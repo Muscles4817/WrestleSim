@@ -16,3 +16,8 @@ namespace WrestlingSim.Enums
         Aerial,
     }
 }
+
+// suggestions from CGPT:
+// Strike, Aerial, Submission, Power, Technical?
+// Pin?
+// Tag team moves?

@@ -18,6 +18,7 @@ namespace WrestlingSim.Models
         public MentalAttributes Mental { get; set; } = new();
         public double Charisma { get; set; }
         public List<Move> Moveset { get; set; }
+        public List<Signature> Signature { get; set; }
         public WrestlingStyle Style { get; set; }
 
         public double BaseMatchScore => RingSkills.GetStandardScore(Style);
@@ -31,10 +32,30 @@ namespace WrestlingSim.Models
             RingSkills = ringSkills ?? new RingSkills();
             Charisma = charisma;
             Moveset = new List<Move>();
+            Signature = new List<Signature>();
             Style = style;
             Physical = new PhysicalAttributes();
             Mental = new MentalAttributes();
         }
 
+        public void AddMove(Move move)
+        {
+            Moveset.Add(move);
+        }
+
+        public void RemoveMove(Move move)
+        { 
+            Moveset.Remove(move);
+        }
+
+        public void AddSignature(Signature signature)
+        {
+            Signature.Add(signature);
+        }
+
+        public void RemoveSignature(Signature signature)
+        {
+            Signature.Remove(signature);
+        }
     }
 }

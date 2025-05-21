@@ -1,0 +1,72 @@
+[
+  {
+    "Name": "Superkick",
+    "Type": [ "Strike" ],
+    "Risk": "Medium",
+    "Difficulty": "Medium",
+    "Impact": "Hard"
+  },
+  {
+    "Name": "German Suplex",
+    "Type": [ "Throw" ],
+    "Risk": "Medium",
+    "Difficulty": "Hard",
+    "Impact": "Hard"
+  },
+  {
+    "Name": "Moonsault",
+    "Type": ["Aerial"],
+    "Risk": "VeryHard",
+    "Difficulty": "Hard",
+    "Impact": "VeryHard"
+  },
+  {
+    "Name": "Sharpshooter",
+    "Type": [ "Submission" ],
+    "Risk": "Easy",
+    "Difficulty": "Medium",
+    "Impact": "Hard"
+  },
+  {
+    "Name": "Powerbomb",
+    "Type": [ "Slam" ],
+    "Risk": "Hard",
+    "Difficulty": "Hard",
+    "Impact": "VeryHard"
+  },
+  {
+    "Name": "DDT",
+    "Type": [ "Technical" ],
+    "Risk": "Easy",
+    "Difficulty": "Easy",
+    "Impact": "Medium"
+  },
+  {
+    "Name": "Top Rope Elbow Drop",
+    "Type": [ "Aerial" ],
+    "Risk": "Hard",
+    "Difficulty": "Hard",
+    "Impact": "Hard"
+  },
+  {
+    "Name": "Clothesline",
+    "Type": [ "Strike" ],
+    "Risk": "VeryEasy",
+    "Difficulty": "VeryEasy",
+    "Impact": "Medium"
+  },
+  {
+    "Name": "Dragon Screw Leg Whip",
+    "Type": [ "Technical" ],
+    "Risk": "Medium",
+    "Difficulty": "Hard",
+    "Impact": "Medium"
+  },
+  {
+    "Name": "Chokeslam",
+    "Type": [ "Slam" ],
+    "Risk": "Medium",
+    "Difficulty": "Medium",
+    "Impact": "Hard"
+  }
+]

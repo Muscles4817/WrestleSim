@@ -9,7 +9,7 @@ class Program
     static void Main(string[] args)
     {
         string filePath = "wrestlers.json"; // Adjust path if needed
-        var wrestlers = WrestlerLoader.LoadWrestlers(filePath);
+        var wrestlers = DataLoaders.LoadWrestlers(filePath);
 
         if (wrestlers == null || wrestlers.Count < 2)
         {
