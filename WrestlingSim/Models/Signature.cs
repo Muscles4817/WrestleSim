@@ -13,9 +13,9 @@ namespace WrestlingSim.Models
         public Move Move { get; set; }
         public bool IsFinisher { get; set; }
         public SkillCheck ImpactModifier { get; set; }
-        public SkillCheck Overness { get; set; }
+        public int Overness { get; set; }
 
-        public Signature (string name, Move move, bool isFinisher, SkillCheck impactModifier, SkillCheck overness)
+        public Signature (string name, Move move, bool isFinisher, SkillCheck impactModifier, int overness)
         {
             Name = name;
             Move = move;
