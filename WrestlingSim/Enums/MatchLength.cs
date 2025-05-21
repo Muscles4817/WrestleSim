@@ -8,8 +8,8 @@ namespace WrestlingSim.Enums
 {
     public enum MatchLength
     {
-        Short,
-        Medium,
-        Long
+        Short = 5,
+        Medium = 10,
+        Long = 20
     }
 }

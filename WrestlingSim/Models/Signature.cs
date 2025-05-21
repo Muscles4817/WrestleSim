@@ -22,12 +22,11 @@ namespace WrestlingSim.Models
             IsFinisher = isFinisher;
             ImpactModifier = impactModifier;
             Overness = overness;
-
         }
 
         public void functionname()
         {
-            // This is an example of an empty function which throws exception
+            // This is an example of an empty function which throws a not implemented exception
             throw new NotImplementedException();
         }
     }

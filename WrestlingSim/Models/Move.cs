@@ -15,8 +15,6 @@ namespace WrestlingSim.Models
         public SkillCheck Difficulty { get; set; }
         public SkillCheck Impact { get; set; }
         
-        
-        
         public Move (string name, List<MoveType> types, SkillCheck risk, SkillCheck difficulty, SkillCheck impact)
         {
             Name = name;
@@ -24,7 +22,6 @@ namespace WrestlingSim.Models
             Risk = risk;
             Difficulty = difficulty;
             Impact = impact;
-            
         }
     }
 }

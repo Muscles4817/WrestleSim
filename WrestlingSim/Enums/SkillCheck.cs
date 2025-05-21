@@ -8,11 +8,11 @@ namespace WrestlingSim.Enums
 {
     public enum SkillCheck
     {
-        VeryEasy,
-        Easy,
-        Medium,
-        Hard,
-        VeryHard,
+        VeryEasy = 1,
+        Easy = 2,
+        Medium = 3,
+        Hard = 4,
+        VeryHard = 5,
     }
 }
 // can be change to ChallengeLevel or ChallengeRating

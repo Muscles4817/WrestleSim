@@ -2,6 +2,13 @@
   {
     "Name": "Superkick",
     "Type": [ "Strike" ],
+    "Risk": "Easy",
+    "Difficulty": "Easy",
+    "Impact": "Medium"
+  },
+  {
+    "Name": "Pumphandle Slam",
+    "Type": [ "Slam" ],
     "Risk": "Medium",
     "Difficulty": "Medium",
     "Impact": "Hard"
@@ -15,7 +22,7 @@
   },
   {
     "Name": "Moonsault",
-    "Type": ["Aerial"],
+    "Type": [ "Aerial" ],
     "Risk": "VeryHard",
     "Difficulty": "Hard",
     "Impact": "VeryHard"
