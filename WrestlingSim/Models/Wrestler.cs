@@ -16,6 +16,7 @@ namespace WrestlingSim.Models
         public RingSkills RingSkills { get; set; }
         public PhysicalAttributes Physical { get; set; } = new();
         public MentalAttributes Mental { get; set; } = new();
+        public Gimmick Gimmick { get; set; } = new();
         public double Charisma { get; set; }
         public List<Move> Moveset { get; set; }
         public WrestlingStyle Style { get; set; }
