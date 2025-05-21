@@ -9,7 +9,7 @@ class Program
     static void Main(string[] args)
     {
         string filePath = "wrestlers.json"; // Adjust path if needed
-        var wrestlers = DataLoaders.LoadWrestlers(filePath);
+        List<Wrestler> wrestlers = DataLoaders.LoadWrestlers(filePath);
 
         if (wrestlers == null || wrestlers.Count < 2)
         {
@@ -32,6 +32,10 @@ class Program
                 var wrestler = wrestlers.FirstOrDefault(w => w.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
                 if (wrestler != null)
                     return wrestler;
+
+
+                Random random = new Random();
+                return wrestlers[random.Next(wrestlers.Count)];
 
                 Console.WriteLine("Wrestler not found. Please enter a valid name from the list.");
             }

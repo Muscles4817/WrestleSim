@@ -2,7 +2,7 @@
 using System.Text.Json.Serialization;
 using WrestlingSim.Models;
 
-public static class WrestlerLoader
+public static class DataLoaders
 {
     public static List<Wrestler> LoadWrestlers(string filePath)
     {
@@ -16,11 +16,7 @@ public static class WrestlerLoader
 
         return JsonSerializer.Deserialize<List<Wrestler>>(json, options);
     }
-}
 
-
-public static class MoveLoader
-{
     public static List<Move> LoadMoves(string filePath)
     {
         //string json = File.ReadAllText(@"C:\Users\mjmak\source\repos\WrestlingSim\WrestlingSim\JSON\MoveList.json");
@@ -34,3 +30,6 @@ public static class MoveLoader
         return JsonSerializer.Deserialize<List<Move>>(json, options);
     }
 }
+
+
+
