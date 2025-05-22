@@ -4,7 +4,9 @@
     "Type": [ "Strike" ],
     "Risk": "Easy",
     "Difficulty": "Easy",
-    "Impact": "Medium"
+    "Impact": "Medium",
+    "RequiresWeapons": "False"
+    "WeaponsSet": []
   },
   {
     "Name": "Pumphandle Slam",

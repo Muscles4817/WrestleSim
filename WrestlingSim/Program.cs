@@ -33,11 +33,10 @@ class Program
                 if (wrestler != null)
                     return wrestler;
 
-
+                // Add random wrestler if none specified
                 Random random = new Random();
                 return wrestlers[random.Next(wrestlers.Count)];
 
-                Console.WriteLine("Wrestler not found. Please enter a valid name from the list.");
             }
         }
 

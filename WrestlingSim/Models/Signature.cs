@@ -14,14 +14,18 @@ namespace WrestlingSim.Models
         public bool IsFinisher { get; set; }
         public SkillCheck ImpactModifier { get; set; }
         public int Overness { get; set; }
+        public bool TagExclusive { get; set; }
 
-        public Signature (string name, Move move, bool isFinisher, SkillCheck impactModifier, int overness)
+
+        public Signature (string name, Move move, bool isFinisher, SkillCheck impactModifier, int overness, bool tagExclusive)
         {
             Name = name;
             Move = move;
             IsFinisher = isFinisher;
             ImpactModifier = impactModifier;
             Overness = overness;
+            // TagExclusive shows if the move can only be competed as a tag team move - Not sure if this is best place for this comment?
+            TagExclusive = tagExclusive;
         }
 
         public void functionname()
