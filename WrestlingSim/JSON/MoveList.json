@@ -1,81 +1,90 @@
 [
   {
     "Name": "Superkick",
-    "Type": [ "Strike" ],
+    "Types": [ "Strike" ],
     "Risk": "Easy",
     "Difficulty": "Easy",
     "Impact": "Medium",
-    "RequiresWeapons": "False"
-    "WeaponsSet": []
+    "RequiresWeapons": false
   },
   {
     "Name": "Pumphandle Slam",
-    "Type": [ "Slam" ],
+    "Types": [ "Slam" ],
     "Risk": "Medium",
     "Difficulty": "Medium",
-    "Impact": "Hard"
+    "Impact": "Hard",
+    "RequiresWeapons": false
   },
   {
     "Name": "German Suplex",
-    "Type": [ "Throw" ],
+    "Types": [ "Throw" ],
     "Risk": "Medium",
     "Difficulty": "Hard",
-    "Impact": "Hard"
+    "Impact": "Hard",
+    "RequiresWeapons": false
   },
   {
     "Name": "Moonsault",
-    "Type": [ "Aerial" ],
+    "Types": [ "Aerial" ],
     "Risk": "VeryHard",
     "Difficulty": "Hard",
-    "Impact": "VeryHard"
+    "Impact": "VeryHard",
+    "RequiresWeapons": false
   },
   {
     "Name": "Sharpshooter",
-    "Type": [ "Submission" ],
+    "Types": [ "Submission" ],
     "Risk": "Easy",
     "Difficulty": "Medium",
-    "Impact": "Hard"
+    "Impact": "Hard",
+    "RequiresWeapons": false
   },
   {
     "Name": "Powerbomb",
-    "Type": [ "Slam" ],
+    "Types": [ "Slam" ],
     "Risk": "Hard",
     "Difficulty": "Hard",
-    "Impact": "VeryHard"
+    "Impact": "VeryHard",
+    "RequiresWeapons": false
   },
   {
     "Name": "DDT",
-    "Type": [ "Technical" ],
+    "Types": [ "Technical" ],
     "Risk": "Easy",
     "Difficulty": "Easy",
-    "Impact": "Medium"
+    "Impact": "Medium",
+    "RequiresWeapons": false
   },
   {
     "Name": "Top Rope Elbow Drop",
-    "Type": [ "Aerial" ],
+    "Types": [ "Aerial" ],
     "Risk": "Hard",
     "Difficulty": "Hard",
-    "Impact": "Hard"
+    "Impact": "Hard",
+    "RequiresWeapons": false
   },
   {
     "Name": "Clothesline",
-    "Type": [ "Strike" ],
+    "Types": [ "Strike" ],
     "Risk": "VeryEasy",
     "Difficulty": "VeryEasy",
-    "Impact": "Medium"
+    "Impact": "Medium",
+    "RequiresWeapons": false
   },
   {
     "Name": "Dragon Screw Leg Whip",
-    "Type": [ "Technical" ],
+    "Types": [ "Technical" ],
     "Risk": "Medium",
     "Difficulty": "Hard",
-    "Impact": "Medium"
+    "Impact": "Medium",
+    "RequiresWeapons": false
   },
   {
     "Name": "Chokeslam",
-    "Type": [ "Slam" ],
+    "Types": [ "Slam" ],
     "Risk": "Medium",
     "Difficulty": "Medium",
-    "Impact": "Hard"
+    "Impact": "Hard",
+    "RequiresWeapons": false
   }
 ]

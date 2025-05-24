@@ -138,13 +138,14 @@ namespace WrestlingSim.Models
         }
 
 
-        public string CalculateWinner()
+        public (string, string) CalculateWinner()
         {
             int total = WrestlerA.Popularity + WrestlerB.Popularity;
             int roll = rand.Next(1, total + 1);
 
-            string selected = (roll <= WrestlerA.Popularity ? WrestlerA.Name : WrestlerB.Name);
-            return selected;
+            // Return a tuple with winner and loser
+            var ResultsTuple = (roll <= WrestlerA.Popularity ? (WrestlerA.Name, WrestlerB.Name) : (WrestlerB.Name, WrestlerA.Name));
+            return ResultsTuple;
         }
     }
 }

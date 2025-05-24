@@ -24,8 +24,7 @@ namespace WrestlingSim.Models
             IsFinisher = isFinisher;
             ImpactModifier = impactModifier;
             Overness = overness;
-            // TagExclusive shows if the move can only be competed as a tag team move - Not sure if this is best place for this comment?
-            TagExclusive = tagExclusive;
+            TagExclusive = tagExclusive;            // TagExclusive shows if the move can only be competed as a tag team move
         }
 
         public void functionname()

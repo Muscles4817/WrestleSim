@@ -17,18 +17,26 @@ namespace WrestlingSim.Models
         public bool RequiresWeapons { get; set; } 
         public List<Weapons> WeaponsSet { get; set; }
         
-        public Move (string name, List<MoveType> types, SkillCheck risk, SkillCheck difficulty, SkillCheck impact, bool requiresWeapons, List<Weapons> weaponsSet)
+        public Move (string name, List<MoveType> types, SkillCheck risk, SkillCheck difficulty, SkillCheck impact, bool requiresWeapons)
         {
             Name = name;
             Types = types;
-            Risk = risk;
-            Difficulty = difficulty;
-            Impact = impact;
-            RequiresWeapons = requiresWeapons;
-            WeaponsSet = weaponsSet;
+            Risk = risk;                            
+            Difficulty = difficulty;                
+            Impact = impact;                        
+            RequiresWeapons = requiresWeapons;      // If true move can only be performed with a weapon
+            WeaponsSet = new List<Weapons>();       // List of weapons that move can be performed with. If empty move cannot be performed with weapon
+        }
+
+        public void AddWeapon(Weapons weapon)
+        {
+            WeaponsSet.Add(weapon);
+        }
+
+        public void RemoveWeapon(Weapons weapon) 
+        {
+            WeaponsSet.Remove(weapon); 
         }
     }
 }
 
-// RequiresWeapon bool. Applicable Weapons (if empty no weapons can be used, if weapons on list then that weapon can be used for the move even if not a RequiresWeapon move)
-// reconsider name for WeaponSet? 

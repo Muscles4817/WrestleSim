@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using WrestlingSim.Engine;
 using WrestlingSim.Enums;
 using WrestlingSim.Models;
@@ -8,8 +9,8 @@ class Program
 {
     static void Main(string[] args)
     {
-        string filePath = "wrestlers.json"; // Adjust path if needed
-        List<Wrestler> wrestlers = DataLoaders.LoadWrestlers(filePath);
+        string fileName = "wrestlers.json"; // Adjust path if needed
+        List<Wrestler> wrestlers = DataLoaders.LoadWrestlers(fileName);
 
         if (wrestlers == null || wrestlers.Count < 2)
         {
@@ -61,6 +62,7 @@ class Program
                 Console.WriteLine($"- {MatchType.Technical.ToString()}");
 
                 Console.Write("\nWhat match style do you want? ");
+
                 string? style = Console.ReadLine();
 
                 if (Enum.TryParse<MatchType>(style, true, out MatchType selectedType))
@@ -68,9 +70,19 @@ class Program
                     return selectedType;
                 }
 
-                Console.WriteLine("Invalid match style. Please enter 'Standard' or 'Technical'.\n");
+                return MatchType.Standard; // defaults to Standard match
+                
+                // Console.WriteLine("Invalid match style. Please enter 'Standard' or 'Technical'.\n");
             }
         }
+
+        fileName = "MoveList.json"; // Adjust path if needed
+        List<Move> moves = DataLoaders.LoadMoves(fileName);
+        Random random = new Random();
+        var LastMove = moves[random.Next(moves.Count)];
+
+        Console.WriteLine(LastMove.Name);
+        Console.WriteLine();
 
 
         var wrestlerA = GetWrestlerByName("Enter the name of the FIRST wrestler");
@@ -79,7 +91,7 @@ class Program
         int simulations = GetSimulationCount();
         MatchType type = GetMatchStyle();
 
-        Console.WriteLine($"\nSimulating {simulations} match(es) between {wrestlerA.Name} and {wrestlerB.Name}...\n");
+        Console.WriteLine($"\nSimulating {simulations} {type} match(es) between {wrestlerA.Name} and {wrestlerB.Name}...\n");
 
         var match = new Match(wrestlerA, wrestlerB, type);
         var sim = new MatchSimulator(match);

@@ -14,7 +14,10 @@ public static class DataLoaders
             PropertyNameCaseInsensitive = true
         };
 
-        return JsonSerializer.Deserialize<List<Wrestler>>(json, options);
+        List<Wrestler> wrestlers  =  JsonSerializer.Deserialize<List<Wrestler>>(json, options);
+        // List<Move> moves = LoadMoves("MoveList.json");
+
+        return wrestlers;
     }
 
     public static List<Move> LoadMoves(string filePath)
