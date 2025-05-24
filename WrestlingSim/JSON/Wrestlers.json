@@ -1,6 +1,7 @@
 [
   {
-    "Name": "Rhea Ripley",
+    "RingName": "Rhea Ripley",
+    "RealName": "Demi Bennett",
     "Popularity": 95,
     "Charisma": 4.5,
     "Style": "Powerhouse",
@@ -28,7 +29,7 @@
     "Moveset": []
   },
   {
-    "Name": "Bianca Belair",
+    "RingName": "Bianca Belair",
     "Popularity": 90,
     "Charisma": 4.2,
     "Style": "Powerhouse",
@@ -56,7 +57,7 @@
     "Moveset": []
   },
   {
-    "Name": "Charlotte Flair",
+    "RingName": "Charlotte Flair",
     "Popularity": 92,
     "Charisma": 4.3,
     "Style": "Technical",
@@ -84,7 +85,7 @@
     "Moveset": []
   },
   {
-    "Name": "Asuka",
+    "RingName": "Asuka",
     "Popularity": 85,
     "Charisma": 3.8,
     "Style": "Striker",
@@ -112,7 +113,7 @@
     "Moveset": []
   },
   {
-    "Name": "Bayley",
+    "RingName": "Bayley",
     "Popularity": 83,
     "Charisma": 4.1,
     "Style": "Technical",
@@ -140,7 +141,7 @@
     "Moveset": []
   },
   {
-    "Name": "Becky Lynch",
+    "RingName": "Becky Lynch",
     "Popularity": 95,
     "Charisma": 4.7,
     "Style": "Brawler",
@@ -168,7 +169,9 @@
     "Moveset": []
   },
   {
-    "Name": "Iyo Sky",
+    "RingName": "Iyo Sky",
+    "RealName": "Masami Odate",
+    "PreviousNames": [ "Biba Kasai", "Hitokiri", "Io Shirai", "Iotica", "Midnight Angel", "Oyuki", "T-2 Mask", "Tenkū Shōjo Lusca" ],
     "Popularity": 80,
     "Charisma": 3.5,
     "Style": "HighFlyer",
@@ -196,7 +199,7 @@
     "Moveset": []
   },
   {
-    "Name": "Liv Morgan",
+    "RingName": "Liv Morgan",
     "Popularity": 78,
     "Charisma": 4.2,
     "Style": "HighFlyer",
@@ -224,7 +227,7 @@
     "Moveset": []
   },
   {
-    "Name": "Shayna Baszler",
+    "RingName": "Shayna Baszler",
     "Popularity": 70,
     "Charisma": 2.5,
     "Style": "Grappler",
@@ -252,7 +255,7 @@
     "Moveset": []
   },
   {
-    "Name": "Zelina Vega",
+    "RingName": "Zelina Vega",
     "Popularity": 68,
     "Charisma": 4.0,
     "Style": "HighFlyer",

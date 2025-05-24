@@ -10,9 +10,10 @@ namespace WrestlingSim.Models
 {
     public class Wrestler
     {
-        public string Name { get; set; }
+        public string RingName { get; set; }
+        public string RealName { get; set; }
+        public List<string> PreviousNames { get; set; }
         public int Popularity { get; set; }
-
         public RingSkills RingSkills { get; set; }
         public PhysicalAttributes Physical { get; set; } = new();
         public MentalAttributes Mental { get; set; } = new();
@@ -25,9 +26,11 @@ namespace WrestlingSim.Models
         public double TechnicalMatchScore => RingSkills.GetTechnicalScore();
 
 
-        public Wrestler(string name, int popularity, RingSkills ringSkills, double charisma, WrestlingStyle style)
+        public Wrestler(string ringName, string realName, int popularity, RingSkills ringSkills, double charisma, WrestlingStyle style)
         {
-            Name = name;
+            RingName = ringName;
+            RealName = realName ?? ringName;                // If no RealName given, deafults to RingName - Probably should be other way around?
+            PreviousNames = new List<string>();              
             Popularity = popularity;
             RingSkills = ringSkills ?? new RingSkills();
             Charisma = charisma;
@@ -56,6 +59,12 @@ namespace WrestlingSim.Models
         public void RemoveSignature(Signature signature)
         {
             Signature.Remove(signature);
+        }
+
+        public void ChangeName(string name)
+        {
+            PreviousNames.Add(RingName);
+            RingName = name;
         }
     }
 }

@@ -21,7 +21,7 @@ class Program
         Console.WriteLine("Available Wrestlers:");
         foreach (var w in wrestlers)
         {
-            Console.WriteLine($"- {w.Name}");
+            Console.WriteLine($"- {w.RingName}");
         }
 
         Wrestler GetWrestlerByName(string prompt)
@@ -30,7 +30,7 @@ class Program
             {
                 Console.Write($"\n{prompt}: ");
                 string name = Console.ReadLine();
-                var wrestler = wrestlers.FirstOrDefault(w => w.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+                var wrestler = wrestlers.FirstOrDefault(w => w.RingName.Equals(name, StringComparison.OrdinalIgnoreCase));
                 if (wrestler != null)
                     return wrestler;
 
@@ -76,14 +76,39 @@ class Program
             }
         }
 
-        fileName = "MoveList.json"; // Adjust path if needed
-        List<Move> moves = DataLoaders.LoadMoves(fileName);
-        Random random = new Random();
-        var LastMove = moves[random.Next(moves.Count)];
+        void TestNameChanger(Wrestler wrestler)
+        {
+            // Function to test chanign a wrestlers name - Can be deleted 
+            Console.WriteLine("Changing the name of the wrestler");
+            Console.WriteLine($"{wrestler.RingName}'s previous names are:");
+            // Print previous names - Probably could logic this to print "Wrester has no prev names" if list is empty
+            foreach (var p in wrestler.PreviousNames)
+            {
+                Console.WriteLine($"- {p}");
+            }
 
-        Console.WriteLine(LastMove.Name);
+            while (true)
+            {
+                Console.WriteLine("What would you like to change their name to? ");
+                string? newName = Console.ReadLine();
+                // Not sure how to check for blank string? Thing to look up
+                if (newName != null && newName != "")
+                {
+                    wrestler.ChangeName(newName);
+                    break;
+                }
+            }
+
+            Console.WriteLine($"Name changed to {wrestler.RingName}.");
+            Console.WriteLine($"{wrestler.RingName}'s previous names are:");
+            foreach (var q in wrestler.PreviousNames)
+            {
+                Console.WriteLine($"- {q}");
+            }
+
+        }
+
         Console.WriteLine();
-
 
         var wrestlerA = GetWrestlerByName("Enter the name of the FIRST wrestler");
         var wrestlerB = GetWrestlerByName("Enter the name of the SECOND wrestler");
@@ -91,7 +116,11 @@ class Program
         int simulations = GetSimulationCount();
         MatchType type = GetMatchStyle();
 
-        Console.WriteLine($"\nSimulating {simulations} {type} match(es) between {wrestlerA.Name} and {wrestlerB.Name}...\n");
+        TestNameChanger(wrestlerA);
+
+        Console.WriteLine($"\nSimulating {simulations} {type} match(es) between {wrestlerA.RingName} and {wrestlerB.RingName}...\n");
+
+        Console.WriteLine($"Wrestler {wrestlerA.RingName}'s real name is {wrestlerA.RealName}");
 
         var match = new Match(wrestlerA, wrestlerB, type);
         var sim = new MatchSimulator(match);

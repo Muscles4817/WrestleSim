@@ -20,7 +20,7 @@ namespace WrestlingSim.Engine
         {
             Console.WriteLine("");
             Console.WriteLine("WELCOME TO A NEW MATCH");
-            Console.WriteLine($"Match: {_match.WrestlerA.Name} vs {_match.WrestlerB.Name}");
+            Console.WriteLine($"Match: {_match.WrestlerA.RingName} vs {_match.WrestlerB.RingName}");
 
             double matchRating = _match.CalculateMatchRating();
             var result = _match.CalculateWinner();
