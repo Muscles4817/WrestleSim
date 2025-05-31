@@ -20,13 +20,24 @@ namespace WrestlingSim.Engine
         {
             Console.WriteLine("");
             Console.WriteLine("WELCOME TO A NEW MATCH");
-            Console.WriteLine($"Match: {_match.WrestlerA.Name} vs {_match.WrestlerB.Name}");
+            Console.WriteLine($"Match: {_match.WrestlerA.RingName} vs {_match.WrestlerB.RingName}");
 
             double matchRating = _match.CalculateMatchRating();
-            string winner = _match.CalculateWinner();
+            var result = _match.CalculateWinner();
+
+            // Load all moves from Json - This will need to be changed to get wrestlers specific moves
+            var fileName = "MoveList.json";
+            List<Move> moves = DataLoaders.LoadMoves(fileName);
+
+            // Get random move from list
+            Random random = new Random();
+            var LastMove = moves[random.Next(moves.Count)];
+
+            Console.WriteLine();
 
             Console.WriteLine($"MATCH RATING: {matchRating}");
-            Console.WriteLine($"WINNER: {winner}");
+            Console.WriteLine($"{result.Item1} used {LastMove.Name} to beat {result.Item2}");
+            Console.WriteLine($"WINNER: {result.Item1}");
             Console.WriteLine("");
         }
     }

@@ -1,0 +1,90 @@
+[
+  {
+    "Name": "Superkick",
+    "Types": [ "Strike" ],
+    "Risk": "Easy",
+    "Difficulty": "Easy",
+    "Impact": "Medium",
+    "RequiresWeapons": false
+  },
+  {
+    "Name": "Pumphandle Slam",
+    "Types": [ "Slam" ],
+    "Risk": "Medium",
+    "Difficulty": "Medium",
+    "Impact": "Hard",
+    "RequiresWeapons": false
+  },
+  {
+    "Name": "German Suplex",
+    "Types": [ "Throw" ],
+    "Risk": "Medium",
+    "Difficulty": "Hard",
+    "Impact": "Hard",
+    "RequiresWeapons": false
+  },
+  {
+    "Name": "Moonsault",
+    "Types": [ "Aerial" ],
+    "Risk": "VeryHard",
+    "Difficulty": "Hard",
+    "Impact": "VeryHard",
+    "RequiresWeapons": false
+  },
+  {
+    "Name": "Sharpshooter",
+    "Types": [ "Submission" ],
+    "Risk": "Easy",
+    "Difficulty": "Medium",
+    "Impact": "Hard",
+    "RequiresWeapons": false
+  },
+  {
+    "Name": "Powerbomb",
+    "Types": [ "Slam" ],
+    "Risk": "Hard",
+    "Difficulty": "Hard",
+    "Impact": "VeryHard",
+    "RequiresWeapons": false
+  },
+  {
+    "Name": "DDT",
+    "Types": [ "Technical" ],
+    "Risk": "Easy",
+    "Difficulty": "Easy",
+    "Impact": "Medium",
+    "RequiresWeapons": false
+  },
+  {
+    "Name": "Top Rope Elbow Drop",
+    "Types": [ "Aerial" ],
+    "Risk": "Hard",
+    "Difficulty": "Hard",
+    "Impact": "Hard",
+    "RequiresWeapons": false
+  },
+  {
+    "Name": "Clothesline",
+    "Types": [ "Strike" ],
+    "Risk": "VeryEasy",
+    "Difficulty": "VeryEasy",
+    "Impact": "Medium",
+    "RequiresWeapons": false
+  },
+  {
+    "Name": "Dragon Screw Leg Whip",
+    "Types": [ "Technical" ],
+    "Risk": "Medium",
+    "Difficulty": "Hard",
+    "Impact": "Medium",
+    "RequiresWeapons": false
+  },
+  {
+    "Name": "Chokeslam",
+    "Types": [ "Slam" ],
+    "Risk": "Medium",
+    "Difficulty": "Medium",
+    "Impact": "Hard",
+    "RequiresWeapons": false
+  }
+]

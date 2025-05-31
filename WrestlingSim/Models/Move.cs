@@ -10,17 +10,33 @@ namespace WrestlingSim.Models
     public class Move
     {
         public string Name { get; set; }
-        public int Difficulty { get; set; }
-        public int Impact { get; set; }
-        public int Risk { get; set; }
-        public MoveType Type { get; set; }
+        public List<MoveType> Types { get; set; }
+        public SkillCheck Risk { get; set; }
+        public SkillCheck Difficulty { get; set; }
+        public SkillCheck Impact { get; set; }
+        public bool RequiresWeapons { get; set; } 
+        public List<Weapons> WeaponsSet { get; set; }
         
-        public Move (string name, int difficulty, int impact, MoveType type)
+        public Move (string name, List<MoveType> types, SkillCheck risk, SkillCheck difficulty, SkillCheck impact, bool requiresWeapons)
         {
             Name = name;
-            Difficulty = difficulty;
-            Impact = impact;
-            Type = type;
+            Types = types;
+            Risk = risk;                            
+            Difficulty = difficulty;                
+            Impact = impact;                        
+            RequiresWeapons = requiresWeapons;      // If true move can only be performed with a weapon
+            WeaponsSet = new List<Weapons>();       // List of weapons that move can be performed with. If empty move cannot be performed with weapon
+        }
+
+        public void AddWeapon(Weapons weapon)
+        {
+            WeaponsSet.Add(weapon);
+        }
+
+        public void RemoveWeapon(Weapons weapon) 
+        {
+            WeaponsSet.Remove(weapon); 
         }
     }
 }
+

@@ -1,0 +1,16 @@
+[
+  {
+    "Name": "Riptide",
+    "Move": {
+      "Name": "Pumphandle Slam",
+      "Type": [ "Slam" ],
+      "Risk": "Medium",
+      "Difficulty": "Medium",
+      "Impact": "Hard"
+    },
+    "IsFinisher": "True",
+    "ImpactModifier": "Hard",
+    "Overness": 88,
+    "TagExclusive":  "False"
+  }
+]
