@@ -72,12 +72,12 @@ namespace WrestlingSim.Models
             double techRawA = WrestlerA.TechnicalMatchScore;
             double modifierA = GetCharismaModifier(WrestlerA.Charisma);
             double techScoreA = Math.Round(Clamp(techRawA + modifierA, 0.0, 5.0), 2);
-            Console.WriteLine($"WRESTLER: {WrestlerA.Name} | Tech: {techRawA} | CharismaMod: {modifierA} => {techScoreA}");
+            Console.WriteLine($"WRESTLER: {WrestlerA.RingName} | Tech: {techRawA} | CharismaMod: {modifierA} => {techScoreA}");
 
             double techRawB = WrestlerB.TechnicalMatchScore;
             double modifierB = GetCharismaModifier(WrestlerB.Charisma);
             double techScoreB = Math.Round(Clamp(techRawB + modifierB, 0.0, 5.0), 2);
-            Console.WriteLine($"WRESTLER: {WrestlerB.Name} | Tech: {techRawB} | CharismaMod: {modifierB} => {techScoreB}");
+            Console.WriteLine($"WRESTLER: {WrestlerB.RingName} | Tech: {techRawB} | CharismaMod: {modifierB} => {techScoreB}");
 
             return (techScoreA + techScoreB) / 2.0;
         }
@@ -87,7 +87,7 @@ namespace WrestlingSim.Models
             double modifierA = GetCharismaModifier(WrestlerA.Charisma);
             double rawRatingA = WrestlerA.BaseMatchScore + modifierA;
             double wrestlerAScore = Math.Round(Clamp(rawRatingA, 0.0, 5.0), 1);
-            Console.WriteLine($"WRESTLER: {WrestlerA.Name}");
+            Console.WriteLine($"WRESTLER: {WrestlerA.RingName}");
             Console.WriteLine($"Modifier: {modifierA}");
             Console.WriteLine($"RawRating: {WrestlerA.BaseMatchScore}");
             Console.WriteLine($"Score: {wrestlerAScore}");
@@ -96,7 +96,7 @@ namespace WrestlingSim.Models
             double modifierB = GetCharismaModifier(WrestlerB.Charisma);
             double rawRatingB = WrestlerB.BaseMatchScore + modifierB;
             double wrestlerBScore = Math.Round(Clamp(rawRatingB, 0.0, 5.0), 1);
-            Console.WriteLine($"WRESTLER: {WrestlerB.Name}");
+            Console.WriteLine($"WRESTLER: {WrestlerB.RingName}");
             Console.WriteLine($"Modifier: {modifierB}");
             Console.WriteLine($"RawRating: {WrestlerB.BaseMatchScore}");
             Console.WriteLine($"Score: {wrestlerBScore}");
@@ -138,13 +138,14 @@ namespace WrestlingSim.Models
         }
 
 
-        public string CalculateWinner()
+        public (string, string) CalculateWinner()
         {
             int total = WrestlerA.Popularity + WrestlerB.Popularity;
             int roll = rand.Next(1, total + 1);
 
-            string selected = (roll <= WrestlerA.Popularity ? WrestlerA.Name : WrestlerB.Name);
-            return selected;
+            // Return a tuple with winner and loser
+            var ResultsTuple = (roll <= WrestlerA.Popularity ? (WrestlerA.RingName, WrestlerB.RingName) : (WrestlerB.RingName, WrestlerA.RingName));
+            return ResultsTuple;
         }
     }
 }
