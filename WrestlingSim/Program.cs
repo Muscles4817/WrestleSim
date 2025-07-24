@@ -2,7 +2,9 @@
 using System.IO;
 using WrestlingSim.Engine;
 using WrestlingSim.Enums;
+using WrestlingSim.Factories;
 using WrestlingSim.Models;
+using WrestlingSim.Models.Segment;
 using MatchType = WrestlingSim.Enums.MatchType;
 
 class Program
@@ -14,113 +16,67 @@ class Program
 
         if (wrestlers == null || wrestlers.Count < 2)
         {
-            Console.WriteLine("Not enough wrestlers loaded to simulate a match.");
+            Console.WriteLine("Not enough wrestlers loaded to run simulations.");
             return;
         }
 
-        Console.WriteLine("Available Wrestlers:");
-        foreach (var w in wrestlers)
+        bool running = true;
+
+        while (running)
         {
-            Console.WriteLine($"- {w.RingName}");
-        }
+            Console.Clear();
+            Console.WriteLine("=== WRESTLING SIMULATOR ===");
+            Console.WriteLine("1. Simulate Match");
+            Console.WriteLine("2. Simulate Segment");
+            Console.WriteLine("3. Exit");
+            Console.Write("\nChoose an option: ");
 
-        Wrestler GetWrestlerByName(string prompt)
-        {
-            while (true)
+            string choice = Console.ReadLine();
+
+            switch (choice)
             {
-                Console.Write($"\n{prompt}: ");
-                string name = Console.ReadLine();
-                var wrestler = wrestlers.FirstOrDefault(w => w.RingName.Equals(name, StringComparison.OrdinalIgnoreCase));
-                if (wrestler != null)
-                    return wrestler;
-
-                // Add random wrestler if none specified
-                Random random = new Random();
-                return wrestlers[random.Next(wrestlers.Count)];
-
-            }
-        }
-
-        int GetSimulationCount()
-        {
-            while (true)
-            {
-                Console.Write("\nHow many times do you want to simulate the match? ");
-                if (int.TryParse(Console.ReadLine(), out int count) && count > 0)
-                    return count;
-
-                Console.WriteLine("Please enter a valid positive number.");
-            }
-        }
-
-        MatchType GetMatchStyle()
-        {
-            while (true)
-            {
-                Console.WriteLine("Available Match Styles:");
-                Console.WriteLine($"- {MatchType.Standard}");
-                Console.WriteLine($"- {MatchType.Technical.ToString()}");
-
-                Console.Write("\nWhat match style do you want? ");
-
-                string? style = Console.ReadLine();
-
-                if (Enum.TryParse<MatchType>(style, true, out MatchType selectedType))
-                {
-                    return selectedType;
-                }
-
-                return MatchType.Standard; // defaults to Standard match
-                
-                // Console.WriteLine("Invalid match style. Please enter 'Standard' or 'Technical'.\n");
-            }
-        }
-
-        void TestNameChanger(Wrestler wrestler)
-        {
-            // Function to test chanign a wrestlers name - Can be deleted 
-            Console.WriteLine("Changing the name of the wrestler");
-            Console.WriteLine($"{wrestler.RingName}'s previous names are:");
-            // Print previous names - Probably could logic this to print "Wrester has no prev names" if list is empty
-            foreach (var p in wrestler.PreviousNames())
-            {
-                Console.WriteLine($"- {p}");
-            }
-
-            while (true)
-            {
-                Console.WriteLine("What would you like to change their name to? ");
-                string? newName = Console.ReadLine();
-                // Not sure how to check for blank string? Thing to look up
-                if (newName != null && newName != "")
-                {
-                    wrestler.ChangeName(newName);
+                case "1":
+                    SimulateMatch(wrestlers);
                     break;
-                }
+                case "2":
+                    SimulateSegment(wrestlers);
+                    break;
+                case "3":
+                    running = false;
+                    Console.WriteLine("Exiting...");
+                    break;
+                default:
+                    Console.WriteLine("Invalid option. Please try again.");
+                    break;
             }
 
-            Console.WriteLine($"Name changed to {wrestler.RingName}.");
-            Console.WriteLine($"{wrestler.RingName}'s previous names are:");
-            foreach (var q in wrestler.PreviousNames())
+            if (running)
             {
-                Console.WriteLine($"- {q}");
+                Console.WriteLine("\nDo you want to return to the main menu or exit?");
+                Console.WriteLine("1. Main Menu");
+                Console.WriteLine("2. Exit");
+                string nextAction = Console.ReadLine();
+                if (nextAction == "2") running = false;
             }
-
         }
+    }
 
-        Console.WriteLine();
+    // ==========================
+    // MATCH SIMULATION LOGIC
+    // ==========================
+    static void SimulateMatch(List<Wrestler> wrestlers)
+    {
+        Console.WriteLine("\nAvailable Wrestlers:");
+        foreach (var w in wrestlers)
+            Console.WriteLine($"- {w.RingName}");
 
-        var wrestlerA = GetWrestlerByName("Enter the name of the FIRST wrestler");
-        var wrestlerB = GetWrestlerByName("Enter the name of the SECOND wrestler");
+        Wrestler wrestlerA = GetWrestlerByName("Enter the name of the FIRST wrestler", wrestlers);
+        Wrestler wrestlerB = GetWrestlerByName("Enter the name of the SECOND wrestler", wrestlers);
 
         int simulations = GetSimulationCount();
         MatchType type = GetMatchStyle();
 
-        TestNameChanger(wrestlerA);
-
         Console.WriteLine($"\nSimulating {simulations} {type} match(es) between {wrestlerA.RingName} and {wrestlerB.RingName}...\n");
-
-        Console.WriteLine($"Wrestler {wrestlerA.RingName}'s real name is {wrestlerA.RealName}");
 
         var match = new Match(wrestlerA, wrestlerB, type);
         var sim = new MatchSimulator(match);
@@ -129,6 +85,111 @@ class Program
         {
             Console.WriteLine($"--- Simulation {i} ---");
             sim.Simulate();
+        }
+    }
+
+    // ==========================
+    // SEGMENT SIMULATION LOGIC
+    // ==========================
+    static void SimulateSegment(List<Wrestler> wrestlers)
+    {
+        Console.WriteLine("\nSegment Simulation Selected.");
+        Console.WriteLine("Choose Segment Type:");
+        Console.WriteLine("1. Promo");
+        Console.WriteLine("2. Confrontation");
+        Console.WriteLine("3. Surprise Return");
+        Console.Write("\nYour choice: ");
+        string choice = Console.ReadLine();
+
+        Wrestler speaker = GetWrestlerByName("Select main wrestler", wrestlers);
+
+        Segment segment = null;
+
+        switch (choice)
+        {
+            case "1":
+                Console.Write("Enter promo text: ");
+                string promoText = Console.ReadLine();
+                segment = SegmentFactory.CreatePromo(speaker, promoText);
+                break;
+
+            case "2":
+                Wrestler interrupter = GetWrestlerByName("Select interrupter", wrestlers);
+                Console.Write("Enter first dialogue: ");
+                string d1 = Console.ReadLine();
+                Console.Write("Enter interruption dialogue: ");
+                string d2 = Console.ReadLine();
+                segment = SegmentFactory.CreateConfrontation(speaker, interrupter, d1, d2);
+                break;
+
+            case "3":
+                Wrestler victim = GetWrestlerByName("Select victim for surprise attack", wrestlers);
+                segment = SegmentFactory.CreateSurpriseReturn(speaker, victim);
+                break;
+
+            default:
+                Console.WriteLine("Invalid option. Returning to main menu...");
+                return;
+        }
+
+        int simulations = GetSimulationCount();
+        var sim = new SegmentSimulator();
+        Console.WriteLine("\n--- Segment Simulation ---");
+
+        for (int i = 1; i <= simulations; i++)
+        {
+            Console.WriteLine($"--- Simulation {i} ---");
+            sim.SimulateSegment(segment);
+        }
+    }
+
+    // ==========================
+    // HELPERS
+    // ==========================
+    static Wrestler GetWrestlerByName(string prompt, List<Wrestler> wrestlers)
+    {
+        while (true)
+        {
+            Console.Write($"\n{prompt}: ");
+            string name = Console.ReadLine();
+            var wrestler = wrestlers.FirstOrDefault(w => w.RingName.Equals(name, StringComparison.OrdinalIgnoreCase));
+            if (wrestler != null)
+                return wrestler;
+
+            Console.WriteLine("Not found. Picking random wrestler...");
+            Random random = new Random();
+            return wrestlers[random.Next(wrestlers.Count)];
+        }
+    }
+
+    static int GetSimulationCount()
+    {
+        while (true)
+        {
+            Console.Write("\nHow many times do you want to simulate this? ");
+            if (int.TryParse(Console.ReadLine(), out int count) && count > 0)
+                return count;
+
+            Console.WriteLine("Please enter a valid positive number.");
+        }
+    }
+
+    static MatchType GetMatchStyle()
+    {
+        while (true)
+        {
+            Console.WriteLine("\nAvailable Match Styles:");
+            foreach (var style in Enum.GetNames(typeof(MatchType)))
+                Console.WriteLine($"- {style}");
+
+            Console.Write("\nSelect match style: ");
+            string input = Console.ReadLine();
+
+            if (Enum.TryParse<MatchType>(input, true, out MatchType selectedType))
+                return selectedType;
+
+            Console.WriteLine("Invalid input. Defaulting to Standard.");
+            return MatchType.Standard;
         }
     }
 }
