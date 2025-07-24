@@ -20,7 +20,18 @@ namespace WrestlingSim.Models
         public double Freshness { get; set; }                // 0.0 to 1.0, decays over time
         public List<string> GimmickTraits { get; set; }       // Optional: extra flavor flags
         public List<FanGroupAppeal> AppealRatings { get; set; } // Different fanbase responses
+        public List<string> PreviousNames { get; set; }
 
         public Gimmick() { }
+
+        public Gimmick(string name)
+        {
+            Name = name;
+        }
+
+        public void ChangeName(string name)
+        {
+            PreviousNames.Add(name);
+        }
     }
 }

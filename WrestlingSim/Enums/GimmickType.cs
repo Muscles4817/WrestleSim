@@ -23,6 +23,7 @@ namespace WrestlingSim.Enums
         DarkPersona,
         Sellout,
         Cryptic,
+        Daredevil,
         Gimmickless
     }
 }

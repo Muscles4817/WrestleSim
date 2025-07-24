@@ -82,7 +82,7 @@ class Program
             Console.WriteLine("Changing the name of the wrestler");
             Console.WriteLine($"{wrestler.RingName}'s previous names are:");
             // Print previous names - Probably could logic this to print "Wrester has no prev names" if list is empty
-            foreach (var p in wrestler.PreviousNames)
+            foreach (var p in wrestler.PreviousNames())
             {
                 Console.WriteLine($"- {p}");
             }
@@ -101,7 +101,7 @@ class Program
 
             Console.WriteLine($"Name changed to {wrestler.RingName}.");
             Console.WriteLine($"{wrestler.RingName}'s previous names are:");
-            foreach (var q in wrestler.PreviousNames)
+            foreach (var q in wrestler.PreviousNames())
             {
                 Console.WriteLine($"- {q}");
             }
