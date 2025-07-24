@@ -1,10 +1,32 @@
 [
   {
-    "RingName": "Rhea Ripley",
     "RealName": "Demi Bennett",
     "Popularity": 95,
     "Charisma": 4.5,
     "Style": "Powerhouse",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Rhea Ripley",
+      "Type": "AntiHero",
+      "PersonaDescriptor": "Brutal Enforcer",
+      "Tone": "Serious",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 10,
+      "Durability": "LongTerm",
+      "Freshness": 0.9,
+      "GimmickTraits": [ "Intimidating", "Dominant" ],
+      "AppealRatings": [
+        {
+          "Group": "Hardcore",
+          "AppealScore": 0.95
+        },
+        {
+          "Group": "Casual",
+          "AppealScore": 0.8
+        }
+      ],
+      "PreviousNames": [ "Demi" ]
+    },
     "RingSkills": {
       "HighFlyer": 2.0,
       "Grappler": 3.5,
@@ -26,13 +48,79 @@
       "RingIQ": 82,
       "Toughness": 88
     },
-    "Moveset": []
+    "Moveset": [
+      {
+        "Name": "Powerbomb",
+        "Types": [ "Slam" ],
+        "Risk": "Medium",
+        "Impact": "VeryHard",
+        "RequiresWeapons": false
+      },
+      {
+        "Name": "Clothesline",
+        "Types": [ "Strike" ],
+        "Risk": "VeryEasy",
+        "Impact": "Medium",
+        "RequiresWeapons": false
+      }
+    ],
+    "Signature": [
+      {
+        "Name": "Riptide",
+        "Move": {
+          "Name": "Pump Handle Slam",
+          "Types": [ "Slam" ],
+          "Risk": "Medium",
+          "Impact": "Hard"
+        },
+        "IsFinisher": true,
+        "ImpactModifier": "Hard",
+        "Overness": 95,
+        "TagExclusive": false
+      },
+      {
+        "Name": "Standing Inverted Texas Cloverleaf",
+        "Move": {
+          "Name": "Prism Trap",
+          "Types": [ "Submission", "Technical" ],
+          "Risk": "Easy",
+          "Impact": "Easy"
+        },
+        "IsFinisher": true,
+        "ImpactModifier": "Hard",
+        "Overness": 85,
+        "TagExclusive": false
+      }
+    ]
   },
   {
-    "RingName": "Bianca Belair",
+    "RealName": "Bianca Blair",
     "Popularity": 90,
     "Charisma": 4.2,
     "Style": "Powerhouse",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Bianca Belair",
+      "Type": "Showman",
+      "PersonaDescriptor": "The EST",
+      "Tone": "Inspirational",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 8,
+      "Durability": "LongTerm",
+      "Freshness": 0.95,
+      "GimmickTraits": [ "Flashy", "Strong", "Athletic" ],
+      "AppealRatings": [
+        {
+          "Group": "Hardcore",
+          "AppealScore": 0.88
+        },
+        {
+          "Group": "Casual",
+          "AppealScore": 0.95
+        }
+      ],
+      "PreviousNames": []
+    },
     "RingSkills": {
       "HighFlyer": 3.5,
       "Grappler": 2.8,
@@ -54,13 +142,64 @@
       "RingIQ": 78,
       "Toughness": 90
     },
-    "Moveset": []
+    "Moveset": [
+      {
+        "Name": "Scoop Slam",
+        "Types": [ "Slam" ],
+        "Risk": "Medium",
+        "Impact": "Hard"
+      },
+      {
+        "Name": "Suplex",
+        "Types": [ "Throw" ],
+        "Risk": "Easy",
+        "Impact": "Medium"
+      }
+    ],
+    "Signature": [
+      {
+        "Name": "KOD",
+        "Move": {
+          "Name": "Kiss of Death",
+          "Types": [ "Slam" ],
+          "Risk": "Medium",
+          "Impact": "Hard"
+        },
+        "IsFinisher": true,
+        "ImpactModifier": "Hard",
+        "Overness": 95,
+        "TagExclusive": false
+      }
+    ]
   },
   {
-    "RingName": "Charlotte Flair",
+    "RealName": "Ashley Fliehr",
     "Popularity": 92,
     "Charisma": 4.3,
     "Style": "Technical",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Charlotte Flair",
+      "Type": "Showman",
+      "PersonaDescriptor": "The Queen",
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 10,
+      "Durability": "LongTerm",
+      "Freshness": 0.9,
+      "GimmickTraits": [ "Elegant", "Dominant", "Technical Specialist" ],
+      "AppealRatings": [
+        {
+          "Group": "Hardcore",
+          "AppealScore": 0.87
+        },
+        {
+          "Group": "Casual",
+          "AppealScore": 0.92
+        }
+      ],
+      "PreviousNames": []
+    },
     "RingSkills": {
       "HighFlyer": 3.5,
       "Grappler": 4.0,
@@ -82,13 +221,58 @@
       "RingIQ": 84,
       "Toughness": 86
     },
-    "Moveset": []
+    "Moveset": [
+      {
+        "Name": "Chop Block",
+        "Types": [ "Strike" ],
+        "Risk": "Easy",
+        "Impact": "Medium"
+      }
+    ],
+    "Signature": [
+      {
+        "Name": "Figure Eight",
+        "Move": {
+          "Name": "Figure Four Bridge",
+          "Types": [ "Technical", "Submission" ],
+          "Risk": "Easy",
+          "Impact": "Hard"
+        },
+        "IsFinisher": true,
+        "ImpactModifier": "Hard",
+        "Overness": 95,
+        "TagExclusive": false
+      }
+    ]
   },
   {
-    "RingName": "Asuka",
+    "RealName": "Kanako Urai",
     "Popularity": 85,
     "Charisma": 3.8,
     "Style": "Striker",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Asuka",
+      "Type": "DarkPersona",
+      "PersonaDescriptor": "The Empress of Tomorrow",
+      "Tone": "Cryptic",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 8,
+      "Durability": "LongTerm",
+      "Freshness": 0.9,
+      "GimmickTraits": [ "Killer Striker", "Submission Specialist" ],
+      "AppealRatings": [
+        {
+          "Group": "Hardcore",
+          "AppealScore": 0.9
+        },
+        {
+          "Group": "Casual",
+          "AppealScore": 0.85
+        }
+      ],
+      "PreviousNames": [ "Kana" ]
+    },
     "RingSkills": {
       "HighFlyer": 2.5,
       "Grappler": 3.5,
@@ -110,13 +294,58 @@
       "RingIQ": 86,
       "Toughness": 89
     },
-    "Moveset": []
+    "Moveset": [
+      {
+        "Name": "Hip Attack",
+        "Types": [ "Strike" ],
+        "Risk": "Easy",
+        "Impact": "Medium"
+      }
+    ],
+    "Signature": [
+      {
+        "Name": "Asuka Lock",
+        "Move": {
+          "Name": "Crossface Chickenwing",
+          "Types": [ "Submission", "Technical" ],
+          "Risk": "Medium",
+          "Impact": "Hard"
+        },
+        "IsFinisher": true,
+        "ImpactModifier": "Hard",
+        "Overness": 90,
+        "TagExclusive": false
+      }
+    ]
   },
   {
-    "RingName": "Bayley",
+    "RealName": "Pamela Rose Martinez",
     "Popularity": 83,
     "Charisma": 4.1,
     "Style": "Technical",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Bayley",
+      "Type": "Gimmickless",
+      "PersonaDescriptor": "Role Model",
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 7,
+      "Durability": "MediumTerm",
+      "Freshness": 0.85,
+      "GimmickTraits": [ "Manipulator", "Leader" ],
+      "AppealRatings": [
+        {
+          "Group": "Hardcore",
+          "AppealScore": 0.85
+        },
+        {
+          "Group": "Casual",
+          "AppealScore": 0.88
+        }
+      ],
+      "PreviousNames": []
+    },
     "RingSkills": {
       "HighFlyer": 2.8,
       "Grappler": 3.5,
@@ -138,13 +367,58 @@
       "RingIQ": 87,
       "Toughness": 84
     },
-    "Moveset": []
+    "Moveset": [
+      {
+        "Name": "Bayley-to-Belly",
+        "Types": [ "Throw" ],
+        "Risk": "Easy",
+        "Impact": "Medium"
+      }
+    ],
+    "Signature": [
+      {
+        "Name": "Rose Plant",
+        "Move": {
+          "Name": "Faceplant DDT",
+          "Types": [ "Technical" ],
+          "Risk": "Medium",
+          "Impact": "Hard"
+        },
+        "IsFinisher": true,
+        "ImpactModifier": "Hard",
+        "Overness": 90,
+        "TagExclusive": false
+      }
+    ]
   },
   {
-    "RingName": "Becky Lynch",
+    "RealName": "Rebecca Quin",
     "Popularity": 95,
     "Charisma": 4.7,
     "Style": "Brawler",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Becky Lynch",
+      "Type": "AntiHero",
+      "PersonaDescriptor": "The Man",
+      "Tone": "SelfRighteous",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 10,
+      "Durability": "LongTerm",
+      "Freshness": 0.95,
+      "GimmickTraits": [ "Fiery", "Loud", "Determined" ],
+      "AppealRatings": [
+        {
+          "Group": "Hardcore",
+          "AppealScore": 0.95
+        },
+        {
+          "Group": "Casual",
+          "AppealScore": 0.96
+        }
+      ],
+      "PreviousNames": []
+    },
     "RingSkills": {
       "HighFlyer": 2.5,
       "Grappler": 3.5,
@@ -166,15 +440,58 @@
       "RingIQ": 88,
       "Toughness": 90
     },
-    "Moveset": []
+    "Moveset": [
+      {
+        "Name": "Exploder Suplex",
+        "Types": [ "Throw" ],
+        "Risk": "Medium",
+        "Impact": "Medium"
+      }
+    ],
+    "Signature": [
+      {
+        "Name": "Dis-Arm-Her",
+        "Move": {
+          "Name": "Armbar",
+          "Types": [ "Submission", "Technical" ],
+          "Risk": "Easy",
+          "Impact": "Hard"
+        },
+        "IsFinisher": true,
+        "ImpactModifier": "Hard",
+        "Overness": 98,
+        "TagExclusive": false
+      }
+    ]
   },
   {
-    "RingName": "Iyo Sky",
     "RealName": "Masami Odate",
-    "PreviousNames": [ "Biba Kasai", "Hitokiri", "Io Shirai", "Iotica", "Midnight Angel", "Oyuki", "T-2 Mask", "Tenkū Shōjo Lusca" ],
     "Popularity": 80,
     "Charisma": 3.5,
     "Style": "HighFlyer",
+    "PreviousGimmicks": [ ],
+    "Gimmick": {
+      "Name": "Iyo Sky",
+      "Type": "Daredevil",
+      "PersonaDescriptor": "The Genius of the Sky",
+      "Tone": "Humorous",
+      "NaturalAlignment": "Tweener",
+      "PopularityModifier": 7,
+      "Durability": "MediumTerm",
+      "Freshness": 0.9,
+      "GimmickTraits": [ "Risk-Taker", "Charismatic" ],
+      "AppealRatings": [
+        {
+          "Group": "Hardcore",
+          "AppealScore": 0.9
+        },
+        {
+          "Group": "Casual",
+          "AppealScore": 0.84
+        }
+      ],
+      "PreviousNames": [ "Io Shirai", "Hitokiri" ]
+    },
     "RingSkills": {
       "HighFlyer": 4.9,
       "Grappler": 3.0,
@@ -196,13 +513,58 @@
       "RingIQ": 84,
       "Toughness": 82
     },
-    "Moveset": []
+    "Moveset": [
+      {
+        "Name": "Moonsault",
+        "Types": [ "Aerial" ],
+        "Risk": "Hard",
+        "Impact": "Hard"
+      }
+    ],
+    "Signature": [
+      {
+        "Name": "Over the Moonsault",
+        "Move": {
+          "Name": "Top Rope Moonsault",
+          "Types": [ "Aerial" ],
+          "Risk": "Hard",
+          "Impact": "Hard"
+        },
+        "IsFinisher": true,
+        "ImpactModifier": "Hard",
+        "Overness": 95,
+        "TagExclusive": false
+      }
+    ]
   },
   {
-    "RingName": "Liv Morgan",
+    "RealName": "Gionna Daddio",
     "Popularity": 78,
     "Charisma": 4.2,
     "Style": "HighFlyer",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Liv Morgan",
+      "Type": "Underdog",
+      "PersonaDescriptor": "Relentless Dreamer",
+      "Tone": "Chaotic",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 6,
+      "Durability": "MediumTerm",
+      "Freshness": 0.88,
+      "GimmickTraits": [ "Relentless", "Wildcard" ],
+      "AppealRatings": [
+        {
+          "Group": "Hardcore",
+          "AppealScore": 0.86
+        },
+        {
+          "Group": "Casual",
+          "AppealScore": 0.9
+        }
+      ],
+      "PreviousNames": []
+    },
     "RingSkills": {
       "HighFlyer": 3.8,
       "Grappler": 2.2,
@@ -224,13 +586,58 @@
       "RingIQ": 76,
       "Toughness": 77
     },
-    "Moveset": []
+    "Moveset": [
+      {
+        "Name": "Codebreaker",
+        "Types": [ "Aerial" ],
+        "Risk": "Medium",
+        "Impact": "Medium"
+      }
+    ],
+    "Signature": [
+      {
+        "Name": "Oblivion",
+        "Move": {
+          "Name": "Springboard Flatliner",
+          "Types": [ "Aerial" ],
+          "Risk": "Medium",
+          "Impact": "Hard"
+        },
+        "IsFinisher": true,
+        "ImpactModifier": "Hard",
+        "Overness": 92,
+        "TagExclusive": false
+      }
+    ]
   },
   {
-    "RingName": "Shayna Baszler",
+    "RealName": "Shayna Baszler",
     "Popularity": 70,
     "Charisma": 2.5,
     "Style": "Grappler",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Shayna Baszler",
+      "Type": "Rebel",
+      "PersonaDescriptor": "Queen of Spades",
+      "Tone": "Serious",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 6,
+      "Durability": "LongTerm",
+      "Freshness": 0.85,
+      "GimmickTraits": [ "MMA Background", "Domineering" ],
+      "AppealRatings": [
+        {
+          "Group": "Hardcore",
+          "AppealScore": 0.88
+        },
+        {
+          "Group": "Casual",
+          "AppealScore": 0.7
+        }
+      ],
+      "PreviousNames": []
+    },
     "RingSkills": {
       "HighFlyer": 1.5,
       "Grappler": 4.7,
@@ -252,34 +659,28 @@
       "RingIQ": 83,
       "Toughness": 92
     },
-    "Moveset": []
-  },
-  {
-    "RingName": "Zelina Vega",
-    "Popularity": 68,
-    "Charisma": 4.0,
-    "Style": "HighFlyer",
-    "RingSkills": {
-      "HighFlyer": 4.0,
-      "Grappler": 2.0,
-      "Powerhouse": 1.5,
-      "Technical": 2.8,
-      "Brawler": 2.5,
-      "Striker": 2.8
-    },
-    "Physical": {
-      "Strength": 60,
-      "Speed": 85,
-      "Agility": 88,
-      "Stamina": 75,
-      "Size": 1
-    },
-    "Mental": {
-      "Psychology": 70,
-      "Selling": 72,
-      "RingIQ": 74,
-      "Toughness": 70
-    },
-    "Moveset": []
+    "Moveset": [
+      {
+        "Name": "Knee Strike",
+        "Types": [ "Strike" ],
+        "Risk": "Easy",
+        "Impact": "Medium"
+      }
+    ],
+    "Signature": [
+      {
+        "Name": "Kirifuda Clutch",
+        "Move": {
+          "Name": "Rear Naked Choke",
+          "Types": [ "Submission" ],
+          "Risk": "Easy",
+          "Impact": "Hard"
+        },
+        "IsFinisher": true,
+        "ImpactModifier": "Hard",
+        "Overness": 88,
+        "TagExclusive": false
+      }
+    ]
   }
 ]
