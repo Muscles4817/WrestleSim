@@ -6,8 +6,8 @@ public static class DataLoaders
 {
     public static List<Wrestler> LoadWrestlers(string filePath)
     {
-        string json = File.ReadAllText(@"C:\Users\mjmak\source\repos\WrestlingSim\WrestlingSim\JSON\Wrestlers.json");
-        //string json = File.ReadAllText(@"C:\Users\Callum\Source\Repos\WrestleSim\WrestlingSim\JSON\Wrestlers.json");;
+        string fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "JSON", filePath);
+        string json = File.ReadAllText(fullPath);
 
         var options = new JsonSerializerOptions
         {
@@ -24,17 +24,14 @@ public static class DataLoaders
 
     public static List<Move> LoadMoves(string filePath)
     {
-        string json = File.ReadAllText(@"C:\Users\mjmak\source\repos\WrestlingSim\WrestlingSim\JSON\MoveList.json");
-        //string json = File.ReadAllText(@"C:\Users\Callum\Source\Repos\WrestleSim\WrestlingSim\JSON\MoveList.json");
+        string fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "JSON", filePath);
+        string json = File.ReadAllText(fullPath);
 
         var options = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
             Converters = { new JsonStringEnumConverter() }
         };
-
-        List<Wrestler> wrestlers = JsonSerializer.Deserialize<List<Wrestler>>(json, options);
-
 
         return JsonSerializer.Deserialize<List<Move>>(json, options);
     }

@@ -28,7 +28,8 @@ class Program
             Console.WriteLine("=== WRESTLING SIMULATOR ===");
             Console.WriteLine("1. Simulate Match");
             Console.WriteLine("2. Simulate Segment");
-            Console.WriteLine("3. Exit");
+            Console.WriteLine("3. Simulate Show");
+            Console.WriteLine("4. Exit");
             Console.Write("\nChoose an option: ");
 
             string choice = Console.ReadLine();
@@ -42,6 +43,9 @@ class Program
                     SimulateSegment(wrestlers);
                     break;
                 case "3":
+                    SimulateShow(wrestlers);
+                    break;
+                case "4":
                     running = false;
                     Console.WriteLine("Exiting...");
                     break;
@@ -79,12 +83,12 @@ class Program
         Console.WriteLine($"\nSimulating {simulations} {type} match(es) between {wrestlerA.RingName} and {wrestlerB.RingName}...\n");
 
         var match = new Match(wrestlerA, wrestlerB, type);
-        var sim = new MatchSimulator(match);
+        var sim = new MatchSimulator();
 
         for (int i = 1; i <= simulations; i++)
         {
             Console.WriteLine($"--- Simulation {i} ---");
-            sim.Simulate();
+            sim.Simulate(match);
         }
     }
 
@@ -142,6 +146,60 @@ class Program
             sim.SimulateSegment(segment);
         }
     }
+
+    // ==========================
+    // SHOW SIMULATION LOGIC
+    // ==========================
+    static void SimulateShow(List<Wrestler> wrestlers)
+    {
+        Console.WriteLine("\n--- Create Your Show ---");
+        Console.Write("Enter show name: ");
+        string showName = Console.ReadLine();
+        Console.Write("Enter location: ");
+        string location = Console.ReadLine();
+
+        var show = new Show
+        {
+            Name = showName,
+            Date = DateTime.Now,
+            Location = location,
+            AudienceSize = 10000 // Default for now
+        };
+
+        Console.WriteLine("\nHow many matches do you want to add?");
+        int matchCount = GetSimulationCount();
+
+        for (int i = 0; i < matchCount; i++)
+        {
+            Console.WriteLine($"\n--- Add Match {i + 1} ---");
+            Wrestler w1 = GetWrestlerByName("Select first wrestler", wrestlers);
+            Wrestler w2 = GetWrestlerByName("Select second wrestler", wrestlers);
+            MatchType type = GetMatchStyle();
+
+            show.Card.Add(new Match(w1, w2, type));
+        }
+
+        Console.WriteLine("\nHow many segments do you want to add?");
+        int segmentCount = GetSimulationCount();
+
+        for (int i = 0; i < segmentCount; i++)
+        {
+            Console.WriteLine($"\n--- Add Segment {i + 1} ---");
+            Wrestler main = GetWrestlerByName("Select main wrestler", wrestlers);
+            show.Card.Add(SegmentFactory.CreatePromo(main, $"Promo by {main.RingName}"));
+        }
+
+        var showSimulator = new ShowSimulator(new MatchSimulator(), new SegmentSimulator());
+        var result = showSimulator.SimulateShow(show);
+
+        Console.WriteLine($"\n=== Show Results ===");
+        Console.WriteLine($"Overall Rating: {result.OverallRating}");
+        foreach (var breakdown in result.Breakdown)
+        {
+            Console.WriteLine($"{breakdown.Key}: {breakdown.Value}");
+        }
+    }
+
 
     // ==========================
     // HELPERS

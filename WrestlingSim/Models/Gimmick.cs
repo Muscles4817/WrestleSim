@@ -31,7 +31,9 @@ namespace WrestlingSim.Models
 
         public void ChangeName(string name)
         {
-            PreviousNames.Add(name);
+            PreviousNames ??= new List<string>();
+            PreviousNames.Add(Name);
+            Name = name;
         }
     }
 }
