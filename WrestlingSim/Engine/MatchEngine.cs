@@ -196,12 +196,16 @@ namespace WrestlingSim.Engine
             r.Commentary.Add(Pick(
                 $"{plan.WrestlerA.RingName} and {plan.WrestlerB.RingName} immediately go at each other before the bell finishes ringing!",
                 $"No feeling-out process — the crowd erupts as these two collide from the first second!",
-                $"{plan.WrestlerA.RingName} and {plan.WrestlerB.RingName} are at each other's throats right away!"
+                $"{plan.WrestlerA.RingName} and {plan.WrestlerB.RingName} are at each other's throats right away!",
+                $"The bell barely sounds before {plan.WrestlerA.RingName} and {plan.WrestlerB.RingName} are trading shots!",
+                $"There will be no feeling out here — these two want each other right now!"
             ));
             r.Commentary.Add(Pick(
                 "The pace is frenetic from the opening bell!",
                 "Neither wrestler is willing to take a step back.",
-                "The energy in the arena is electric — this is must-see television!"
+                "The energy in the arena is electric — this is must-see television!",
+                "The crowd is immediately invested — they came to see exactly this!",
+                "Both wrestlers throwing everything at each other from the jump — breathtaking stuff!"
             ));
         }
 
@@ -218,12 +222,16 @@ namespace WrestlingSim.Engine
             r.Commentary.Add(Pick(
                 $"{plan.WrestlerA.RingName} and {plan.WrestlerB.RingName} circle each other, measuring the distance carefully.",
                 $"A deliberate, methodical start as both wrestlers respect each other's ability.",
-                $"The feeling-out process begins — neither willing to show their hand too soon."
+                $"The feeling-out process begins — neither willing to show their hand too soon.",
+                $"{plan.WrestlerA.RingName} and {plan.WrestlerB.RingName} are in no rush — this is going to be a war of attrition.",
+                $"Slow, deliberate movements from both competitors — each hunting for an opening."
             ));
             r.Commentary.Add(Pick(
                 "Both competitors are playing the long game.",
                 "The chess match has begun.",
-                "They know this is a marathon, not a sprint."
+                "They know this is a marathon, not a sprint.",
+                "This crowd is patient — they trust these two to take them somewhere special.",
+                "Every movement is calculated. Every step deliberate. Something is being built here."
             ));
         }
 
@@ -240,7 +248,9 @@ namespace WrestlingSim.Engine
             r.Commentary.Add(Pick(
                 $"{plan.WrestlerA.RingName} and {plan.WrestlerB.RingName} lock up.",
                 $"The match gets under way with both wrestlers testing each other.",
-                $"An even start as {plan.WrestlerA.RingName} and {plan.WrestlerB.RingName} feel each other out."
+                $"An even start as {plan.WrestlerA.RingName} and {plan.WrestlerB.RingName} feel each other out.",
+                $"A collar-and-elbow tie-up to open — both wrestlers gauging what they're dealing with.",
+                $"Standard opening exchanges, but the undercurrent of tension is already obvious."
             ));
         }
 
@@ -272,12 +282,16 @@ namespace WrestlingSim.Engine
             r.Commentary.Add(Pick(
                 $"{control.RingName} takes control, grounding {other.RingName} with focused, methodical offense.",
                 $"{control.RingName} seizes the advantage and begins working over {other.RingName}.",
-                $"{control.RingName} takes over, imposing their will on a struggling {other.RingName}."
+                $"{control.RingName} takes over, imposing their will on a struggling {other.RingName}.",
+                $"{control.RingName} has found a target and is grinding {other.RingName} down with precision.",
+                $"The tide has completely turned — {control.RingName} in total command of this match."
             ));
             r.Commentary.Add(Pick(
                 $"The crowd watches on as {other.RingName} desperately tries to find a way back in.",
                 $"{control.RingName} is in complete command here.",
-                $"It's all {control.RingName} right now — {other.RingName} is in serious trouble."
+                $"It's all {control.RingName} right now — {other.RingName} is in serious trouble.",
+                $"Every time {other.RingName} tries to mount any resistance, {control.RingName} shuts it down.",
+                $"{other.RingName} is being systematically picked apart. Can they find a way back?"
             ));
         }
 
@@ -304,12 +318,16 @@ namespace WrestlingSim.Engine
             r.Commentary.Add(Pick(
                 $"{control.RingName} fires back! The crowd erupts!",
                 $"Out of nowhere, {control.RingName} starts fighting back!",
-                $"{control.RingName} refuses to stay down — the crowd is on their feet!"
+                $"{control.RingName} refuses to stay down — the crowd is on their feet!",
+                $"{control.RingName} with a sudden burst of life — they are NOT done yet!",
+                $"HERE COMES {control.RingName}! The whole arena just ignited!"
             ));
             r.Commentary.Add(Pick(
                 $"Nothing {other.RingName} does can keep {control.RingName} down for long!",
                 $"The tide is turning! {control.RingName} is fighting with everything they have!",
-                $"A blistering comeback — {other.RingName} is suddenly on the back foot!"
+                $"A blistering comeback — {other.RingName} is suddenly on the back foot!",
+                $"{control.RingName} is hitting everything! This crowd is absolutely electric!",
+                $"{other.RingName} can't stop the momentum — {control.RingName} is a house on fire right now!"
             ));
         }
 
@@ -339,16 +357,22 @@ namespace WrestlingSim.Engine
             r.Commentary.Add(Pick(
                 $"{control.RingName} covers! One... Two... {other.RingName} kicks out!",
                 $"{control.RingName} goes for the pin! The ref counts — {other.RingName} gets the shoulder up!",
-                $"Down goes {other.RingName}! The count reaches two — but {other.RingName} refuses to quit!"
+                $"Down goes {other.RingName}! The count reaches two — but {other.RingName} refuses to quit!",
+                $"COVER! One — Two — NO! {other.RingName} gets a shoulder up at the last possible moment!",
+                $"{control.RingName} with the hook of the leg — two count only! {other.RingName} still breathing!"
             ));
             r.Commentary.Add(diminish < 0.6
                 ? Pick(
                     $"This crowd cannot believe {other.RingName} is STILL in this!",
-                    $"HOW is {other.RingName} alive?! This crowd is losing their minds!")
+                    $"HOW is {other.RingName} alive?! This crowd is losing their minds!",
+                    $"{other.RingName} will not die! This is an extraordinary display of resilience!",
+                    $"The sheer will of {other.RingName} — they simply refuse to stay down!")
                 : Pick(
                     $"So close! The crowd reacts with a gasp.",
                     $"{other.RingName} survives — but for how much longer?",
-                    $"A near fall! {control.RingName} thought they had it!"));
+                    $"A near fall! {control.RingName} thought they had it!",
+                    $"Agony for {control.RingName} — they were convinced that was the match.",
+                    $"{other.RingName} barely alive — but still in this contest."));
         }
 
         private void ApplyHighSpot(BeatResult r, MatchBeat beat, MatchEngineState state,
@@ -365,7 +389,9 @@ namespace WrestlingSim.Engine
             r.Commentary.Add(Pick(
                 $"{control.RingName} takes flight! A breathtaking high-risk manoeuvre!",
                 $"Nobody does it like {control.RingName} — a spectacular aerial attack!",
-                $"{control.RingName} launches off the top — the crowd is on their feet!"
+                $"{control.RingName} launches off the top — the crowd is on their feet!",
+                $"Oh my! {control.RingName} with a death-defying aerial assault — incredible athleticism!",
+                $"{control.RingName} goes airborne and the crowd loses its mind completely!"
             ));
         }
 
@@ -383,7 +409,9 @@ namespace WrestlingSim.Engine
             r.Commentary.Add(Pick(
                 $"{control.RingName} grounds {other.RingName}, slowing the pace right down.",
                 $"A rest hold from {control.RingName} — methodically wearing down {other.RingName}.",
-                $"{control.RingName} cinches in a hold, looking to drain {other.RingName}'s energy reserves."
+                $"{control.RingName} cinches in a hold, looking to drain {other.RingName}'s energy reserves.",
+                $"The pace drops sharply as {control.RingName} locks {other.RingName} in place — smart tactics.",
+                $"{control.RingName} is working smart here, conserving energy while keeping {other.RingName} grounded."
             ));
         }
 
@@ -405,7 +433,9 @@ namespace WrestlingSim.Engine
             r.Commentary.Add(Pick(
                 $"This match spills out to the floor! The crowd parts as the brawl comes to them!",
                 $"{plan.WrestlerA.RingName} and {plan.WrestlerB.RingName} are fighting into the crowd!",
-                $"Chaos! These two are taking this war everywhere!"
+                $"Chaos! These two are taking this war everywhere!",
+                $"We have completely lost control — they're brawling through the entire arena!",
+                $"The guardrail is not going to contain this one — they're spilling out into the audience!"
             ));
         }
 
@@ -428,7 +458,9 @@ namespace WrestlingSim.Engine
                 r.Commentary.Add(Pick(
                     $"{control.RingName} gets under {other.RingName}'s skin — the crowd reacts viscerally to what that means between these two!",
                     $"A pointed taunt from {control.RingName}! The crowd knows the history here and they explode!",
-                    $"{control.RingName} is playing mind games, and given what's between them, it hits differently!"
+                    $"{control.RingName} is playing mind games, and given what's between them, it hits differently!",
+                    $"{control.RingName} lands a taunt that cuts right to the core of this rivalry — the crowd erupts with recognition!",
+                    $"A deeply personal jab from {control.RingName} — you could see it land on {other.RingName}'s face!"
                 ));
             }
             else
@@ -436,7 +468,9 @@ namespace WrestlingSim.Engine
                 r.Commentary.Add(Pick(
                     $"{control.RingName} gets in {other.RingName}'s head with a calculated taunt.",
                     $"The psychological warfare begins — {control.RingName} looking to tilt {other.RingName}.",
-                    $"{control.RingName} is doing as much damage mentally as physically right now."
+                    $"{control.RingName} is doing as much damage mentally as physically right now.",
+                    $"{control.RingName} is working the mental game — a calculated attempt to derail {other.RingName}.",
+                    $"{other.RingName} doesn't look happy about that at all — {control.RingName} is getting inside their head."
                 ));
             }
         }
@@ -454,12 +488,16 @@ namespace WrestlingSim.Engine
             r.Commentary.Add(Pick(
                 $"This feud reaches a boiling point! {plan.WrestlerA.RingName} and {plan.WrestlerB.RingName} can no longer contain their hatred!",
                 $"Everything this feud has been building toward is pouring out right now!",
-                $"The bad blood between these two erupts — the crowd is absolutely unhinged!"
+                $"The bad blood between these two erupts — the crowd is absolutely unhinged!",
+                $"The gloves are off! The real hatred between {plan.WrestlerA.RingName} and {plan.WrestlerB.RingName} is on full display!",
+                $"This match has just become something completely different — the feud has taken over everything!"
             ));
             r.Commentary.Add(Pick(
                 "You can feel months of tension releasing in real time.",
                 "This is what personal feuds look like at their peak.",
-                "The history between these two is making every second of this feel enormous."
+                "The history between these two is making every second of this feel enormous.",
+                "The ringside barriers cannot contain this. The feud has turned this into something primal.",
+                "This is no longer just a match. This is personal — and every person in this building feels it."
             ));
         }
 
@@ -476,7 +514,9 @@ namespace WrestlingSim.Engine
             r.Commentary.Add(Pick(
                 $"{control.RingName} turns the tables — doing to {other.RingName} exactly what was done to them! The crowd erupts in recognition!",
                 $"A callback! {control.RingName} uses their own weapon against them — the crowd goes ballistic!",
-                $"The symmetry! {control.RingName} gives {other.RingName} a taste of their own medicine!"
+                $"The symmetry! {control.RingName} gives {other.RingName} a taste of their own medicine!",
+                $"{control.RingName} has been waiting for this moment — and the payoff is ENORMOUS!",
+                $"Pure catharsis — this crowd has been waiting all match to see {control.RingName} get their hands on {other.RingName} like this!"
             ));
         }
 
@@ -491,7 +531,9 @@ namespace WrestlingSim.Engine
             r.Commentary.Add(Pick(
                 "Someone connected to this feud has made their presence known!",
                 "A third party has gotten involved — and the crowd reacts in a massive way!",
-                "Outside interference from someone tied to this rivalry!"
+                "Outside interference from someone tied to this rivalry!",
+                "Wait — who is THAT?! A familiar face has just made their presence felt at ringside!",
+                "An unexpected arrival! Someone with a stake in this feud has just changed the dynamic completely!"
             ));
         }
 
@@ -509,12 +551,16 @@ namespace WrestlingSim.Engine
             r.Commentary.Add(Pick(
                 $"{control.RingName} turns on their own outside help — sending them away! The crowd erupts!",
                 $"{control.RingName} wants none of it — waving off their allies! They'll do this ALONE!",
-                $"Unbelievable! {control.RingName} fights off their own people! This crowd cannot believe what they're seeing!"
+                $"Unbelievable! {control.RingName} fights off their own people! This crowd cannot believe what they're seeing!",
+                $"{control.RingName} shoves their own corner away — they are doing this without any help!",
+                $"The ally tries to get involved — and {control.RingName} sends them packing! Incredible!"
             ));
             r.Commentary.Add(Pick(
                 "This match just changed completely — and the crowd knows it.",
                 "A massive statement of intent. Just these two, the way it should be.",
-                "The arena is on its feet. Whatever comes next, this just became something else entirely."
+                "The arena is on its feet. Whatever comes next, this just became something else entirely.",
+                "The crowd has just witnessed something they won't forget for a long time.",
+                $"{control.RingName} choosing honour over an easy win — or is it pure pride? Either way, this crowd respects it."
             ));
         }
 
@@ -537,7 +583,9 @@ namespace WrestlingSim.Engine
                     r.Commentary.Add(Pick(
                         $"{control.RingName} hits a SECOND finisher! This has to be it!",
                         $"The super finisher! {other.RingName} has nowhere to go!",
-                        $"{control.RingName} going deep into their arsenal — there is no coming back from this!"
+                        $"{control.RingName} going deep into their arsenal — there is no coming back from this!",
+                        $"A SECOND finishing manoeuvre! {control.RingName} is absolutely ruthless tonight!",
+                        $"{control.RingName} is not taking any chances — they hit it again! Cover — count — that's it!"
                     ));
                     break;
 
@@ -547,7 +595,9 @@ namespace WrestlingSim.Engine
                     r.Commentary.Add(Pick(
                         $"{control.RingName} rolls up {other.RingName} out of nowhere! One — Two — Three!",
                         $"A surprise roll-up! {control.RingName} steals it!",
-                        $"Nobody saw that coming — {control.RingName} with the small package!"
+                        $"Nobody saw that coming — {control.RingName} with the small package!",
+                        $"{control.RingName} with a quick inside cradle — One! Two! Three! The referee's hand hits the mat!",
+                        $"An opportunistic roll-up from {control.RingName} — and just like that, this match is over!"
                     ));
                     break;
 
@@ -557,7 +607,9 @@ namespace WrestlingSim.Engine
                     r.Commentary.Add(Pick(
                         $"{control.RingName} locks in the submission! {other.RingName} has nowhere to go — they tap!",
                         $"It's locked in! {other.RingName} is trapped — they have to tap out!",
-                        $"The hold is applied — {other.RingName} fights it... but they're done! They tap!"
+                        $"The hold is applied — {other.RingName} fights it... but they're done! They tap!",
+                        $"{control.RingName} sinks it in perfectly — {other.RingName} is going nowhere. The tap comes.",
+                        $"{other.RingName} fights with everything they have — but the submission is inescapable. They tap!"
                     ));
                     break;
 
@@ -567,7 +619,9 @@ namespace WrestlingSim.Engine
                     r.Commentary.Add(Pick(
                         $"{other.RingName} has been disqualified! {control.RingName} wins — but not how they wanted it.",
                         $"A disqualification! The crowd is not happy about how this ended.",
-                        $"The referee has no choice — {other.RingName} is DQ'd."
+                        $"The referee has no choice — {other.RingName} is DQ'd.",
+                        $"The referee finally reaches his limit — {other.RingName} is out of here via disqualification!",
+                        $"{other.RingName} pushed too far — they're disqualified, and the crowd lets them know it."
                     ));
                     break;
 
@@ -577,7 +631,9 @@ namespace WrestlingSim.Engine
                     r.Commentary.Add(Pick(
                         $"{other.RingName} cannot beat the count! {control.RingName} wins by count-out — and nobody is happy.",
                         $"The referee reaches ten! {other.RingName} is counted out — a hollow result.",
-                        $"Count-out! {other.RingName} can't make it back in time. The crowd voices its displeasure."
+                        $"Count-out! {other.RingName} can't make it back in time. The crowd voices its displeasure.",
+                        $"The count reaches ten and {other.RingName} is still on the floor — count-out. Nobody feels satisfied.",
+                        $"{other.RingName} counted out — a frustrating, anticlimactic end to what had been a compelling match."
                     ));
                     break;
 
@@ -587,7 +643,9 @@ namespace WrestlingSim.Engine
                     r.Commentary.Add(Pick(
                         $"Outside interference changes everything! {control.RingName} capitalises to take the win!",
                         $"This one is decided by outside forces — and {control.RingName} takes advantage!",
-                        $"Controversy! Someone gets involved and {control.RingName} benefits!"
+                        $"Controversy! Someone gets involved and {control.RingName} benefits!",
+                        $"The match is decided by an outside party — and {control.RingName} is in the right place at the right time!",
+                        $"We have interference! {control.RingName} uses the distraction to seal this one!"
                     ));
                     break;
 
@@ -597,7 +655,9 @@ namespace WrestlingSim.Engine
                     r.Commentary.Add(Pick(
                         $"{control.RingName} hits the finisher and covers! One... Two... Three! It's over!",
                         $"The finishing blow lands! {control.RingName} gets the three count!",
-                        $"{other.RingName} goes down — and this time they're not getting up! {control.RingName} wins!"
+                        $"{other.RingName} goes down — and this time they're not getting up! {control.RingName} wins!",
+                        $"{control.RingName} with the definitive exclamation point — the cover, the count, and it's done!",
+                        $"Clean as a whistle — {control.RingName} with a beautiful finish to seal a hard-fought victory!"
                     ));
                     break;
             }
