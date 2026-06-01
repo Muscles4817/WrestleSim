@@ -28,8 +28,8 @@ class Program
 
             switch (choice)
             {
-                case "1": BookMatch(wrestlers);       break;
-                case "2": BookShow(wrestlers);        break;
+                case "1": MatchBookingFlow.Run(wrestlers); break;
+                case "2": BookShow(wrestlers);             break;
                 case "3": MainMenu.RenderWrestlers(wrestlers); break;
                 case "4": running = false;            break;
                 default:
@@ -38,33 +38,6 @@ class Program
                     break;
             }
         }
-    }
-
-    // ─── Book a Match ────────────────────────────────────────────────────────────
-
-    static void BookMatch(List<Wrestler> wrestlers)
-    {
-        Console.Clear();
-        Console.WriteLine("\n  === BOOK A MATCH ===\n");
-        PrintRoster(wrestlers);
-
-        Wrestler a = GetWrestlerByName("First wrestler", wrestlers);
-        Wrestler b = GetWrestlerByName("Second wrestler", wrestlers);
-        int count  = GetCount("How many simulations?");
-        MatchType type = GetMatchStyle();
-
-        Console.WriteLine($"\n  {a.RingName} vs {b.RingName}  |  {type}  |  {count} sim(s)\n");
-
-        var match = new Match(a, b, type);
-        var sim   = new MatchSimulator();
-
-        for (int i = 1; i <= count; i++)
-        {
-            Console.WriteLine($"  --- Simulation {i} ---");
-            sim.Simulate(match);
-        }
-
-        Pause();
     }
 
     // ─── Book a Show ─────────────────────────────────────────────────────────────
