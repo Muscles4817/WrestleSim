@@ -147,7 +147,7 @@ namespace WrestlingSim.Engine
                     break;
 
                 case BeatType.ThirdPartyPullIn:
-                    ApplyThirdPartyPullIn(result, beat, state, plan, iMod);
+                    ApplyThirdPartyPullIn(result, beat, state, plan, iMod, feudMult);
                     break;
 
                 case BeatType.AlliesRejected:
@@ -234,8 +234,8 @@ namespace WrestlingSim.Engine
 
             r.CrowdEnergyDelta      = Rng(3, 8) * iMod;
             r.MomentumDelta         = Rng(-4, 4);
-            r.TechnicalContribution = 4.5 * (avgRing / 5.0) * iMod;
-            r.StorytellingContribution = 2.0 * iMod;
+            r.TechnicalContribution = 4.5 * (avgRing / 5.0) * dMod;
+            r.StorytellingContribution = 2.0 * dMod;
 
             r.Commentary.Add(Pick(
                 $"{plan.WrestlerA.RingName} and {plan.WrestlerB.RingName} lock up.",
@@ -481,12 +481,12 @@ namespace WrestlingSim.Engine
         }
 
         private void ApplyThirdPartyPullIn(BeatResult r, MatchBeat beat, MatchEngineState state,
-            MatchPlan plan, double iMod)
+            MatchPlan plan, double iMod, double feudMult)
         {
-            r.CrowdEnergyDelta = Rng(10, 16) * iMod;
+            r.CrowdEnergyDelta = Rng(10, 16) * iMod * feudMult;
             r.MomentumDelta    = Rng(-10, 10);
             r.TechnicalContribution    = 1.0;
-            r.StorytellingContribution = 9.0 * iMod;
+            r.StorytellingContribution = 9.0 * iMod * feudMult;
 
             r.Commentary.Add(Pick(
                 "Someone connected to this feud has made their presence known!",
