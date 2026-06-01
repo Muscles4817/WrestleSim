@@ -34,6 +34,13 @@ namespace WrestlingSim.Models.MatchPlan
         /// </summary>
         public FeudIntensity RequiredFeudIntensity { get; init; } = FeudIntensity.None;
 
+        /// <summary>
+        /// When set, the engine uses this style's skill stat instead of the control
+        /// wrestler's natural style, making template choice mechanically distinct.
+        /// E.g. Technical Dissection sets Technical; Power Beatdown sets Powerhouse.
+        /// </summary>
+        public WrestlingStyle? StyleHint { get; init; }
+
         // ── Factory ──────────────────────────────────────────────────────────
 
         /// <summary>
@@ -51,7 +58,8 @@ namespace WrestlingSim.Models.MatchPlan
             Control         = control,
             Intensity       = intensity       ?? DefaultIntensity,
             Duration        = duration        ?? DefaultDuration,
-            FeudalResonance = feudalResonance
+            FeudalResonance = feudalResonance,
+            StyleHint       = StyleHint
         };
 
         public override string ToString() => Name;

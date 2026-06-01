@@ -73,6 +73,7 @@ namespace WrestlingSim.Engine
                 Type             = BeatType.HeatSegment,
                 DefaultIntensity = BeatIntensity.High,
                 DefaultDuration  = BeatDuration.Medium,
+                StyleHint        = WrestlingStyle.Powerhouse,
                 BookerTip        = "Heels with low crowd disposition build more tension here.",
                 Tags             = ["Power", "Physical"]
             },
@@ -85,6 +86,7 @@ namespace WrestlingSim.Engine
                 Type             = BeatType.HeatSegment,
                 DefaultIntensity = BeatIntensity.High,
                 DefaultDuration  = BeatDuration.Long,
+                StyleHint        = WrestlingStyle.Technical,
                 BookerTip        = "Contributes the most Technical score of any heat option. Pair with a submission finish.",
                 Tags             = ["Technical", "Slow"]
             },
@@ -109,6 +111,7 @@ namespace WrestlingSim.Engine
                 Type             = BeatType.HeatSegment,
                 DefaultIntensity = BeatIntensity.High,
                 DefaultDuration  = BeatDuration.Medium,
+                StyleHint        = WrestlingStyle.Grappler,
                 BookerTip        = "Effective once. A second Suplex Run in the same match kills the crowd.",
                 Tags             = ["Power", "Repetitive"]
             },
@@ -121,6 +124,7 @@ namespace WrestlingSim.Engine
                 Type             = BeatType.HeatSegment,
                 DefaultIntensity = BeatIntensity.Extreme,
                 DefaultDuration  = BeatDuration.Short,
+                StyleHint        = WrestlingStyle.Brawler,
                 BookerTip        = "Great for re-establishing control after a near-fall or comeback. Keeps urgency high.",
                 Tags             = ["Fast", "Exciting", "Physical"]
             },

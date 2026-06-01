@@ -53,10 +53,12 @@ namespace WrestlingSim.Engine
         {
             double avgPop = (plan.WrestlerA.Popularity + plan.WrestlerB.Popularity) / 2.0;
 
-            // Crowd disposition modifier: when both wrestlers are over, crowd starts hotter
+            // Crowd disposition modifier: rewards having BOTH wrestlers over, not just one.
+            // Using Min rather than average means one nobody eliminates the bonus —
+            // the crowd doesn't start hot just because one star is in the match.
             double dispA = CrowdDisposition(plan.WrestlerA);
             double dispB = CrowdDisposition(plan.WrestlerB);
-            double bothOverBonus = (dispA + dispB) / 2.0 * 8.0; // up to +8
+            double bothOverBonus = Math.Min(dispA, dispB) * 8.0; // up to +8
 
             double baseEnergy = (avgPop / 100.0) * 65.0 + bothOverBonus;
             double feudBonus  = plan.Feud?.StartingEnergyBonus ?? 0;
@@ -129,7 +131,7 @@ namespace WrestlingSim.Engine
                     break;
 
                 case BeatType.CrowdBrawl:
-                    ApplyCrowdBrawl(result, beat, state, plan, iMod, dMod);
+                    ApplyCrowdBrawl(result, beat, state, plan, control, iMod, dMod);
                     break;
 
                 case BeatType.PsychologicalWarfare:
@@ -258,8 +260,10 @@ namespace WrestlingSim.Engine
             double momSwing = Rng(20, 40) * iMod * dMod;
             r.MomentumDelta = (beat.Control == BeatControl.WrestlerA ? 1 : -1) * momSwing;
 
-            // Technical: control wrestler's relevant skills
-            double styleSkill = control.RingSkills.GetStyleProficiency(control.Style);
+            // Technical: use the beat's style hint if set (makes template choice meaningful),
+            // otherwise fall back to the wrestler's natural style.
+            WrestlingStyle beatStyle = beat.StyleHint ?? control.Style;
+            double styleSkill = control.RingSkills.GetStyleProficiency(beatStyle);
             r.TechnicalContribution = 6.5 * (styleSkill / 5.0) * iMod * dMod;
 
             // Storytelling: pacing and control quality
@@ -384,11 +388,18 @@ namespace WrestlingSim.Engine
         }
 
         private void ApplyCrowdBrawl(BeatResult r, MatchBeat beat, MatchEngineState state,
-            MatchPlan plan, double iMod, double dMod)
+            MatchPlan plan, Wrestler? control, double iMod, double dMod)
         {
-            r.CrowdEnergyDelta      = Rng(6, 12) * iMod * dMod;
+            // Brawler skill of the controlling wrestler drives energy and technical quality.
+            // When control is Even/Contested, use the average of both.
+            double brawlerSkill = control != null
+                ? control.RingSkills.Brawler
+                : (plan.WrestlerA.RingSkills.Brawler + plan.WrestlerB.RingSkills.Brawler) / 2.0;
+            double brawlFactor = 0.5 + brawlerSkill / 5.0 * 0.8; // 0.66–1.30
+
+            r.CrowdEnergyDelta      = Rng(6, 12) * iMod * dMod * brawlFactor;
             r.MomentumDelta         = Rng(-8, 8);
-            r.TechnicalContribution = 3.0 * iMod;
+            r.TechnicalContribution = 3.0 * (brawlerSkill / 5.0) * iMod;
             r.StorytellingContribution = 4.5 * iMod * dMod;
 
             r.Commentary.Add(Pick(
@@ -617,8 +628,9 @@ namespace WrestlingSim.Engine
             double storyComponent  = Math.Clamp(state.StorytellingScore / MaxStorytelling, 0, 1) * 100 * StoryWeight;
             double crowdComponent  = ((state.CrowdPeakEnergy * 0.4) + (state.CrowdAverage * 0.6)) * CrowdWeight;
 
-            // Finish quality nudges the final score (±5 points)
-            double finishNudge = (state.FinishQuality - 50.0) / 100.0 * 10.0;
+            // Finish quality nudges the final score (±10 points — doubled from original ±5
+            // so an unearned finish meaningfully costs around a third of a star).
+            double finishNudge = (state.FinishQuality - 50.0) / 100.0 * 20.0;
 
             double finalScore = Math.Clamp(techComponent + storyComponent + crowdComponent + finishNudge, 0, 100);
             double starRating = Math.Clamp(finalScore / 20.0, 0, 5);

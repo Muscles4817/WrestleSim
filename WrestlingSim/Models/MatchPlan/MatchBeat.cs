@@ -19,6 +19,13 @@ namespace WrestlingSim.Models.MatchPlan
         // Optional: narrative/feud context that amplifies this beat when satisfied.
         public FeudalResonance? FeudalResonance { get; set; }
 
+        /// <summary>
+        /// When set, overrides the control wrestler's natural style for skill lookups
+        /// in this beat. Set by BeatTemplate so template choice is mechanically meaningful
+        /// (e.g. Technical Dissection uses Technical skill regardless of wrestler style).
+        /// </summary>
+        public WrestlingStyle? StyleHint { get; set; }
+
         // ── Derived helpers ──────────────────────────────────────────────────
 
         public double IntensityModifier => Intensity switch
