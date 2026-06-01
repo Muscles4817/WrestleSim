@@ -67,8 +67,6 @@ namespace WrestlingSim.Engine
                 Momentum    = 0
             };
 
-            state.InMatchHeat[plan.WrestlerA.RingName] = 0;
-            state.InMatchHeat[plan.WrestlerB.RingName] = 0;
             state.RecordEnergy();
 
             return state;
@@ -170,10 +168,6 @@ namespace WrestlingSim.Engine
             state.ApplyMomentum(result.MomentumDelta);
             state.TechnicalScore    += result.TechnicalContribution;
             state.StorytellingScore += result.StorytellingContribution;
-
-            // Update in-match heat for the control wrestler
-            if (control != null)
-                state.InMatchHeat[control.RingName] += result.CrowdEnergyDelta * 0.1;
 
             // Snapshot state into result
             result.CrowdEnergyAfter     = state.CrowdEnergy;
@@ -288,9 +282,11 @@ namespace WrestlingSim.Engine
         {
             if (control == null) { control = plan.WrestlerA; }
 
-            // Bigger comeback pop when momentum deficit is larger (more earned)
-            double momentumDeficit = Math.Abs(state.Momentum);
-            double earnedBonus = Math.Min(momentumDeficit / 100.0 * 0.5, 0.5); // up to +50% bonus
+            // Bigger comeback pop when the accumulated heat is deeper (more earned).
+            // RawMomentum is uncapped, so two consecutive heat segments produce a larger bonus
+            // than one — the clamped Momentum value cannot distinguish between them.
+            double momentumDeficit = Math.Abs(state.RawMomentum);
+            double earnedBonus = Math.Min(momentumDeficit / 200.0 * 0.5, 0.5); // up to +50% bonus
 
             r.CrowdEnergyDelta = Rng(12, 20) * iMod * (1.0 + earnedBonus);
 
@@ -437,7 +433,9 @@ namespace WrestlingSim.Engine
         private void ApplyFeudalEscalation(BeatResult r, MatchBeat beat, MatchEngineState state,
             MatchPlan plan, double iMod, double feudMult)
         {
-            r.CrowdEnergyDelta = Rng(12, 22) * iMod * (feudMult - 0.5);
+            // Use feudMult directly (not offset). At Nuclear (×1.5) this peaks higher than
+            // RevengeSpot, which is correct — FeudalEscalation should be the match's biggest moment.
+            r.CrowdEnergyDelta = Rng(14, 24) * iMod * feudMult;
             r.MomentumDelta    = Rng(-5, 5); // contested — both wrestlers go at it
             r.TechnicalContribution    = 2.0 * iMod;
             r.StorytellingContribution = 14.0 * iMod * feudMult;
@@ -559,6 +557,16 @@ namespace WrestlingSim.Engine
                         $"{other.RingName} has been disqualified! {control.RingName} wins — but not how they wanted it.",
                         $"A disqualification! The crowd is not happy about how this ended.",
                         $"The referee has no choice — {other.RingName} is DQ'd."
+                    ));
+                    break;
+
+                case BeatType.FinishCountout:
+                    r.CrowdEnergyDelta = Rng(-6, 4) * iMod;
+                    r.StorytellingContribution = 3.0 * iMod * feudMult;
+                    r.Commentary.Add(Pick(
+                        $"{other.RingName} cannot beat the count! {control.RingName} wins by count-out — and nobody is happy.",
+                        $"The referee reaches ten! {other.RingName} is counted out — a hollow result.",
+                        $"Count-out! {other.RingName} can't make it back in time. The crowd voices its displeasure."
                     ));
                     break;
 

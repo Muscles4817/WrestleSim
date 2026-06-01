@@ -13,6 +13,13 @@ namespace WrestlingSim.Engine
         /// </summary>
         public double Momentum { get; set; }
 
+        /// <summary>
+        /// Uncapped running total of all momentum deltas. Unlike Momentum, this is never
+        /// clamped, so it accumulates across multiple heat segments and correctly measures
+        /// how deep a hole a wrestler has dug — used to scale the comeback earned bonus.
+        /// </summary>
+        public double RawMomentum { get; private set; }
+
         // ── Accumulators ─────────────────────────────────────────────────────
 
         public double TechnicalScore    { get; set; }
@@ -33,10 +40,6 @@ namespace WrestlingSim.Engine
 
         public double FinishQuality { get; set; }
 
-        // ── In-match heat deltas per wrestler (ring name → delta) ─────────────
-
-        public Dictionary<string, double> InMatchHeat { get; set; } = new();
-
         // ── Helpers ──────────────────────────────────────────────────────────
 
         public double CrowdAverage =>
@@ -52,8 +55,11 @@ namespace WrestlingSim.Engine
             RecordEnergy();
         }
 
-        public void ApplyMomentum(double delta) =>
+        public void ApplyMomentum(double delta)
+        {
+            RawMomentum += delta;
             Momentum = Math.Clamp(Momentum + delta, -100, 100);
+        }
 
         /// <summary>
         /// Natural crowd decay between beats (crowd cannot sustain maximum tension indefinitely).
