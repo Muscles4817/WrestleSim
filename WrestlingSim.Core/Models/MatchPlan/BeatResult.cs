@@ -23,6 +23,12 @@ namespace WrestlingSim.Models.MatchPlan
 
         public bool FeudalResonanceActivated { get; set; }
 
+        /// <summary>
+        /// 1.0 the first time a beat type is used, falling with each repetition in the
+        /// same match. Exposed so the booking UI can show why a repeated beat landed flat.
+        /// </summary>
+        public double RepetitionFactor { get; set; } = 1.0;
+
         // ── Display ──────────────────────────────────────────────────────────
 
         public string BeatLabel => BeatType switch

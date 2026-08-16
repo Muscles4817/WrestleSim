@@ -611,14 +611,17 @@ namespace WrestlingSim.Tests
         //  • An unearned finish: momentum was split/neutral at the end.
         // ────────────────────────────────────────────────────────────────────
 
-        [Fact]
-        public void GoldbergVsBrock_WM20_CrowdChecksOut()
+        /// <summary>
+        /// The WM20 match as it was actually booked. Shared so the better-booking test can
+        /// compare against it directly rather than against a hard-coded number.
+        /// </summary>
+        private static MatchPlan WM20OriginalPlan()
         {
             var goldberg = MakeGoldbergWM20();
             var brock    = MakeBrockWM20();
 
             // No feud — whatever they built, the audience rejected it completely
-            var plan = new MatchPlan
+            return new MatchPlan
             {
                 WrestlerA = goldberg,
                 WrestlerB = brock,
@@ -675,14 +678,20 @@ namespace WrestlingSim.Tests
                     }
                 ]
             };
+        }
+
+        [Fact]
+        public void GoldbergVsBrock_WM20_CrowdChecksOut()
+        {
+            var plan = WM20OriginalPlan();
 
             var engine = new MatchEngine(Seed);
             var result = engine.Execute(plan);
 
             PrintResult(result, "GOLDBERG vs BROCK LESNAR — WrestleMania XX (Both leaving, crowd hostile)");
 
-            Assert.Equal(goldberg.RingName, result.Winner.RingName);
-            Assert.Equal(brock.RingName, result.Loser.RingName);
+            Assert.Equal(plan.WrestlerA.RingName, result.Winner.RingName);
+            Assert.Equal(plan.WrestlerB.RingName, result.Loser.RingName);
             Assert.True(result.StarRating <= 1.75,
                 $"Expected a poor rating (≤★¾) for this historically bad match, got {result.StarDisplay}");
             Assert.True(result.CrowdAverageEnergy < 50,
@@ -903,11 +912,27 @@ namespace WrestlingSim.Tests
 
             Assert.Equal(goldberg.RingName, result.Winner.RingName);
             Assert.Equal(brock.RingName, result.Loser.RingName);
-            // Same hostile crowd, better structure — should significantly beat the 1.27 original
-            Assert.True(result.StarRating >= 2.5,
-                $"A tight explosive sprint should rescue this from the 1.27 original, got {result.StarDisplay}");
-            Assert.True(result.CrowdPeakEnergy > 60,
-                $"HotOpening + Comeback should pop the crowd above 60, got {result.CrowdPeakEnergy:F1}");
+            // Same hostile crowd, better structure — should significantly beat the original.
+            // The bar here was 2.5 when crowd energy had no per-pairing ceiling and every
+            // match could climb to 100. Now that two rejected performers cap out around 64
+            // crowd energy, a well-worked sprint between them lands at ★★¼–★★½ rather than
+            // ★★½+, which is the more honest read of the hypothetical.
+            Assert.True(result.StarRating >= 2.25,
+                $"A tight explosive sprint should rescue this from the original, got {result.StarDisplay}");
+
+            // The crowd assertion is deliberately relative rather than an absolute threshold.
+            // Two performers this thoroughly rejected have a hard ceiling on how loud they can
+            // get a building — booking cannot conjure a reaction the audience does not have.
+            // What better booking *can* do is get much closer to that ceiling, so that is what
+            // we measure: the same two men, same crowd, materially bigger peak.
+            var original = new MatchEngine(Seed).Execute(WM20OriginalPlan());
+
+            Assert.True(result.CrowdPeakEnergy > original.CrowdPeakEnergy * 1.5,
+                $"Better booking should pop this crowd far harder than the original: " +
+                $"got {result.CrowdPeakEnergy:F1} vs original {original.CrowdPeakEnergy:F1}");
+            Assert.True(result.StarRating > original.StarRating + 1.0,
+                $"Better booking should be worth more than a full star here: " +
+                $"got {result.StarRating:F2} vs original {original.StarRating:F2}");
         }
 
         // ────────────────────────────────────────────────────────────────────

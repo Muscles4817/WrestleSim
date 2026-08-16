@@ -14,6 +14,12 @@ namespace WrestlingSim.Models.MatchPlan
         public double CrowdAverageEnergy { get; init; }
         public double FinishQuality      { get; init; }
 
+        /// <summary>
+        /// 0–1. How much of the plan suited the declared MatchType. Always 1.0 for Standard,
+        /// which has no preference. Feeds a small bonus/penalty in the final score.
+        /// </summary>
+        public double MatchTypeCoherence { get; init; } = 1.0;
+
         // Final rating
         public double FinalScore  { get; init; }  // 0–100
         public double StarRating  { get; init; }  // 0–5

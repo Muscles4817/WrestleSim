@@ -1,3 +1,5 @@
+using WrestlingSim.Enums;
+
 namespace WrestlingSim.Engine
 {
     internal class MatchEngineState
@@ -28,13 +30,47 @@ namespace WrestlingSim.Engine
         /// <summary>Highest crowd energy reached at any point.</summary>
         public double CrowdPeakEnergy { get; set; }
 
+        /// <summary>
+        /// The loudest this particular pairing can ever get this building, 0–100.
+        ///
+        /// Set from both wrestlers' Connection at the opening bell. Two people the
+        /// audience has no investment in cannot reach a WrestleMania-main-event
+        /// reaction no matter how many near-falls are booked — without this the crowd
+        /// component pinned at 100 for every match and stopped distinguishing anything.
+        /// </summary>
+        public double CrowdCeiling { get; set; } = 100;
+
         /// <summary>Running readings for average crowd calculation.</summary>
         public List<double> CrowdEnergyReadings { get; set; } = new();
 
-        // ── Near-fall tracking ───────────────────────────────────────────────
+        // ── Repetition tracking ──────────────────────────────────────────────
 
-        /// <summary>Total near falls executed so far; drives diminishing returns.</summary>
-        public int NearFallCount { get; set; }
+        /// <summary>
+        /// How many times each beat type has been executed. Drives diminishing returns:
+        /// a crowd that has already seen four beatdowns does not react to the fifth.
+        /// Generalises what used to be a near-fall-only rule.
+        /// </summary>
+        private readonly Dictionary<BeatType, int> _typeCounts = new();
+
+        /// <summary>Records this beat type and returns how many times it has now been used (1-based).</summary>
+        public int RegisterBeat(BeatType type)
+        {
+            _typeCounts.TryGetValue(type, out int seen);
+            _typeCounts[type] = seen + 1;
+            BeatIndex++;
+            return seen + 1;
+        }
+
+        public int TimesUsed(BeatType type) => _typeCounts.TryGetValue(type, out int n) ? n : 0;
+
+        /// <summary>How many distinct beat types the match has used. Rewards varied booking.</summary>
+        public int DistinctBeatTypes => _typeCounts.Count;
+
+        /// <summary>0-based position of the beat currently resolving.</summary>
+        public int BeatIndex { get; private set; } = -1;
+
+        /// <summary>Total near falls executed so far; drives near-fall specific commentary.</summary>
+        public int NearFallCount => TimesUsed(BeatType.NearFall);
 
         // ── Finish ───────────────────────────────────────────────────────────
 
@@ -48,9 +84,23 @@ namespace WrestlingSim.Engine
 
         public void RecordEnergy() => CrowdEnergyReadings.Add(CrowdEnergy);
 
+        /// <summary>
+        /// Applies a crowd-energy delta.
+        ///
+        /// Positive deltas are compressed as the crowd approaches its ceiling — the last
+        /// 20 points of a reaction are far harder to buy than the first 20. Without this,
+        /// every match of every quality pinned the peak at exactly 100 and the crowd
+        /// component stopped distinguishing anything.
+        /// </summary>
         public void ApplyEnergy(double delta)
         {
-            CrowdEnergy = Math.Clamp(CrowdEnergy + delta, 0, 100);
+            if (delta > 0)
+            {
+                double headroom = Math.Max(0, (CrowdCeiling - CrowdEnergy) / Math.Max(1, CrowdCeiling));
+                delta *= 0.20 + 0.80 * Math.Sqrt(headroom);
+            }
+
+            CrowdEnergy = Math.Clamp(CrowdEnergy + delta, 0, CrowdCeiling);
             if (CrowdEnergy > CrowdPeakEnergy) CrowdPeakEnergy = CrowdEnergy;
             RecordEnergy();
         }
