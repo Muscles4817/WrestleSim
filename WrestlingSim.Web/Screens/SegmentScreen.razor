@@ -1,0 +1,113 @@
+@inject GameState State
+
+@if (result is null)
+{
+    <div class="screen__head">
+        <div class="screen__eyebrow">How feuds get built</div>
+        <h1 class="screen__title">Book a Segment</h1>
+        <p class="screen__lede">
+            Every segment deposits heat and history tags into the feud book. A turn generates
+            the most of anything in the game; a good promo builds a programme too, just slower.
+        </p>
+    </div>
+
+    <SegmentBuilder OnDone="Run" OnCancel="@(() => State.Go(Screen.Menu))" ConfirmLabel="Run the segment ★" />
+}
+else
+{
+    <div class="screen__head">
+        <div class="screen__eyebrow">@result.Type · @result.Location</div>
+        <h1 class="screen__title">@result.SegmentName</h1>
+    </div>
+
+    <div class="score-hero">
+        <div>
+            <div class="score-hero__label">Crowd reaction</div>
+            <div class="score-hero__main">@result.AudienceImpact.ToString("F1") <span class="muted">/ 10</span></div>
+        </div>
+        <div>
+            <div class="score-hero__label">Feud heat</div>
+            <div class="score-hero__main gold">+@result.HeatGenerated.ToString("F1")</div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel__title">Outcome</div>
+        <div class="stack">
+            <Meter Label="Crowd reaction" Value="@result.AudienceImpact" Max="10"
+                   ValueText="@($"{result.AudienceImpact:F1} / 10")" />
+            <Meter Label="Heat generated" Value="@result.HeatGenerated" Max="15"
+                   ValueText="@($"+{result.HeatGenerated:F1}")" Variant="cyan" />
+        </div>
+
+        @if (result.Botched)
+        {
+            <div class="notice notice--error mt">
+                <strong>Botched.</strong> The segment fell apart — reaction cut to 60%, heat halved,
+                and everyone in it lost popularity. Unscripted segments need Psychology to carry them.
+            </div>
+        }
+
+        @if (result.Injured is not null)
+        {
+            <div class="notice notice--error mt">
+                <strong>@result.Injured.RingName is injured.</strong> The feud picks up an
+                <span class="badge badge--cyan">InjuryAngle</span> tag.
+            </div>
+        }
+
+        @if (result.OvernessChanges.Count > 0)
+        {
+            <div class="row mt small">
+                <span class="muted">Popularity:</span>
+                @foreach (var change in result.OvernessChanges)
+                {
+                    <span class="badge @(change.Delta >= 0 ? "badge--face" : "badge--heel")">
+                        @change.Wrestler.RingName @change.Delta.ToString("+0;-0") → @change.Wrestler.Popularity
+                    </span>
+                }
+            </div>
+        }
+    </div>
+
+    <FeudUpdates Updates="@feudUpdates" />
+
+    <div class="panel">
+        <div class="panel__title">How it played</div>
+        <div class="pbp">
+            @foreach (var line in result.Commentary)
+            {
+                <div class="pbp__line">@line</div>
+            }
+        </div>
+    </div>
+
+    <div class="wizard-bar">
+        <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Menu)">← Main menu</button>
+        <span class="wizard-bar__spacer"></span>
+        <button class="btn" @onclick="() => State.Go(Screen.Feuds)">See the feud book</button>
+        <button class="btn btn--primary" @onclick="Reset">Book another segment</button>
+    </div>
+}
+
+@code {
+    private SegmentResult? result;
+    private List<FeudUpdate> feudUpdates = new();
+
+    private void Run(SegmentModel segment)
+    {
+        result = new SegmentSimulator().Simulate(segment);
+
+        feudUpdates = State.FeudBook
+            .RecordSegment(segment.Participants, result.HeatGenerated, result.HistoryTags)
+            .ToList();
+
+        State.Notify();
+    }
+
+    private void Reset()
+    {
+        result = null;
+        feudUpdates = new();
+    }
+}

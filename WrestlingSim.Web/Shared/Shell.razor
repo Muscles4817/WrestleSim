@@ -1,0 +1,96 @@
+@implements IDisposable
+@inject GameState State
+
+<div class="shell">
+    <header class="topbar">
+        <button class="brand" @onclick="() => State.Go(Screen.Menu)" title="Main menu">
+            <span class="brand__star">★</span>
+            <span class="brand__name">Wrestling Sim</span>
+            <span class="brand__sub">Booking System</span>
+        </button>
+
+        @if (State.Loaded && State.Roster.Count >= 2)
+        {
+            <nav class="nav">
+                @foreach (var (screen, label, _) in NavItems)
+                {
+                    <button class="nav__item @(State.Current == screen ? "is-active" : "")"
+                            @onclick="() => State.Go(screen)">
+                        @label
+                        @if (screen == Screen.Feuds && State.ActiveFeudCount > 0)
+                        {
+                            <span class="nav__count">@State.ActiveFeudCount</span>
+                        }
+                    </button>
+                }
+            </nav>
+        }
+    </header>
+
+    <main class="main">
+        @if (!State.Loaded)
+        {
+            <div class="empty">
+                <div class="empty__mark">★</div>
+                Loading the roster…
+            </div>
+        }
+        else if (State.LoadError is not null)
+        {
+            <div class="notice notice--error">@State.LoadError</div>
+        }
+        else
+        {
+            @switch (State.Current)
+            {
+                case Screen.Menu:    <MainMenuScreen />; break;
+                case Screen.Roster:  <RosterScreen />;   break;
+                case Screen.Feuds:   <FeudsScreen />;    break;
+                case Screen.Match:   <MatchScreen />;    break;
+                case Screen.Segment: <SegmentScreen />;  break;
+                case Screen.Show:    <ShowScreen />;     break;
+            }
+        }
+    </main>
+
+    @* On phones the top nav is hidden and navigation moves to the thumb zone. *@
+    @if (State.Loaded && State.Roster.Count >= 2)
+    {
+        <nav class="tabbar" aria-label="Main">
+            @foreach (var (screen, label, glyph) in NavItems)
+            {
+                <button class="tabbar__item @(State.Current == screen ? "is-active" : "")"
+                        aria-current="@(State.Current == screen ? "page" : null)"
+                        @onclick="() => State.Go(screen)">
+                    <span class="tabbar__glyph" aria-hidden="true">@glyph</span>
+                    <span>@label</span>
+                    @if (screen == Screen.Feuds && State.ActiveFeudCount > 0)
+                    {
+                        <span class="tabbar__badge">@State.ActiveFeudCount</span>
+                    }
+                </button>
+            }
+        </nav>
+    }
+</div>
+
+@code {
+    private static readonly (Screen Screen, string Label, string Glyph)[] NavItems =
+    [
+        (Screen.Match,   "Match",   "★"),
+        (Screen.Segment, "Segment", "🎤"),
+        (Screen.Show,    "Show",    "📋"),
+        (Screen.Roster,  "Roster",  "👥"),
+        (Screen.Feuds,   "Feuds",   "🔥"),
+    ];
+
+    protected override void OnInitialized()
+    {
+        State.Changed += OnChanged;
+        State.Load();
+    }
+
+    private void OnChanged() => StateHasChanged();
+
+    public void Dispose() => State.Changed -= OnChanged;
+}

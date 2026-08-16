@@ -1,0 +1,40 @@
+<div class="pbp">
+    @foreach (var beat in Result.BeatResults)
+    {
+        <div class="pbp__beat @StateClass(beat)">
+            <div class="pbp__label">@beat.BeatLabel</div>
+            @foreach (var line in beat.Commentary)
+            {
+                <div class="pbp__line">@line</div>
+            }
+            <div class="pbp__stats">
+                <span>Crowd <b>@Before(beat).ToString("F0") → @beat.CrowdEnergyAfter.ToString("F0")</b></span>
+                <span>Momentum <b>@beat.MomentumAfter.ToString("+0.0;-0.0;0.0")</b></span>
+                <span>Tech <b>+@beat.TechnicalContribution.ToString("F1")</b></span>
+                <span>Story <b>+@beat.StorytellingContribution.ToString("F1")</b></span>
+                @if (beat.FeudalResonanceActivated)
+                {
+                    <span class="gold">★ Feud resonance</span>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public MatchEngineResult Result { get; set; } = default!;
+
+    private static double Before(BeatResult beat) => beat.CrowdEnergyAfter - beat.CrowdEnergyDelta;
+
+    private static string StateClass(BeatResult beat)
+    {
+        bool isFinish = beat.BeatType is BeatType.FinishClean or BeatType.FinishRollup
+            or BeatType.FinishSubmission or BeatType.FinishDQ or BeatType.FinishCountout
+            or BeatType.FinishInterference or BeatType.FinishSuperFinisher;
+
+        bool isOpening = beat.BeatType is BeatType.HotOpening
+            or BeatType.SlowOpening or BeatType.StandardOpening;
+
+        return isFinish ? "is-finish" : isOpening ? "is-opening" : "";
+    }
+}

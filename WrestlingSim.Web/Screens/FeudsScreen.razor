@@ -1,0 +1,99 @@
+@inject GameState State
+
+<div class="screen__head">
+    <div class="screen__eyebrow">@(feuds.Count) active</div>
+    <h1 class="screen__title">Feud Book</h1>
+    <p class="screen__lede">
+        Intensity is derived from accumulated heat, not chosen. Book segments to build it —
+        the match editor unlocks feud-gated beats once a rivalry reaches Building.
+    </p>
+</div>
+
+@if (feuds.Count == 0)
+{
+    <div class="empty">
+        <div class="empty__mark">◇</div>
+        <p><strong>No feuds yet.</strong></p>
+        <p class="small">A betrayal or a weapon shot generates the most heat of anything you can book.</p>
+        <button class="btn btn--primary mt" @onclick="() => State.Go(Screen.Segment)">Book a segment</button>
+    </div>
+}
+else
+{
+    <div class="stack">
+        @foreach (var feud in feuds)
+        {
+            <div class="panel">
+                <div class="panel__title">
+                    @feud.WrestlerA.RingName vs @feud.WrestlerB.RingName
+                    <span class="spacer"></span>
+                    <span class="badge @FeudUpdates.IntensityBadge(feud.Intensity)">@feud.Intensity</span>
+                </div>
+
+                <Meter Label="Heat" Value="@feud.Heat" Max="50" ValueText="@($"{feud.Heat:F0} / 50")" />
+
+                <div class="row mt small">
+                    <span class="muted">Matches</span> <strong>@feud.MatchCount</strong>
+                    <span class="faint">•</span>
+                    <span class="muted">Starting crowd bonus</span> <strong>+@feud.StartingEnergyBonus</strong>
+                    @if (feud.HeatToNextTier is > 0 and var toNext)
+                    {
+                        <span class="faint">•</span>
+                        <span class="muted">@toNext.ToString("F0") heat to next tier</span>
+                    }
+                </div>
+
+                @if (feud.History.Count > 0)
+                {
+                    <div class="badge-row mt">
+                        @foreach (var tag in feud.History)
+                        {
+                            <span class="badge badge--cyan">@tag</span>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="small faint mt">No history tags yet.</div>
+                }
+
+                @{
+                    var unlocked = UnlockedBeats(feud).ToList();
+                }
+                @if (unlocked.Count > 0)
+                {
+                    <div class="notice notice--tip mt">
+                        <strong>Unlocked beats:</strong> @string.Join(", ", unlocked)
+                    </div>
+                }
+
+                <div class="row mt">
+                    <button class="btn btn--sm btn--primary" @onclick="() => BookBlowoff(feud)">Book the blowoff →</button>
+                    <button class="btn btn--sm btn--ghost" @onclick="() => State.Go(Screen.Segment)">Add another angle</button>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<div class="row mt">
+    <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Menu)">← Main menu</button>
+</div>
+
+@code {
+    private List<Feud> feuds = new();
+
+    protected override void OnInitialized() => feuds = State.FeudBook.All.ToList();
+
+    private void BookBlowoff(Feud feud) => State.Go(Screen.Match);
+
+    /// <summary>Beats this feud's state makes legal, matching MatchPlan.Validate.</summary>
+    private static IEnumerable<string> UnlockedBeats(Feud feud)
+    {
+        if (feud.Intensity >= FeudIntensity.Building)
+            yield return "Feud Erupts";
+
+        if (feud.HasTag(FeudHistoryTag.FamilyInvolved) || feud.HasTag(FeudHistoryTag.ManagerConflict))
+            yield return "Outside Party";
+    }
+}

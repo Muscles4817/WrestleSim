@@ -1,0 +1,71 @@
+@inject GameState State
+
+<div class="screen__head">
+    <div class="screen__eyebrow">You are the booker</div>
+    <h1 class="screen__title">What are we running tonight?</h1>
+    <p class="screen__lede">
+        Build feuds with segments, design matches beat by beat, then put it all on a card.
+        Everything you book feeds the same feud book — a betrayal tonight is worth more heat
+        in the blowoff.
+    </p>
+</div>
+
+<div class="tiles">
+    @foreach (var tile in Tiles)
+    {
+        <button class="tile" @onclick="() => State.Go(tile.Screen)">
+            <div class="tile__key">@tile.Key</div>
+            <div class="tile__name">@tile.Name</div>
+            <div class="tile__desc">@tile.Desc</div>
+        </button>
+    }
+</div>
+
+@if (State.ActiveFeudCount > 0)
+{
+    <div class="panel mt-2">
+        <div class="panel__title">
+            Live feuds
+            <span class="spacer"></span>
+            <button class="btn btn--sm btn--ghost" @onclick="() => State.Go(Screen.Feuds)">View all</button>
+        </div>
+
+        @foreach (var feud in State.FeudBook.All.Take(3))
+        {
+            <div class="feud">
+                <div class="feud__top">
+                    <span class="feud__names">
+                        @feud.WrestlerA.RingName <span class="faint">vs</span> @feud.WrestlerB.RingName
+                    </span>
+                    <span class="badge @FeudUpdates.IntensityBadge(feud.Intensity)">@feud.Intensity</span>
+                    <span class="spacer"></span>
+                    <span class="small muted">@feud.MatchCount match@(feud.MatchCount == 1 ? "" : "es")</span>
+                </div>
+                <Meter Label="Heat" Value="@feud.Heat" Max="50" ValueText="@($"{feud.Heat:F0} / 50")" />
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="notice notice--info mt-2">
+        <strong>New session.</strong> Nobody has any history yet. Book a segment — a betrayal or a
+        weapon shot generates the most heat — and the feud will show up here and in the match booker.
+    </div>
+}
+
+@code {
+    private static readonly (Screen Screen, string Key, string Name, string Desc)[] Tiles =
+    [
+        (Screen.Match, "01", "Book a Match",
+            "Pick two wrestlers, choose a structure, then edit the beats. The engine scores technical work, storytelling and crowd reaction."),
+        (Screen.Segment, "02", "Book a Segment",
+            "Promos, confrontations, beatdowns and turns. This is how feuds actually get built."),
+        (Screen.Show, "03", "Book a Show",
+            "Assemble a full card in running order against a runtime budget. Position and pacing both matter."),
+        (Screen.Roster, "04", "View Roster",
+            "Popularity, ring skills, charisma and gimmick for everyone on the books."),
+        (Screen.Feuds, "05", "Feud Book",
+            "Every rivalry you have going, how hot it is, and what it has unlocked."),
+    ];
+}

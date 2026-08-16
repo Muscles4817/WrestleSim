@@ -1,0 +1,103 @@
+@inject GameState State
+
+@if (result is null)
+{
+    <div class="screen__head">
+        <div class="screen__eyebrow">Beat by beat</div>
+        <h1 class="screen__title">Book a Match</h1>
+        <p class="screen__lede">
+            The engine does not decide who wins — you do, with the finish beat. It scores how
+            well the story you booked landed with the crowd.
+        </p>
+    </div>
+
+    <MatchBuilder OnDone="Run" OnCancel="@(() => State.Go(Screen.Menu))" ConfirmLabel="Run the match ★" />
+}
+else
+{
+    <div class="screen__head">
+        <div class="screen__eyebrow">@booked!.StructureName</div>
+        <h1 class="screen__title">@booked.Plan.WrestlerA.RingName vs @booked.Plan.WrestlerB.RingName</h1>
+    </div>
+
+    <div class="score-hero">
+        <div>
+            <div class="score-hero__label">Winner</div>
+            <div class="score-hero__main">@result.Winner.RingName</div>
+        </div>
+        <Stars Rating="@result.StarRating" />
+    </div>
+
+    <div class="panel">
+        <div class="panel__title">Scorecard</div>
+        <div class="stack">
+            <Meter Label="Technical" Value="@result.TechnicalScore" Max="60" />
+            <Meter Label="Storytelling" Value="@result.StorytellingScore" Max="80" Variant="cyan" />
+            <Meter Label="Crowd average" Value="@result.CrowdAverageEnergy" Max="100" Variant="face" />
+            <Meter Label="Crowd peak" Value="@result.CrowdPeakEnergy" Max="100" Variant="face" />
+            <Meter Label="Finish quality" Value="@result.FinishQuality" Max="100"
+                   Variant="@(result.FinishQuality < 70 ? "heel" : "gold")" />
+        </div>
+
+        @if (result.FinishQuality < 70)
+        {
+            <div class="notice notice--warn mt">
+                <strong>The finish was not earned.</strong> Momentum did not favour
+                @result.Winner.RingName when the finish landed, so finish quality took a 45% hit.
+                Book the heat and comeback so the right person is ahead going in.
+            </div>
+        }
+    </div>
+
+    <FeudUpdates Updates="@feudUpdates" />
+
+    <div class="panel">
+        <div class="panel__title">Play by play</div>
+        <PlayByPlay Result="@result" />
+    </div>
+
+    <div class="wizard-bar">
+        <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Menu)">← Main menu</button>
+        <span class="wizard-bar__spacer"></span>
+        <button class="btn" @onclick="RunAgain">Run the same plan again</button>
+        <button class="btn btn--primary" @onclick="Reset">Book another match</button>
+    </div>
+}
+
+@code {
+    private BookedMatch? booked;
+    private MatchEngineResult? result;
+    private List<FeudUpdate> feudUpdates = new();
+
+    private void Run(BookedMatch match)
+    {
+        booked = match;
+        Execute();
+    }
+
+    private void RunAgain() => Execute();
+
+    private void Execute()
+    {
+        if (booked is null) return;
+
+        result = new MatchEngine().Execute(booked.Plan);
+
+        var update = State.FeudBook.Record(
+            booked.Plan.WrestlerA, booked.Plan.WrestlerB,
+            heat: result.StarRating * 2.0,
+            tags: new[] { FeudHistoryTag.PriorMatch });
+
+        update.Feud.MatchCount++;
+        feudUpdates = new List<FeudUpdate> { update };
+
+        State.Notify();
+    }
+
+    private void Reset()
+    {
+        booked = null;
+        result = null;
+        feudUpdates = new();
+    }
+}

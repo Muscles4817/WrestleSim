@@ -1,0 +1,532 @@
+@inject GameState State
+
+<div class="steps">
+    @foreach (var (index, label) in StepLabels)
+    {
+        <div class="step @(step == index ? "is-current" : step > index ? "is-done" : "")">
+            <span class="step__n">@(step > index ? "✓" : (index + 1).ToString())</span>
+            <span>@label</span>
+        </div>
+    }
+</div>
+
+@* ── 1. Template ──────────────────────────────────────────────────────── *@
+@if (step == 0)
+{
+    <div class="panel">
+        <div class="panel__title">Segment type</div>
+
+        @foreach (var category in SegmentTemplateLibrary.Categories)
+        {
+            <div class="group-label">@category</div>
+            <div class="picks">
+                @foreach (var t in SegmentTemplateLibrary.ByCategory(category))
+                {
+                    var blocked = t.MinParticipants > State.Roster.Count;
+                    <button class="pick @(template == t ? "is-selected" : "")"
+                            disabled="@blocked" @onclick="() => PickTemplate(t)">
+                        <span class="pick__body">
+                            <span class="pick__name">@t.Name</span>
+                            <span class="pick__desc">@t.Description</span>
+                            @if (!string.IsNullOrWhiteSpace(t.BookerTip))
+                            {
+                                <span class="pick__desc gold">ⓘ @t.BookerTip</span>
+                            }
+                            @if (t.HistoryTags.Count > 0)
+                            {
+                                <span class="badge-row" style="margin-top:6px">
+                                    @foreach (var tag in t.HistoryTags)
+                                    {
+                                        <span class="badge badge--cyan">@tag</span>
+                                    }
+                                </span>
+                            }
+                        </span>
+                        <span class="pick__meta">
+                            @t.MinParticipants@(t.AllowsExtraParticipants ? "+" : "")&nbsp;people<br />@t.Location
+                        </span>
+                    </button>
+                }
+            </div>
+        }
+
+        <div class="group-label">Custom</div>
+        <div class="picks">
+            <button class="pick @(isCustom ? "is-selected" : "")" @onclick="PickCustom">
+                <span class="pick__body">
+                    <span class="pick__name">Build from scratch</span>
+                    <span class="pick__desc">Choose the format, the setting and every action yourself.</span>
+                </span>
+            </button>
+        </div>
+    </div>
+}
+
+@* ── 2. Cast ──────────────────────────────────────────────────────────── *@
+@if (step == 1)
+{
+    @if (isCustom)
+    {
+        <div class="panel">
+            <div class="panel__title">Format</div>
+            <div class="fields">
+                <div class="field">
+                    <span class="field__label">Name</span>
+                    <input class="input" @bind="customName" placeholder="Untitled segment" />
+                </div>
+                <div class="field">
+                    <span class="field__label">Type</span>
+                    <select class="select" @bind="customType">
+                        @foreach (var v in Enum.GetValues<SegmentType>())
+                        {
+                            <option value="@v">@v</option>
+                        }
+                    </select>
+                </div>
+                <div class="field">
+                    <span class="field__label">Location</span>
+                    <select class="select" @bind="customLocation">
+                        @foreach (var v in Enum.GetValues<SegmentLocation>())
+                        {
+                            <option value="@v">@v (×@LocationMultiplier(v).ToString("0.00"))</option>
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel__title">Cast <span class="spacer"></span><span class="small muted">@cast.Count selected</span></div>
+            <CastFilter Query="@castQuery" QueryChanged="@(v => castQuery = v)"
+                        Division="@castDivision" DivisionChanged="@(v => castDivision = v)" />
+            <div class="picks picks--2">
+                @foreach (var w in FilteredRoster())
+                {
+                    <button class="pick @(cast.Contains(w) ? "is-selected" : "")" @onclick="() => ToggleCast(w)">
+                        <span class="pick__body">
+                            <span class="pick__name">@w.RingName</span>
+                            <span class="pick__desc">Cha @w.Charisma.ToString("F1") · Psych @(w.Mental?.Psychology ?? 0)</span>
+                        </span>
+                    </button>
+                }
+            </div>
+        </div>
+    }
+    else if (template is not null)
+    {
+        <div class="panel">
+            <div class="panel__title">Cast — @template.Name</div>
+
+            @for (int r = 0; r < template.ParticipantRoles.Count; r++)
+            {
+                var roleIndex = r;
+                var role = template.ParticipantRoles[roleIndex];
+                <div class="field mt">
+                    <span class="field__label">@role</span>
+                    <div class="picks picks--2">
+                        @foreach (var w in FilteredRoster().Where(x => IsAvailableFor(x, roleIndex)))
+                        {
+                            <button class="pick @(RoleAt(roleIndex) == w ? "is-selected" : "")"
+                                    @onclick="() => AssignRole(roleIndex, w)">
+                                <span class="pick__body">
+                                    <span class="pick__name">@w.RingName</span>
+                                    <span class="pick__desc">Cha @w.Charisma.ToString("F1") · Tough @(w.Mental?.Toughness ?? 0)</span>
+                                </span>
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (template.AllowsExtraParticipants)
+            {
+                <div class="field mt">
+                    <span class="field__label">@template.ExtraParticipantRole (optional)</span>
+                    <div class="picks picks--2">
+                        @foreach (var w in FilteredRoster().Where(x => !cast.Take(template.ParticipantRoles.Count).Contains(x)))
+                        {
+                            <button class="pick @(extras.Contains(w) ? "is-selected" : "")" @onclick="() => ToggleExtra(w)">
+                                <span class="pick__body"><span class="pick__name">@w.RingName</span></span>
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (template.UsesDialogue)
+            {
+                <div class="field mt">
+                    <span class="field__label">Dialogue</span>
+                    <input class="input" @bind="dialogue" placeholder="Leave blank for a default line" />
+                </div>
+            }
+        </div>
+    }
+}
+
+@* ── 3. Action editor ─────────────────────────────────────────────────── *@
+@if (step == 2 && segment is not null)
+{
+    <div class="panel">
+        <div class="panel__title">
+            @segment.Name
+            <span class="spacer"></span>
+            <span class="small muted">~@segment.DurationMinutes min</span>
+        </div>
+
+        <div class="row small">
+            <span class="badge">@segment.Type</span>
+            <span class="badge">@segment.Location ×@LocationMultiplier(segment.Location).ToString("0.00")</span>
+            <label class="check spacer">
+                <input type="checkbox" checked="@segment.IsScripted"
+                       @onchange="e => segment.IsScripted = (bool)(e.Value ?? true)" />
+                Scripted
+            </label>
+        </div>
+
+        <div class="notice @(segment.IsScripted ? "notice--info" : "notice--warn") mt">
+            @if (segment.IsScripted)
+            {
+                <text>Scripted: no botch risk, no rawness bonus.</text>
+            }
+            else
+            {
+                <text><strong>Unscripted:</strong> ×1.15 crowd reaction, but low-Psychology performers can botch — which costs impact, heat <em>and</em> popularity.</text>
+            }
+        </div>
+
+        <div class="row mt small">
+            <span class="muted">Cast:</span>
+            @foreach (var w in segment.Participants)
+            {
+                <span class="badge">@w.RingName</span>
+            }
+        </div>
+
+        @if (segment.HistoryTags.Count > 0)
+        {
+            <div class="row mt small">
+                <span class="muted">Stamps:</span>
+                @foreach (var tag in segment.HistoryTags)
+                {
+                    <span class="badge badge--cyan">@tag</span>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="panel">
+        <div class="panel__title">Run sheet <span class="spacer"></span><span class="small muted">@segment.Actions.Count actions</span></div>
+
+        @if (segment.Actions.Count == 0)
+        {
+            <div class="empty">Nothing happens yet — add an action below.</div>
+        }
+
+        @foreach (var action in segment.Actions)
+        {
+            var i = segment.Actions.IndexOf(action);
+            <div class="editor-row">
+                <div class="editor-row__n">@(i + 1)</div>
+                <div>
+                    <div class="editor-row__name">@(string.IsNullOrWhiteSpace(action.Label) ? action.ActionType.ToString() : action.Label)</div>
+                    <div class="editor-row__sub">
+                        @action.ActionType
+                        @if (action.HeatImpact > 0)
+                        {
+                            <text> · +@action.HeatImpact.ToString("0.#") heat</text>
+                        }
+                    </div>
+                    @if (action.ActionType is SegmentActionType.Talk or SegmentActionType.Interrupt)
+                    {
+                        <input class="input" style="margin-top:6px;font-size:13px"
+                               value="@action.Dialogue"
+                               @onchange="e => SetDialogue(action, e.Value?.ToString())"
+                               placeholder="Dialogue (optional)" />
+                    }
+                </div>
+                <div class="editor-row__tools">
+                    <select class="inline-select" value="@action.Performer?.RealName"
+                            @onchange="e => SetPerformer(action, e.Value?.ToString())">
+                        @foreach (var w in segment.Participants)
+                        {
+                            <option value="@w.RealName">@w.RingName</option>
+                        }
+                    </select>
+
+                    @if (action.RequiresTarget)
+                    {
+                        <select class="inline-select" value="@action.Target?.RealName"
+                                @onchange="e => SetTarget(action, e.Value?.ToString())">
+                            <option value="">— target —</option>
+                            @foreach (var w in segment.Participants.Where(x => x != action.Performer))
+                            {
+                                <option value="@w.RealName">@w.RingName</option>
+                            }
+                        </select>
+                    }
+
+                    <button class="btn btn--icon btn--ghost" disabled="@(i == 0)"
+                            title="Move up" @onclick="() => MoveAction(i, -1)">↑</button>
+                    <button class="btn btn--icon btn--ghost" disabled="@(i == segment.Actions.Count - 1)"
+                            title="Move down" @onclick="() => MoveAction(i, 1)">↓</button>
+                    <button class="btn btn--icon btn--danger" title="Remove"
+                            @onclick="() => segment.Actions.Remove(action)">✕</button>
+                </div>
+            </div>
+        }
+
+        <div class="row mt">
+            <button class="btn" @onclick="() => showAddAction = !showAddAction">
+                @(showAddAction ? "Close action library" : "+ Add an action")
+            </button>
+        </div>
+
+        @if (showAddAction)
+        {
+            <div class="panel panel--flat mt">
+                @foreach (var category in SegmentActionLibrary.Categories)
+                {
+                    <div class="group-label">@category</div>
+                    <div class="picks">
+                        @foreach (var t in SegmentActionLibrary.ByCategory(category))
+                        {
+                            var blocked = t.RequiresTarget && segment.Participants.Count < 2;
+                            <button class="pick" disabled="@blocked" @onclick="() => AddAction(t)">
+                                <span class="pick__body">
+                                    <span class="pick__name">
+                                        @t.Name
+                                        @if (blocked) { <span class="badge badge--heel">needs two people</span> }
+                                    </span>
+                                    <span class="pick__desc">@t.Description</span>
+                                    @if (!string.IsNullOrWhiteSpace(t.BookerTip))
+                                    {
+                                        <span class="pick__desc gold">ⓘ @t.BookerTip</span>
+                                    }
+                                </span>
+                                <span class="pick__meta">
+                                    impact @t.BaseImpact.ToString("0.#")<br />heat @t.Heat.ToString("0.#")
+                                </span>
+                            </button>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    @if (errors.Count > 0)
+    {
+        <div class="notice notice--error">
+            <strong>This segment will not run:</strong>
+            <ul>@foreach (var e in errors) { <li>@e</li> }</ul>
+        </div>
+    }
+}
+
+@* ── Wizard controls ──────────────────────────────────────────────────── *@
+<div class="wizard-bar wizard-bar--sticky">
+    <button class="btn btn--ghost" @onclick="Back">@(step == 0 ? "← Cancel" : "← Back")</button>
+    <span class="wizard-bar__spacer"></span>
+    @if (step < 2)
+    {
+        <button class="btn btn--primary" disabled="@(!CanAdvance)" @onclick="Next">Next →</button>
+    }
+    else
+    {
+        <button class="btn btn--primary" @onclick="Finish">@ConfirmLabel</button>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public EventCallback<SegmentModel> OnDone { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public string ConfirmLabel { get; set; } = "Run the segment ★";
+
+    private static readonly (int Index, string Label)[] StepLabels =
+    [
+        (0, "Type"), (1, "Cast"), (2, "Actions")
+    ];
+
+    private int step;
+    private SegmentTemplate? template;
+    private bool isCustom;
+
+    private readonly List<Wrestler> cast = new();
+
+    private string castQuery = "";
+    private Division? castDivision;
+
+    /// <summary>Roster narrowed by the search box and division chips, most over first.</summary>
+    private IEnumerable<Wrestler> FilteredRoster() =>
+        State.Roster
+            .Where(w => castDivision is null || w.Division == castDivision)
+            .Where(w => string.IsNullOrWhiteSpace(castQuery)
+                     || (w.RingName?.Contains(castQuery, StringComparison.OrdinalIgnoreCase) ?? false)
+                     || (w.RealName?.Contains(castQuery, StringComparison.OrdinalIgnoreCase) ?? false))
+            .OrderByDescending(w => w.Popularity);
+    private readonly List<Wrestler> extras = new();
+    private string dialogue = "";
+
+    private string customName = "";
+    private SegmentType customType = SegmentType.Promo;
+    private SegmentLocation customLocation = SegmentLocation.Ring;
+
+    private SegmentModel? segment;
+    private bool showAddAction;
+    private List<string> errors = new();
+
+    private bool CanAdvance => step switch
+    {
+        0 => template is not null || isCustom,
+        1 => isCustom
+                ? cast.Count > 0
+                : template is not null && Enumerable.Range(0, template.ParticipantRoles.Count).All(i => RoleAt(i) is not null),
+        _ => true
+    };
+
+    // ── Navigation ───────────────────────────────────────────────────────
+
+    private void Next()
+    {
+        if (step == 1) BuildSegment();
+        step++;
+    }
+
+    private async Task Back()
+    {
+        if (step == 0)
+        {
+            await OnCancel.InvokeAsync();
+            return;
+        }
+        step--;
+    }
+
+    private void PickTemplate(SegmentTemplate t)
+    {
+        template = t;
+        isCustom = false;
+        cast.Clear();
+        extras.Clear();
+    }
+
+    private void PickCustom()
+    {
+        isCustom = true;
+        template = null;
+        cast.Clear();
+        extras.Clear();
+    }
+
+    // ── Casting ──────────────────────────────────────────────────────────
+
+    private Wrestler? RoleAt(int index) => index < cast.Count ? cast[index] : null;
+
+    private bool IsAvailableFor(Wrestler w, int roleIndex)
+    {
+        for (int i = 0; i < cast.Count; i++)
+            if (i != roleIndex && cast[i] == w) return false;
+        return !extras.Contains(w);
+    }
+
+    private void AssignRole(int index, Wrestler w)
+    {
+        while (cast.Count <= index) cast.Add(null!);
+        cast[index] = w;
+    }
+
+    private void ToggleExtra(Wrestler w)
+    {
+        if (!extras.Remove(w)) extras.Add(w);
+    }
+
+    private void ToggleCast(Wrestler w)
+    {
+        if (!cast.Remove(w)) cast.Add(w);
+    }
+
+    private void BuildSegment()
+    {
+        if (isCustom)
+        {
+            segment = new SegmentModel(
+                string.IsNullOrWhiteSpace(customName) ? $"{customType} Segment" : customName,
+                customType, customLocation, isScripted: true);
+
+            foreach (var w in cast) segment.AddParticipant(w);
+        }
+        else if (template is not null)
+        {
+            var roster = cast.Take(template.ParticipantRoles.Count).Concat(extras).ToList();
+            segment = template.Create(roster, dialogue);
+        }
+    }
+
+    // ── Action editing ───────────────────────────────────────────────────
+
+    private void AddAction(SegmentActionTemplate t)
+    {
+        if (segment is null) return;
+
+        var performer = segment.Participants.First();
+        Wrestler? target = t.RequiresTarget
+            ? segment.Participants.FirstOrDefault(x => x != performer)
+            : null;
+
+        segment.AddAction(t.ToAction(performer, target));
+
+        if (t.HistoryTag.HasValue && !segment.HistoryTags.Contains(t.HistoryTag.Value))
+            segment.HistoryTags.Add(t.HistoryTag.Value);
+
+        showAddAction = false;
+    }
+
+    private void SetPerformer(SegmentAction action, string? realName)
+    {
+        var w = segment?.Participants.FirstOrDefault(x => x.RealName == realName);
+        if (w is null) return;
+
+        action.Performer = w;
+        if (action.Target == w) action.Target = null;
+    }
+
+    private void SetTarget(SegmentAction action, string? realName)
+    {
+        action.Target = segment?.Participants.FirstOrDefault(x => x.RealName == realName);
+    }
+
+    private static void SetDialogue(SegmentAction action, string? value) =>
+        action.Dialogue = value ?? "";
+
+    private void MoveAction(int index, int direction)
+    {
+        if (segment is null) return;
+        int to = index + direction;
+        if (to < 0 || to >= segment.Actions.Count) return;
+        (segment.Actions[index], segment.Actions[to]) = (segment.Actions[to], segment.Actions[index]);
+    }
+
+    // ── Finish ───────────────────────────────────────────────────────────
+
+    private async Task Finish()
+    {
+        if (segment is null) return;
+
+        errors = segment.Validate();
+        if (errors.Count > 0) return;
+
+        await OnDone.InvokeAsync(segment);
+    }
+
+    /// <summary>Mirrors SegmentSimulator.LocationModifier so the UI can show the trade-off.</summary>
+    internal static double LocationMultiplier(SegmentLocation location) => location switch
+    {
+        SegmentLocation.Ring       => 1.00,
+        SegmentLocation.Crowd      => 1.10,
+        SegmentLocation.ParkingLot => 0.90,
+        SegmentLocation.Backstage  => 0.85,
+        SegmentLocation.GMOffice   => 0.80,
+        _                          => 1.00
+    };
+}

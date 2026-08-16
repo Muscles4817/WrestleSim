@@ -1,0 +1,32 @@
+<div class="meter @VariantClass">
+    <div class="meter__top">
+        <span class="meter__label">@Label</span>
+        <span class="meter__value">@Display</span>
+    </div>
+    <div class="meter__track"
+         role="progressbar"
+         aria-label="@Label"
+         aria-valuenow="@((int)Math.Round(Value))"
+         aria-valuemin="0"
+         aria-valuemax="@((int)Math.Round(Max))">
+        <div class="meter__fill" style="width:@(Percent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%"></div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+    [Parameter, EditorRequired] public double Value { get; set; }
+    [Parameter] public double Max { get; set; } = 100;
+
+    /// <summary>Optional override for the right-hand readout.</summary>
+    [Parameter] public string? ValueText { get; set; }
+
+    /// <summary>"gold" (default), "cyan", "face" or "heel".</summary>
+    [Parameter] public string Variant { get; set; } = "gold";
+
+    private double Percent => Max <= 0 ? 0 : Math.Clamp(Value / Max * 100, 0, 100);
+
+    private string Display => ValueText ?? $"{Value:F0} / {Max:F0}";
+
+    private string VariantClass => Variant == "gold" ? "" : $"meter--{Variant}";
+}
