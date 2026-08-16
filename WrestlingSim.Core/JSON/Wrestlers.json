@@ -1,6 +1,7 @@
 [
   {
     "RealName": "Demi Bennett",
+    "Division": "Womens",
     "Popularity": 95,
     "Charisma": 4.5,
     "Style": "Powerhouse",
@@ -16,602 +17,263 @@
       "Freshness": 0.9,
       "GimmickTraits": [ "Intimidating", "Dominant" ],
       "AppealRatings": [
-        {
-          "Group": "Hardcore",
-          "AppealScore": 0.95
-        },
-        {
-          "Group": "Casual",
-          "AppealScore": 0.8
-        }
+        { "Group": "Hardcore", "AppealScore": 0.95 },
+        { "Group": "Casual", "AppealScore": 0.8 }
       ],
       "PreviousNames": [ "Demi" ]
     },
-    "RingSkills": {
-      "HighFlyer": 2.0,
-      "Grappler": 3.5,
-      "Powerhouse": 4.8,
-      "Technical": 3.5,
-      "Brawler": 4.2,
-      "Striker": 4.0
-    },
-    "Physical": {
-      "Strength": 90,
-      "Speed": 70,
-      "Agility": 65,
-      "Stamina": 80,
-      "Size": 4
-    },
-    "Mental": {
-      "Psychology": 85,
-      "Selling": 78,
-      "RingIQ": 82,
-      "Toughness": 88
-    },
+    "RingSkills": { "HighFlyer": 2.0, "Grappler": 3.5, "Powerhouse": 4.8, "Technical": 3.5, "Brawler": 4.2, "Striker": 4.0 },
+    "Physical": { "Strength": 90, "Speed": 70, "Agility": 65, "Stamina": 80, "Size": 4 },
+    "Mental": { "Psychology": 85, "Selling": 78, "RingIQ": 82, "Toughness": 88 },
     "Moveset": [
-      {
-        "Name": "Powerbomb",
-        "Types": [ "Slam" ],
-        "Risk": "Medium",
-        "Impact": "VeryHard",
-        "RequiresWeapons": false
-      },
-      {
-        "Name": "Clothesline",
-        "Types": [ "Strike" ],
-        "Risk": "VeryEasy",
-        "Impact": "Medium",
-        "RequiresWeapons": false
-      }
+      { "Name": "Powerbomb", "Types": [ "Slam" ], "Risk": "Medium", "Impact": "VeryHard", "RequiresWeapons": false },
+      { "Name": "Clothesline", "Types": [ "Strike" ], "Risk": "VeryEasy", "Impact": "Medium", "RequiresWeapons": false }
     ],
     "Signature": [
-      {
-        "Name": "Riptide",
-        "Move": {
-          "Name": "Pump Handle Slam",
-          "Types": [ "Slam" ],
-          "Risk": "Medium",
-          "Impact": "Hard"
-        },
-        "IsFinisher": true,
-        "ImpactModifier": "Hard",
-        "Overness": 95,
-        "TagExclusive": false
-      },
-      {
-        "Name": "Standing Inverted Texas Cloverleaf",
-        "Move": {
-          "Name": "Prism Trap",
-          "Types": [ "Submission", "Technical" ],
-          "Risk": "Easy",
-          "Impact": "Easy"
-        },
-        "IsFinisher": true,
-        "ImpactModifier": "Hard",
-        "Overness": 85,
-        "TagExclusive": false
-      }
-    ]
-  },
-  {
-    "RealName": "Bianca Blair",
-    "Popularity": 90,
-    "Charisma": 4.2,
-    "Style": "Powerhouse",
-    "PreviousGimmicks": [],
-    "Gimmick": {
-      "Name": "Bianca Belair",
-      "Type": "Showman",
-      "PersonaDescriptor": "The EST",
-      "Tone": "Inspirational",
-      "NaturalAlignment": "Face",
-      "PopularityModifier": 8,
-      "Durability": "LongTerm",
-      "Freshness": 0.95,
-      "GimmickTraits": [ "Flashy", "Strong", "Athletic" ],
-      "AppealRatings": [
-        {
-          "Group": "Hardcore",
-          "AppealScore": 0.88
-        },
-        {
-          "Group": "Casual",
-          "AppealScore": 0.95
-        }
-      ],
-      "PreviousNames": []
-    },
-    "RingSkills": {
-      "HighFlyer": 3.5,
-      "Grappler": 2.8,
-      "Powerhouse": 4.5,
-      "Technical": 3.0,
-      "Brawler": 3.2,
-      "Striker": 3.5
-    },
-    "Physical": {
-      "Strength": 95,
-      "Speed": 90,
-      "Agility": 85,
-      "Stamina": 88,
-      "Size": 4
-    },
-    "Mental": {
-      "Psychology": 80,
-      "Selling": 75,
-      "RingIQ": 78,
-      "Toughness": 90
-    },
-    "Moveset": [
-      {
-        "Name": "Scoop Slam",
-        "Types": [ "Slam" ],
-        "Risk": "Medium",
-        "Impact": "Hard"
-      },
-      {
-        "Name": "Suplex",
-        "Types": [ "Throw" ],
-        "Risk": "Easy",
-        "Impact": "Medium"
-      }
-    ],
-    "Signature": [
-      {
-        "Name": "KOD",
-        "Move": {
-          "Name": "Kiss of Death",
-          "Types": [ "Slam" ],
-          "Risk": "Medium",
-          "Impact": "Hard"
-        },
-        "IsFinisher": true,
-        "ImpactModifier": "Hard",
-        "Overness": 95,
-        "TagExclusive": false
-      }
-    ]
-  },
-  {
-    "RealName": "Ashley Fliehr",
-    "Popularity": 92,
-    "Charisma": 4.3,
-    "Style": "Technical",
-    "PreviousGimmicks": [],
-    "Gimmick": {
-      "Name": "Charlotte Flair",
-      "Type": "Showman",
-      "PersonaDescriptor": "The Queen",
-      "Tone": "Arrogant",
-      "NaturalAlignment": "Heel",
-      "PopularityModifier": 10,
-      "Durability": "LongTerm",
-      "Freshness": 0.9,
-      "GimmickTraits": [ "Elegant", "Dominant", "Technical Specialist" ],
-      "AppealRatings": [
-        {
-          "Group": "Hardcore",
-          "AppealScore": 0.87
-        },
-        {
-          "Group": "Casual",
-          "AppealScore": 0.92
-        }
-      ],
-      "PreviousNames": []
-    },
-    "RingSkills": {
-      "HighFlyer": 3.5,
-      "Grappler": 4.0,
-      "Powerhouse": 3.8,
-      "Technical": 4.6,
-      "Brawler": 3.2,
-      "Striker": 3.5
-    },
-    "Physical": {
-      "Strength": 85,
-      "Speed": 75,
-      "Agility": 80,
-      "Stamina": 85,
-      "Size": 4
-    },
-    "Mental": {
-      "Psychology": 88,
-      "Selling": 82,
-      "RingIQ": 84,
-      "Toughness": 86
-    },
-    "Moveset": [
-      {
-        "Name": "Chop Block",
-        "Types": [ "Strike" ],
-        "Risk": "Easy",
-        "Impact": "Medium"
-      }
-    ],
-    "Signature": [
-      {
-        "Name": "Figure Eight",
-        "Move": {
-          "Name": "Figure Four Bridge",
-          "Types": [ "Technical", "Submission" ],
-          "Risk": "Easy",
-          "Impact": "Hard"
-        },
-        "IsFinisher": true,
-        "ImpactModifier": "Hard",
-        "Overness": 95,
-        "TagExclusive": false
-      }
-    ]
-  },
-  {
-    "RealName": "Kanako Urai",
-    "Popularity": 85,
-    "Charisma": 3.8,
-    "Style": "Striker",
-    "PreviousGimmicks": [],
-    "Gimmick": {
-      "Name": "Asuka",
-      "Type": "DarkPersona",
-      "PersonaDescriptor": "The Empress of Tomorrow",
-      "Tone": "Cryptic",
-      "NaturalAlignment": "Face",
-      "PopularityModifier": 8,
-      "Durability": "LongTerm",
-      "Freshness": 0.9,
-      "GimmickTraits": [ "Killer Striker", "Submission Specialist" ],
-      "AppealRatings": [
-        {
-          "Group": "Hardcore",
-          "AppealScore": 0.9
-        },
-        {
-          "Group": "Casual",
-          "AppealScore": 0.85
-        }
-      ],
-      "PreviousNames": [ "Kana" ]
-    },
-    "RingSkills": {
-      "HighFlyer": 2.5,
-      "Grappler": 3.5,
-      "Powerhouse": 3.0,
-      "Technical": 4.2,
-      "Brawler": 4.0,
-      "Striker": 4.8
-    },
-    "Physical": {
-      "Strength": 80,
-      "Speed": 80,
-      "Agility": 82,
-      "Stamina": 83,
-      "Size": 3
-    },
-    "Mental": {
-      "Psychology": 90,
-      "Selling": 88,
-      "RingIQ": 86,
-      "Toughness": 89
-    },
-    "Moveset": [
-      {
-        "Name": "Hip Attack",
-        "Types": [ "Strike" ],
-        "Risk": "Easy",
-        "Impact": "Medium"
-      }
-    ],
-    "Signature": [
-      {
-        "Name": "Asuka Lock",
-        "Move": {
-          "Name": "Crossface Chickenwing",
-          "Types": [ "Submission", "Technical" ],
-          "Risk": "Medium",
-          "Impact": "Hard"
-        },
-        "IsFinisher": true,
-        "ImpactModifier": "Hard",
-        "Overness": 90,
-        "TagExclusive": false
-      }
-    ]
-  },
-  {
-    "RealName": "Pamela Rose Martinez",
-    "Popularity": 83,
-    "Charisma": 4.1,
-    "Style": "Technical",
-    "PreviousGimmicks": [],
-    "Gimmick": {
-      "Name": "Bayley",
-      "Type": "Gimmickless",
-      "PersonaDescriptor": "Role Model",
-      "Tone": "Arrogant",
-      "NaturalAlignment": "Heel",
-      "PopularityModifier": 7,
-      "Durability": "MediumTerm",
-      "Freshness": 0.85,
-      "GimmickTraits": [ "Manipulator", "Leader" ],
-      "AppealRatings": [
-        {
-          "Group": "Hardcore",
-          "AppealScore": 0.85
-        },
-        {
-          "Group": "Casual",
-          "AppealScore": 0.88
-        }
-      ],
-      "PreviousNames": []
-    },
-    "RingSkills": {
-      "HighFlyer": 2.8,
-      "Grappler": 3.5,
-      "Powerhouse": 2.5,
-      "Technical": 4.3,
-      "Brawler": 3.0,
-      "Striker": 2.8
-    },
-    "Physical": {
-      "Strength": 75,
-      "Speed": 70,
-      "Agility": 78,
-      "Stamina": 80,
-      "Size": 3
-    },
-    "Mental": {
-      "Psychology": 85,
-      "Selling": 83,
-      "RingIQ": 87,
-      "Toughness": 84
-    },
-    "Moveset": [
-      {
-        "Name": "Bayley-to-Belly",
-        "Types": [ "Throw" ],
-        "Risk": "Easy",
-        "Impact": "Medium"
-      }
-    ],
-    "Signature": [
-      {
-        "Name": "Rose Plant",
-        "Move": {
-          "Name": "Faceplant DDT",
-          "Types": [ "Technical" ],
-          "Risk": "Medium",
-          "Impact": "Hard"
-        },
-        "IsFinisher": true,
-        "ImpactModifier": "Hard",
-        "Overness": 90,
-        "TagExclusive": false
-      }
+      { "Name": "Riptide", "Move": { "Name": "Pump Handle Slam", "Types": [ "Slam" ], "Risk": "Medium", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 95, "TagExclusive": false }
     ]
   },
   {
     "RealName": "Rebecca Quin",
+    "Division": "Womens",
     "Popularity": 95,
     "Charisma": 4.7,
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Becky Lynch",
-      "Type": "AntiHero",
+      "Type": "Superstar",
       "PersonaDescriptor": "The Man",
-      "Tone": "SelfRighteous",
+      "Tone": "Arrogant",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 10,
+      "PopularityModifier": 12,
       "Durability": "LongTerm",
-      "Freshness": 0.95,
-      "GimmickTraits": [ "Fiery", "Loud", "Determined" ],
+      "Freshness": 0.88,
+      "GimmickTraits": [ "Defiant", "Quotable" ],
       "AppealRatings": [
-        {
-          "Group": "Hardcore",
-          "AppealScore": 0.95
-        },
-        {
-          "Group": "Casual",
-          "AppealScore": 0.96
-        }
+        { "Group": "Hardcore", "AppealScore": 0.95 },
+        { "Group": "Casual", "AppealScore": 0.96 }
+      ],
+      "PreviousNames": [ "Rebecca Knox" ]
+    },
+    "RingSkills": { "HighFlyer": 2.8, "Grappler": 3.8, "Powerhouse": 2.6, "Technical": 3.9, "Brawler": 4.2, "Striker": 4.0 },
+    "Physical": { "Strength": 72, "Speed": 78, "Agility": 76, "Stamina": 85, "Size": 3 },
+    "Mental": { "Psychology": 90, "Selling": 87, "RingIQ": 88, "Toughness": 90 },
+    "Moveset": [
+      { "Name": "Exploder Suplex", "Types": [ "Throw" ], "Risk": "Medium", "Impact": "Hard", "RequiresWeapons": false },
+      { "Name": "Bexploder", "Types": [ "Throw" ], "Risk": "Medium", "Impact": "Hard", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Dis-Arm-Her", "Move": { "Name": "Armbar", "Types": [ "Submission" ], "Risk": "Easy", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 94, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Ashley Fliehr",
+    "Division": "Womens",
+    "Popularity": 92,
+    "Charisma": 4.3,
+    "Style": "Technical",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Charlotte Flair",
+      "Type": "Egotist",
+      "PersonaDescriptor": "The Queen",
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 9,
+      "Durability": "LongTerm",
+      "Freshness": 0.8,
+      "GimmickTraits": [ "Legacy", "Dominant" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.87 },
+        { "Group": "Casual", "AppealScore": 0.92 }
       ],
       "PreviousNames": []
     },
-    "RingSkills": {
-      "HighFlyer": 2.5,
-      "Grappler": 3.5,
-      "Powerhouse": 3.2,
-      "Technical": 4.0,
-      "Brawler": 4.6,
-      "Striker": 3.8
-    },
-    "Physical": {
-      "Strength": 80,
-      "Speed": 78,
-      "Agility": 76,
-      "Stamina": 85,
-      "Size": 3
-    },
-    "Mental": {
-      "Psychology": 90,
-      "Selling": 87,
-      "RingIQ": 88,
-      "Toughness": 90
-    },
+    "RingSkills": { "HighFlyer": 3.2, "Grappler": 4.0, "Powerhouse": 3.5, "Technical": 4.6, "Brawler": 3.0, "Striker": 3.2 },
+    "Physical": { "Strength": 78, "Speed": 80, "Agility": 82, "Stamina": 85, "Size": 3 },
+    "Mental": { "Psychology": 88, "Selling": 82, "RingIQ": 84, "Toughness": 86 },
     "Moveset": [
-      {
-        "Name": "Exploder Suplex",
-        "Types": [ "Throw" ],
-        "Risk": "Medium",
-        "Impact": "Medium"
-      }
+      { "Name": "Chop Block", "Types": [ "Strike" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Natural Selection", "Types": [ "Slam" ], "Risk": "Medium", "Impact": "Hard", "RequiresWeapons": false }
     ],
     "Signature": [
-      {
-        "Name": "Dis-Arm-Her",
-        "Move": {
-          "Name": "Armbar",
-          "Types": [ "Submission", "Technical" ],
-          "Risk": "Easy",
-          "Impact": "Hard"
-        },
-        "IsFinisher": true,
-        "ImpactModifier": "Hard",
-        "Overness": 98,
-        "TagExclusive": false
-      }
+      { "Name": "Figure Eight", "Move": { "Name": "Figure Four Bridge", "Types": [ "Submission" ], "Risk": "Medium", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "VeryHard", "Overness": 92, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Bianca Blair",
+    "Division": "Womens",
+    "Popularity": 90,
+    "Charisma": 4.2,
+    "Style": "Powerhouse",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Bianca Belair",
+      "Type": "Superstar",
+      "PersonaDescriptor": "The EST",
+      "Tone": "Inspirational",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 8,
+      "Durability": "LongTerm",
+      "Freshness": 0.85,
+      "GimmickTraits": [ "Athletic", "Confident" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.88 },
+        { "Group": "Casual", "AppealScore": 0.95 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 3.4, "Grappler": 3.2, "Powerhouse": 4.5, "Technical": 3.0, "Brawler": 3.4, "Striker": 3.2 },
+    "Physical": { "Strength": 88, "Speed": 90, "Agility": 88, "Stamina": 88, "Size": 3 },
+    "Mental": { "Psychology": 80, "Selling": 75, "RingIQ": 78, "Toughness": 90 },
+    "Moveset": [
+      { "Name": "Scoop Slam", "Types": [ "Slam" ], "Risk": "VeryEasy", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Suplex", "Types": [ "Throw" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "KOD", "Move": { "Name": "Kiss of Death", "Types": [ "Slam" ], "Risk": "Medium", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "VeryHard", "Overness": 90, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Kanako Urai",
+    "Division": "Womens",
+    "Popularity": 85,
+    "Charisma": 3.8,
+    "Style": "Striker",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Asuka",
+      "Type": "Cryptic",
+      "PersonaDescriptor": "The Empress of Tomorrow",
+      "Tone": "Chaotic",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 7,
+      "Durability": "LongTerm",
+      "Freshness": 0.82,
+      "GimmickTraits": [ "Unpredictable", "Feared" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.9 },
+        { "Group": "Casual", "AppealScore": 0.85 }
+      ],
+      "PreviousNames": [ "Kana" ]
+    },
+    "RingSkills": { "HighFlyer": 3.5, "Grappler": 4.2, "Powerhouse": 2.5, "Technical": 4.0, "Brawler": 3.0, "Striker": 4.7 },
+    "Physical": { "Strength": 72, "Speed": 82, "Agility": 84, "Stamina": 83, "Size": 2 },
+    "Mental": { "Psychology": 90, "Selling": 88, "RingIQ": 86, "Toughness": 89 },
+    "Moveset": [
+      { "Name": "Hip Attack", "Types": [ "Strike" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Roundhouse Kick", "Types": [ "Strike" ], "Risk": "Easy", "Impact": "Hard", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Asuka Lock", "Move": { "Name": "Crossface Chickenwing", "Types": [ "Submission" ], "Risk": "Medium", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "VeryHard", "Overness": 88, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Pamela Rose Martinez",
+    "Division": "Womens",
+    "Popularity": 83,
+    "Charisma": 4.1,
+    "Style": "Technical",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Bayley",
+      "Type": "Rebel",
+      "PersonaDescriptor": "Role Model",
+      "Tone": "SelfRighteous",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 6,
+      "Durability": "MediumTerm",
+      "Freshness": 0.78,
+      "GimmickTraits": [ "Manipulative", "Calculating" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.85 },
+        { "Group": "Casual", "AppealScore": 0.88 }
+      ],
+      "PreviousNames": [ "Davina Rose" ]
+    },
+    "RingSkills": { "HighFlyer": 2.6, "Grappler": 3.4, "Powerhouse": 2.4, "Technical": 4.0, "Brawler": 3.2, "Striker": 3.0 },
+    "Physical": { "Strength": 65, "Speed": 72, "Agility": 74, "Stamina": 80, "Size": 2 },
+    "Mental": { "Psychology": 85, "Selling": 83, "RingIQ": 87, "Toughness": 84 },
+    "Moveset": [
+      { "Name": "Bayley-to-Belly", "Types": [ "Throw" ], "Risk": "Medium", "Impact": "Hard", "RequiresWeapons": false },
+      { "Name": "Elbow Drop", "Types": [ "Aerial" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Rose Plant", "Move": { "Name": "Faceplant DDT", "Types": [ "Slam" ], "Risk": "Medium", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 84, "TagExclusive": false }
     ]
   },
   {
     "RealName": "Masami Odate",
+    "Division": "Womens",
     "Popularity": 80,
     "Charisma": 3.5,
     "Style": "HighFlyer",
-    "PreviousGimmicks": [ ],
+    "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Iyo Sky",
       "Type": "Daredevil",
       "PersonaDescriptor": "The Genius of the Sky",
-      "Tone": "Humorous",
-      "NaturalAlignment": "Tweener",
-      "PopularityModifier": 7,
+      "Tone": "Serious",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 5,
       "Durability": "MediumTerm",
-      "Freshness": 0.9,
-      "GimmickTraits": [ "Risk-Taker", "Charismatic" ],
+      "Freshness": 0.86,
+      "GimmickTraits": [ "Fearless", "Innovative" ],
       "AppealRatings": [
-        {
-          "Group": "Hardcore",
-          "AppealScore": 0.9
-        },
-        {
-          "Group": "Casual",
-          "AppealScore": 0.84
-        }
+        { "Group": "Hardcore", "AppealScore": 0.9 },
+        { "Group": "Casual", "AppealScore": 0.84 }
       ],
-      "PreviousNames": [ "Io Shirai", "Hitokiri" ]
+      "PreviousNames": [ "Io Shirai" ]
     },
-    "RingSkills": {
-      "HighFlyer": 4.9,
-      "Grappler": 3.0,
-      "Powerhouse": 2.5,
-      "Technical": 4.0,
-      "Brawler": 3.0,
-      "Striker": 3.5
-    },
-    "Physical": {
-      "Strength": 70,
-      "Speed": 92,
-      "Agility": 95,
-      "Stamina": 85,
-      "Size": 2
-    },
-    "Mental": {
-      "Psychology": 86,
-      "Selling": 85,
-      "RingIQ": 84,
-      "Toughness": 82
-    },
+    "RingSkills": { "HighFlyer": 4.9, "Grappler": 3.4, "Powerhouse": 2.2, "Technical": 3.8, "Brawler": 2.8, "Striker": 3.6 },
+    "Physical": { "Strength": 62, "Speed": 88, "Agility": 94, "Stamina": 85, "Size": 2 },
+    "Mental": { "Psychology": 86, "Selling": 85, "RingIQ": 84, "Toughness": 82 },
     "Moveset": [
-      {
-        "Name": "Moonsault",
-        "Types": [ "Aerial" ],
-        "Risk": "Hard",
-        "Impact": "Hard"
-      }
+      { "Name": "Moonsault", "Types": [ "Aerial" ], "Risk": "Hard", "Impact": "Hard", "RequiresWeapons": false },
+      { "Name": "Missile Dropkick", "Types": [ "Aerial" ], "Risk": "Medium", "Impact": "Medium", "RequiresWeapons": false }
     ],
     "Signature": [
-      {
-        "Name": "Over the Moonsault",
-        "Move": {
-          "Name": "Top Rope Moonsault",
-          "Types": [ "Aerial" ],
-          "Risk": "Hard",
-          "Impact": "Hard"
-        },
-        "IsFinisher": true,
-        "ImpactModifier": "Hard",
-        "Overness": 95,
-        "TagExclusive": false
-      }
+      { "Name": "Over the Moonsault", "Move": { "Name": "Top Rope Moonsault", "Types": [ "Aerial" ], "Risk": "VeryHard", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "VeryHard", "Overness": 86, "TagExclusive": false }
     ]
   },
   {
     "RealName": "Gionna Daddio",
+    "Division": "Womens",
     "Popularity": 78,
     "Charisma": 4.2,
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Liv Morgan",
-      "Type": "Underdog",
-      "PersonaDescriptor": "Relentless Dreamer",
+      "Type": "DarkPersona",
+      "PersonaDescriptor": "Revenge Tour",
       "Tone": "Chaotic",
-      "NaturalAlignment": "Face",
-      "PopularityModifier": 6,
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 7,
       "Durability": "MediumTerm",
-      "Freshness": 0.88,
-      "GimmickTraits": [ "Relentless", "Wildcard" ],
+      "Freshness": 0.9,
+      "GimmickTraits": [ "Obsessive", "Charismatic" ],
       "AppealRatings": [
-        {
-          "Group": "Hardcore",
-          "AppealScore": 0.86
-        },
-        {
-          "Group": "Casual",
-          "AppealScore": 0.9
-        }
+        { "Group": "Hardcore", "AppealScore": 0.86 },
+        { "Group": "Casual", "AppealScore": 0.9 }
       ],
       "PreviousNames": []
     },
-    "RingSkills": {
-      "HighFlyer": 3.8,
-      "Grappler": 2.2,
-      "Powerhouse": 2.0,
-      "Technical": 3.0,
-      "Brawler": 3.2,
-      "Striker": 2.8
-    },
-    "Physical": {
-      "Strength": 65,
-      "Speed": 82,
-      "Agility": 80,
-      "Stamina": 78,
-      "Size": 2
-    },
-    "Mental": {
-      "Psychology": 75,
-      "Selling": 80,
-      "RingIQ": 76,
-      "Toughness": 77
-    },
+    "RingSkills": { "HighFlyer": 3.5, "Grappler": 2.6, "Powerhouse": 2.2, "Technical": 2.5, "Brawler": 3.0, "Striker": 2.8 },
+    "Physical": { "Strength": 60, "Speed": 78, "Agility": 80, "Stamina": 78, "Size": 2 },
+    "Mental": { "Psychology": 75, "Selling": 80, "RingIQ": 76, "Toughness": 77 },
     "Moveset": [
-      {
-        "Name": "Codebreaker",
-        "Types": [ "Aerial" ],
-        "Risk": "Medium",
-        "Impact": "Medium"
-      }
+      { "Name": "Codebreaker", "Types": [ "Strike" ], "Risk": "Medium", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Enziguri", "Types": [ "Strike" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false }
     ],
     "Signature": [
-      {
-        "Name": "Oblivion",
-        "Move": {
-          "Name": "Springboard Flatliner",
-          "Types": [ "Aerial" ],
-          "Risk": "Medium",
-          "Impact": "Hard"
-        },
-        "IsFinisher": true,
-        "ImpactModifier": "Hard",
-        "Overness": 92,
-        "TagExclusive": false
-      }
+      { "Name": "Oblivion", "Move": { "Name": "Springboard Flatliner", "Types": [ "Aerial" ], "Risk": "Hard", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 80, "TagExclusive": false }
     ]
   },
   {
     "RealName": "Shayna Baszler",
+    "Division": "Womens",
     "Popularity": 70,
     "Charisma": 2.5,
     "Style": "Grappler",
@@ -627,60 +289,735 @@
       "Freshness": 0.85,
       "GimmickTraits": [ "MMA Background", "Domineering" ],
       "AppealRatings": [
-        {
-          "Group": "Hardcore",
-          "AppealScore": 0.88
-        },
-        {
-          "Group": "Casual",
-          "AppealScore": 0.7
-        }
+        { "Group": "Hardcore", "AppealScore": 0.88 },
+        { "Group": "Casual", "AppealScore": 0.7 }
       ],
       "PreviousNames": []
     },
-    "RingSkills": {
-      "HighFlyer": 1.5,
-      "Grappler": 4.7,
-      "Powerhouse": 4.0,
-      "Technical": 4.2,
-      "Brawler": 4.0,
-      "Striker": 4.5
-    },
-    "Physical": {
-      "Strength": 88,
-      "Speed": 70,
-      "Agility": 72,
-      "Stamina": 82,
-      "Size": 4
-    },
-    "Mental": {
-      "Psychology": 84,
-      "Selling": 75,
-      "RingIQ": 83,
-      "Toughness": 92
-    },
+    "RingSkills": { "HighFlyer": 1.5, "Grappler": 4.7, "Powerhouse": 4.0, "Technical": 4.2, "Brawler": 4.0, "Striker": 4.5 },
+    "Physical": { "Strength": 88, "Speed": 70, "Agility": 72, "Stamina": 82, "Size": 4 },
+    "Mental": { "Psychology": 84, "Selling": 75, "RingIQ": 83, "Toughness": 92 },
     "Moveset": [
-      {
-        "Name": "Knee Strike",
-        "Types": [ "Strike" ],
-        "Risk": "Easy",
-        "Impact": "Medium"
-      }
+      { "Name": "Gutwrench Suplex", "Types": [ "Throw" ], "Risk": "Medium", "Impact": "Hard", "RequiresWeapons": false },
+      { "Name": "Knee Strike", "Types": [ "Strike" ], "Risk": "Easy", "Impact": "Hard", "RequiresWeapons": false }
     ],
     "Signature": [
-      {
-        "Name": "Kirifuda Clutch",
-        "Move": {
-          "Name": "Rear Naked Choke",
-          "Types": [ "Submission" ],
-          "Risk": "Easy",
-          "Impact": "Hard"
-        },
-        "IsFinisher": true,
-        "ImpactModifier": "Hard",
-        "Overness": 88,
-        "TagExclusive": false
-      }
+      { "Name": "Kirifuda Clutch", "Move": { "Name": "Rear Naked Choke", "Types": [ "Submission" ], "Risk": "Medium", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "VeryHard", "Overness": 76, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Victoria Gonzalez",
+    "Division": "Womens",
+    "Popularity": 66,
+    "Charisma": 3.2,
+    "Style": "Powerhouse",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Raquel Rodriguez",
+      "Type": "Monster",
+      "PersonaDescriptor": "Big Mami Cool",
+      "Tone": "Serious",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 4,
+      "Durability": "MediumTerm",
+      "Freshness": 0.8,
+      "GimmickTraits": [ "Imposing", "Protective" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.7 },
+        { "Group": "Casual", "AppealScore": 0.68 }
+      ],
+      "PreviousNames": [ "Reina Gonzalez" ]
+    },
+    "RingSkills": { "HighFlyer": 1.8, "Grappler": 3.0, "Powerhouse": 4.7, "Technical": 2.6, "Brawler": 3.6, "Striker": 3.2 },
+    "Physical": { "Strength": 94, "Speed": 58, "Agility": 55, "Stamina": 78, "Size": 5 },
+    "Mental": { "Psychology": 74, "Selling": 70, "RingIQ": 72, "Toughness": 88 },
+    "Moveset": [
+      { "Name": "Fallaway Slam", "Types": [ "Throw" ], "Risk": "Easy", "Impact": "Hard", "RequiresWeapons": false },
+      { "Name": "Big Boot", "Types": [ "Strike" ], "Risk": "VeryEasy", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Tejana Bomb", "Move": { "Name": "Crucifix Powerbomb", "Types": [ "Slam" ], "Risk": "Medium", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "VeryHard", "Overness": 70, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Thea Trinidad",
+    "Division": "Womens",
+    "Popularity": 58,
+    "Charisma": 4.0,
+    "Style": "HighFlyer",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Zelina Vega",
+      "Type": "Showman",
+      "PersonaDescriptor": "Queen of the Ring",
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 5,
+      "Durability": "MediumTerm",
+      "Freshness": 0.82,
+      "GimmickTraits": [ "Quick-Witted", "Theatrical" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.74 },
+        { "Group": "Casual", "AppealScore": 0.78 }
+      ],
+      "PreviousNames": [ "Rosita" ]
+    },
+    "RingSkills": { "HighFlyer": 4.0, "Grappler": 2.8, "Powerhouse": 1.6, "Technical": 2.8, "Brawler": 2.4, "Striker": 3.0 },
+    "Physical": { "Strength": 48, "Speed": 84, "Agility": 88, "Stamina": 76, "Size": 1 },
+    "Mental": { "Psychology": 78, "Selling": 82, "RingIQ": 80, "Toughness": 70 },
+    "Moveset": [
+      { "Name": "Hurricanrana", "Types": [ "Throw" ], "Risk": "Medium", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Meteora", "Types": [ "Aerial" ], "Risk": "Medium", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Code Red", "Move": { "Name": "Sunset Flip Powerbomb", "Types": [ "Aerial" ], "Risk": "Hard", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 62, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Kimberly Benson",
+    "Division": "Womens",
+    "Popularity": 50,
+    "Charisma": 3.4,
+    "Style": "Powerhouse",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Piper Niven",
+      "Type": "Monster",
+      "PersonaDescriptor": "Scottish Wrecking Ball",
+      "Tone": "Violent",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 3,
+      "Durability": "MediumTerm",
+      "Freshness": 0.72,
+      "GimmickTraits": [ "Bruising", "Unmovable" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.66 },
+        { "Group": "Casual", "AppealScore": 0.6 }
+      ],
+      "PreviousNames": [ "Doudrop", "Viper" ]
+    },
+    "RingSkills": { "HighFlyer": 2.2, "Grappler": 2.8, "Powerhouse": 4.4, "Technical": 2.4, "Brawler": 3.8, "Striker": 2.8 },
+    "Physical": { "Strength": 90, "Speed": 52, "Agility": 50, "Stamina": 72, "Size": 5 },
+    "Mental": { "Psychology": 72, "Selling": 74, "RingIQ": 70, "Toughness": 86 },
+    "Moveset": [
+      { "Name": "Body Avalanche", "Types": [ "Strike" ], "Risk": "VeryEasy", "Impact": "Hard", "RequiresWeapons": false },
+      { "Name": "Cannonball", "Types": [ "Strike" ], "Risk": "Easy", "Impact": "Hard", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Michinoku Driver", "Move": { "Name": "Sit-out Driver", "Types": [ "Slam" ], "Risk": "Medium", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 54, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Steffanie Newell",
+    "Division": "Womens",
+    "Popularity": 43,
+    "Charisma": 2.8,
+    "Style": "HighFlyer",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Tegan Nox",
+      "Type": "Underdog",
+      "PersonaDescriptor": "The Girl With the Shiniest Wizards",
+      "Tone": "Inspirational",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 2,
+      "Durability": "MediumTerm",
+      "Freshness": 0.7,
+      "GimmickTraits": [ "Resilient", "Comeback Story" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.55 },
+        { "Group": "Casual", "AppealScore": 0.52 }
+      ],
+      "PreviousNames": [ "Nixon Newell" ]
+    },
+    "RingSkills": { "HighFlyer": 3.8, "Grappler": 2.6, "Powerhouse": 2.0, "Technical": 2.8, "Brawler": 3.0, "Striker": 2.6 },
+    "Physical": { "Strength": 58, "Speed": 76, "Agility": 78, "Stamina": 74, "Size": 2 },
+    "Mental": { "Psychology": 68, "Selling": 72, "RingIQ": 66, "Toughness": 74 },
+    "Moveset": [
+      { "Name": "Crossbody", "Types": [ "Aerial" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Neckbreaker", "Types": [ "Slam" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Shiniest Wizard", "Move": { "Name": "Running Knee Strike", "Types": [ "Strike" ], "Risk": "Medium", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 46, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Kiah Dean",
+    "Division": "Womens",
+    "Popularity": 33,
+    "Charisma": 2.6,
+    "Style": "HighFlyer",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Katana Chance",
+      "Type": "Daredevil",
+      "PersonaDescriptor": "Lightning in a Bottle",
+      "Tone": "Humorous",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 1,
+      "Durability": "ShortTerm",
+      "Freshness": 0.95,
+      "GimmickTraits": [ "Explosive", "Green" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.46 },
+        { "Group": "Casual", "AppealScore": 0.42 }
+      ],
+      "PreviousNames": [ "Kacy Catanzaro" ]
+    },
+    "RingSkills": { "HighFlyer": 4.2, "Grappler": 2.2, "Powerhouse": 1.8, "Technical": 2.2, "Brawler": 2.2, "Striker": 2.6 },
+    "Physical": { "Strength": 52, "Speed": 90, "Agility": 92, "Stamina": 80, "Size": 1 },
+    "Mental": { "Psychology": 58, "Selling": 64, "RingIQ": 56, "Toughness": 68 },
+    "Moveset": [
+      { "Name": "Handspring Elbow", "Types": [ "Strike" ], "Risk": "Medium", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Corkscrew Splash", "Types": [ "Aerial" ], "Risk": "Hard", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Katana Cutter", "Move": { "Name": "Springboard Cutter", "Types": [ "Aerial" ], "Risk": "Hard", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Medium", "Overness": 34, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Cynthia Lopez",
+    "Division": "Womens",
+    "Popularity": 25,
+    "Charisma": 2.2,
+    "Style": "Brawler",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Elektra Lopez",
+      "Type": "Loner",
+      "PersonaDescriptor": "Legado Enforcer",
+      "Tone": "Serious",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 0,
+      "Durability": "ShortTerm",
+      "Freshness": 0.75,
+      "GimmickTraits": [ "Stoic", "Unproven" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.34 },
+        { "Group": "Casual", "AppealScore": 0.3 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 2.0, "Grappler": 2.4, "Powerhouse": 2.8, "Technical": 2.0, "Brawler": 3.2, "Striker": 2.6 },
+    "Physical": { "Strength": 70, "Speed": 62, "Agility": 60, "Stamina": 68, "Size": 3 },
+    "Mental": { "Psychology": 54, "Selling": 58, "RingIQ": 52, "Toughness": 70 },
+    "Moveset": [
+      { "Name": "Spinebuster", "Types": [ "Slam" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Forearm Smash", "Types": [ "Strike" ], "Risk": "VeryEasy", "Impact": "Easy", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Barrio Buster", "Move": { "Name": "Fireman's Carry Slam", "Types": [ "Slam" ], "Risk": "Easy", "Impact": "Medium" }, "IsFinisher": true, "ImpactModifier": "Medium", "Overness": 26, "TagExclusive": false }
+    ]
+  },
+
+  {
+    "RealName": "Joe Anoa'i",
+    "Division": "Mens",
+    "Popularity": 96,
+    "Charisma": 4.6,
+    "Style": "Powerhouse",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Roman Reigns",
+      "Type": "Egotist",
+      "PersonaDescriptor": "The Tribal Chief",
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 12,
+      "Durability": "LongTerm",
+      "Freshness": 0.86,
+      "GimmickTraits": [ "Entitled", "Feared", "Legacy" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.92 },
+        { "Group": "Casual", "AppealScore": 0.9 }
+      ],
+      "PreviousNames": [ "Leakee" ]
+    },
+    "RingSkills": { "HighFlyer": 1.6, "Grappler": 3.2, "Powerhouse": 4.7, "Technical": 3.4, "Brawler": 4.3, "Striker": 4.0 },
+    "Physical": { "Strength": 92, "Speed": 72, "Agility": 68, "Stamina": 84, "Size": 4 },
+    "Mental": { "Psychology": 88, "Selling": 80, "RingIQ": 86, "Toughness": 90 },
+    "Moveset": [
+      { "Name": "Superman Punch", "Types": [ "Strike" ], "Risk": "Easy", "Impact": "Hard", "RequiresWeapons": false },
+      { "Name": "Drive-By", "Types": [ "Strike" ], "Risk": "VeryEasy", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Spear", "Move": { "Name": "Spear", "Types": [ "Takedown" ], "Risk": "Medium", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "VeryHard", "Overness": 96, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Cody Runnels",
+    "Division": "Mens",
+    "Popularity": 93,
+    "Charisma": 4.5,
+    "Style": "Technical",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Cody Rhodes",
+      "Type": "Superstar",
+      "PersonaDescriptor": "The American Nightmare",
+      "Tone": "Inspirational",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 11,
+      "Durability": "LongTerm",
+      "Freshness": 0.9,
+      "GimmickTraits": [ "Legacy", "Determined" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.9 },
+        { "Group": "Casual", "AppealScore": 0.94 }
+      ],
+      "PreviousNames": [ "Stardust" ]
+    },
+    "RingSkills": { "HighFlyer": 3.0, "Grappler": 3.8, "Powerhouse": 3.4, "Technical": 4.4, "Brawler": 3.6, "Striker": 3.6 },
+    "Physical": { "Strength": 76, "Speed": 78, "Agility": 80, "Stamina": 86, "Size": 3 },
+    "Mental": { "Psychology": 86, "Selling": 84, "RingIQ": 85, "Toughness": 84 },
+    "Moveset": [
+      { "Name": "Disaster Kick", "Types": [ "Strike" ], "Risk": "Medium", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Cody Cutter", "Types": [ "Aerial" ], "Risk": "Medium", "Impact": "Hard", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Cross Rhodes", "Move": { "Name": "Rolling Cutter", "Types": [ "Slam" ], "Risk": "Medium", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "VeryHard", "Overness": 93, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Colby Lopez",
+    "Division": "Mens",
+    "Popularity": 90,
+    "Charisma": 4.8,
+    "Style": "HighFlyer",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Seth Rollins",
+      "Type": "Showman",
+      "PersonaDescriptor": "The Visionary",
+      "Tone": "Chaotic",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 10,
+      "Durability": "LongTerm",
+      "Freshness": 0.84,
+      "GimmickTraits": [ "Theatrical", "Unpredictable", "Quotable" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.93 },
+        { "Group": "Casual", "AppealScore": 0.91 }
+      ],
+      "PreviousNames": [ "Tyler Black" ]
+    },
+    "RingSkills": { "HighFlyer": 4.4, "Grappler": 3.6, "Powerhouse": 3.0, "Technical": 4.2, "Brawler": 3.8, "Striker": 4.0 },
+    "Physical": { "Strength": 74, "Speed": 86, "Agility": 88, "Stamina": 84, "Size": 3 },
+    "Mental": { "Psychology": 92, "Selling": 86, "RingIQ": 90, "Toughness": 82 },
+    "Moveset": [
+      { "Name": "Falcon Arrow", "Types": [ "Slam" ], "Risk": "Medium", "Impact": "Hard", "RequiresWeapons": false },
+      { "Name": "Suicide Dive", "Types": [ "Aerial" ], "Risk": "Hard", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Stomp", "Move": { "Name": "Curb Stomp", "Types": [ "Strike" ], "Risk": "Medium", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "VeryHard", "Overness": 92, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Randal Orton",
+    "Division": "Mens",
+    "Popularity": 88,
+    "Charisma": 4.2,
+    "Style": "Technical",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Randy Orton",
+      "Type": "Realist",
+      "PersonaDescriptor": "The Viper",
+      "Tone": "Serious",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 9,
+      "Durability": "LongTerm",
+      "Freshness": 0.66,
+      "GimmickTraits": [ "Veteran", "Methodical", "Legacy" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.9 },
+        { "Group": "Casual", "AppealScore": 0.86 }
+      ],
+      "PreviousNames": [ "Legend Killer" ]
+    },
+    "RingSkills": { "HighFlyer": 2.2, "Grappler": 3.6, "Powerhouse": 3.6, "Technical": 4.4, "Brawler": 3.8, "Striker": 4.2 },
+    "Physical": { "Strength": 80, "Speed": 56, "Agility": 58, "Stamina": 64, "Size": 4 },
+    "Mental": { "Psychology": 96, "Selling": 90, "RingIQ": 94, "Toughness": 80 },
+    "Moveset": [
+      { "Name": "Draping DDT", "Types": [ "Slam" ], "Risk": "Easy", "Impact": "Hard", "RequiresWeapons": false },
+      { "Name": "Powerslam", "Types": [ "Slam" ], "Risk": "Easy", "Impact": "Hard", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "RKO", "Move": { "Name": "Jumping Cutter", "Types": [ "Slam" ], "Risk": "Medium", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "VeryHard", "Overness": 95, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Walter Hahn",
+    "Division": "Mens",
+    "Popularity": 86,
+    "Charisma": 3.2,
+    "Style": "Striker",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Gunther",
+      "Type": "Monster",
+      "PersonaDescriptor": "The Ring General",
+      "Tone": "Serious",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 8,
+      "Durability": "LongTerm",
+      "Freshness": 0.88,
+      "GimmickTraits": [ "Imposing", "Disciplined", "Feared" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.88 },
+        { "Group": "Casual", "AppealScore": 0.72 }
+      ],
+      "PreviousNames": [ "WALTER" ]
+    },
+    "RingSkills": { "HighFlyer": 1.2, "Grappler": 4.0, "Powerhouse": 4.6, "Technical": 4.5, "Brawler": 4.2, "Striker": 4.9 },
+    "Physical": { "Strength": 95, "Speed": 54, "Agility": 52, "Stamina": 84, "Size": 5 },
+    "Mental": { "Psychology": 92, "Selling": 84, "RingIQ": 90, "Toughness": 94 },
+    "Moveset": [
+      { "Name": "Chop", "Types": [ "Strike" ], "Risk": "VeryEasy", "Impact": "Hard", "RequiresWeapons": false },
+      { "Name": "Sleeper Hold", "Types": [ "Submission" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Last Symphony", "Move": { "Name": "Powerbomb", "Types": [ "Slam" ], "Risk": "Medium", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "VeryHard", "Overness": 88, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Andrew Galloway",
+    "Division": "Mens",
+    "Popularity": 83,
+    "Charisma": 4.1,
+    "Style": "Powerhouse",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Drew McIntyre",
+      "Type": "AntiHero",
+      "PersonaDescriptor": "The Scottish Warrior",
+      "Tone": "SelfRighteous",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 7,
+      "Durability": "LongTerm",
+      "Freshness": 0.8,
+      "GimmickTraits": [ "Bitter", "Imposing" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.84 },
+        { "Group": "Casual", "AppealScore": 0.82 }
+      ],
+      "PreviousNames": [ "Drew Galloway" ]
+    },
+    "RingSkills": { "HighFlyer": 2.4, "Grappler": 3.4, "Powerhouse": 4.6, "Technical": 3.4, "Brawler": 4.0, "Striker": 4.2 },
+    "Physical": { "Strength": 92, "Speed": 74, "Agility": 70, "Stamina": 82, "Size": 5 },
+    "Mental": { "Psychology": 84, "Selling": 80, "RingIQ": 82, "Toughness": 88 },
+    "Moveset": [
+      { "Name": "Future Shock DDT", "Types": [ "Slam" ], "Risk": "Easy", "Impact": "Hard", "RequiresWeapons": false },
+      { "Name": "Glasgow Kiss", "Types": [ "Strike" ], "Risk": "VeryEasy", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Claymore", "Move": { "Name": "Running Big Boot", "Types": [ "Strike" ], "Risk": "Medium", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "VeryHard", "Overness": 84, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Rami Sebei",
+    "Division": "Mens",
+    "Popularity": 80,
+    "Charisma": 4.4,
+    "Style": "Brawler",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Sami Zayn",
+      "Type": "Underdog",
+      "PersonaDescriptor": "The Underdog from the Underground",
+      "Tone": "Inspirational",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 8,
+      "Durability": "LongTerm",
+      "Freshness": 0.88,
+      "GimmickTraits": [ "Heartfelt", "Resilient", "Quotable" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.89 },
+        { "Group": "Casual", "AppealScore": 0.85 }
+      ],
+      "PreviousNames": [ "El Generico" ]
+    },
+    "RingSkills": { "HighFlyer": 3.6, "Grappler": 3.4, "Powerhouse": 2.6, "Technical": 3.8, "Brawler": 4.4, "Striker": 3.8 },
+    "Physical": { "Strength": 66, "Speed": 78, "Agility": 80, "Stamina": 86, "Size": 3 },
+    "Mental": { "Psychology": 91, "Selling": 92, "RingIQ": 88, "Toughness": 84 },
+    "Moveset": [
+      { "Name": "Blue Thunder Bomb", "Types": [ "Slam" ], "Risk": "Medium", "Impact": "Hard", "RequiresWeapons": false },
+      { "Name": "Exploder into the Corner", "Types": [ "Throw" ], "Risk": "Medium", "Impact": "Hard", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Helluva Kick", "Move": { "Name": "Running Boot", "Types": [ "Strike" ], "Risk": "Medium", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "VeryHard", "Overness": 86, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Shaun Ricker",
+    "Division": "Mens",
+    "Popularity": 77,
+    "Charisma": 4.9,
+    "Style": "Brawler",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "LA Knight",
+      "Type": "Showman",
+      "PersonaDescriptor": "The Megastar",
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 9,
+      "Durability": "MediumTerm",
+      "Freshness": 0.94,
+      "GimmickTraits": [ "Catchphrase", "Magnetic", "Quotable" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.86 },
+        { "Group": "Casual", "AppealScore": 0.88 }
+      ],
+      "PreviousNames": [ "Max Dupri", "Eli Drake" ]
+    },
+    "RingSkills": { "HighFlyer": 1.8, "Grappler": 2.4, "Powerhouse": 3.0, "Technical": 2.4, "Brawler": 3.4, "Striker": 3.0 },
+    "Physical": { "Strength": 78, "Speed": 68, "Agility": 66, "Stamina": 74, "Size": 4 },
+    "Mental": { "Psychology": 66, "Selling": 70, "RingIQ": 64, "Toughness": 76 },
+    "Moveset": [
+      { "Name": "Neckbreaker", "Types": [ "Slam" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Elbow Drop", "Types": [ "Aerial" ], "Risk": "Easy", "Impact": "Easy", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "BFT", "Move": { "Name": "Blunt Force Trauma", "Types": [ "Slam" ], "Risk": "Easy", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 82, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Kevin Steen",
+    "Division": "Mens",
+    "Popularity": 74,
+    "Charisma": 4.3,
+    "Style": "Brawler",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Kevin Owens",
+      "Type": "Realist",
+      "PersonaDescriptor": "The Prizefighter",
+      "Tone": "Violent",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 6,
+      "Durability": "LongTerm",
+      "Freshness": 0.76,
+      "GimmickTraits": [ "Blunt", "Volatile", "Quotable" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.86 },
+        { "Group": "Casual", "AppealScore": 0.8 }
+      ],
+      "PreviousNames": [ "Kevin Steen" ]
+    },
+    "RingSkills": { "HighFlyer": 3.2, "Grappler": 3.4, "Powerhouse": 3.8, "Technical": 3.4, "Brawler": 4.5, "Striker": 3.8 },
+    "Physical": { "Strength": 84, "Speed": 62, "Agility": 64, "Stamina": 74, "Size": 4 },
+    "Mental": { "Psychology": 90, "Selling": 88, "RingIQ": 87, "Toughness": 88 },
+    "Moveset": [
+      { "Name": "Cannonball", "Types": [ "Strike" ], "Risk": "Easy", "Impact": "Hard", "RequiresWeapons": false },
+      { "Name": "Frog Splash", "Types": [ "Aerial" ], "Risk": "Medium", "Impact": "Hard", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Stunner", "Move": { "Name": "Jumping Stunner", "Types": [ "Slam" ], "Risk": "Medium", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "VeryHard", "Overness": 80, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Bronson Rechsteiner",
+    "Division": "Mens",
+    "Popularity": 70,
+    "Charisma": 3.3,
+    "Style": "Powerhouse",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Bron Breakker",
+      "Type": "Monster",
+      "PersonaDescriptor": "The Freak Athlete",
+      "Tone": "Violent",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 5,
+      "Durability": "ShortTerm",
+      "Freshness": 0.96,
+      "GimmickTraits": [ "Explosive", "Legacy", "Green" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.72 },
+        { "Group": "Casual", "AppealScore": 0.7 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 2.6, "Grappler": 4.0, "Powerhouse": 4.6, "Technical": 3.0, "Brawler": 3.6, "Striker": 3.4 },
+    "Physical": { "Strength": 94, "Speed": 88, "Agility": 84, "Stamina": 90, "Size": 4 },
+    "Mental": { "Psychology": 62, "Selling": 66, "RingIQ": 60, "Toughness": 88 },
+    "Moveset": [
+      { "Name": "Gorilla Press", "Types": [ "Throw" ], "Risk": "Easy", "Impact": "Hard", "RequiresWeapons": false },
+      { "Name": "Belly-to-Belly", "Types": [ "Throw" ], "Risk": "Easy", "Impact": "Hard", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Spear", "Move": { "Name": "Running Spear", "Types": [ "Takedown" ], "Risk": "Medium", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "VeryHard", "Overness": 72, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Trevor Mann",
+    "Division": "Mens",
+    "Popularity": 64,
+    "Charisma": 2.9,
+    "Style": "HighFlyer",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Ricochet",
+      "Type": "Daredevil",
+      "PersonaDescriptor": "The One and Only",
+      "Tone": "Serious",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 3,
+      "Durability": "MediumTerm",
+      "Freshness": 0.7,
+      "GimmickTraits": [ "Gravity-Defying", "Understated" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.74 },
+        { "Group": "Casual", "AppealScore": 0.62 }
+      ],
+      "PreviousNames": [ "Prince Puma" ]
+    },
+    "RingSkills": { "HighFlyer": 5.0, "Grappler": 3.0, "Powerhouse": 2.2, "Technical": 3.4, "Brawler": 2.6, "Striker": 3.6 },
+    "Physical": { "Strength": 66, "Speed": 94, "Agility": 97, "Stamina": 86, "Size": 2 },
+    "Mental": { "Psychology": 70, "Selling": 74, "RingIQ": 68, "Toughness": 76 },
+    "Moveset": [
+      { "Name": "Shooting Star Press", "Types": [ "Aerial" ], "Risk": "VeryHard", "Impact": "Hard", "RequiresWeapons": false },
+      { "Name": "Standing Moonsault", "Types": [ "Aerial" ], "Risk": "Hard", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "630 Senton", "Move": { "Name": "630 Senton", "Types": [ "Aerial" ], "Risk": "VeryHard", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "VeryHard", "Overness": 68, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Charles Betts",
+    "Division": "Mens",
+    "Popularity": 59,
+    "Charisma": 3.0,
+    "Style": "Grappler",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Chad Gable",
+      "Type": "Egotist",
+      "PersonaDescriptor": "The Master of the Amateurs",
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 2,
+      "Durability": "MediumTerm",
+      "Freshness": 0.84,
+      "GimmickTraits": [ "Technician", "Overlooked" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.78 },
+        { "Group": "Casual", "AppealScore": 0.54 }
+      ],
+      "PreviousNames": [ "Chad Betts" ]
+    },
+    "RingSkills": { "HighFlyer": 2.8, "Grappler": 4.9, "Powerhouse": 3.4, "Technical": 4.7, "Brawler": 3.0, "Striker": 3.4 },
+    "Physical": { "Strength": 84, "Speed": 76, "Agility": 82, "Stamina": 84, "Size": 2 },
+    "Mental": { "Psychology": 93, "Selling": 86, "RingIQ": 92, "Toughness": 82 },
+    "Moveset": [
+      { "Name": "German Suplex", "Types": [ "Throw" ], "Risk": "Medium", "Impact": "Hard", "RequiresWeapons": false },
+      { "Name": "Ankle Lock", "Types": [ "Submission" ], "Risk": "Easy", "Impact": "Hard", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Chaos Theory", "Move": { "Name": "Rolling German Suplex", "Types": [ "Throw" ], "Risk": "Hard", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "VeryHard", "Overness": 60, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Nikola Bogojevic",
+    "Division": "Mens",
+    "Popularity": 54,
+    "Charisma": 3.6,
+    "Style": "Powerhouse",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Otis",
+      "Type": "Comedy",
+      "PersonaDescriptor": "The Wiggle",
+      "Tone": "Humorous",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 4,
+      "Durability": "ShortTerm",
+      "Freshness": 0.68,
+      "GimmickTraits": [ "Lovable", "Goofy", "Powerful" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.68 },
+        { "Group": "Casual", "AppealScore": 0.72 }
+      ],
+      "PreviousNames": [ "Otis Dozovic" ]
+    },
+    "RingSkills": { "HighFlyer": 1.4, "Grappler": 2.6, "Powerhouse": 4.5, "Technical": 1.8, "Brawler": 2.8, "Striker": 2.2 },
+    "Physical": { "Strength": 96, "Speed": 48, "Agility": 44, "Stamina": 66, "Size": 5 },
+    "Mental": { "Psychology": 58, "Selling": 66, "RingIQ": 54, "Toughness": 84 },
+    "Moveset": [
+      { "Name": "Caterpillar", "Types": [ "Strike" ], "Risk": "VeryEasy", "Impact": "Easy", "RequiresWeapons": false },
+      { "Name": "Overhead Belly-to-Belly", "Types": [ "Throw" ], "Risk": "Easy", "Impact": "Hard", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Vader Bomb", "Move": { "Name": "Second Rope Splash", "Types": [ "Aerial" ], "Risk": "Medium", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 56, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Akira Tozawa",
+    "Division": "Mens",
+    "Popularity": 40,
+    "Charisma": 2.4,
+    "Style": "HighFlyer",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Akira Tozawa",
+      "Type": "Underdog",
+      "PersonaDescriptor": "The Stamina Monster",
+      "Tone": "Humorous",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 1,
+      "Durability": "MediumTerm",
+      "Freshness": 0.6,
+      "GimmickTraits": [ "Scrappy", "Overlooked" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.5 },
+        { "Group": "Casual", "AppealScore": 0.44 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 4.3, "Grappler": 2.8, "Powerhouse": 1.6, "Technical": 3.0, "Brawler": 2.4, "Striker": 3.0 },
+    "Physical": { "Strength": 50, "Speed": 86, "Agility": 88, "Stamina": 80, "Size": 1 },
+    "Mental": { "Psychology": 74, "Selling": 76, "RingIQ": 72, "Toughness": 72 },
+    "Moveset": [
+      { "Name": "Shining Wizard", "Types": [ "Strike" ], "Risk": "Medium", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Suicide Dive", "Types": [ "Aerial" ], "Risk": "Hard", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Diving Senton", "Move": { "Name": "Top Rope Senton", "Types": [ "Aerial" ], "Risk": "Hard", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 42, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Cal Bloom",
+    "Division": "Mens",
+    "Popularity": 23,
+    "Charisma": 1.6,
+    "Style": "Powerhouse",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Von Wagner",
+      "Type": "Monster",
+      "PersonaDescriptor": "The Troubled Giant",
+      "Tone": "Melancholic",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 0,
+      "Durability": "ShortTerm",
+      "Freshness": 0.72,
+      "GimmickTraits": [ "Raw", "Unproven", "Green" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.28 },
+        { "Group": "Casual", "AppealScore": 0.24 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 1.4, "Grappler": 2.0, "Powerhouse": 3.6, "Technical": 1.6, "Brawler": 2.4, "Striker": 2.0 },
+    "Physical": { "Strength": 88, "Speed": 56, "Agility": 52, "Stamina": 68, "Size": 5 },
+    "Mental": { "Psychology": 44, "Selling": 48, "RingIQ": 42, "Toughness": 72 },
+    "Moveset": [
+      { "Name": "Big Boot", "Types": [ "Strike" ], "Risk": "VeryEasy", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Body Slam", "Types": [ "Slam" ], "Risk": "VeryEasy", "Impact": "Easy", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Death Valley Driver", "Move": { "Name": "Death Valley Driver", "Types": [ "Slam" ], "Risk": "Medium", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Medium", "Overness": 24, "TagExclusive": false }
     ]
   }
 ]

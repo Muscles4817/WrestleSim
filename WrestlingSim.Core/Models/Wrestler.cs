@@ -22,6 +22,20 @@ namespace WrestlingSim.Models
         public List<Move> Moveset { get; set; }
         public List<Signature> Signature { get; set; }
         public WrestlingStyle Style { get; set; }
+        public Division Division { get; set; } = Division.Womens;
+
+        /// <summary>
+        /// Where this wrestler sits on a card, derived from popularity. Purely a
+        /// presentation aid — the engine reads the underlying attributes, not this.
+        /// </summary>
+        public CardPosition CardPosition => Popularity switch
+        {
+            >= 88 => CardPosition.MainEvent,
+            >= 74 => CardPosition.UpperCard,
+            >= 56 => CardPosition.Midcard,
+            >= 36 => CardPosition.LowerCard,
+            _     => CardPosition.Enhancement
+        };
 
         public double BaseMatchScore => RingSkills.GetStandardScore(Style);
         public double TechnicalMatchScore => RingSkills.GetTechnicalScore();
