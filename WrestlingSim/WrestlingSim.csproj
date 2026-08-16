@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -8,9 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="JSON\**\*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <ProjectReference Include="..\WrestlingSim.Core\WrestlingSim.Core.csproj" />
   </ItemGroup>
 
 </Project>

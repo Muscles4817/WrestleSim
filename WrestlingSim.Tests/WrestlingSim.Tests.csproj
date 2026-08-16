@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\WrestlingSim\WrestlingSim.csproj" />
+    <ProjectReference Include="..\WrestlingSim.Core\WrestlingSim.Core.csproj" />
   </ItemGroup>
 
 </Project>

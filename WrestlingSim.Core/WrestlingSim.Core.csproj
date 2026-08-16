@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <!-- Namespaces stay WrestlingSim.* so nothing downstream has to change. -->
+    <RootNamespace>WrestlingSim</RootNamespace>
+  </PropertyGroup>
+
+  <!-- Game data travels with the library two ways, from one physical copy:
+       - Content, so hosts with a filesystem find it next to the executable.
+       - EmbeddedResource, so hosts without one (WebAssembly) can read it
+         straight out of the assembly with no fetch and no base-path concerns. -->
+  <ItemGroup>
+    <Content Include="JSON\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <EmbeddedResource Include="JSON\**\*" />
+  </ItemGroup>
+
+</Project>
