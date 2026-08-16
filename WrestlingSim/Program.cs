@@ -1,10 +1,7 @@
 using WrestlingSim.Engine;
-using WrestlingSim.Enums;
-using WrestlingSim.Factories;
 using WrestlingSim.Models;
-using WrestlingSim.Models.Segment;
 using WrestlingSim.UI;
-using MatchType = WrestlingSim.Enums.MatchType;
+using static WrestlingSim.UI.ConsoleUi;
 
 class Program
 {
@@ -20,125 +17,70 @@ class Program
             return;
         }
 
+        // One feud book for the session. Segments and matches both write into it,
+        // and the match booker reads it back — this is what makes booking cumulative.
+        var feudBook = new FeudBook();
+
         bool running = true;
         while (running)
         {
             MainMenu.Render();
-            string choice = Console.ReadLine();
+            string choice = Console.ReadLine() ?? "";
 
-            switch (choice)
+            switch (choice.Trim())
             {
-                case "1": MatchBookingFlow.Run(wrestlers); break;
-                case "2": BookShow(wrestlers);             break;
-                case "3": MainMenu.RenderWrestlers(wrestlers); break;
-                case "4": running = false;            break;
+                case "1": MatchBookingFlow.Run(wrestlers, feudBook);   break;
+                case "2": SegmentBookingFlow.Run(wrestlers, feudBook); break;
+                case "3": ShowBookingFlow.Run(wrestlers, feudBook);    break;
+                case "4": MainMenu.RenderWrestlers(wrestlers);         break;
+                case "5": ViewFeuds(feudBook);                         break;
+                case "6": running = false;                             break;
                 default:
                     Console.WriteLine("\n  Invalid option. Press any key...");
-                    Console.ReadKey(true);
+                    ConsoleUi.AnyKey();
                     break;
             }
         }
     }
 
-    // ─── Book a Show ─────────────────────────────────────────────────────────────
+    // ─── Feud book ───────────────────────────────────────────────────────────────
 
-    static void BookShow(List<Wrestler> wrestlers)
+    static void ViewFeuds(FeudBook feudBook)
     {
-        Console.Clear();
-        Console.WriteLine("\n  === BOOK A SHOW ===\n");
+        ConsoleUi.Clear();
+        DrawHeader("FEUDS");
 
-        Console.Write("  Show name : ");
-        string showName = Console.ReadLine() ?? "Unnamed Show";
-        Console.Write("  Location  : ");
-        string location = Console.ReadLine() ?? "Unknown Arena";
+        var feuds = feudBook.All;
 
-        var show = new Show
+        if (feuds.Count == 0)
         {
-            Name         = showName,
-            Date         = DateTime.Now,
-            Location     = location,
-            AudienceSize = 10000
-        };
-
-        PrintRoster(wrestlers);
-
-        int matchCount = GetCount("\n  How many matches?");
-        for (int i = 0; i < matchCount; i++)
-        {
-            Console.WriteLine($"\n  --- Match {i + 1} ---");
-            Wrestler w1  = GetWrestlerByName("First wrestler", wrestlers);
-            Wrestler w2  = GetWrestlerByName("Second wrestler", wrestlers);
-            MatchType mt = GetMatchStyle();
-            show.Card.Add(new Match(w1, w2, mt));
+            WriteLine("\n  No feuds yet.", ConsoleColor.DarkGray);
+            WriteLine("  Book segments between wrestlers to build one — a betrayal or a", ConsoleColor.DarkGray);
+            WriteLine("  weapon shot generates the most heat.", ConsoleColor.DarkGray);
+            Pause("Press any key to return to the main menu...");
+            return;
         }
 
-        int segCount = GetCount("\n  How many segments?");
-        for (int i = 0; i < segCount; i++)
-        {
-            Console.WriteLine($"\n  --- Segment {i + 1} ---");
-            Wrestler main = GetWrestlerByName("Main wrestler", wrestlers);
-            show.Card.Add(SegmentFactory.CreatePromo(main, $"Promo by {main.RingName}"));
-        }
-
-        var result = new ShowSimulator(new MatchSimulator(), new SegmentSimulator()).SimulateShow(show);
-
-        Console.WriteLine($"\n  === Results: {show.Name} ===");
-        Console.WriteLine($"  Overall Rating : {result.OverallRating:F1}");
         Console.WriteLine();
-        foreach (var (label, score) in result.Breakdown)
-            Console.WriteLine($"    {label,-12}  {score:F1}");
-
-        Pause();
-    }
-
-    // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-    static void PrintRoster(List<Wrestler> wrestlers)
-    {
-        Console.WriteLine("  Roster:");
-        foreach (var w in wrestlers)
-            Console.WriteLine($"    - {w.RingName}");
-        Console.WriteLine();
-    }
-
-    static Wrestler GetWrestlerByName(string prompt, List<Wrestler> wrestlers)
-    {
-        while (true)
+        foreach (var f in feuds)
         {
-            Console.Write($"  {prompt}: ");
-            string input = Console.ReadLine() ?? "";
-            var match = wrestlers.FirstOrDefault(
-                w => w.RingName.Equals(input, StringComparison.OrdinalIgnoreCase));
-            if (match != null) return match;
+            WriteLine($"  {f.WrestlerA.RingName} vs {f.WrestlerB.RingName}", ConsoleColor.White);
+            WriteLine($"    {f.Intensity,-9} {Bar(f.Heat, 50)}  {f.Heat:F0} heat", ConsoleColor.Yellow);
+            WriteLine($"    Matches   : {f.MatchCount}", ConsoleColor.DarkGray);
+            WriteLine($"    History   : {(f.History.Count > 0 ? string.Join(", ", f.History) : "none")}",
+                      ConsoleColor.DarkGray);
 
-            Console.WriteLine("  Not found — picking randomly.");
-            return wrestlers[Random.Shared.Next(wrestlers.Count)];
+            if (f.HeatToNextTier is > 0 and var toNext)
+                WriteLine($"    {toNext:F0} more heat to the next tier.", ConsoleColor.DarkGray);
+
+            Console.WriteLine();
         }
-    }
 
-    static int GetCount(string prompt)
-    {
-        while (true)
-        {
-            Console.Write($"{prompt}: ");
-            if (int.TryParse(Console.ReadLine(), out int n) && n > 0) return n;
-            Console.WriteLine("  Please enter a positive number.");
-        }
-    }
+        WriteLine("  Feud intensity raises starting crowd energy and unlocks beats:", ConsoleColor.DarkGray);
+        WriteLine("    Building+  →  Feud Erupts, Outside Party", ConsoleColor.DarkGray);
+        WriteLine("    Tags gate individual beats — ManagerConflict or FamilyInvolved", ConsoleColor.DarkGray);
+        WriteLine("    unlock the Outside Party pull-in.", ConsoleColor.DarkGray);
 
-    static MatchType GetMatchStyle()
-    {
-        Console.WriteLine("\n  Match styles: " + string.Join(", ", Enum.GetNames<MatchType>()));
-        Console.Write("  Select style : ");
-        string input = Console.ReadLine() ?? "";
-        if (Enum.TryParse<MatchType>(input, ignoreCase: true, out var t)) return t;
-        Console.WriteLine("  Defaulting to Standard.");
-        return MatchType.Standard;
-    }
-
-    static void Pause()
-    {
-        Console.WriteLine("\n  Press any key to return to the main menu...");
-        Console.ReadKey(true);
+        Pause("Press any key to return to the main menu...");
     }
 }

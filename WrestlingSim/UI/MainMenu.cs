@@ -11,7 +11,7 @@ namespace WrestlingSim.UI
 
         public static void Render()
         {
-            Console.Clear();
+            ConsoleUi.Clear();
             Console.OutputEncoding = System.Text.Encoding.UTF8;
             Console.WriteLine();
             DrawHeader();
@@ -47,11 +47,15 @@ namespace WrestlingSim.UI
 
             MenuItem("1", "Book a Match");
             MBlank();
-            MenuItem("2", "Book a Show");
+            MenuItem("2", "Book a Segment");
             MBlank();
-            MenuItem("3", "View Wrestlers");
+            MenuItem("3", "Book a Show");
             MBlank();
-            MenuItem("4", "Exit");
+            MenuItem("4", "View Wrestlers");
+            MBlank();
+            MenuItem("5", "View Feuds");
+            MBlank();
+            MenuItem("6", "Exit");
 
             Console.ForegroundColor = ConsoleColor.DarkGray;
             MBlank();
@@ -92,7 +96,7 @@ namespace WrestlingSim.UI
 
         public static void RenderWrestlers(List<Wrestler> wrestlers)
         {
-            Console.Clear();
+            ConsoleUi.Clear();
             Console.OutputEncoding = System.Text.Encoding.UTF8;
             Console.WriteLine();
 
@@ -152,7 +156,7 @@ namespace WrestlingSim.UI
             Console.ForegroundColor = ConsoleColor.DarkGray;
             Console.WriteLine("  Press any key to return to the main menu...");
             Console.ResetColor();
-            Console.ReadKey(true);
+            ConsoleUi.AnyKey();
         }
 
         // ─── Shared helpers ──────────────────────────────────────────────────────

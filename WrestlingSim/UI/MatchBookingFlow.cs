@@ -2,24 +2,52 @@ using WrestlingSim.Engine;
 using WrestlingSim.Enums;
 using WrestlingSim.Models;
 using WrestlingSim.Models.MatchPlan;
+using static WrestlingSim.UI.ConsoleUi;
 using MatchType = WrestlingSim.Enums.MatchType;
 
 namespace WrestlingSim.UI
 {
     public static class MatchBookingFlow
     {
-        // ── Entry point ──────────────────────────────────────────────────────
+        // ── Entry points ─────────────────────────────────────────────────────
 
-        public static void Run(List<Wrestler> wrestlers)
+        /// <summary>Books a standalone match, runs it, and banks the feud heat.</summary>
+        public static void Run(List<Wrestler> wrestlers, FeudBook feudBook)
         {
-            Console.Clear();
+            ConsoleUi.Clear();
             DrawHeader("BOOK A SINGLES MATCH");
 
-            var a         = SelectWrestler("WRESTLER A", wrestlers);
-            var b         = SelectWrestler("WRESTLER B", wrestlers, exclude: a);
+            var booked = BuildMatch(wrestlers, feudBook);
+            if (booked == null) return;
+
+            var result = new MatchEngine().Execute(booked.Plan);
+
+            var update = feudBook.Record(
+                booked.Plan.WrestlerA, booked.Plan.WrestlerB,
+                heat: result.StarRating * 2.0,
+                tags: new[] { FeudHistoryTag.PriorMatch });
+            update.Feud.MatchCount++;
+
+            DisplayResults(result, booked.Plan.WrestlerA, booked.Plan.WrestlerB);
+            SegmentBookingFlow.DisplayFeudUpdates(new[] { update });
+            Pause("Press any key to return to the main menu...");
+        }
+
+        /// <summary>
+        /// Builds a match without running it, for placing on a show card.
+        /// Returns null if the player backs out.
+        /// </summary>
+        public static BookedMatch? BuildMatch(List<Wrestler> wrestlers, FeudBook feudBook)
+        {
+            var a = SelectWrestler("WRESTLER A", wrestlers);
+            if (a == null) return null;
+
+            var b = SelectWrestler("WRESTLER B", wrestlers, exclude: a);
+            if (b == null) return null;
+
             var matchType = SelectMatchType();
-            var feud      = SetupFeud(a, b);
-            var beats     = SelectStructure(feud);
+            var feud      = ResolveFeud(a, b, feudBook);
+            var (beats, structureName) = SelectStructure(feud);
 
             while (true)
             {
@@ -35,110 +63,99 @@ namespace WrestlingSim.UI
                 };
 
                 var errors = plan.Validate();
-                if (errors.Count > 0)
-                {
-                    Console.WriteLine();
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    foreach (var e in errors)
-                        Console.WriteLine($"  ✖  {e}");
-                    Console.ResetColor();
-                    Console.WriteLine("\n  Fix the plan and try again — press any key...");
-                    Console.ReadKey(true);
-                    continue;
-                }
+                if (errors.Count == 0)
+                    return new BookedMatch { Plan = plan, StructureName = structureName };
 
-                var result = new MatchEngine().Execute(plan);
-                DisplayResults(result, a, b);
-                Pause();
-                return;
+                Console.WriteLine();
+                foreach (var e in errors)
+                    WriteLine($"  ✖  {e}", ConsoleColor.Red);
+                Pause("Fix the plan and try again — press any key...");
             }
         }
 
         // ── Wrestler selection ───────────────────────────────────────────────
 
-        private static Wrestler SelectWrestler(string label, List<Wrestler> wrestlers, Wrestler? exclude = null)
+        private static Wrestler? SelectWrestler(string label, List<Wrestler> wrestlers, Wrestler? exclude = null)
         {
             var pool = wrestlers.Where(w => w != exclude).ToList();
 
-            Console.WriteLine($"\n  ── {label} " + new string('─', Math.Max(1, 40 - label.Length)));
+            Rule(label, 40);
             for (int i = 0; i < pool.Count; i++)
             {
                 var w = pool[i];
-                Console.ForegroundColor = ConsoleColor.DarkGray;
-                Console.Write($"  [{i + 1,2}] ");
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.Write(Fit(w.RingName, 22));
-                Console.ForegroundColor = ConsoleColor.DarkGray;
-                Console.WriteLine($"Pop {w.Popularity,3}  Skill {w.RingSkills.GetOverallSkill():F1}  Cha {w.Charisma:F1}");
-                Console.ResetColor();
+                Write($"  [{i + 1,2}] ", ConsoleColor.DarkGray);
+                Write(Fit(w.RingName, 22), ConsoleColor.White);
+                WriteLine($"Pop {w.Popularity,3}  Skill {w.RingSkills.GetOverallSkill():F1}  Cha {w.Charisma:F1}",
+                          ConsoleColor.DarkGray);
             }
 
-            while (true)
-            {
-                Console.Write("\n  Select: ");
-                if (int.TryParse(Console.ReadLine(), out int n) && n >= 1 && n <= pool.Count)
-                    return pool[n - 1];
-                Console.WriteLine("  Invalid — try again.");
-            }
+            Console.Write("\n  Select (0 to cancel): ");
+            if (int.TryParse(Console.ReadLine(), out int n) && n >= 1 && n <= pool.Count)
+                return pool[n - 1];
+
+            return null;
         }
 
         // ── Match type ───────────────────────────────────────────────────────
 
         private static MatchType SelectMatchType()
         {
-            var types = Enum.GetValues<MatchType>().ToList();
-
-            Console.WriteLine("\n  ── MATCH TYPE " + new string('─', 28));
-            for (int i = 0; i < types.Count; i++)
-            {
-                Console.ForegroundColor = ConsoleColor.DarkGray;
-                Console.Write($"  [{i + 1}] ");
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine(types[i]);
-                Console.ResetColor();
-            }
-            Console.Write("\n  Select (Enter = Standard): ");
-
-            if (int.TryParse(Console.ReadLine(), out int c) && c >= 1 && c <= types.Count)
-                return types[c - 1];
-            return MatchType.Standard;
+            Rule("MATCH TYPE", 34);
+            return ChooseEnum<MatchType>("Select (Enter = Standard)") ?? MatchType.Standard;
         }
 
-        // ── Feud setup ───────────────────────────────────────────────────────
+        // ── Feud ─────────────────────────────────────────────────────────────
 
-        private static Feud? SetupFeud(Wrestler a, Wrestler b)
+        /// <summary>
+        /// Reads the feud these two have actually built through booked segments and
+        /// matches. Falls back to declaring one by hand when there is no history yet.
+        /// </summary>
+        private static Feud? ResolveFeud(Wrestler a, Wrestler b, FeudBook feudBook)
         {
-            Console.WriteLine("\n  ── FEUD SETUP " + new string('─', 28));
-            Console.Write($"  Active feud between {a.RingName} and {b.RingName}? (y/n): ");
-            if (!(Console.ReadLine() ?? "").TrimStart().StartsWith("y", StringComparison.OrdinalIgnoreCase))
-                return null;
+            Rule("FEUD", 34);
 
-            // Intensity
+            var existing = feudBook.Find(a, b);
+            if (existing != null && existing.Intensity > FeudIntensity.None)
+            {
+                WriteLine($"\n  {a.RingName} and {b.RingName} have history:", ConsoleColor.Cyan);
+                WriteLine($"    Intensity : {existing.Intensity}  ({existing.Heat:F0} heat)", ConsoleColor.White);
+                WriteLine($"    Matches   : {existing.MatchCount}", ConsoleColor.DarkGray);
+                WriteLine($"    History   : {(existing.History.Count > 0 ? string.Join(", ", existing.History) : "none")}",
+                          ConsoleColor.DarkGray);
+
+                if (existing.HeatToNextTier is > 0 and var toNext)
+                    WriteLine($"    {toNext:F0} more heat to the next tier.", ConsoleColor.DarkGray);
+
+                Console.WriteLine();
+                if (YesNo("Use this feud?", defaultYes: true)) return existing;
+            }
+            else
+            {
+                WriteLine($"\n  {a.RingName} and {b.RingName} have no booked history.", ConsoleColor.DarkGray);
+                WriteLine("  Book segments between them to build a feud properly.", ConsoleColor.DarkGray);
+                Console.WriteLine();
+            }
+
+            if (!YesNo("Declare a feud by hand instead?")) return null;
+
             var intensities = new[] { FeudIntensity.Cold, FeudIntensity.Building, FeudIntensity.Hot, FeudIntensity.Nuclear };
             Console.WriteLine("\n  Feud intensity:");
             for (int i = 0; i < intensities.Length; i++)
             {
-                Console.ForegroundColor = ConsoleColor.DarkGray;
-                Console.Write($"  [{i + 1}] ");
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine(intensities[i]);
-                Console.ResetColor();
+                Write($"  [{i + 1}] ", ConsoleColor.DarkGray);
+                WriteLine(intensities[i].ToString(), ConsoleColor.White);
             }
             Console.Write("  Select (Enter = Building): ");
             var intensity = FeudIntensity.Building;
             if (int.TryParse(Console.ReadLine(), out int ic) && ic >= 1 && ic <= intensities.Length)
                 intensity = intensities[ic - 1];
 
-            // History tags
             var allTags = Enum.GetValues<FeudHistoryTag>().ToList();
             Console.WriteLine("\n  History tags (comma-separated numbers, 0 for none):");
             for (int i = 0; i < allTags.Count; i++)
             {
-                Console.ForegroundColor = ConsoleColor.DarkGray;
-                Console.Write($"  [{i + 1}] ");
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine(allTags[i]);
-                Console.ResetColor();
+                Write($"  [{i + 1}] ", ConsoleColor.DarkGray);
+                WriteLine(allTags[i].ToString(), ConsoleColor.White);
             }
             Console.Write("  Select: ");
 
@@ -150,16 +167,21 @@ namespace WrestlingSim.UI
                 .Select(t => t!.Value)
                 .ToList();
 
-            return new Feud { WrestlerA = a, WrestlerB = b, Intensity = intensity, History = history };
+            // Declared feuds go into the book too, so later segments build on them.
+            var feud = feudBook.GetOrCreate(a, b);
+            feud.SetMinimumIntensity(intensity);
+            foreach (var tag in history) feud.AddTag(tag);
+
+            return feud;
         }
 
         // ── Structure selection ──────────────────────────────────────────────
 
-        private static List<MatchBeat> SelectStructure(Feud? feud)
+        private static (List<MatchBeat> Beats, string Name) SelectStructure(Feud? feud)
         {
             var all = MatchStructureLibrary.All;
 
-            Console.WriteLine("\n  ── MATCH STRUCTURE " + new string('─', 23));
+            Rule("MATCH STRUCTURE", 29);
             Console.WriteLine();
 
             for (int i = 0; i < all.Count; i++)
@@ -167,42 +189,32 @@ namespace WrestlingSim.UI
                 var s         = all[i];
                 bool feudWarn = s.RequiresFeud && feud == null;
 
-                Console.ForegroundColor = ConsoleColor.DarkGray;
-                Console.Write($"  [{i + 1}] ");
-                Console.ForegroundColor = feudWarn ? ConsoleColor.DarkGray : ConsoleColor.White;
-                Console.Write(Fit(s.Name, 22));
-                Console.ForegroundColor = ConsoleColor.DarkGray;
-                Console.Write($"{s.Beats.Count} beats");
-                if (feudWarn)
-                {
-                    Console.ForegroundColor = ConsoleColor.DarkYellow;
-                    Console.Write("  ⚠ needs feud");
-                }
-                Console.ResetColor();
+                Write($"  [{i + 1}] ", ConsoleColor.DarkGray);
+                Write(Fit(s.Name, 22), feudWarn ? ConsoleColor.DarkGray : ConsoleColor.White);
+                Write($"{s.Beats.Count} beats", ConsoleColor.DarkGray);
+                if (feudWarn) Write("  ⚠ needs feud", ConsoleColor.DarkYellow);
                 Console.WriteLine();
-                Console.ForegroundColor = ConsoleColor.DarkGray;
-                Console.WriteLine("       " + Truncate(s.Description, 66));
-                Console.ResetColor();
+                WriteLine("       " + Truncate(s.Description, 66), ConsoleColor.DarkGray);
                 Console.WriteLine();
             }
 
-            Console.ForegroundColor = ConsoleColor.DarkGray;
-            Console.Write($"  [{all.Count + 1}] ");
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write("Build from scratch    ");
-            Console.ForegroundColor = ConsoleColor.DarkGray;
-            Console.WriteLine("2 beats — opening + finish pre-loaded");
-            Console.ResetColor();
+            Write($"  [{all.Count + 1}] ", ConsoleColor.DarkGray);
+            Write("Build from scratch    ", ConsoleColor.White);
+            WriteLine("2 beats — opening + finish pre-loaded", ConsoleColor.DarkGray);
 
             Console.Write("\n  Select structure: ");
             if (int.TryParse(Console.ReadLine(), out int c) && c >= 1 && c <= all.Count)
-                return all[c - 1].Beats.ToList();
+            {
+                // Clone: the library's beats are shared singletons, so editing a plan
+                // built from a preset would otherwise mutate the preset itself.
+                return (all[c - 1].Beats.Select(b => b.Clone()).ToList(), all[c - 1].Name);
+            }
 
-            return
+            return (
             [
                 BeatLibrary.Find("Standard Collar-and-Elbow")!.ToMatchBeat(BeatControl.Even),
                 BeatLibrary.Find("Clean Victory")!.ToMatchBeat(BeatControl.WrestlerA),
-            ];
+            ], "Custom");
         }
 
         // ── Beat editor ──────────────────────────────────────────────────────
@@ -211,26 +223,30 @@ namespace WrestlingSim.UI
         {
             while (true)
             {
-                Console.Clear();
+                ConsoleUi.Clear();
                 DrawHeader("BEAT EDITOR");
                 Console.WriteLine();
-                Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.WriteLine($"  {a.RingName}  (A)     vs     {b.RingName}  (B)");
-                Console.ResetColor();
+                WriteLine($"  {a.RingName}  (A)     vs     {b.RingName}  (B)", ConsoleColor.Cyan);
+
+                if (feud != null)
+                    WriteLine($"  Feud: {feud.Intensity} ({feud.Heat:F0} heat)" +
+                              (feud.History.Count > 0 ? $" — {string.Join(", ", feud.History)}" : ""),
+                              ConsoleColor.DarkYellow);
 
                 DisplayPlan(beats, a, b);
 
-                Console.WriteLine();
-                Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.Write("  [A]dd   [R]emove   [C]hange control   [G]o");
-                Console.ResetColor();
+                int minutes = 2 + beats.Sum(x => x.DurationMinutes);
+                WriteLine($"  Estimated runtime: ~{minutes} min", ConsoleColor.DarkGray);
+
+                Write("\n  [A]dd   [R]emove   [C]hange control   [I]ntensity   [G]o", ConsoleColor.Cyan);
                 Console.Write("\n\n  > ");
 
                 switch ((Console.ReadLine() ?? "").Trim().ToUpperInvariant())
                 {
-                    case "A": AddBeat(beats, a, b, feud);  break;
-                    case "R": RemoveBeat(beats, a, b);     break;
-                    case "C": ChangeControl(beats, a, b);  break;
+                    case "A": AddBeat(beats, a, b, feud);   break;
+                    case "R": RemoveBeat(beats, a, b);      break;
+                    case "C": ChangeControl(beats, a, b);   break;
+                    case "I": ChangeIntensity(beats, a, b); break;
                     case "G": return;
                 }
             }
@@ -238,7 +254,7 @@ namespace WrestlingSim.UI
 
         private static void AddBeat(List<MatchBeat> beats, Wrestler a, Wrestler b, Feud? feud)
         {
-            Console.WriteLine("\n  ── ADD A BEAT " + new string('─', 28));
+            Rule("ADD A BEAT", 34);
 
             var available = BeatLibrary.Available(feud).ToList();
             var indexed   = new List<BeatTemplate>();
@@ -249,19 +265,12 @@ namespace WrestlingSim.UI
             {
                 if (t.Category != lastCat)
                 {
-                    Console.WriteLine();
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.WriteLine($"  {t.Category.ToUpperInvariant()}");
-                    Console.ResetColor();
+                    WriteLine($"\n  {t.Category.ToUpperInvariant()}", ConsoleColor.Yellow);
                     lastCat = t.Category;
                 }
-                Console.ForegroundColor = ConsoleColor.DarkGray;
-                Console.Write($"  [{n,2}] ");
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.Write(Fit(t.Name, 28));
-                Console.ForegroundColor = ConsoleColor.DarkGray;
-                Console.WriteLine(Truncate(t.Description, 42));
-                Console.ResetColor();
+                Write($"  [{n,2}] ", ConsoleColor.DarkGray);
+                Write(Fit(t.Name, 28), ConsoleColor.White);
+                WriteLine(Truncate(t.Description, 42), ConsoleColor.DarkGray);
                 indexed.Add(t);
                 n++;
             }
@@ -270,22 +279,26 @@ namespace WrestlingSim.UI
             if (!int.TryParse(Console.ReadLine(), out int c) || c < 1 || c > indexed.Count)
                 return;
 
+            var template = indexed[c - 1];
+            if (!string.IsNullOrWhiteSpace(template.BookerTip))
+                WriteLine($"\n  ⓘ  {template.BookerTip}", ConsoleColor.DarkCyan);
+
             var control = SelectControl(a, b);
 
             // Insert before the last beat (keeps the finish at the end)
             int at = Math.Max(0, beats.Count - 1);
-            beats.Insert(at, indexed[c - 1].ToMatchBeat(control));
+            beats.Insert(at, template.ToMatchBeat(control));
         }
 
         private static void RemoveBeat(List<MatchBeat> beats, Wrestler a, Wrestler b)
         {
-            Console.WriteLine("\n  ── REMOVE A BEAT " + new string('─', 25));
+            Rule("REMOVE A BEAT", 31);
             DisplayPlan(beats, a, b);
             Console.Write("  Beat number (0 to cancel): ");
             if (!int.TryParse(Console.ReadLine(), out int n) || n == 0) return;
 
             int idx = n - 1;
-            if (idx < 0 || idx >= beats.Count)               { Warn("Invalid selection.");                      return; }
+            if (idx < 0 || idx >= beats.Count)               { Warn("Invalid selection."); return; }
             if (beats[idx].IsOpening && beats.Count(x => x.IsOpening) <= 1) { Warn("Cannot remove the only opening beat."); return; }
             if (beats[idx].IsFinish  && beats.Count(x => x.IsFinish)  <= 1) { Warn("Cannot remove the only finish beat.");  return; }
 
@@ -294,7 +307,7 @@ namespace WrestlingSim.UI
 
         private static void ChangeControl(List<MatchBeat> beats, Wrestler a, Wrestler b)
         {
-            Console.WriteLine("\n  ── CHANGE CONTROL " + new string('─', 24));
+            Rule("CHANGE CONTROL", 30);
             DisplayPlan(beats, a, b);
             Console.Write("  Beat number (0 to cancel): ");
             if (!int.TryParse(Console.ReadLine(), out int n) || n == 0) return;
@@ -305,19 +318,38 @@ namespace WrestlingSim.UI
             beats[idx].Control = SelectControl(a, b);
         }
 
+        /// <summary>
+        /// Intensity and duration were previously fixed at the template defaults with
+        /// no way to reach the overrides ToMatchBeat already supported.
+        /// </summary>
+        private static void ChangeIntensity(List<MatchBeat> beats, Wrestler a, Wrestler b)
+        {
+            Rule("INTENSITY / DURATION", 24);
+            DisplayPlan(beats, a, b);
+            Console.Write("  Beat number (0 to cancel): ");
+            if (!int.TryParse(Console.ReadLine(), out int n) || n == 0) return;
+
+            int idx = n - 1;
+            if (idx < 0 || idx >= beats.Count) { Warn("Invalid selection."); return; }
+
+            Rule("INTENSITY", 30);
+            var intensity = ChooseEnum<BeatIntensity>("Intensity (0 = leave alone)");
+            if (intensity.HasValue) beats[idx].Intensity = intensity.Value;
+
+            Rule("DURATION", 30);
+            var duration = ChooseEnum<BeatDuration>("Duration (0 = leave alone)");
+            if (duration.HasValue) beats[idx].Duration = duration.Value;
+        }
+
         private static BeatControl SelectControl(Wrestler? a = null, Wrestler? b = null)
         {
             Console.WriteLine("\n  Control:");
-            Console.ForegroundColor = ConsoleColor.DarkGray;
-            Console.Write("  [1] "); Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine(a != null ? $"WrestlerA — {a.RingName}" : "WrestlerA");
-            Console.ForegroundColor = ConsoleColor.DarkGray;
-            Console.Write("  [2] "); Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine(b != null ? $"WrestlerB — {b.RingName}" : "WrestlerB");
-            Console.ForegroundColor = ConsoleColor.DarkGray;
-            Console.WriteLine("  [3] Even");
-            Console.WriteLine("  [4] Contested (rapid back-and-forth)");
-            Console.ResetColor();
+            Write("  [1] ", ConsoleColor.DarkGray);
+            WriteLine(a != null ? $"WrestlerA — {a.RingName}" : "WrestlerA", ConsoleColor.White);
+            Write("  [2] ", ConsoleColor.DarkGray);
+            WriteLine(b != null ? $"WrestlerB — {b.RingName}" : "WrestlerB", ConsoleColor.White);
+            WriteLine("  [3] Even", ConsoleColor.DarkGray);
+            WriteLine("  [4] Contested (rapid back-and-forth)", ConsoleColor.DarkGray);
             Console.Write("  Select (Enter = Even): ");
 
             return (Console.ReadLine() ?? "").Trim() switch
@@ -335,86 +367,55 @@ namespace WrestlingSim.UI
         {
             const int typeW = 24;
             Console.WriteLine();
-            Console.ForegroundColor = ConsoleColor.DarkGray;
-            Console.WriteLine($"  {"#",3}  {"TYPE",-typeW}  CONTROL");
-            Console.WriteLine("  " + new string('─', 54));
-            Console.ResetColor();
+            WriteLine($"  {"#",3}  {"TYPE",-typeW}  {"CONTROL",-18}  INTENSITY", ConsoleColor.DarkGray);
+            WriteLine("  " + new string('─', 70), ConsoleColor.DarkGray);
 
             for (int i = 0; i < beats.Count; i++)
             {
                 var beat = beats[i];
-                Console.ForegroundColor = ConsoleColor.DarkGray;
-                Console.Write($"  {i + 1,3}  ");
+                Write($"  {i + 1,3}  ", ConsoleColor.DarkGray);
 
-                if (beat.IsFinish)       Console.ForegroundColor = ConsoleColor.Yellow;
-                else if (beat.IsOpening) Console.ForegroundColor = ConsoleColor.Cyan;
-                else                     Console.ForegroundColor = ConsoleColor.White;
+                var colour = beat.IsFinish  ? ConsoleColor.Yellow
+                           : beat.IsOpening ? ConsoleColor.Cyan
+                           : ConsoleColor.White;
 
-                Console.Write(Fit(BeatTypeName(beat.Type), typeW));
-                Console.ForegroundColor = ConsoleColor.DarkGray;
-                Console.WriteLine($"  {ControlLabel(beat.Control, a, b)}");
-                Console.ResetColor();
+                Write(Fit(BeatTypeName(beat.Type), typeW), colour);
+                Write("  " + Fit(ControlLabel(beat.Control, a, b), 18), ConsoleColor.DarkGray);
+                WriteLine($"  {beat.Intensity} / {beat.Duration}", ConsoleColor.DarkGray);
             }
 
-            Console.ForegroundColor = ConsoleColor.DarkGray;
-            Console.WriteLine("  " + new string('─', 54));
-            Console.ResetColor();
+            WriteLine("  " + new string('─', 70), ConsoleColor.DarkGray);
         }
 
         // ── Results display ──────────────────────────────────────────────────
 
-        private static void DisplayResults(MatchEngineResult result, Wrestler a, Wrestler b)
+        public static void DisplayResults(MatchEngineResult result, Wrestler a, Wrestler b)
         {
-            Console.Clear();
+            ConsoleUi.Clear();
             DrawHeader("MATCH RESULT");
 
             Console.WriteLine();
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine($"  {a.RingName}  vs  {b.RingName}");
-            Console.ResetColor();
+            WriteLine($"  {a.RingName}  vs  {b.RingName}", ConsoleColor.White);
             Console.WriteLine();
 
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine($"  WINNER        {result.Winner.RingName}");
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine($"  RATING        {result.StarDisplay}");
-            Console.ResetColor();
+            WriteLine($"  WINNER        {result.Winner.RingName}", ConsoleColor.Yellow);
+            WriteLine($"  RATING        {result.StarDisplay}", ConsoleColor.White);
             Console.WriteLine();
 
-            Console.ForegroundColor = ConsoleColor.DarkGray;
-            Console.WriteLine($"  Technical     {result.Bar(result.TechnicalScore,    60)}  {result.TechnicalScore:F0} / 60");
-            Console.WriteLine($"  Storytelling  {result.Bar(result.StorytellingScore, 80)}  {result.StorytellingScore:F0} / 80");
-            Console.WriteLine($"  Crowd         {result.Bar(result.CrowdAverageEnergy)}  {result.CrowdAverageEnergy:F0} / 100");
-            Console.ResetColor();
+            WriteLine($"  Technical     {result.Bar(result.TechnicalScore,    60)}  {result.TechnicalScore:F0} / 60", ConsoleColor.DarkGray);
+            WriteLine($"  Storytelling  {result.Bar(result.StorytellingScore, 80)}  {result.StorytellingScore:F0} / 80", ConsoleColor.DarkGray);
+            WriteLine($"  Crowd         {result.Bar(result.CrowdAverageEnergy)}  {result.CrowdAverageEnergy:F0} / 100", ConsoleColor.DarkGray);
 
             Console.WriteLine();
-            Console.ForegroundColor = ConsoleColor.DarkGray;
-            Console.WriteLine("  ── PLAY BY PLAY " + new string('─', 40));
-            Console.ResetColor();
+            WriteLine("  ── PLAY BY PLAY " + new string('─', 40), ConsoleColor.DarkGray);
             Console.WriteLine();
 
             foreach (var line in result.PlayByPlay)
             {
-                if (line.StartsWith('['))
-                {
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.WriteLine($"  {line}");
-                }
-                else if (line.StartsWith("  ▶"))
-                {
-                    Console.ForegroundColor = ConsoleColor.DarkGray;
-                    Console.WriteLine($"  {line}");
-                }
-                else if (!string.IsNullOrWhiteSpace(line))
-                {
-                    Console.ForegroundColor = ConsoleColor.White;
-                    Console.WriteLine($"  {line}");
-                }
-                else
-                {
-                    Console.WriteLine();
-                }
-                Console.ResetColor();
+                if (line.StartsWith('['))              WriteLine($"  {line}", ConsoleColor.Yellow);
+                else if (line.StartsWith("  ▶"))       WriteLine($"  {line}", ConsoleColor.DarkGray);
+                else if (!string.IsNullOrWhiteSpace(line)) WriteLine($"  {line}", ConsoleColor.White);
+                else Console.WriteLine();
             }
         }
 
@@ -454,36 +455,5 @@ namespace WrestlingSim.UI
             BeatControl.Contested => "Contested",
             _                     => control.ToString()
         };
-
-        private static string Fit(string s, int len) =>
-            s.Length > len ? s[..(len - 1)] + "…" : s.PadRight(len);
-
-        private static string Truncate(string s, int max) =>
-            s.Length > max ? s[..(max - 1)] + "…" : s;
-
-        private static void DrawHeader(string title)
-        {
-            const int W = 56;
-            int pad = (W - title.Length) / 2;
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine("  ╔" + new string('═', W) + "╗");
-            Console.WriteLine("  ║" + new string(' ', pad) + title + new string(' ', W - pad - title.Length) + "║");
-            Console.WriteLine("  ╚" + new string('═', W) + "╝");
-            Console.ResetColor();
-        }
-
-        private static void Warn(string msg)
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"\n  {msg}");
-            Console.ResetColor();
-            Console.ReadKey(true);
-        }
-
-        private static void Pause()
-        {
-            Console.WriteLine("\n  Press any key to return to the main menu...");
-            Console.ReadKey(true);
-        }
     }
 }
