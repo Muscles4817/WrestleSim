@@ -1,0 +1,74 @@
+{
+  // Terminal → Run Task…, or Ctrl+Shift+B for the default build.
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "detail": "Build the whole solution",
+      "command": "dotnet",
+      "type": "process",
+      "args": ["build", "${workspaceFolder}/WrestlingSim.sln", "/consoleloggerparameters:NoSummary"],
+      "problemMatcher": "$msCompile",
+      "group": { "kind": "build", "isDefault": true }
+    },
+    {
+      "label": "test",
+      "detail": "Run the xUnit suite",
+      "command": "dotnet",
+      "type": "process",
+      "args": ["test", "${workspaceFolder}/WrestlingSim.sln"],
+      "problemMatcher": "$msCompile",
+      "group": { "kind": "test", "isDefault": true }
+    },
+    {
+      "label": "web: run",
+      "detail": "Start the Blazor dev server on http://localhost:5080",
+      "command": "dotnet",
+      "type": "process",
+      "args": ["run", "--project", "${workspaceFolder}/WrestlingSim.Web"],
+      "problemMatcher": "$msCompile",
+      "isBackground": true
+    },
+    {
+      "label": "web: watch",
+      "detail": "Blazor dev server with hot reload",
+      "command": "dotnet",
+      "type": "process",
+      "args": ["watch", "--project", "${workspaceFolder}/WrestlingSim.Web"],
+      "problemMatcher": "$msCompile",
+      "isBackground": true
+    },
+    {
+      "label": "web: publish",
+      "detail": "Build the static site GitHub Pages will host",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "publish",
+        "${workspaceFolder}/WrestlingSim.Web",
+        "-c", "Release",
+        "-o", "${workspaceFolder}/artifacts/site"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "web: preview published site",
+      "detail": "Publish, then serve the exact static output on http://localhost:5081",
+      "dependsOn": "web: publish",
+      "type": "shell",
+      "command": "dotnet tool install --global dotnet-serve 2> $null; dotnet serve -d artifacts/site/wwwroot -p 5081 -o",
+      "windows": {
+        "command": "dotnet tool install --global dotnet-serve 2> $null; dotnet serve -d artifacts/site/wwwroot -p 5081 -o"
+      },
+      "linux": {
+        "command": "dotnet tool install --global dotnet-serve 2>/dev/null; dotnet serve -d artifacts/site/wwwroot -p 5081 -o"
+      },
+      "osx": {
+        "command": "dotnet tool install --global dotnet-serve 2>/dev/null; dotnet serve -d artifacts/site/wwwroot -p 5081 -o"
+      },
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": [],
+      "isBackground": true
+    }
+  ]
+}

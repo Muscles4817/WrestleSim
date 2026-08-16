@@ -1,0 +1,8 @@
+{
+  "recommendations": [
+    // C# language support, plus the Blazor WebAssembly debugger used by the
+    // "Run Web UI (debug C#)" launch configuration.
+    "ms-dotnettools.csdevkit",
+    "ms-dotnettools.csharp"
+  ]
+}

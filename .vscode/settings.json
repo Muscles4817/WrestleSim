@@ -1,0 +1,23 @@
+{
+  "dotnet.defaultSolution": "WrestlingSim.sln",
+
+  // Build output and the published site are not source.
+  "files.exclude": {
+    "**/bin": true,
+    "**/obj": true,
+    "artifacts": true
+  },
+  "search.exclude": {
+    "**/bin": true,
+    "**/obj": true,
+    "artifacts": true
+  },
+
+  "[csharp]": {
+    "editor.formatOnSave": false,
+    "editor.tabSize": 4
+  },
+  "[razor]": {
+    "editor.tabSize": 4
+  }
+}

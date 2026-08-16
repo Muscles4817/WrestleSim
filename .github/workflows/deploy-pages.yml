@@ -1,0 +1,67 @@
+name: Deploy web UI to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Allow GITHUB_TOKEN to publish to Pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time; let a newer push supersede an in-flight run.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Test
+        run: dotnet test WrestlingSim.sln --configuration Release
+
+      - name: Publish the Blazor app
+        run: dotnet publish WrestlingSim.Web -c Release -o artifacts/site
+
+      # GitHub Pages serves a project site from /<repo>/, so the Blazor loader
+      # needs a matching base href. Rewritten here rather than committed so the
+      # app still runs from the root during local development.
+      - name: Rewrite base href for the project sub-path
+        run: |
+          sed -i 's|<base href="/" />|<base href="/${{ github.event.repository.name }}/" />|g' \
+            artifacts/site/wwwroot/index.html
+          grep -o '<base href="[^"]*"' artifacts/site/wwwroot/index.html
+
+      # Without this, Pages runs Jekyll and drops the _framework directory.
+      - name: Add .nojekyll
+        run: touch artifacts/site/wwwroot/.nojekyll
+
+      # Single-page app: send unknown paths back to index.html.
+      - name: Add SPA fallback
+        run: cp artifacts/site/wwwroot/index.html artifacts/site/wwwroot/404.html
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: artifacts/site/wwwroot
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
