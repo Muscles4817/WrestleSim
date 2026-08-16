@@ -1,19 +1,32 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using WrestlingSim.Models.Segment;
-
 namespace WrestlingSim.Models
 {
     public class Show
     {
-        public string Name { get; set; }
+        public string Name { get; set; } = "Unnamed Show";
         public DateTime Date { get; set; }
-        public string Location { get; set; }
-        public int AudienceSize { get; set; }
-        public List<object> Card { get; set; } = new(); // Mix of Matches & Segments
+        public string Location { get; set; } = "Unknown Arena";
+        public int AudienceSize { get; set; } = 10000;
+
+        /// <summary>Matches and segments in running order.</summary>
+        public List<ICardItem> Card { get; set; } = new();
+
+        /// <summary>The runtime the card has to fit inside.</summary>
         public int TotalDurationMinutes { get; set; } = 180;
+
+        // ── Runtime budget ───────────────────────────────────────────────────
+
+        public int BookedMinutes => Card.Sum(i => i.DurationMinutes);
+
+        public int RemainingMinutes => TotalDurationMinutes - BookedMinutes;
+
+        public bool IsOverrunning => BookedMinutes > TotalDurationMinutes;
+
+        /// <summary>
+        /// How far over the runtime the card is, as a fraction of the budget.
+        /// Drives the overrun penalty in ShowSimulator.
+        /// </summary>
+        public double OverrunFraction => TotalDurationMinutes <= 0
+            ? 0
+            : Math.Max(0, BookedMinutes - TotalDurationMinutes) / (double)TotalDurationMinutes;
     }
 }

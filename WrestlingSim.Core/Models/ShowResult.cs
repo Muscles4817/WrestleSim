@@ -1,14 +1,59 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using WrestlingSim.Engine;
+using WrestlingSim.Models.MatchPlan;
+using SegResult = WrestlingSim.Models.Segment.SegmentResult;
 
 namespace WrestlingSim.Models
 {
     public class ShowResult
     {
+        /// <summary>Weighted overall show score, 0–100.</summary>
         public double OverallRating { get; set; }
-        public Dictionary<string, double> Breakdown { get; set; } = new();
+
+        public List<CardItemResult> Items { get; set; } = new();
+
+        /// <summary>Every feud that moved as a result of this show.</summary>
+        public List<FeudUpdate> FeudUpdates { get; set; } = new();
+
+        public int BookedMinutes { get; set; }
+        public int BudgetMinutes { get; set; }
+
+        /// <summary>Fraction shaved off the overall score for running long, 0–0.35.</summary>
+        public double OverrunPenalty { get; set; }
+
+        /// <summary>Crowd mood at the final bell, 0–10.</summary>
+        public double FinalCrowdMood { get; set; }
+
+        /// <summary>Kept for compatibility with the old label-to-score view.</summary>
+        public Dictionary<string, double> Breakdown =>
+            Items.ToDictionary(i => i.Label, i => i.Score);
+    }
+
+    public class CardItemResult
+    {
+        public required string Label { get; init; }
+        public required CardItemKind Kind { get; init; }
+
+        /// <summary>Score after every modifier, 0–100.</summary>
+        public double Score { get; set; }
+
+        /// <summary>Score before fatigue, crowd mood and position weighting.</summary>
+        public double RawScore { get; set; }
+
+        public double PositionWeight { get; set; } = 1.0;
+        public bool FatiguePenaltyApplied { get; set; }
+        public int DurationMinutes { get; set; }
+
+        /// <summary>Crowd mood going into this item, 0–10.</summary>
+        public double CrowdMoodBefore { get; set; }
+
+        /// <summary>Full engine output when this item was a match.</summary>
+        public MatchEngineResult? MatchResult { get; set; }
+
+        /// <summary>Full simulator output when this item was a segment.</summary>
+        public SegResult? SegmentResult { get; set; }
+
+        public double? StarRating => MatchResult?.StarRating;
+
+        public List<string> Notes { get; set; } = new();
     }
 }

@@ -20,30 +20,32 @@ namespace WrestlingSim.Models.MatchPlan
 
         // ── Display helpers ──────────────────────────────────────────────────
 
-        public string StarDisplay
+        public string StarDisplay => $"{GlyphsFor(StarRating)}  ({StarRating:F2} / 5.00)";
+
+        /// <summary>
+        /// Star glyphs for a 0–5 rating, rounded to the nearest quarter star.
+        /// Shared so every front end renders a rating the same way.
+        /// </summary>
+        public static string GlyphsFor(double rating)
         {
-            get
+            int full = (int)rating;
+            double rem = rating - full;
+
+            string stars = new string('★', full);
+            stars += rem switch
             {
-                // Full stars
-                int full = (int)StarRating;
-                double rem = StarRating - full;
+                >= 0.875 => "★",
+                >= 0.625 => "¾",
+                >= 0.375 => "½",
+                >= 0.125 => "¼",
+                _        => ""
+            };
 
-                string stars = new string('★', full);
-                stars += rem switch
-                {
-                    >= 0.875 => "★",
-                    >= 0.625 => "¾",
-                    >= 0.375 => "½",
-                    >= 0.125 => "¼",
-                    _        => ""
-                };
+            // If full+remainder rounded up past 5, cap display
+            if (stars.Replace("¼", "").Replace("½", "").Replace("¾", "").Length > 5)
+                stars = "★★★★★";
 
-                // If full+remainder rounded up past 5, cap display
-                if (stars.Replace("¼","").Replace("½","").Replace("¾","").Length > 5)
-                    stars = "★★★★★";
-
-                return $"{stars}  ({StarRating:F2} / 5.00)";
-            }
+            return stars;
         }
 
         public string Bar(double value, double max = 100, int width = 20)
