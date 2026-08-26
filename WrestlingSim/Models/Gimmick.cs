@@ -22,16 +22,29 @@ namespace WrestlingSim.Models
         public List<FanGroupAppeal> AppealRatings { get; set; } // Different fanbase responses
         public List<string> PreviousNames { get; set; }
 
-        public Gimmick() { }
+        public Gimmick()
+        {
+            GimmickTraits = new List<string>();
+            AppealRatings = new List<FanGroupAppeal>();
+            PreviousNames = new List<string>();
+        }
 
-        public Gimmick(string name)
+        public Gimmick(string name) : this()
         {
             Name = name;
         }
 
         public void ChangeName(string name)
         {
-            PreviousNames.Add(name);
+            if (string.IsNullOrWhiteSpace(name) || name == Name)
+                return;
+
+            PreviousNames ??= new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(Name))
+                PreviousNames.Add(Name);
+
+            Name = name;
         }
     }
 }

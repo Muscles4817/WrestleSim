@@ -46,6 +46,19 @@ namespace WrestlingSim.Models
         {
             Gimmick = gimmick;
         }
+
+        public void ChangeGimmick(Gimmick gimmick)
+        {
+            if (gimmick == null || ReferenceEquals(gimmick, Gimmick))
+                return;
+
+            PreviousGimmicks ??= new List<Gimmick>();
+
+            if (Gimmick != null)
+                PreviousGimmicks.Add(Gimmick);
+
+            Gimmick = gimmick;
+        }
             
         public void AddMove(Move move)
         {
@@ -70,11 +83,6 @@ namespace WrestlingSim.Models
         public void ChangeName(string name)
         {
             Gimmick.ChangeName(name);
-        }
-
-        public void ChangeGimmick(Gimmick gimmick)
-        { 
-            PreviousGimmicks.Add(gimmick);
         }
 
         public List<string> PreviousNames()
