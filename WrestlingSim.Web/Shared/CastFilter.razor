@@ -1,0 +1,35 @@
+@*
+    Search + division filter for any roster picker.
+
+    A thirty-name list is a wall on a phone. Both the match builder and the segment
+    builder need the same narrowing controls, so they live here rather than being
+    duplicated with slightly different behaviour in each.
+*@
+
+<div class="searchbar">
+    <input class="input" type="search" placeholder="@Placeholder"
+           value="@Query" @oninput="OnQuery" />
+    <div class="chips">
+        <button class="chip @(Division is null ? "is-active" : "")"
+                @onclick="() => SetDivision(null)">All</button>
+        <button class="chip @(Division == WrestlingSim.Enums.Division.Womens ? "is-active" : "")"
+                @onclick="() => SetDivision(WrestlingSim.Enums.Division.Womens)">Women</button>
+        <button class="chip @(Division == WrestlingSim.Enums.Division.Mens ? "is-active" : "")"
+                @onclick="() => SetDivision(WrestlingSim.Enums.Division.Mens)">Men</button>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Query { get; set; } = "";
+    [Parameter] public EventCallback<string> QueryChanged { get; set; }
+
+    [Parameter] public Division? Division { get; set; }
+    [Parameter] public EventCallback<Division?> DivisionChanged { get; set; }
+
+    [Parameter] public string Placeholder { get; set; } = "Search the roster…";
+
+    private Task OnQuery(ChangeEventArgs e) =>
+        QueryChanged.InvokeAsync(e.Value?.ToString() ?? "");
+
+    private Task SetDivision(Division? d) => DivisionChanged.InvokeAsync(d);
+}

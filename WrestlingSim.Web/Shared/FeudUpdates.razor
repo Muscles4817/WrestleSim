@@ -1,0 +1,55 @@
+@if (Meaningful.Count > 0)
+{
+    <div class="panel">
+        <div class="panel__title">Feuds</div>
+
+        @foreach (var update in Meaningful)
+        {
+            <div class="feud">
+                <div class="feud__top">
+                    <span class="feud__names">
+                        @update.Feud.WrestlerA.RingName <span class="faint">vs</span> @update.Feud.WrestlerB.RingName
+                    </span>
+                    <span class="feud__delta">+@update.HeatAdded.ToString("F1") heat</span>
+                    <span class="badge @IntensityBadge(update.LevelAfter)">@update.LevelAfter</span>
+                </div>
+
+                <Meter Label="Heat" Value="@update.HeatAfter" Max="50"
+                       ValueText="@($"{update.HeatAfter:F0} / 50")" />
+
+                @if (update.Escalated)
+                {
+                    <div class="feud__escalate">
+                        ▲ Escalated from @update.PreviousLevel to @update.LevelAfter
+                    </div>
+                }
+
+                @if (update.NewTags.Count > 0)
+                {
+                    <div class="badge-row mt">
+                        @foreach (var tag in update.NewTags)
+                        {
+                            <span class="badge badge--cyan">+ @tag</span>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public IEnumerable<FeudUpdate> Updates { get; set; } = Array.Empty<FeudUpdate>();
+
+    private List<FeudUpdate> Meaningful =>
+        Updates.Where(u => u.HeatAdded > 0.05).ToList();
+
+    internal static string IntensityBadge(FeudIntensity intensity) => intensity switch
+    {
+        FeudIntensity.Nuclear  => "badge--heel",
+        FeudIntensity.Hot      => "badge--gold",
+        FeudIntensity.Building => "badge--cyan",
+        FeudIntensity.Cold     => "badge",
+        _                      => "badge--muted"
+    };
+}

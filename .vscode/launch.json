@@ -1,0 +1,51 @@
+{
+  // Press F5, or pick a configuration in the Run and Debug panel.
+  // The first entry is the default, so F5 runs the web UI.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // Starts the Blazor dev server and opens http://localhost:5080 in your browser.
+      // Uses only VS Code's built-in terminal launcher, so it needs no extensions.
+      "name": "▶ Run Web UI",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "dotnet run --project WrestlingSim.Web",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      // Same app, but with C# breakpoints working inside the browser.
+      // Needs the C# Dev Kit extension plus Chrome or Edge.
+      "name": "▶ Run Web UI (debug C#)",
+      "type": "blazorwasm",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/WrestlingSim.Web",
+      "url": "http://localhost:5080"
+    },
+    {
+      // Hot reload: edits to .razor and .cs files refresh the browser automatically.
+      "name": "▶ Run Web UI (hot reload)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "dotnet watch --project WrestlingSim.Web",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      // The original terminal version of the game.
+      "name": "▶ Run Console App",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/WrestlingSim/bin/Debug/net8.0/WrestlingSim.dll",
+      "cwd": "${workspaceFolder}/WrestlingSim",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": "▶ Run Tests",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "dotnet test",
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

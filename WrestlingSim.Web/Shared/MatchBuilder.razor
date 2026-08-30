@@ -1,0 +1,643 @@
+@inject GameState State
+
+<div class="steps">
+    @foreach (var (index, label) in StepLabels)
+    {
+        <div class="step @(step == index ? "is-current" : step > index ? "is-done" : "")">
+            <span class="step__n">@(step > index ? "✓" : (index + 1).ToString())</span>
+            <span>@label</span>
+        </div>
+    }
+</div>
+
+@* ── 1. Wrestlers ─────────────────────────────────────────────────────── *@
+@if (step == 0)
+{
+    <CastFilter Query="@rosterQuery" QueryChanged="@(v => rosterQuery = v)"
+                Division="@rosterDivision" DivisionChanged="@(v => rosterDivision = v)" />
+
+    <div class="panel">
+        <div class="panel__title">
+            Corner A
+            @if (a is not null) { <span class="badge badge--gold">@a.RingName</span> }
+            <span class="spacer"></span>
+            <span class="small muted">wins by default in every preset</span>
+        </div>
+        @{ var poolA = FilteredRoster().ToList(); }
+        @if (poolA.Count == 0)
+        {
+            <div class="empty">Nobody matches that search.</div>
+        }
+        @foreach (var group in poolA.GroupBy(w => w.CardPosition).OrderByDescending(g => g.Key))
+        {
+            <div class="group-label">@group.Key.Label()</div>
+            <div class="picks picks--2">
+                @foreach (var w in group.OrderByDescending(x => x.Popularity))
+                {
+                    <button class="pick @(a == w ? "is-selected" : "")" @onclick="() => PickA(w)">
+                        <span class="pick__body">
+                            <span class="pick__name">@w.RingName</span>
+                            <span class="pick__desc">@w.Style · @(w.Gimmick?.NaturalAlignment.ToString() ?? "—")</span>
+                        </span>
+                        <span class="pick__meta">Pop @w.Popularity<br />Cha @w.Charisma.ToString("F1")</span>
+                    </button>
+                }
+            </div>
+        }
+    </div>
+
+    @if (a is not null)
+    {
+        <div class="panel">
+            <div class="panel__title">
+                Corner B
+                @if (b is not null) { <span class="badge badge--gold">@b.RingName</span> }
+            </div>
+            @if (b is not null && b.Division != a.Division)
+            {
+                <div class="notice notice--warn">
+                    This is an intergender match — @a.RingName is in the @DivisionName(a.Division)
+                    division and @b.RingName is in the @DivisionName(b.Division). Perfectly legal
+                    to book, just an unusual call.
+                </div>
+            }
+            @{ var poolB = FilteredRoster().Where(x => x != a).ToList(); }
+            @foreach (var group in poolB.GroupBy(w => w.CardPosition).OrderByDescending(g => g.Key))
+            {
+                <div class="group-label">@group.Key.Label()</div>
+                <div class="picks picks--2">
+                    @foreach (var w in group.OrderByDescending(x => x.Popularity))
+                    {
+                        <button class="pick @(b == w ? "is-selected" : "")" @onclick="() => PickB(w)">
+                            <span class="pick__body">
+                                <span class="pick__name">@w.RingName</span>
+                                <span class="pick__desc">@w.Style · @(w.Gimmick?.NaturalAlignment.ToString() ?? "—")</span>
+                            </span>
+                            <span class="pick__meta">Pop @w.Popularity<br />Cha @w.Charisma.ToString("F1")</span>
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+    }
+}
+
+@* ── 2. Match type ────────────────────────────────────────────────────── *@
+@if (step == 1)
+{
+    <div class="panel">
+        <div class="panel__title">Match type</div>
+        <div class="picks">
+            @foreach (var t in Enum.GetValues<MatchType>())
+            {
+                <button class="pick @(matchType == t ? "is-selected" : "")" @onclick="() => matchType = t">
+                    <span class="pick__body">
+                        <span class="pick__name">@t</span>
+                        <span class="pick__desc">@TypeBlurb(t)</span>
+                    </span>
+                    <span class="pick__meta">@TypeWeights(t)</span>
+                </button>
+            }
+        </div>
+        <div class="notice notice--tip mt">
+            The type you declare shifts how the match is graded <em>and</em> what it is graded
+            against. Book a plan that delivers what you advertised and you are paid for it;
+            declare a technical classic and book a brawl and you are not.
+            <strong>Standard</strong> promises nothing specific — the safe choice, never the free one.
+        </div>
+    </div>
+}
+
+@* ── 3. Feud ──────────────────────────────────────────────────────────── *@
+@if (step == 2)
+{
+    <div class="panel">
+        <div class="panel__title">Feud</div>
+
+        @if (existingFeud is not null && existingFeud.Intensity > FeudIntensity.None)
+        {
+            <p class="small muted">
+                @a!.RingName and @b!.RingName have history you have booked. Using it raises the
+                crowd's starting energy and unlocks feud-gated beats.
+            </p>
+
+            <button class="pick @(feudChoice == FeudChoice.UseExisting ? "is-selected" : "")"
+                    @onclick="() => feudChoice = FeudChoice.UseExisting">
+                <span class="pick__body">
+                    <span class="pick__name">
+                        Use the booked feud
+                        <span class="badge @FeudUpdates.IntensityBadge(existingFeud.Intensity)">@existingFeud.Intensity</span>
+                    </span>
+                    <span class="pick__desc">
+                        @existingFeud.Heat.ToString("F0") heat · @existingFeud.MatchCount match@(existingFeud.MatchCount == 1 ? "" : "es")
+                        @if (existingFeud.History.Count > 0)
+                        {
+                            <text> · @string.Join(", ", existingFeud.History)</text>
+                        }
+                    </span>
+                </span>
+            </button>
+        }
+        else
+        {
+            <div class="notice notice--info">
+                @a!.RingName and @b!.RingName have no booked history. Book segments between them
+                to build a feud properly, or declare one by hand below.
+            </div>
+        }
+
+        <div class="picks mt">
+            <button class="pick @(feudChoice == FeudChoice.Declare ? "is-selected" : "")"
+                    @onclick="() => feudChoice = FeudChoice.Declare">
+                <span class="pick__body">
+                    <span class="pick__name">Declare a feud by hand</span>
+                    <span class="pick__desc">Written into the feud book so later segments build on it.</span>
+                </span>
+            </button>
+
+            <button class="pick @(feudChoice == FeudChoice.None ? "is-selected" : "")"
+                    @onclick="() => feudChoice = FeudChoice.None">
+                <span class="pick__body">
+                    <span class="pick__name">No feud</span>
+                    <span class="pick__desc">A straight contest with nothing personal behind it.</span>
+                </span>
+            </button>
+        </div>
+
+        @if (feudChoice == FeudChoice.Declare)
+        {
+            <div class="panel panel--flat mt">
+                <div class="field">
+                    <span class="field__label">Intensity</span>
+                    <select class="select" @bind="declaredIntensity">
+                        @foreach (var i in new[] { FeudIntensity.Cold, FeudIntensity.Building, FeudIntensity.Hot, FeudIntensity.Nuclear })
+                        {
+                            <option value="@i">@i — @Feud.HeatFor(i).ToString("F0") heat</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="field mt">
+                    <span class="field__label">History tags</span>
+                    <div class="badge-row">
+                        @foreach (var tag in Enum.GetValues<FeudHistoryTag>())
+                        {
+                            <button class="btn btn--sm @(declaredTags.Contains(tag) ? "btn--primary" : "btn--ghost")"
+                                    @onclick="() => ToggleTag(tag)">
+                                @tag
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@* ── 4. Structure ─────────────────────────────────────────────────────── *@
+@if (step == 3)
+{
+    <div class="panel">
+        <div class="panel__title">Match structure</div>
+        <div class="picks">
+            @foreach (var s in MatchStructureLibrary.All)
+            {
+                var blocked = s.RequiresFeud && feud is null;
+                <button class="pick @(structureName == s.Name ? "is-selected" : "")"
+                        disabled="@blocked"
+                        @onclick="() => PickStructure(s)">
+                    <span class="pick__body">
+                        <span class="pick__name">
+                            @s.Name
+                            @if (blocked) { <span class="badge badge--heel">needs a feud</span> }
+                        </span>
+                        <span class="pick__desc">@s.Description</span>
+                    </span>
+                    <span class="pick__meta">@s.Beats.Count beats</span>
+                </button>
+            }
+
+            <button class="pick @(structureName == "Custom" ? "is-selected" : "")" @onclick="PickCustom">
+                <span class="pick__body">
+                    <span class="pick__name">Build from scratch</span>
+                    <span class="pick__desc">An opening and a finish, pre-loaded. Add the rest yourself.</span>
+                </span>
+                <span class="pick__meta">2 beats</span>
+            </button>
+        </div>
+    </div>
+}
+
+@* ── 5. Beat editor ───────────────────────────────────────────────────── *@
+@if (step == 4)
+{
+    <div class="panel">
+        <div class="versus">
+            <div class="versus__side">
+                <div class="versus__corner">Corner A</div>
+                <div class="versus__name">@a!.RingName</div>
+                <div class="versus__meta">Pop @a.Popularity · Cha @a.Charisma.ToString("F1")</div>
+            </div>
+            <div class="versus__vs">VS</div>
+            <div class="versus__side">
+                <div class="versus__corner">Corner B</div>
+                <div class="versus__name">@b!.RingName</div>
+                <div class="versus__meta">Pop @b.Popularity · Cha @b.Charisma.ToString("F1")</div>
+            </div>
+        </div>
+
+        @if (feud is not null)
+        {
+            <div class="notice notice--tip mt">
+                <strong>@feud.Intensity feud</strong> — @feud.Heat.ToString("F0") heat,
+                +@feud.StartingEnergyBonus starting crowd energy.
+                @if (feud.History.Count > 0)
+                {
+                    <text> History: @string.Join(", ", feud.History).</text>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="panel">
+        <div class="panel__title">
+            Beat sheet
+            <span class="spacer"></span>
+            <span class="small muted">~@RuntimeMinutes min · @beats.Count beats</span>
+        </div>
+
+        @foreach (var beat in beats)
+        {
+            var i = beats.IndexOf(beat);
+            <div class="editor-row @(beat.IsFinish ? "is-finish" : beat.IsOpening ? "is-opening" : "")">
+                <div class="editor-row__n">@(i + 1)</div>
+                <div>
+                    <div class="editor-row__name">@BeatTypeName(beat.Type)</div>
+                    <div class="editor-row__sub">@beat.Intensity · @beat.Duration · @beat.DurationMinutes min</div>
+                </div>
+                <div class="editor-row__tools">
+                    <select class="inline-select" value="@beat.Control"
+                            @onchange="e => SetControl(beat, e.Value?.ToString())">
+                        <option value="@BeatControl.WrestlerA">A — @a.RingName</option>
+                        <option value="@BeatControl.WrestlerB">B — @b.RingName</option>
+                        <option value="@BeatControl.Even">Even</option>
+                        <option value="@BeatControl.Contested">Contested</option>
+                    </select>
+
+                    <select class="inline-select" value="@beat.Intensity"
+                            @onchange="e => SetIntensity(beat, e.Value?.ToString())">
+                        @foreach (var v in Enum.GetValues<BeatIntensity>())
+                        {
+                            <option value="@v">@v</option>
+                        }
+                    </select>
+
+                    <select class="inline-select" value="@beat.Duration"
+                            @onchange="e => SetDuration(beat, e.Value?.ToString())">
+                        @foreach (var v in Enum.GetValues<BeatDuration>())
+                        {
+                            <option value="@v">@v</option>
+                        }
+                    </select>
+
+                    <button class="btn btn--icon btn--ghost" disabled="@(i == 0)"
+                            title="Move up" @onclick="() => Move(i, -1)">↑</button>
+                    <button class="btn btn--icon btn--ghost" disabled="@(i == beats.Count - 1)"
+                            title="Move down" @onclick="() => Move(i, 1)">↓</button>
+                    <button class="btn btn--icon btn--danger" disabled="@(!CanRemove(beat))"
+                            title="Remove" @onclick="() => Remove(beat)">✕</button>
+                </div>
+            </div>
+        }
+
+        <div class="row mt">
+            <button class="btn" @onclick="() => showAddBeat = !showAddBeat">
+                @(showAddBeat ? "Close beat library" : "+ Add a beat")
+            </button>
+        </div>
+
+        @if (showAddBeat)
+        {
+            <div class="panel panel--flat mt">
+                @foreach (var category in BeatLibrary.Categories)
+                {
+                    <div class="group-label">@category</div>
+                    <div class="picks">
+                        @foreach (var t in BeatLibrary.ByCategory(category))
+                        {
+                            var gate = GateFor(t);
+                            <button class="pick" disabled="@(gate is not null)" @onclick="() => AddBeat(t)">
+                                <span class="pick__body">
+                                    <span class="pick__name">
+                                        @t.Name
+                                        @if (gate is not null) { <span class="badge badge--heel">@gate</span> }
+                                    </span>
+                                    <span class="pick__desc">@t.Description</span>
+                                    @if (!string.IsNullOrWhiteSpace(t.BookerTip))
+                                    {
+                                        <span class="pick__desc gold">ⓘ @t.BookerTip</span>
+                                    }
+                                </span>
+                                <span class="pick__meta">@t.DefaultIntensity<br />@t.DefaultDuration</span>
+                            </button>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    @if (errors.Count > 0)
+    {
+        <div class="notice notice--error">
+            <strong>This plan will not run:</strong>
+            <ul>@foreach (var e in errors) { <li>@e</li> }</ul>
+        </div>
+    }
+}
+
+@* ── Wizard controls ──────────────────────────────────────────────────── *@
+@* Sticky on mobile so Next is always reachable without scrolling past a long
+   beat sheet or a 30-name roster list. *@
+<div class="wizard-bar wizard-bar--sticky">
+    <button class="btn btn--ghost" @onclick="Back">@(step == 0 ? "← Cancel" : "← Back")</button>
+    <span class="wizard-bar__spacer"></span>
+    @if (step < 4)
+    {
+        <button class="btn btn--primary" disabled="@(!CanAdvance)" @onclick="Next">Next →</button>
+    }
+    else
+    {
+        <button class="btn btn--primary" @onclick="Finish">@ConfirmLabel</button>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public EventCallback<BookedMatch> OnDone { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    /// <summary>Label for the final button — "Run the match" vs "Add to card".</summary>
+    [Parameter] public string ConfirmLabel { get; set; } = "Run the match ★";
+
+    private enum FeudChoice { UseExisting, Declare, None }
+
+    private static readonly (int Index, string Label)[] StepLabels =
+    [
+        (0, "Wrestlers"), (1, "Type"), (2, "Feud"), (3, "Structure"), (4, "Beats")
+    ];
+
+    private int step;
+    private Wrestler? a, b;
+    private MatchType matchType = MatchType.Standard;
+
+    private string rosterQuery = "";
+    private Division? rosterDivision;
+
+    /// <summary>
+    /// The roster narrowed by the search box and division chips. With thirty wrestlers a
+    /// flat alphabetical wall is unusable on a phone, so the picker filters and then groups
+    /// by card position.
+    /// </summary>
+    private IEnumerable<Wrestler> FilteredRoster() =>
+        State.Roster
+            .Where(w => rosterDivision is null || w.Division == rosterDivision)
+            .Where(w => string.IsNullOrWhiteSpace(rosterQuery)
+                     || (w.RingName?.Contains(rosterQuery, StringComparison.OrdinalIgnoreCase) ?? false)
+                     || (w.RealName?.Contains(rosterQuery, StringComparison.OrdinalIgnoreCase) ?? false));
+
+    private static string DivisionName(Division d) => d == Division.Womens ? "women's" : "men's";
+
+    private static string TypeBlurb(MatchType t) => t switch
+    {
+        MatchType.Technical    => "Graded mostly on ring work. Wants mat wrestling, holds and a submission payoff.",
+        MatchType.Storytelling => "Graded mostly on story. Wants psychology, callbacks and near-falls.",
+        MatchType.Spotfest     => "Graded mostly on crowd reaction. Wants high spots, brawling and comebacks.",
+        _                      => "Balanced grading with no preference about how you get there."
+    };
+
+    /// <summary>
+    /// Component weights for a type, one per line. .pick__meta honours the breaks on
+    /// desktop and reflows them below the description on a phone.
+    /// </summary>
+    private static string TypeWeights(MatchType t)
+    {
+        var (tech, story, crowd) = t switch
+        {
+            MatchType.Technical    => (46, 24, 30),
+            MatchType.Storytelling => (24, 42, 34),
+            MatchType.Spotfest     => (30, 22, 48),
+            _                      => (35, 30, 35)
+        };
+        return $"Tech {tech}%\nStory {story}%\nCrowd {crowd}%";
+    }
+
+    private Feud? existingFeud;
+    private Feud? feud;
+    private FeudChoice feudChoice = FeudChoice.None;
+    private FeudIntensity declaredIntensity = FeudIntensity.Building;
+    private readonly List<FeudHistoryTag> declaredTags = new();
+
+    private string structureName = "";
+    private List<MatchBeat> beats = new();
+    private bool showAddBeat;
+    private List<string> errors = new();
+
+    private int RuntimeMinutes => 2 + beats.Sum(x => x.DurationMinutes);
+
+    private bool CanAdvance => step switch
+    {
+        0 => a is not null && b is not null,
+        1 => true,
+        2 => true,
+        3 => beats.Count > 0,
+        _ => true
+    };
+
+    // ── Navigation ───────────────────────────────────────────────────────
+
+    private void Next()
+    {
+        if (step == 0)
+        {
+            existingFeud = State.FeudBook.Find(a!, b!);
+            feudChoice = existingFeud is not null && existingFeud.Intensity > FeudIntensity.None
+                ? FeudChoice.UseExisting
+                : FeudChoice.None;
+        }
+
+        if (step == 2) ResolveFeud();
+
+        step++;
+    }
+
+    private async Task Back()
+    {
+        if (step == 0)
+        {
+            await OnCancel.InvokeAsync();
+            return;
+        }
+        step--;
+    }
+
+    private void PickA(Wrestler w)
+    {
+        a = w;
+        if (b == w) b = null;
+    }
+
+    private void PickB(Wrestler w) => b = w;
+
+    private void ToggleTag(FeudHistoryTag tag)
+    {
+        if (!declaredTags.Remove(tag)) declaredTags.Add(tag);
+    }
+
+    private void ResolveFeud()
+    {
+        switch (feudChoice)
+        {
+            case FeudChoice.UseExisting:
+                feud = existingFeud;
+                break;
+
+            case FeudChoice.Declare:
+                // Declared feuds go into the book so later segments build on them.
+                var declared = State.FeudBook.GetOrCreate(a!, b!);
+                declared.SetMinimumIntensity(declaredIntensity);
+                foreach (var tag in declaredTags) declared.AddTag(tag);
+                feud = declared;
+                break;
+
+            default:
+                feud = null;
+                break;
+        }
+    }
+
+    private void PickStructure(MatchStructure s)
+    {
+        structureName = s.Name;
+        // Clone: the library's beats are shared singletons.
+        beats = s.Beats.Select(x => x.Clone()).ToList();
+    }
+
+    private void PickCustom()
+    {
+        structureName = "Custom";
+        beats =
+        [
+            BeatLibrary.Find("Standard Collar-and-Elbow")!.ToMatchBeat(BeatControl.Even),
+            BeatLibrary.Find("Clean Victory")!.ToMatchBeat(BeatControl.WrestlerA),
+        ];
+    }
+
+    // ── Beat editing ─────────────────────────────────────────────────────
+
+    private void SetControl(MatchBeat beat, string? value)
+    {
+        if (Enum.TryParse<BeatControl>(value, out var parsed)) beat.Control = parsed;
+    }
+
+    private void SetIntensity(MatchBeat beat, string? value)
+    {
+        if (Enum.TryParse<BeatIntensity>(value, out var parsed)) beat.Intensity = parsed;
+    }
+
+    private void SetDuration(MatchBeat beat, string? value)
+    {
+        if (Enum.TryParse<BeatDuration>(value, out var parsed)) beat.Duration = parsed;
+    }
+
+    private bool CanRemove(MatchBeat beat) =>
+        !(beat.IsOpening && beats.Count(x => x.IsOpening) <= 1)
+        && !(beat.IsFinish && beats.Count(x => x.IsFinish) <= 1);
+
+    private void Remove(MatchBeat beat)
+    {
+        if (CanRemove(beat)) beats.Remove(beat);
+    }
+
+    private void Move(int index, int direction)
+    {
+        int to = index + direction;
+        if (to < 0 || to >= beats.Count) return;
+        (beats[index], beats[to]) = (beats[to], beats[index]);
+    }
+
+    private void AddBeat(BeatTemplate template)
+    {
+        // Insert before the finish so the finish stays last.
+        int at = beats.FindLastIndex(x => x.IsFinish);
+        if (at < 0) at = beats.Count;
+        beats.Insert(at, template.ToMatchBeat(BeatControl.WrestlerA));
+        showAddBeat = false;
+    }
+
+    /// <summary>
+    /// Why a template cannot be booked right now, or null if it can.
+    /// Covers the tag and ordering rules BeatLibrary.Available does not check,
+    /// so the editor never offers a beat that validation will then reject.
+    /// </summary>
+    private string? GateFor(BeatTemplate t)
+    {
+        if (t.RequiredFeudIntensity != FeudIntensity.None
+            && (feud is null || feud.Intensity < t.RequiredFeudIntensity))
+            return $"needs {t.RequiredFeudIntensity}+ feud";
+
+        if (t.Type == BeatType.ThirdPartyPullIn
+            && (feud is null
+                || (!feud.HasTag(FeudHistoryTag.FamilyInvolved) && !feud.HasTag(FeudHistoryTag.ManagerConflict))))
+            return "needs FamilyInvolved or ManagerConflict";
+
+        if (t.Type == BeatType.AlliesRejected && !beats.Any(x => x.Type == BeatType.ThirdPartyPullIn))
+            return "must follow an Outside Party beat";
+
+        return null;
+    }
+
+    // ── Finish ───────────────────────────────────────────────────────────
+
+    private async Task Finish()
+    {
+        var plan = new MatchPlanModel
+        {
+            WrestlerA = a!,
+            WrestlerB = b!,
+            MatchType = matchType,
+            Feud      = feud,
+            Beats     = beats
+        };
+
+        errors = plan.Validate();
+        if (errors.Count > 0) return;
+
+        await OnDone.InvokeAsync(new BookedMatch { Plan = plan, StructureName = structureName });
+    }
+
+    private static string BeatTypeName(BeatType type) => type switch
+    {
+        BeatType.HotOpening           => "Hot Opening",
+        BeatType.SlowOpening          => "Slow Opening",
+        BeatType.StandardOpening      => "Opening",
+        BeatType.HeatSegment          => "Heat Segment",
+        BeatType.Comeback             => "Comeback",
+        BeatType.RestHold             => "Rest Hold",
+        BeatType.HighSpot             => "High Spot",
+        BeatType.CrowdBrawl           => "Crowd Brawl",
+        BeatType.PsychologicalWarfare => "Psychological Warfare",
+        BeatType.RevengeSpot          => "Revenge Spot",
+        BeatType.FeudalEscalation     => "Feudal Escalation",
+        BeatType.ThirdPartyPullIn     => "Third Party Pull-In",
+        BeatType.AlliesRejected       => "Goes It Alone",
+        BeatType.NearFall             => "Near Fall",
+        BeatType.FinishClean          => "Finish: Clean",
+        BeatType.FinishRollup         => "Finish: Roll-Up",
+        BeatType.FinishSubmission     => "Finish: Submission",
+        BeatType.FinishDQ             => "Finish: DQ",
+        BeatType.FinishCountout       => "Finish: Count-Out",
+        BeatType.FinishInterference   => "Finish: Interference",
+        BeatType.FinishSuperFinisher  => "Finish: Super Finisher",
+        _                             => type.ToString()
+    };
+}

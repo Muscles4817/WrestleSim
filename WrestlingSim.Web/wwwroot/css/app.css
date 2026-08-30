@@ -1,0 +1,851 @@
+/* ============================================================================
+   WrestlingSim — booking system
+   Dark broadcast-graphics aesthetic. Self-contained: no external fonts or CDNs.
+   ========================================================================= */
+
+:root {
+  --bg:          #0a0b0f;
+  --bg-2:        #0f1116;
+  --panel:       #14161e;
+  --panel-2:     #1a1d27;
+  --panel-3:     #212533;
+  --line:        #272c3a;
+  --line-soft:   #1e2230;
+
+  --ink:         #e9ebf2;
+  --ink-2:       #b6bccd;
+  --muted:       #7d8497;
+  --faint:       #565d70;
+
+  --gold:        #f5b93b;
+  --gold-2:      #ffd77a;
+  --gold-dim:    #8a6a20;
+  --cyan:        #4fd1e0;
+
+  --face:        #4ade80;
+  --heel:        #f2585f;
+
+  --r-sm: 6px;
+  --r:    10px;
+  --r-lg: 16px;
+
+  --pad:  clamp(14px, 2.2vw, 22px);
+  --gap:  clamp(10px, 1.4vw, 16px);
+
+  /* Minimum comfortable touch target. Below ~44px, taps start missing. */
+  --tap: 44px;
+
+  /* Notch / home-indicator insets. Zero on anything that doesn't have them. */
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+
+  /* Height of the mobile tab bar, including its safe-area padding. */
+  --tabbar-h: calc(58px + var(--safe-b));
+
+  --shadow: 0 10px 30px rgba(0, 0, 0, .45);
+  --ring: 0 0 0 2px rgba(245, 185, 59, .55);
+
+  --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(1200px 620px at 50% -10%, #1b2030 0%, transparent 62%),
+    radial-gradient(800px 400px at 90% 110%, #171426 0%, transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  /* Stop the whole page rubber-banding when a scrollable panel hits its end. */
+  overscroll-behavior-y: none;
+}
+
+/* Touch behaviour. Removes the legacy 300ms tap delay and the grey flash that
+   makes a web app feel like a web page rather than an app. */
+button, a, select, input, label, [role="button"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+h1, h2, h3, h4 { margin: 0; font-weight: 700; line-height: 1.15; }
+p { margin: 0 0 .7em; }
+a { color: var(--gold); }
+
+::selection { background: rgba(245, 185, 59, .3); }
+
+/* ── Boot screen ─────────────────────────────────────────────────────────── */
+
+.boot {
+  min-height: 100dvh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 6px;
+  text-align: center;
+}
+.boot__mark { color: var(--gold); font-size: 34px; animation: pulse 1.6s ease-in-out infinite; }
+.boot__title {
+  font-size: 30px; font-weight: 800; letter-spacing: .22em;
+  text-transform: uppercase; color: var(--ink);
+}
+.boot__sub { color: var(--muted); font-size: 13px; letter-spacing: .08em; }
+.boot__bar {
+  margin-top: 14px; width: 210px; height: 3px; border-radius: 3px;
+  background: var(--panel-3); overflow: hidden;
+}
+.boot__bar span {
+  display: block; height: 100%; width: 40%; border-radius: 3px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  animation: slide 1.3s ease-in-out infinite;
+}
+@keyframes pulse { 50% { opacity: .35; } }
+@keyframes slide { 0% { transform: translateX(-110%); } 100% { transform: translateX(320%); } }
+
+/* ── Shell ───────────────────────────────────────────────────────────────── */
+
+.shell { min-height: 100dvh; display: flex; flex-direction: column; }
+
+.topbar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: var(--gap);
+  flex-wrap: wrap;
+  padding: 10px clamp(12px, 3vw, 28px);
+  padding-top: calc(10px + var(--safe-t));
+  padding-left: calc(clamp(12px, 3vw, 28px) + var(--safe-l));
+  padding-right: calc(clamp(12px, 3vw, 28px) + var(--safe-r));
+  background: rgba(10, 11, 15, .82);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand {
+  display: flex; align-items: baseline; gap: 9px;
+  margin-right: auto; cursor: pointer;
+  background: none; border: 0; color: inherit; font: inherit;
+  /* It is a real button (returns to the menu), so it needs a real target. */
+  min-height: var(--tap); padding: 0 8px 0 0;
+}
+.brand__star { color: var(--gold); font-size: 15px; }
+.brand__name {
+  font-size: 16px; font-weight: 800; letter-spacing: .17em;
+  text-transform: uppercase;
+}
+.brand__sub {
+  font-size: 10px; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--faint);
+}
+
+.nav { display: flex; gap: 4px; flex-wrap: wrap; }
+.nav__item {
+  appearance: none; border: 1px solid transparent; background: none;
+  color: var(--ink-2); font: inherit; font-size: 13px; font-weight: 600;
+  letter-spacing: .05em; padding: 7px 13px; border-radius: 999px;
+  cursor: pointer; transition: background .14s, color .14s, border-color .14s;
+  white-space: nowrap;
+}
+@media (hover: hover) and (pointer: fine) {
+  .nav__item:hover { background: var(--panel-2); color: var(--ink); }
+}
+.nav__item.is-active {
+  background: rgba(245, 185, 59, .12);
+  border-color: rgba(245, 185, 59, .35);
+  color: var(--gold-2);
+}
+.nav__count {
+  display: inline-block; margin-left: 6px; padding: 0 6px;
+  border-radius: 999px; background: var(--gold); color: #16130a;
+  font-size: 11px; font-weight: 800;
+}
+
+.main {
+  flex: 1;
+  width: 100%; max-width: 1120px; margin: 0 auto;
+  padding: clamp(18px, 3.4vw, 34px) clamp(12px, 3vw, 28px) 64px;
+  padding-left: calc(clamp(12px, 3vw, 28px) + var(--safe-l));
+  padding-right: calc(clamp(12px, 3vw, 28px) + var(--safe-r));
+}
+
+/* ── Mobile tab bar ──────────────────────────────────────────────────────── */
+/* Hidden on desktop, where the top nav does the job. On a phone the top of the
+   screen is the hardest place to reach, so navigation moves to the thumb zone. */
+
+.tabbar { display: none; }
+
+@media (max-width: 820px) {
+  .tabbar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+    display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+    background: rgba(10, 11, 15, .94);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--line);
+    padding-bottom: var(--safe-b);
+    padding-left: var(--safe-l);
+    padding-right: var(--safe-r);
+  }
+
+  .tabbar__item {
+    appearance: none; border: 0; background: none; color: var(--muted);
+    font: inherit; font-size: 10.5px; font-weight: 700;
+    letter-spacing: .04em;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px; padding: 8px 2px; min-height: 58px;
+    cursor: pointer; position: relative;
+    transition: color .14s;
+  }
+  .tabbar__glyph { font-size: 17px; line-height: 1; }
+  .tabbar__item.is-active { color: var(--gold); }
+  .tabbar__item.is-active::before {
+    content: ""; position: absolute; top: 0; left: 22%; right: 22%; height: 2px;
+    background: var(--gold); border-radius: 0 0 3px 3px;
+  }
+  .tabbar__badge {
+    position: absolute; top: 6px; left: 50%; margin-left: 6px;
+    min-width: 16px; height: 16px; padding: 0 4px;
+    border-radius: 999px; background: var(--gold); color: #16130a;
+    font-size: 10px; font-weight: 800; line-height: 16px; text-align: center;
+  }
+
+  /* Keep content clear of the fixed bar. */
+  .main { padding-bottom: calc(var(--tabbar-h) + 28px); }
+}
+
+/* ── Sticky wizard footer ────────────────────────────────────────────────── */
+/* The Back/Next controls in a multi-step builder must not require scrolling to
+   the bottom of a long beat sheet to reach. */
+
+.wizard-bar {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: calc(var(--gap) * 2);
+}
+.wizard-bar__spacer { margin-left: auto; }
+
+@media (max-width: 820px) {
+  /* Only wizards stick. A browse screen whose only control is "Main menu" does
+     not need to spend 60px of a phone screen advertising it. */
+  .wizard-bar--sticky {
+    position: sticky; bottom: var(--tabbar-h); z-index: 15;
+    margin: var(--gap) calc(clamp(12px, 3vw, 28px) * -1) 0;
+    padding: 10px clamp(12px, 3vw, 28px);
+    background: rgba(10, 11, 15, .95);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--line);
+  }
+
+  .wizard-bar--sticky .btn { flex: 1; }
+  .wizard-bar--sticky .btn--primary { flex: 1.6; }
+}
+
+/* ── Search / filter bar ─────────────────────────────────────────────────── */
+
+.searchbar { display: flex; gap: 8px; align-items: center; margin-bottom: var(--gap); flex-wrap: wrap; }
+.searchbar .input { flex: 1; min-width: 160px; }
+
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip {
+  appearance: none; cursor: pointer; font: inherit;
+  font-size: 12.5px; font-weight: 700; letter-spacing: .03em;
+  padding: 7px 13px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--panel-2); color: var(--ink-2);
+  min-height: 36px;
+  transition: background .13s, border-color .13s, color .13s;
+}
+@media (hover: hover) and (pointer: fine) {
+  .chip:hover:not(:disabled) { background: var(--panel-3); color: var(--ink); }
+}
+.chip.is-active {
+  background: rgba(245, 185, 59, .13);
+  border-color: rgba(245, 185, 59, .4);
+  color: var(--gold-2);
+}
+.chip:focus-visible { outline: none; box-shadow: var(--ring); }
+
+/* ── Roster cards (mobile alternative to wide tables) ────────────────────── */
+
+.rcards { display: grid; gap: 8px; }
+
+.rcard {
+  border: 1px solid var(--line); border-radius: var(--r);
+  background: var(--panel-2); padding: 12px 14px;
+}
+.rcard__top { display: flex; align-items: flex-start; gap: 10px; }
+.rcard__name { font-weight: 800; font-size: 15px; }
+.rcard__real { font-size: 12px; color: var(--faint); margin-top: 1px; }
+.rcard__badges { margin-left: auto; display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; }
+
+.rcard__stats {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 8px; margin-top: 12px;
+}
+.rcard__stat { text-align: center; }
+.rcard__stat b {
+  display: block; font-size: 15px; font-variant-numeric: tabular-nums; color: var(--ink);
+}
+.rcard__stat span {
+  display: block; font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--faint); margin-top: 2px;
+}
+
+.rcard__skills { margin-top: 12px; display: grid; gap: 5px; }
+.rcard__skill { display: grid; grid-template-columns: 62px 1fr 26px; gap: 8px; align-items: center; }
+.rcard__skill span { font-size: 11px; color: var(--muted); letter-spacing: .04em; }
+.rcard__skill b { font-size: 11.5px; font-variant-numeric: tabular-nums; text-align: right; color: var(--ink-2); font-weight: 600; }
+.rcard__bar { height: 5px; border-radius: 999px; background: var(--panel-3); overflow: hidden; }
+.rcard__bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--gold-dim), var(--gold)); }
+
+.rcard__toggle {
+  appearance: none; border: 0; background: none; color: var(--muted);
+  font: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
+  padding: 8px 0 0; min-height: var(--tap); text-align: left;
+}
+@media (hover: hover) and (pointer: fine) {
+  .rcard__toggle:hover { color: var(--gold); }
+}
+
+/* ── Screen headers ──────────────────────────────────────────────────────── */
+
+.screen__head { margin-bottom: clamp(16px, 2.6vw, 26px); }
+.screen__eyebrow {
+  font-size: 11px; letter-spacing: .24em; text-transform: uppercase;
+  color: var(--gold); font-weight: 700; margin-bottom: 6px;
+}
+.screen__title {
+  font-size: clamp(26px, 4.6vw, 40px); font-weight: 800;
+  letter-spacing: -.015em;
+}
+.screen__lede { color: var(--muted); max-width: 62ch; margin-top: 8px; }
+
+/* ── Panels ──────────────────────────────────────────────────────────────── */
+
+.panel {
+  background: linear-gradient(180deg, var(--panel) 0%, var(--bg-2) 100%);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: var(--pad);
+  box-shadow: var(--shadow);
+}
+.panel + .panel { margin-top: var(--gap); }
+.panel--flat { background: var(--panel); box-shadow: none; }
+
+.panel__title {
+  font-size: 12px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--muted); font-weight: 700;
+  padding-bottom: 10px; margin-bottom: 14px;
+  border-bottom: 1px solid var(--line-soft);
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+/* Secondary text inside a panel title is a note, not a second heading — it must
+   drop the shouty casing and tracking it would otherwise inherit. */
+.panel__title .small,
+.panel__title .muted {
+  text-transform: none; letter-spacing: normal; font-weight: 600;
+}
+
+.stack { display: grid; gap: var(--gap); }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.row--end { justify-content: flex-end; }
+.row--between { justify-content: space-between; }
+.spacer { margin-left: auto; }
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+
+.btn {
+  appearance: none; cursor: pointer;
+  font: inherit; font-weight: 700; font-size: 14px; letter-spacing: .02em;
+  padding: 10px 18px; border-radius: var(--r);
+  border: 1px solid var(--line);
+  background: var(--panel-2); color: var(--ink);
+  transition: transform .1s, background .14s, border-color .14s, color .14s;
+}
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn:focus-visible { outline: none; box-shadow: var(--ring); }
+
+.btn--primary {
+  background: linear-gradient(180deg, var(--gold-2), var(--gold));
+  border-color: #d9a02c; color: #1a1405;
+}
+
+.btn--ghost { background: transparent; }
+
+.btn--danger { color: var(--heel); border-color: rgba(242, 88, 95, .35); background: rgba(242, 88, 95, .08); }
+
+/* Hover styles are gated behind a real pointer.
+   On touch devices :hover latches after a tap and does not clear until you tap
+   something else, so an ungated hover rule leaves the button you just pressed
+   stuck in its hover appearance. Each variant restates its own background —
+   .btn:hover would otherwise strip the primary button's gradient, since the
+   variant rules only set filter and border-color. */
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover:not(:disabled) { background: var(--panel-3); border-color: #394054; }
+
+  .btn--primary:hover:not(:disabled) {
+    background: linear-gradient(180deg, var(--gold-2), var(--gold));
+    filter: brightness(1.07); border-color: #d9a02c;
+  }
+
+  .btn--ghost:hover:not(:disabled) { background: var(--panel-2); }
+
+  .btn--danger:hover:not(:disabled) {
+    background: rgba(242, 88, 95, .16); border-color: rgba(242, 88, 95, .5);
+  }
+}
+
+.btn--sm { padding: 6px 11px; font-size: 12.5px; border-radius: var(--r-sm); }
+.btn--icon { padding: 6px 10px; font-size: 13px; line-height: 1; border-radius: var(--r-sm); }
+.btn--block { width: 100%; }
+
+/* ── Menu tiles ──────────────────────────────────────────────────────────── */
+
+.tiles {
+  display: grid; gap: var(--gap);
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+.tile {
+  position: relative; overflow: hidden;
+  text-align: left; cursor: pointer;
+  background: linear-gradient(180deg, var(--panel) 0%, var(--bg-2) 100%);
+  border: 1px solid var(--line); border-radius: var(--r-lg);
+  padding: 20px; color: inherit; font: inherit;
+  transition: transform .14s, border-color .14s, box-shadow .14s;
+}
+.tile::before {
+  content: ""; position: absolute; inset: 0 auto 0 0; width: 3px;
+  background: var(--gold); opacity: 0; transition: opacity .14s;
+}
+@media (hover: hover) and (pointer: fine) {
+  .tile:hover { transform: translateY(-2px); border-color: #3a4157; box-shadow: var(--shadow); }
+  .tile:hover::before { opacity: 1; }
+}
+.tile:focus-visible { outline: none; box-shadow: var(--ring); }
+.tile__key {
+  font-size: 11px; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--gold); font-weight: 800; margin-bottom: 10px;
+}
+.tile__name { font-size: 19px; font-weight: 800; margin-bottom: 6px; }
+.tile__desc { color: var(--muted); font-size: 13.5px; line-height: 1.5; }
+
+/* ── Selectable options ──────────────────────────────────────────────────── */
+
+.picks { display: grid; gap: 8px; }
+.picks--2 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+
+.pick {
+  display: flex; align-items: flex-start; gap: 12px; text-align: left;
+  width: 100%; cursor: pointer; font: inherit; color: inherit;
+  background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: var(--r); padding: 12px 14px;
+  transition: background .13s, border-color .13s, transform .1s;
+}
+/* Not gating this would be worse than cosmetic: a latched hover on touch makes an
+   unselected card carry almost the same treatment as .pick.is-selected. */
+@media (hover: hover) and (pointer: fine) {
+  .pick:hover:not(:disabled) { background: var(--panel-3); border-color: #3a4157; }
+}
+.pick:active:not(:disabled) { transform: translateY(1px); }
+.pick:focus-visible { outline: none; box-shadow: var(--ring); }
+.pick.is-selected {
+  border-color: rgba(245, 185, 59, .55);
+  background: rgba(245, 185, 59, .09);
+}
+.pick:disabled { opacity: .45; cursor: not-allowed; }
+
+.pick__body { flex: 1; min-width: 0; }
+.pick__name { font-weight: 700; font-size: 14.5px; }
+.pick__desc { color: var(--muted); font-size: 13px; margin-top: 3px; line-height: 1.45; }
+.pick__meta {
+  font-size: 12px; color: var(--faint); font-variant-numeric: tabular-nums;
+  white-space: pre-line;      /* honours the line breaks the callers supply */
+  text-align: right; padding-top: 2px; flex: none;
+}
+.pick__index {
+  flex: none; width: 26px; height: 26px; border-radius: 7px;
+  display: grid; place-content: center;
+  background: var(--panel-3); color: var(--muted);
+  font-size: 12px; font-weight: 800;
+}
+.pick.is-selected .pick__index { background: var(--gold); color: #17120a; }
+
+/* ── Group headings inside lists ─────────────────────────────────────────── */
+
+.group-label {
+  font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--gold-dim); font-weight: 800;
+  margin: 16px 0 6px;
+}
+.group-label:first-child { margin-top: 0; }
+
+/* ── Tables ──────────────────────────────────────────────────────────────── */
+
+.table-wrap { overflow-x: auto; border-radius: var(--r); }
+table.data {
+  width: 100%; border-collapse: collapse; font-size: 14px;
+  min-width: 520px;
+}
+table.data th {
+  text-align: left; font-size: 10.5px; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--muted); font-weight: 700;
+  padding: 0 12px 9px; border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+table.data td {
+  padding: 11px 12px; border-bottom: 1px solid var(--line-soft);
+  vertical-align: middle;
+}
+table.data tr:last-child td { border-bottom: 0; }
+@media (hover: hover) and (pointer: fine) {
+  table.data tbody tr:hover td { background: rgba(255, 255, 255, .022); }
+}
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.nowrap { white-space: nowrap; }
+
+/* ── Badges ──────────────────────────────────────────────────────────────── */
+
+.badge {
+  display: inline-block; padding: 2px 9px; border-radius: 999px;
+  font-size: 11px; font-weight: 700; letter-spacing: .06em;
+  background: var(--panel-3); color: var(--ink-2);
+  border: 1px solid var(--line); white-space: nowrap;
+}
+.badge--face  { color: var(--face); border-color: rgba(74, 222, 128, .3); background: rgba(74, 222, 128, .1); }
+.badge--heel  { color: var(--heel); border-color: rgba(242, 88, 95, .3);  background: rgba(242, 88, 95, .1); }
+.badge--gold  { color: var(--gold); border-color: rgba(245, 185, 59, .32); background: rgba(245, 185, 59, .1); }
+.badge--cyan  { color: var(--cyan); border-color: rgba(79, 209, 224, .3);  background: rgba(79, 209, 224, .1); }
+.badge--muted { color: var(--faint); }
+
+.badge-row { display: flex; gap: 5px; flex-wrap: wrap; }
+
+/* ── Meters ──────────────────────────────────────────────────────────────── */
+
+.meter { display: grid; gap: 5px; }
+.meter__top {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+  font-size: 12.5px;
+}
+.meter__label { color: var(--muted); letter-spacing: .04em; }
+.meter__value { font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 700; }
+.meter__track {
+  height: 7px; border-radius: 999px; background: var(--panel-3); overflow: hidden;
+}
+.meter__fill {
+  height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+  transition: width .5s cubic-bezier(.2, .8, .3, 1);
+}
+.meter--cyan .meter__fill { background: linear-gradient(90deg, #1d6b74, var(--cyan)); }
+.meter--face .meter__fill { background: linear-gradient(90deg, #23794a, var(--face)); }
+.meter--heel .meter__fill { background: linear-gradient(90deg, #8a2c30, var(--heel)); }
+
+/* ── Stars ───────────────────────────────────────────────────────────────── */
+
+.stars { display: inline-flex; align-items: center; gap: 10px; }
+.stars__glyphs {
+  font-size: clamp(20px, 3.4vw, 28px); color: var(--gold);
+  letter-spacing: .06em; line-height: 1;
+  text-shadow: 0 0 18px rgba(245, 185, 59, .35);
+}
+.stars__num {
+  font-variant-numeric: tabular-nums; color: var(--muted);
+  font-size: 13px; font-weight: 700;
+}
+
+.score-hero {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--gap); flex-wrap: wrap;
+  padding: 18px 20px; border-radius: var(--r-lg);
+  background: linear-gradient(135deg, rgba(245, 185, 59, .1), rgba(245, 185, 59, .02));
+  border: 1px solid rgba(245, 185, 59, .25);
+}
+.score-hero__label {
+  font-size: 11px; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--gold); font-weight: 800;
+}
+.score-hero__main { font-size: clamp(20px, 3.6vw, 27px); font-weight: 800; }
+
+/* ── Play by play ────────────────────────────────────────────────────────── */
+
+.pbp { display: grid; gap: 14px; }
+.pbp__beat { border-left: 2px solid var(--line); padding: 2px 0 2px 16px; }
+.pbp__beat.is-finish { border-left-color: var(--gold); }
+.pbp__beat.is-opening { border-left-color: var(--cyan); }
+.pbp__label {
+  font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase;
+  font-weight: 800; color: var(--gold); margin-bottom: 5px;
+}
+.pbp__beat.is-opening .pbp__label { color: var(--cyan); }
+.pbp__line { color: var(--ink-2); margin-bottom: 3px; }
+.pbp__stats {
+  font-family: var(--mono); font-size: 11.5px; color: var(--faint);
+  margin-top: 6px; display: flex; gap: 14px; flex-wrap: wrap;
+}
+.pbp__stats b { color: var(--ink-2); font-weight: 600; }
+
+/* ── Wizard steps ────────────────────────────────────────────────────────── */
+
+.steps { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: clamp(16px, 2.4vw, 24px); }
+.step {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 12px 6px 8px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--panel);
+  font-size: 12.5px; color: var(--muted);
+}
+.step__n {
+  width: 20px; height: 20px; border-radius: 50%;
+  display: grid; place-content: center;
+  background: var(--panel-3); color: var(--muted);
+  font-size: 11px; font-weight: 800;
+}
+.step.is-done .step__n { background: rgba(74, 222, 128, .18); color: var(--face); }
+.step.is-done { color: var(--ink-2); }
+.step.is-current {
+  color: var(--gold-2); border-color: rgba(245, 185, 59, .45);
+  background: rgba(245, 185, 59, .08);
+}
+.step.is-current .step__n { background: var(--gold); color: #17120a; }
+
+/* ── Versus header ───────────────────────────────────────────────────────── */
+
+.versus {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  gap: var(--gap); text-align: center;
+}
+.versus__side { min-width: 0; }
+.versus__name { font-size: clamp(15px, 2.6vw, 20px); font-weight: 800; }
+.versus__meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.versus__vs { font-size: 12px; font-weight: 800; letter-spacing: .18em; color: var(--gold); padding: 0 6px; }
+.versus__corner { font-size: 10.5px; letter-spacing: .18em; color: var(--faint); font-weight: 800; }
+
+/* ── Editors (beat / action / card sheet) ────────────────────────────────── */
+
+.editor-row {
+  display: grid; align-items: center; gap: 10px;
+  grid-template-columns: 30px 1fr auto;
+  padding: 9px 12px; border-radius: var(--r);
+  background: var(--panel-2); border: 1px solid var(--line-soft);
+}
+.editor-row + .editor-row { margin-top: 6px; }
+.editor-row.is-opening { border-left: 2px solid var(--cyan); }
+.editor-row.is-finish  { border-left: 2px solid var(--gold); }
+.editor-row.is-flagged { border-color: rgba(247, 163, 60, .4); background: rgba(247, 163, 60, .06); }
+.editor-row__n {
+  font-variant-numeric: tabular-nums; color: var(--faint);
+  font-size: 12px; font-weight: 700; text-align: right;
+}
+.editor-row__name { font-weight: 700; font-size: 14px; }
+.editor-row__sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.editor-row__tools { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; align-items: center; }
+
+.inline-select {
+  font: inherit; font-size: 12.5px;
+  background: var(--panel-3); color: var(--ink);
+  border: 1px solid var(--line); border-radius: var(--r-sm);
+  padding: 5px 8px; cursor: pointer; max-width: 190px;
+}
+.inline-select:focus-visible { outline: none; box-shadow: var(--ring); }
+
+.field { display: grid; gap: 6px; }
+.field__label {
+  font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--muted); font-weight: 700;
+}
+.input, .select, .textarea {
+  font: inherit; width: 100%;
+  background: var(--panel-2); color: var(--ink);
+  border: 1px solid var(--line); border-radius: var(--r);
+  padding: 9px 12px;
+}
+.input:focus-visible, .select:focus-visible, .textarea:focus-visible {
+  outline: none; box-shadow: var(--ring); border-color: transparent;
+}
+.fields { display: grid; gap: var(--gap); grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+.check { display: flex; align-items: center; gap: 9px; cursor: pointer; font-size: 14px; }
+.check input { width: 17px; height: 17px; accent-color: var(--gold); cursor: pointer; }
+
+/* ── Notices ─────────────────────────────────────────────────────────────── */
+
+.notice {
+  border-radius: var(--r); padding: 12px 14px; font-size: 13.5px;
+  border: 1px solid var(--line); background: var(--panel-2); color: var(--ink-2);
+}
+.notice--error { border-color: rgba(242, 88, 95, .38); background: rgba(242, 88, 95, .08); color: #ffb9bc; }
+.notice--warn  { border-color: rgba(247, 163, 60, .38); background: rgba(247, 163, 60, .08); color: #ffd8a3; }
+.notice--info  { border-color: rgba(79, 209, 224, .3);  background: rgba(79, 209, 224, .07); color: #b7ecf3; }
+.notice--tip   { border-color: rgba(245, 185, 59, .3);  background: rgba(245, 185, 59, .07); color: #ffe0a3; }
+.notice ul { margin: 6px 0 0; padding-left: 18px; }
+.notice li { margin: 2px 0; }
+
+.empty {
+  text-align: center; padding: 40px 20px; color: var(--muted);
+  border: 1px dashed var(--line); border-radius: var(--r-lg);
+}
+.empty__mark { font-size: 26px; margin-bottom: 8px; opacity: .5; }
+
+/* ── Feud cards ──────────────────────────────────────────────────────────── */
+
+.feud {
+  border: 1px solid var(--line); border-radius: var(--r);
+  background: var(--panel-2); padding: 14px 16px;
+}
+.feud + .feud { margin-top: 8px; }
+.feud__top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.feud__names { font-weight: 800; font-size: 15px; }
+.feud__delta { font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--gold); font-weight: 700; }
+.feud__escalate { margin-top: 8px; font-size: 12.5px; color: var(--gold-2); font-weight: 700; }
+
+/* ── Utility ─────────────────────────────────────────────────────────────── */
+
+.muted { color: var(--muted); }
+.faint { color: var(--faint); }
+.gold  { color: var(--gold); }
+.small { font-size: 12.5px; }
+.tabnum { font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--mono); }
+.center { text-align: center; }
+.mt   { margin-top: var(--gap); }
+.mt-2 { margin-top: calc(var(--gap) * 2); }
+
+/* ── Blazor error UI ─────────────────────────────────────────────────────── */
+
+#blazor-error-ui {
+  display: none;
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000;
+  padding: 12px 20px;
+  background: #2b1416; color: #ffc9cb;
+  border-top: 1px solid var(--heel);
+  box-shadow: 0 -6px 24px rgba(0, 0, 0, .5);
+}
+#blazor-error-ui .dismiss { cursor: pointer; float: right; }
+#blazor-error-ui a { color: var(--gold); }
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+
+/* Tablet and below: the top nav is replaced by the bottom tab bar. */
+@media (max-width: 820px) {
+  .nav { display: none; }
+  .topbar { padding-top: calc(12px + var(--safe-t)); padding-bottom: 12px; }
+  .brand { margin-right: 0; }
+
+  /* Tiles must fit a 320px screen without overflowing. */
+  .tiles { grid-template-columns: 1fr; }
+  .picks--2 { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  /* ── Touch targets ─────────────────────────────────────────────────────
+     Everything tappable gets at least 44px of height. Below that, taps land
+     on the wrong control often enough to be genuinely frustrating. */
+  .btn { min-height: var(--tap); padding: 11px 18px; }
+  .btn--sm { min-height: 38px; padding: 9px 14px; font-size: 13px; }
+  .btn--icon { min-height: var(--tap); min-width: var(--tap); padding: 10px; font-size: 16px; }
+  /* The meta column drops below the body rather than competing with it for a
+     336px card — otherwise the description wraps into a four-word ribbon. */
+  .pick { padding: 14px; min-height: var(--tap); flex-wrap: wrap; }
+  .pick__body { flex: 1 1 100%; }
+  .pick__meta {
+    flex: 1 1 100%; text-align: left; white-space: normal;
+    margin-top: 8px; padding-top: 8px;
+    border-top: 1px solid var(--line-soft);
+  }
+  .chip { min-height: var(--tap); padding: 10px 15px; }
+  .check { min-height: var(--tap); }
+  .check input { width: 22px; height: 22px; }
+
+  /* ── iOS zoom guard ────────────────────────────────────────────────────
+     Safari zooms the viewport when a focused field's font-size is under 16px,
+     and never zooms back out. Every text-entry control has to clear 16px. */
+  .input, .select, .textarea, .inline-select {
+    font-size: 16px;
+    min-height: var(--tap);
+    max-width: none;
+  }
+
+  /* ── Beat editor ───────────────────────────────────────────────────────
+     Three inline dropdowns plus three icon buttons do not fit a phone. The row
+     becomes a stacked card: identity on top, controls in a 3-column grid, and
+     the reorder/remove buttons on their own line. */
+  .editor-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 14px;
+  }
+  .editor-row__n {
+    text-align: left;
+    font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+  }
+  .editor-row__n::before { content: "Beat "; }
+  .editor-row__tools {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 8px; justify-content: stretch;
+  }
+  .editor-row__tools .inline-select { width: 100%; max-width: none; }
+  /* The three icon buttons share the last row and stay square. */
+  .editor-row__tools .btn--icon { grid-column: span 1; }
+
+  .versus { grid-template-columns: 1fr; gap: 6px; }
+  .versus__vs { padding: 4px 0; }
+  .brand__sub { display: none; }
+  .brand__name { font-size: 15px; }
+
+  /* Wide data tables become card lists — see .rcards. */
+  .table-wrap { display: none; }
+  .rcards { display: grid; }
+
+  .fields { grid-template-columns: 1fr; }
+  .score-hero { flex-direction: column; align-items: flex-start; }
+  .steps { gap: 4px; }
+  .step { padding: 5px 10px 5px 6px; font-size: 11.5px; }
+  .step span:not(.step__n) { display: none; }
+  .step.is-current span:not(.step__n) { display: inline; }
+
+  .panel { padding: 14px; border-radius: var(--r); }
+
+  /* Explanatory copy is worth a line or two, not half the viewport. On a 320x568
+     screen the untruncated Roster lede pushed the first wrestler below the fold. */
+  .screen__lede {
+    font-size: 14px;
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3;
+    overflow: hidden;
+  }
+  .screen__title { font-size: clamp(24px, 7vw, 30px); }
+  .screen__head { margin-bottom: 14px; }
+}
+
+/* Desktop keeps the tables and hides the card list. */
+@media (min-width: 641px) {
+  .rcards { display: none; }
+}
+
+/* Very small phones — 320px-wide devices still exist. */
+@media (max-width: 360px) {
+  .rcard__stats { grid-template-columns: repeat(2, 1fr); }
+  .editor-row__tools { grid-template-columns: repeat(2, 1fr); }
+  .tabbar__item { font-size: 9.5px; }
+}
+
+/* Landscape phones: vertical space is the scarce resource, not horizontal. */
+@media (max-height: 480px) and (orientation: landscape) {
+  .topbar { position: static; }
+  .screen__head { margin-bottom: 12px; }
+  .screen__title { font-size: 22px; }
+  .screen__lede { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+}

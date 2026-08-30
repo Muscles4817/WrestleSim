@@ -1,0 +1,81 @@
+using WrestlingSim.Enums;
+
+namespace WrestlingSim.Models.MatchPlan
+{
+    public class BeatResult
+    {
+        public BeatType BeatType { get; set; }
+        public BeatControl Control { get; set; }
+
+        public List<string> Commentary { get; set; } = new();
+
+        // Raw deltas applied this beat
+        public double CrowdEnergyDelta { get; set; }
+        public double MomentumDelta { get; set; }
+        public double TechnicalContribution { get; set; }
+        public double StorytellingContribution { get; set; }
+
+        // State snapshots after this beat resolves
+        public double CrowdEnergyAfter { get; set; }
+
+        /// <summary>
+        /// Crowd energy as the beat began. Recorded rather than derived: ApplyEnergy
+        /// compresses gains near the ceiling and clamps, and decay runs between beats, so
+        /// "after minus delta" reported a starting figure the crowd was never at.
+        /// </summary>
+        public double CrowdEnergyBefore { get; set; }
+        public double MomentumAfter { get; set; }
+        public double TechnicalScoreAfter { get; set; }
+        public double StorytellingScoreAfter { get; set; }
+
+        public bool FeudalResonanceActivated { get; set; }
+
+        /// <summary>
+        /// 1.0 the first time a beat type is used, falling with each repetition in the
+        /// same match. Exposed so the booking UI can show why a repeated beat landed flat.
+        /// </summary>
+        public double RepetitionFactor { get; set; } = 1.0;
+
+        // ── Display ──────────────────────────────────────────────────────────
+
+        public string BeatLabel => BeatType switch
+        {
+            BeatType.HotOpening          => "HOT OPENING",
+            BeatType.SlowOpening         => "SLOW OPENING",
+            BeatType.StandardOpening     => "OPENING",
+            BeatType.HeatSegment         => "HEAT SEGMENT",
+            BeatType.Comeback            => "COMEBACK",
+            BeatType.RestHold            => "REST HOLD",
+            BeatType.HighSpot            => "HIGH SPOT",
+            BeatType.CrowdBrawl          => "CROWD BRAWL",
+            BeatType.PsychologicalWarfare => "PSYCHOLOGICAL WARFARE",
+            BeatType.RevengeSpot         => "REVENGE SPOT",
+            BeatType.FeudalEscalation    => "FEUDAL ESCALATION",
+            BeatType.ThirdPartyPullIn    => "THIRD PARTY PULL-IN",
+            BeatType.AlliesRejected      => "GOES IT ALONE",
+            BeatType.NearFall            => "NEAR FALL",
+            BeatType.FinishClean         => "FINISH — CLEAN",
+            BeatType.FinishRollup        => "FINISH — ROLL-UP",
+            BeatType.FinishSubmission    => "FINISH — SUBMISSION",
+            BeatType.FinishDQ            => "FINISH — DISQUALIFICATION",
+            BeatType.FinishCountout      => "FINISH — COUNT-OUT",
+            BeatType.FinishInterference  => "FINISH — INTERFERENCE",
+            BeatType.FinishSuperFinisher => "FINISH — SUPER FINISHER",
+            _                            => BeatType.ToString().ToUpper()
+        };
+
+        public string StatsLine
+        {
+            get
+            {
+                double before = CrowdEnergyBefore;
+                string feudTag = FeudalResonanceActivated ? "  ★ Feud Resonance" : "";
+                return $"Crowd: {before:F0}→{CrowdEnergyAfter:F0}  |  " +
+                       $"Momentum: {MomentumAfter:+0.0;-0.0;0.0}  |  " +
+                       $"+Tech: {TechnicalContribution:F1}  |  " +
+                       $"+Story: {StorytellingContribution:F1}" +
+                       feudTag;
+            }
+        }
+    }
+}

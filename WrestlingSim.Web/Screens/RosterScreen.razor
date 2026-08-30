@@ -1,0 +1,229 @@
+@inject GameState State
+
+<div class="screen__head">
+    <div class="screen__eyebrow">@State.Roster.Count under contract</div>
+    <h1 class="screen__title">Roster</h1>
+    <p class="screen__lede">
+        Crowd disposition is derived from popularity and per-fan-group appeal rather than
+        alignment, which is why a heel can still read as beloved. Connection and workrate
+        are separate axes — the best worker on the roster is not the biggest draw.
+    </p>
+</div>
+
+<div class="searchbar">
+    <input class="input" type="search" placeholder="Search name or gimmick…"
+           value="@query" @oninput="OnQueryChanged" />
+    <div class="chips">
+        <button class="chip @(division is null ? "is-active" : "")" @onclick="() => division = null">All</button>
+        <button class="chip @(division == Division.Womens ? "is-active" : "")"
+                @onclick="() => division = Division.Womens">Women</button>
+        <button class="chip @(division == Division.Mens ? "is-active" : "")"
+                @onclick="() => division = Division.Mens">Men</button>
+    </div>
+</div>
+
+@if (!Filtered.Any())
+{
+    <div class="empty">
+        <div class="empty__mark">★</div>
+        Nobody matches “@query”.
+    </div>
+}
+
+@* ── Mobile: card list, grouped by card position ───────────────────────── *@
+<div class="rcards">
+    @foreach (var group in Filtered.GroupBy(w => w.CardPosition).OrderByDescending(g => g.Key))
+    {
+        <div class="group-label">@group.Key.Label()</div>
+
+        @foreach (var w in group.OrderByDescending(x => x.Popularity))
+        {
+            <div class="rcard">
+                <div class="rcard__top">
+                    <div>
+                        <div class="rcard__name">@w.RingName</div>
+                        <div class="rcard__real">@w.RealName · @w.Style</div>
+                    </div>
+                    <div class="rcard__badges">
+                        <span class="badge @AlignBadge(w)">@(w.Gimmick?.NaturalAlignment.ToString() ?? "—")</span>
+                    </div>
+                </div>
+
+                <div class="rcard__stats">
+                    <div class="rcard__stat"><b>@w.Popularity</b><span>Pop</span></div>
+                    <div class="rcard__stat"><b>@w.Charisma.ToString("F1")</b><span>Cha</span></div>
+                    <div class="rcard__stat"><b>@w.RingSkills.GetOverallSkill().ToString("F2")</b><span>Skill</span></div>
+                    <div class="rcard__stat"><b class="gold">@Disposition(w).ToString("F2")</b><span>Disp</span></div>
+                </div>
+
+                <button class="rcard__toggle" @onclick="() => Toggle(w.RingName)">
+                    @(expanded.Contains(w.RingName) ? "Hide ring skills ▲" : "Ring skills ▼")
+                </button>
+
+                @if (expanded.Contains(w.RingName))
+                {
+                    <div class="rcard__skills">
+                        @foreach (var (label, value) in Skills(w))
+                        {
+                            <div class="rcard__skill">
+                                <span>@label</span>
+                                <div class="rcard__bar"><i style="width:@((value / 5.0 * 100).ToString("F0"))%"></i></div>
+                                <b>@value.ToString("F1")</b>
+                            </div>
+                        }
+                        <div class="rcard__skill">
+                            <span>Psych</span>
+                            <div class="rcard__bar"><i style="width:@(w.Mental.Psychology)%"></i></div>
+                            <b>@w.Mental.Psychology</b>
+                        </div>
+                        <div class="rcard__skill">
+                            <span>Selling</span>
+                            <div class="rcard__bar"><i style="width:@(w.Mental.Selling)%"></i></div>
+                            <b>@w.Mental.Selling</b>
+                        </div>
+                        <div class="rcard__skill">
+                            <span>Stamina</span>
+                            <div class="rcard__bar"><i style="width:@(w.Physical.Stamina)%"></i></div>
+                            <b>@w.Physical.Stamina</b>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>
+
+@* ── Desktop: the full tables ──────────────────────────────────────────── *@
+<div class="panel">
+    <div class="table-wrap">
+        <table class="data">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Division</th>
+                    <th>Gimmick</th>
+                    <th>Align</th>
+                    <th>Style</th>
+                    <th class="num">Pop</th>
+                    <th class="num">Skill</th>
+                    <th class="num">Cha</th>
+                    <th class="num">Disp</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var w in Filtered.OrderByDescending(x => x.Popularity))
+                {
+                    <tr>
+                        <td>
+                            <strong>@w.RingName</strong>
+                            <div class="small faint">@w.RealName</div>
+                        </td>
+                        <td class="small muted nowrap">@(w.Division == Division.Womens ? "Women's" : "Men's")</td>
+                        <td class="small muted">@(w.Gimmick?.Type.ToString() ?? "—")</td>
+                        <td><span class="badge @AlignBadge(w)">@(w.Gimmick?.NaturalAlignment.ToString() ?? "—")</span></td>
+                        <td class="small muted nowrap">@w.Style</td>
+                        <td class="num">@w.Popularity</td>
+                        <td class="num">@w.RingSkills.GetOverallSkill().ToString("F2")</td>
+                        <td class="num">@w.Charisma.ToString("F1")</td>
+                        <td class="num gold">@Disposition(w).ToString("F2")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="panel">
+    <div class="panel__title">Ring skills</div>
+    <div class="table-wrap">
+        <table class="data">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th class="num">Flyer</th>
+                    <th class="num">Grappler</th>
+                    <th class="num">Power</th>
+                    <th class="num">Technical</th>
+                    <th class="num">Brawler</th>
+                    <th class="num">Striker</th>
+                    <th class="num">Psych</th>
+                    <th class="num">Sell</th>
+                    <th class="num">Stam</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var w in Filtered.OrderByDescending(x => x.Popularity))
+                {
+                    <tr>
+                        <td><strong>@w.RingName</strong></td>
+                        <td class="num">@w.RingSkills.HighFlyer.ToString("F1")</td>
+                        <td class="num">@w.RingSkills.Grappler.ToString("F1")</td>
+                        <td class="num">@w.RingSkills.Powerhouse.ToString("F1")</td>
+                        <td class="num">@w.RingSkills.Technical.ToString("F1")</td>
+                        <td class="num">@w.RingSkills.Brawler.ToString("F1")</td>
+                        <td class="num">@w.RingSkills.Striker.ToString("F1")</td>
+                        <td class="num muted">@w.Mental.Psychology</td>
+                        <td class="num muted">@w.Mental.Selling</td>
+                        <td class="num muted">@w.Physical.Stamina</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="wizard-bar">
+    <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Menu)">← Main menu</button>
+</div>
+
+@code {
+    private string query = "";
+    private Division? division;
+    private readonly HashSet<string> expanded = new();
+
+    private IEnumerable<Wrestler> Filtered =>
+        State.Roster
+            .Where(w => division is null || w.Division == division)
+            .Where(w => string.IsNullOrWhiteSpace(query)
+                     || (w.RingName?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false)
+                     || (w.RealName?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false)
+                     || (w.Gimmick?.PersonaDescriptor?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false));
+
+    private void OnQueryChanged(ChangeEventArgs e) => query = e.Value?.ToString() ?? "";
+
+    private void Toggle(string name)
+    {
+        if (!expanded.Remove(name)) expanded.Add(name);
+    }
+
+    private static (string Label, double Value)[] Skills(Wrestler w) =>
+    [
+        ("Flyer",     w.RingSkills.HighFlyer),
+        ("Grappler",  w.RingSkills.Grappler),
+        ("Power",     w.RingSkills.Powerhouse),
+        ("Technical", w.RingSkills.Technical),
+        ("Brawler",   w.RingSkills.Brawler),
+        ("Striker",   w.RingSkills.Striker),
+    ];
+
+    private static string AlignBadge(Wrestler w) => w.Gimmick?.NaturalAlignment switch
+    {
+        Alignment.Face => "badge--face",
+        Alignment.Heel => "badge--heel",
+        _              => "badge--muted"
+    };
+
+    /// <summary>
+    /// The raw popularity + fan-group appeal blend the engine calls Disposition.
+    /// Shown so the player can see why a heel still reads as beloved.
+    /// </summary>
+    private static double Disposition(Wrestler w)
+    {
+        double pop = w.Popularity / 100.0;
+
+        if (w.Gimmick?.AppealRatings is { Count: > 0 } ratings)
+            return (pop + ratings.Average(r => r.AppealScore)) / 2.0;
+
+        return pop;
+    }
+}
