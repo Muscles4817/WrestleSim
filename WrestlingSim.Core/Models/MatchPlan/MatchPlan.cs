@@ -58,6 +58,11 @@ namespace WrestlingSim.Models.MatchPlan
                 errors.Add("Plan has more than one finish beat.");
             else if (!Beats.Last().IsFinish)
                 errors.Add("Finish beat must be the last beat.");
+            else if (finishBeats[0].Control is not (BeatControl.WrestlerA or BeatControl.WrestlerB))
+                // BookedWinner reads the finish's Control, so Even/Contested silently resolved
+                // to WrestlerB while the engine's commentary credited WrestlerA. A finish has
+                // to say who won.
+                errors.Add("Finish beat must be controlled by WrestlerA or WrestlerB — a finish decides who wins.");
 
             // Feud-gated beats require an active feud
             foreach (var beat in Beats)

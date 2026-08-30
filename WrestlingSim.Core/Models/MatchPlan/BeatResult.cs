@@ -17,6 +17,13 @@ namespace WrestlingSim.Models.MatchPlan
 
         // State snapshots after this beat resolves
         public double CrowdEnergyAfter { get; set; }
+
+        /// <summary>
+        /// Crowd energy as the beat began. Recorded rather than derived: ApplyEnergy
+        /// compresses gains near the ceiling and clamps, and decay runs between beats, so
+        /// "after minus delta" reported a starting figure the crowd was never at.
+        /// </summary>
+        public double CrowdEnergyBefore { get; set; }
         public double MomentumAfter { get; set; }
         public double TechnicalScoreAfter { get; set; }
         public double StorytellingScoreAfter { get; set; }
@@ -61,7 +68,7 @@ namespace WrestlingSim.Models.MatchPlan
         {
             get
             {
-                double before = CrowdEnergyAfter - CrowdEnergyDelta;
+                double before = CrowdEnergyBefore;
                 string feudTag = FeudalResonanceActivated ? "  ★ Feud Resonance" : "";
                 return $"Crowd: {before:F0}→{CrowdEnergyAfter:F0}  |  " +
                        $"Momentum: {MomentumAfter:+0.0;-0.0;0.0}  |  " +

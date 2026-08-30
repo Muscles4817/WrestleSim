@@ -252,6 +252,7 @@ namespace WrestlingSim.Engine
             }
 
             // Commit deltas to state
+            result.CrowdEnergyBefore = state.CrowdEnergy;
             state.ApplyEnergy(result.CrowdEnergyDelta);
             state.ApplyMomentum(result.MomentumDelta);
             state.TechnicalScore    += result.TechnicalContribution;
@@ -343,6 +344,16 @@ namespace WrestlingSim.Engine
             // Implicit resonance pays 70% of what a hand-authored resonance would.
             return 1.0 + (feud.IntensityMultiplier - 1.0) * 0.70;
         }
+
+        /// <summary>
+        /// +1 when momentum should swing toward WrestlerA for this beat, -1 toward WrestlerB.
+        ///
+        /// Derived from the *resolved* control wrestler rather than the raw enum. Handlers
+        /// fall back to WrestlerA when control is Even/Contested, so reading the enum
+        /// directly sent the momentum to B while the commentary credited A.
+        /// </summary>
+        private static int ControlSign(Ctx ctx, Wrestler control) =>
+            ReferenceEquals(control, ctx.Plan.WrestlerA) ? 1 : -1;
 
         // ── Individual beat handlers ─────────────────────────────────────────
 
@@ -452,7 +463,7 @@ namespace WrestlingSim.Engine
             // 20–40 this used to be — one beat should not consume half the momentum scale,
             // or no single comeback can ever recover from two of them.
             double momSwing = Rng(12, 26) * iMod * dMod;
-            r.MomentumDelta = (beat.Control == BeatControl.WrestlerA ? 1 : -1) * momSwing;
+            r.MomentumDelta = ControlSign(ctx, control) * momSwing;
 
             // Technical: use the beat's style hint if set (makes template choice meaningful),
             // otherwise fall back to the wrestler's natural style. The victim's selling is
@@ -519,10 +530,16 @@ namespace WrestlingSim.Engine
             // the classic face-in-peril structure can never book an earned finish.
             double baseSwing = Rng(25, 45) * iMod * dMod;
             double recoveryShare = 0.55 + 0.30 * (iMod / 1.6);
-            double recovery = Math.Abs(state.Momentum) * recoveryShare;
-            double momSwing = baseSwing + recovery;
+            int sign = ControlSign(ctx, control);
 
-            r.MomentumDelta = (beat.Control == BeatControl.WrestlerA ? 1 : -1) * momSwing;
+            // Only claw back a deficit. Booking a comeback for someone already ahead is a
+            // booking mistake, not a licence to double their lead — without the sign check
+            // the recovery term compounded a favourable momentum instead of reversing an
+            // unfavourable one.
+            double deficit = sign > 0 ? Math.Max(0, -state.Momentum) : Math.Max(0, state.Momentum);
+            double momSwing = baseSwing + deficit * recoveryShare;
+
+            r.MomentumDelta = sign * momSwing;
 
             r.TechnicalContribution    = 4.5 * (AvgRingSkill(ctx.Plan) / 5.0) * iMod * pControl.Workrate
                                          * PerformerProfile.Blend(pControl.Athleticism, 0.40);
@@ -572,7 +589,7 @@ namespace WrestlingSim.Engine
 
             // Slight moral momentum to the one who kicked out. Kept small — stacking
             // near-falls in the winner's favour should not sabotage their own finish.
-            r.MomentumDelta = (beat.Control == BeatControl.WrestlerA ? -1 : 1)
+            r.MomentumDelta = -ControlSign(ctx, control)
                               * Rng(2, 5) * PerformerProfile.Blend(pOther.Resilience, 0.5);
 
             // Psychology / selling drive near-fall quality
@@ -615,7 +632,7 @@ namespace WrestlingSim.Engine
 
             r.CrowdEnergyDelta      = Rng(8, 14) * (0.6 + flyerSkill / 5.0 * 0.8) * iMod
                                       * execution * PerformerProfile.Blend(pControl.Connection, 0.55);
-            r.MomentumDelta         = (beat.Control == BeatControl.WrestlerA ? 1 : -1) * Rng(5, 15);
+            r.MomentumDelta         = ControlSign(ctx, control) * Rng(5, 15);
             r.TechnicalContribution = 5.0 * (flyerSkill / 5.0) * iMod
                                       * pControl.WorkrateFor(WrestlingStyle.HighFlyer) * execution;
             r.StorytellingContribution = 3.0 * iMod * PerformerProfile.Blend(pControl.Connection, 0.5);
@@ -642,7 +659,7 @@ namespace WrestlingSim.Engine
             drain *= 2.0 - PerformerProfile.Blend(pControl.Connection, 0.55); // low connection = steeper drain
 
             r.CrowdEnergyDelta      = drain;
-            r.MomentumDelta         = (beat.Control == BeatControl.WrestlerA ? 1 : -1) * Rng(4, 9);
+            r.MomentumDelta         = ControlSign(ctx, control) * Rng(4, 9);
             r.TechnicalContribution = 1.5 * (control.RingSkills.Technical / 5.0) * dMod
                                       * pControl.WorkrateFor(WrestlingStyle.Technical);
             r.StorytellingContribution = 2.0 * dMod * PerformerProfile.Blend(pControl.RingPsych, 0.7);
@@ -700,7 +717,7 @@ namespace WrestlingSim.Engine
             double charismaFactor = control.Charisma / 5.0;
 
             r.CrowdEnergyDelta = Rng(3, 7) * iMod * feudMult * pControl.Connection;
-            r.MomentumDelta    = (beat.Control == BeatControl.WrestlerA ? 1 : -1) * Rng(3, 10);
+            r.MomentumDelta    = ControlSign(ctx, control) * Rng(3, 10);
 
             r.TechnicalContribution    = 1.5 * psychSkill * iMod * pControl.RingPsych;
 
@@ -778,8 +795,9 @@ namespace WrestlingSim.Engine
             // Grudge Brawl use this instead of a Comeback beat as their pivot, so it has to
             // recover enough for the booked winner to actually earn the finish.
             double baseSwing = Rng(10, 20) * iMod;
-            double recovery  = Math.Abs(state.Momentum) * 0.62;
-            r.MomentumDelta  = (beat.Control == BeatControl.WrestlerA ? 1 : -1) * (baseSwing + recovery);
+            int sign = ControlSign(ctx, control);
+            double deficit = sign > 0 ? Math.Max(0, -state.Momentum) : Math.Max(0, state.Momentum);
+            r.MomentumDelta  = sign * (baseSwing + deficit * 0.62);
 
             r.TechnicalContribution    = 3.0 * iMod * pControl.Workrate;
             r.StorytellingContribution = 10.0 * iMod * feudMult
@@ -823,7 +841,7 @@ namespace WrestlingSim.Engine
             double dispControl = pControl.Disposition;
 
             r.CrowdEnergyDelta         = Rng(10, 20) * iMod * (0.5 + dispControl) * pControl.Connection;
-            r.MomentumDelta            = (beat.Control == BeatControl.WrestlerA ? 1 : -1) * Rng(12, 22);
+            r.MomentumDelta            = ControlSign(ctx, control) * Rng(12, 22);
             r.TechnicalContribution    = 1.0;
             r.StorytellingContribution = 10.0 * iMod * (0.5 + dispControl) * pControl.Connection;
 
@@ -961,7 +979,7 @@ namespace WrestlingSim.Engine
                                       * PerformerProfile.Blend(pOther.Selling, 0.5);
 
             // Final momentum swing in winner's direction
-            r.MomentumDelta = (beat.Control == BeatControl.WrestlerA ? 1 : -1) * 30;
+            r.MomentumDelta = ControlSign(ctx, control) * 30;
 
             // Record finish quality (used in final rating)
             state.FinishQuality = Math.Clamp(
@@ -1057,17 +1075,28 @@ namespace WrestlingSim.Engine
         /// plan actually delivers what they advertised, and to penalise one who declares
         /// a technical classic and books a brawl.
         /// </summary>
+        /// Every set names at least one opening and one finish. Openings and finishes are
+        /// mandatory in any plan, so a type whose set omitted them could never reach full
+        /// coherence however well it was booked — only Technical had both, which quietly
+        /// made it the best-paying declaration on almost any plan.
         private static bool IsOnType(BeatType t, MatchTypeEnum type) => type switch
         {
-            MatchTypeEnum.Technical => t is BeatType.SlowOpening or BeatType.HeatSegment
-                or BeatType.RestHold or BeatType.NearFall or BeatType.FinishSubmission,
+            // Mat wrestling, limb work and a submission payoff.
+            MatchTypeEnum.Technical => t is BeatType.SlowOpening or BeatType.StandardOpening
+                or BeatType.HeatSegment or BeatType.RestHold or BeatType.NearFall
+                or BeatType.FinishSubmission or BeatType.FinishClean,
 
-            MatchTypeEnum.Spotfest => t is BeatType.HotOpening or BeatType.HighSpot
-                or BeatType.CrowdBrawl or BeatType.NearFall or BeatType.Comeback,
+            // Spectacle: get them early, keep them loud, finish emphatically.
+            MatchTypeEnum.Spotfest => t is BeatType.HotOpening or BeatType.StandardOpening
+                or BeatType.HighSpot or BeatType.CrowdBrawl or BeatType.NearFall or BeatType.Comeback
+                or BeatType.FinishClean or BeatType.FinishSuperFinisher or BeatType.FinishRollup,
 
-            MatchTypeEnum.Storytelling => t is BeatType.PsychologicalWarfare or BeatType.RevengeSpot
+            // Character and grudge work, including the finishes that leave a story running.
+            MatchTypeEnum.Storytelling => t is BeatType.SlowOpening or BeatType.StandardOpening
+                or BeatType.PsychologicalWarfare or BeatType.RevengeSpot
                 or BeatType.FeudalEscalation or BeatType.ThirdPartyPullIn or BeatType.AlliesRejected
-                or BeatType.Comeback or BeatType.NearFall,
+                or BeatType.Comeback or BeatType.NearFall
+                or BeatType.FinishClean or BeatType.FinishInterference or BeatType.FinishDQ,
 
             _ => true // Standard has no preference — anything is on-type
         };

@@ -24,7 +24,7 @@
 @code {
     [Parameter, EditorRequired] public MatchEngineResult Result { get; set; } = default!;
 
-    private static double Before(BeatResult beat) => beat.CrowdEnergyAfter - beat.CrowdEnergyDelta;
+    private static double Before(BeatResult beat) => beat.CrowdEnergyBefore;
 
     private static string StateClass(BeatResult beat)
     {
