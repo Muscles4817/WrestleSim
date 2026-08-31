@@ -565,6 +565,23 @@ WrestlingSim.Tests/
 
 ---
 
+## The Wrestling Operations Reference
+
+`docs/wrestling-reference/` is a 31-document description of **how the professional wrestling
+business actually works** — how promotions are run, who does what and what makes them good
+or bad at it, who gets hired and fired and when, how many shows get run and why, what
+audiences respond to, why performers get hot and cold, why brand splits work or fail, and
+where a promotion stops succeeding on merit and starts coasting on cultural inertia.
+
+It exists so that "X should work like real life" has a standing answer that neither a human
+nor an AI session has to go and re-derive. Most chapters end with a **Sim implications**
+section relating the industry reality back to this engine; the gap analysis and suggested
+build order live in [31-sim-mapping.md](docs/wrestling-reference/31-sim-mapping.md).
+
+Start at [docs/wrestling-reference/README.md](docs/wrestling-reference/README.md).
+
+---
+
 ## Design Notes
 
 **Why beats instead of a probability roll?** A single-roll match simulator can tell you who won. A beat-based simulator can tell you *how* it went — which is what wrestling actually is. The booker controls the narrative; the engine scores how well it landed with the crowd.
