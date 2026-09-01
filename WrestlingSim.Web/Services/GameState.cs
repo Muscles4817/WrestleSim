@@ -16,6 +16,7 @@ public enum Screen
     Calendar,
     Roster,
     Feuds,
+    Shows,
     BookShow,
 
     // Exhibition — the old sandbox, kept for trying the engine without a career
@@ -126,7 +127,11 @@ public class GameState
 
     // ── Career lifecycle ─────────────────────────────────────────────────────
 
-    public async Task StartCareerAsync(string promotionName, PromotionTier tier, DateOnly startDate)
+    public async Task StartCareerAsync(
+        string promotionName,
+        PromotionTier tier,
+        DateOnly startDate,
+        IEnumerable<ShowDefinition>? shows = null)
     {
         var promotion = new Promotion
         {
@@ -144,7 +149,8 @@ public class GameState
             Roster = DataLoaders.LoadEmbeddedWrestlers()
         };
 
-        SeedOpeningSchedule(career);
+        career.ShowDefinitions.AddRange(shows ?? DefaultSlate(promotion));
+        career.MaterialiseSchedule();
 
         Career = career;
         ActiveShow = null;
@@ -155,29 +161,100 @@ public class GameState
     }
 
     /// <summary>
-    /// Puts the first few shows on the board so a new save opens onto something to do
-    /// rather than an empty calendar. Cadence comes from the tier.
+    /// The slate a promotion of this tier would plausibly run, used to pre-fill the
+    /// opening wizard so it starts from something sensible rather than a blank form.
     /// </summary>
-    private static void SeedOpeningSchedule(Career career)
+    public static List<ShowDefinition> DefaultSlate(Promotion promotion)
     {
-        var promotion = career.Promotion;
+        var slate = new List<ShowDefinition>();
 
         if (promotion.HasTelevision)
         {
-            // Weekly television, starting on the first Monday on or after the start date.
-            var first = career.StartDate;
-            while (first.DayOfWeek != DayOfWeek.Monday) first = first.AddDays(1);
-
-            for (int i = 0; i < 4; i++)
-                career.Schedule($"{promotion.Name} Weekly", first.AddDays(i * 7), ShowType.Television);
+            slate.Add(new ShowDefinition
+            {
+                Name = $"{promotion.Name} Weekly",
+                Type = ShowType.Television,
+                Recurrence = RecurrenceKind.Weekly,
+                Day = DayOfWeek.Monday
+            });
         }
         else
         {
-            // No TV: space house shows at the tier's natural interval.
-            int gap = promotion.TypicalShowIntervalDays;
-            for (int i = 0; i < 3; i++)
-                career.Schedule($"{promotion.Name} Live", career.StartDate.AddDays(gap * (i + 1)), ShowType.HouseShow);
+            // No television, so the live date is the business.
+            slate.Add(new ShowDefinition
+            {
+                Name = $"{promotion.Name} Live",
+                Type = ShowType.HouseShow,
+                Recurrence = RecurrenceKind.Monthly,
+                Day = DayOfWeek.Saturday,
+                Ordinal = WeekOrdinal.First
+            });
         }
+
+        slate.Add(new ShowDefinition
+        {
+            Name = "Premium Event",
+            Type = ShowType.PremiumEvent,
+            Recurrence = RecurrenceKind.Monthly,
+            Day = DayOfWeek.Saturday,
+            Ordinal = WeekOrdinal.Last
+        });
+
+        return slate;
+    }
+
+    // ── Show definitions ─────────────────────────────────────────────────────
+
+    public async Task AddShowDefinitionAsync(ShowDefinition definition)
+    {
+        if (Career == null) return;
+
+        Career.ShowDefinitions.Add(definition);
+        Career.MaterialiseSchedule();
+
+        await SaveAsync();
+        Notify();
+    }
+
+    /// <summary>Applies an edited definition to the calendar and persists.</summary>
+    public async Task ResyncShowDefinitionAsync(ShowDefinition definition)
+    {
+        if (Career == null) return;
+
+        Career.ResyncDefinition(definition);
+        await SaveAsync();
+        Notify();
+    }
+
+    public async Task RetireShowDefinitionAsync(ShowDefinition definition)
+    {
+        if (Career == null) return;
+
+        Career.RetireDefinition(definition);
+        await SaveAsync();
+        Notify();
+    }
+
+    public async Task ReviveShowDefinitionAsync(ShowDefinition definition)
+    {
+        if (Career == null) return;
+
+        definition.Active = true;
+        Career.MaterialiseSchedule();
+
+        await SaveAsync();
+        Notify();
+    }
+
+    public async Task DeleteShowDefinitionAsync(ShowDefinition definition)
+    {
+        if (Career == null) return;
+
+        Career.RetireDefinition(definition);
+        Career.ShowDefinitions.Remove(definition);
+
+        await SaveAsync();
+        Notify();
     }
 
     public async Task LoadCareerAsync(string key)

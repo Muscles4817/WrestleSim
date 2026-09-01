@@ -1,0 +1,165 @@
+@using WrestlingSim.Models.World
+@inherits StateComponent
+
+@if (State.Career is not { } career)
+{
+    <div class="empty"><div class="empty__mark">★</div>No career loaded.</div>
+}
+else
+{
+    <div class="screen__head">
+        <div class="screen__eyebrow">Standing commitments</div>
+        <h1 class="screen__title">Your shows</h1>
+        <p class="screen__lede">
+            The shows that come round on a rhythm. Changing one moves its future dates on the
+            calendar; anything you have already booked or run is left alone.
+        </p>
+    </div>
+
+    @if (!career.Promotion.HasTelevision)
+    {
+        <div class="notice notice--info">
+            <strong>@career.Promotion.TierLabel has no television.</strong>
+            Reach Established and a weekly slot becomes available.
+        </div>
+    }
+
+    @foreach (var definition in career.ShowDefinitions)
+    {
+        <div class="panel @(definition.Active ? "" : "is-retired")">
+            <div class="panel__title">
+                @(string.IsNullOrWhiteSpace(definition.Name) ? "Untitled show" : definition.Name)
+                @if (!definition.Active)
+                {
+                    <span class="badge badge--muted">Retired</span>
+                }
+                <span class="spacer"></span>
+                <span class="small muted">@Upcoming(career, definition) upcoming</span>
+            </div>
+
+            @if (editing == definition.Id)
+            {
+                <ShowDefinitionEditor Definition="definition" Promotion="career.Promotion"
+                                      OnChanged="StateHasChanged" />
+                <div class="row mt">
+                    <span class="small muted">
+                        Saving moves every future date that has not been booked yet.
+                    </span>
+                    <span class="spacer"></span>
+                    <button class="btn btn--sm btn--ghost" @onclick="() => editing = null">Cancel</button>
+                    <button class="btn btn--sm btn--primary" @onclick="() => Save(definition)">Save changes</button>
+                </div>
+            }
+            else
+            {
+                <div class="row small">
+                    <span class="badge @(definition.Type == ShowType.PremiumEvent ? "badge--gold" : "badge--cyan")">
+                        @Label(definition.Type)
+                    </span>
+                    <span class="muted">
+                        @definition.RecurrenceLabel
+                        · @(definition.RuntimeMinutes ?? career.Promotion.DefaultRuntimeFor(definition.Type)) min
+                        @if (!string.IsNullOrWhiteSpace(definition.Venue)) { <text> · @definition.Venue</text> }
+                    </span>
+                    <span class="spacer"></span>
+
+                    <button class="btn btn--sm" @onclick="() => editing = definition.Id">Edit</button>
+
+                    @if (definition.Active)
+                    {
+                        <button class="btn btn--sm btn--ghost" @onclick="() => State.RetireShowDefinitionAsync(definition)">
+                            Retire
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="btn btn--sm btn--ghost" @onclick="() => State.ReviveShowDefinitionAsync(definition)">
+                            Reinstate
+                        </button>
+                    }
+
+                    <button class="btn btn--icon btn--danger" title="Delete this show"
+                            @onclick="() => confirmingDelete = definition.Id">✕</button>
+                </div>
+
+                @if (confirmingDelete == definition.Id)
+                {
+                    <div class="notice notice--warn mt">
+                        Delete <strong>@definition.Name</strong>? Future dates that are not booked yet
+                        come off the calendar. Shows you have already booked or run stay.
+                        <span class="spacer"></span>
+                        <button class="btn btn--sm btn--danger" @onclick="() => Delete(definition)">Delete</button>
+                        <button class="btn btn--sm btn--ghost" @onclick="() => confirmingDelete = null">Cancel</button>
+                    </div>
+                }
+            }
+        </div>
+    }
+
+    @if (career.ShowDefinitions.Count == 0)
+    {
+        <div class="empty">
+            <div class="empty__mark">◷</div>
+            No standing shows. Add one and it will fill the calendar forward from today.
+        </div>
+    }
+
+    <div class="panel">
+        <div class="panel__title">Add a show</div>
+        <div class="row">
+            @foreach (var type in career.Promotion.AvailableShowTypes)
+            {
+                <button class="btn" @onclick="() => Add(career, type)">+ @Label(type)</button>
+            }
+        </div>
+    </div>
+
+    <div class="wizard-bar">
+        <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Dashboard)">← Dashboard</button>
+        <span class="wizard-bar__spacer"></span>
+        <button class="btn btn--sm btn--ghost" @onclick="() => State.Go(Screen.Calendar)">Calendar →</button>
+    </div>
+}
+
+@code {
+    private string? editing;
+    private string? confirmingDelete;
+
+    private static int Upcoming(Career career, ShowDefinition definition) =>
+        career.Shows.Count(s => s.DefinitionId == definition.Id && !s.HasRun && s.Date >= career.CurrentDate);
+
+    private async Task Add(Career career, ShowType type)
+    {
+        var definition = new ShowDefinition
+        {
+            Name       = Label(type),
+            Type       = type,
+            Recurrence = type == ShowType.PremiumEvent ? RecurrenceKind.Monthly : RecurrenceKind.Weekly,
+            Day        = type == ShowType.PremiumEvent ? DayOfWeek.Saturday : DayOfWeek.Monday,
+            Ordinal    = WeekOrdinal.Last
+        };
+
+        await State.AddShowDefinitionAsync(definition);
+        editing = definition.Id;
+    }
+
+    private async Task Save(ShowDefinition definition)
+    {
+        editing = null;
+        await State.ResyncShowDefinitionAsync(definition);
+    }
+
+    private async Task Delete(ShowDefinition definition)
+    {
+        confirmingDelete = null;
+        await State.DeleteShowDefinitionAsync(definition);
+    }
+
+    private static string Label(ShowType type) => type switch
+    {
+        ShowType.Television   => "Television",
+        ShowType.PremiumEvent => "Premium Event",
+        ShowType.HouseShow    => "House Show",
+        _                     => type.ToString()
+    };
+}

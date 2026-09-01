@@ -1,0 +1,124 @@
+@using WrestlingSim.Models.World
+
+@* One recurring show, as a form. Shared by the opening wizard and the Shows screen so
+   the two can never drift apart. *@
+
+<div class="panel panel--flat">
+    <div class="fields">
+        <div class="field">
+            <span class="field__label">Name</span>
+            <input class="input" @bind="Definition.Name" @bind:event="oninput" @bind:after="Changed"
+                   maxlength="48" placeholder="e.g. Raw" />
+        </div>
+
+        <div class="field">
+            <span class="field__label">Type</span>
+            <select class="input" @bind="Definition.Type" @bind:after="OnTypeChanged">
+                @foreach (var type in AvailableTypes)
+                {
+                    <option value="@type">@Label(type)</option>
+                }
+            </select>
+        </div>
+
+        <div class="field">
+            <span class="field__label">Repeats</span>
+            <select class="input" @bind="Definition.Recurrence" @bind:after="Changed">
+                <option value="@RecurrenceKind.Weekly">Every week</option>
+                <option value="@RecurrenceKind.Monthly">Once a month</option>
+            </select>
+        </div>
+
+        @if (Definition.Recurrence == RecurrenceKind.Monthly)
+        {
+            <div class="field">
+                <span class="field__label">Which one</span>
+                <select class="input" @bind="Definition.Ordinal" @bind:after="Changed">
+                    @foreach (var ordinal in Ordinals)
+                    {
+                        <option value="@ordinal">@ShowDefinition.OrdinalLabel(ordinal)</option>
+                    }
+                </select>
+            </div>
+        }
+
+        <div class="field">
+            <span class="field__label">Day</span>
+            <select class="input" @bind="Definition.Day" @bind:after="Changed">
+                @foreach (var day in Days)
+                {
+                    <option value="@day">@day</option>
+                }
+            </select>
+        </div>
+
+        <div class="field">
+            <span class="field__label">Venue (optional)</span>
+            <input class="input" @bind="Definition.Venue" @bind:after="Changed"
+                   maxlength="60" placeholder="Unknown Arena" />
+        </div>
+    </div>
+
+    <div class="row mt small muted">
+        <span>
+            <strong class="gold">@DisplayName</strong> — @Label(Definition.Type), @Definition.RecurrenceLabel
+            · @Runtime min budget
+            · about @Promotion.TypicalCardSizeFor(Definition.Type) items
+        </span>
+        <span class="spacer"></span>
+        @if (OnRemove.HasDelegate)
+        {
+            <button class="btn btn--sm btn--danger" @onclick="OnRemove">Remove</button>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public ShowDefinition Definition { get; set; } = default!;
+    [Parameter, EditorRequired] public Promotion Promotion { get; set; } = default!;
+
+    [Parameter] public EventCallback OnChanged { get; set; }
+    [Parameter] public EventCallback OnRemove { get; set; }
+
+    private static readonly DayOfWeek[] Days =
+    [
+        DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday,
+        DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday
+    ];
+
+    private static readonly WeekOrdinal[] Ordinals =
+    [
+        WeekOrdinal.First, WeekOrdinal.Second, WeekOrdinal.Third, WeekOrdinal.Fourth, WeekOrdinal.Last
+    ];
+
+    private IEnumerable<ShowType> AvailableTypes => Promotion.AvailableShowTypes;
+
+    private string DisplayName =>
+        string.IsNullOrWhiteSpace(Definition.Name) ? "Untitled show" : Definition.Name;
+
+    private int Runtime =>
+        Definition.RuntimeMinutes ?? Promotion.DefaultRuntimeFor(Definition.Type);
+
+    /// <summary>
+    /// Changing the type re-anchors the recurrence to what that type is normally run on:
+    /// weekly television, monthly premium events. The player can still override it.
+    /// </summary>
+    private async Task OnTypeChanged()
+    {
+        Definition.Recurrence = Definition.Type == ShowType.PremiumEvent
+            ? RecurrenceKind.Monthly
+            : RecurrenceKind.Weekly;
+
+        await Changed();
+    }
+
+    private Task Changed() => OnChanged.InvokeAsync();
+
+    private static string Label(ShowType type) => type switch
+    {
+        ShowType.Television   => "Television",
+        ShowType.PremiumEvent => "Premium Event",
+        ShowType.HouseShow    => "House Show",
+        _                     => type.ToString()
+    };
+}

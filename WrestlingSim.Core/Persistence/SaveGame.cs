@@ -37,6 +37,7 @@ namespace WrestlingSim.Persistence
         public DateTime LastPlayedUtc { get; set; } = DateTime.UtcNow;
 
         public List<WrestlerStateDto> Wrestlers { get; set; } = new();
+        public List<ShowDefinitionDto> ShowDefinitions { get; set; } = new();
         public List<FeudDto> Feuds { get; set; } = new();
         public List<ShowDto> Shows { get; set; } = new();
     }
@@ -46,6 +47,19 @@ namespace WrestlingSim.Persistence
     {
         public string Id { get; set; } = "";
         public int Popularity { get; set; }
+    }
+
+    public class ShowDefinitionDto
+    {
+        public string Id { get; set; } = "";
+        public string Name { get; set; } = "";
+        public ShowType Type { get; set; }
+        public RecurrenceKind Recurrence { get; set; }
+        public DayOfWeek Day { get; set; }
+        public WeekOrdinal Ordinal { get; set; }
+        public string Venue { get; set; } = "";
+        public int? RuntimeMinutes { get; set; }
+        public bool Active { get; set; } = true;
     }
 
     public class FeudDto
@@ -60,6 +74,7 @@ namespace WrestlingSim.Persistence
     public class ShowDto
     {
         public string Id { get; set; } = "";
+        public string? DefinitionId { get; set; }
         public string Name { get; set; } = "";
         public string Date { get; set; } = "";
         public ShowType Type { get; set; }
