@@ -1,44 +1,95 @@
-﻿using System.Text.Json;
+using System.Reflection;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using WrestlingSim.Models;
 
 public static class DataLoaders
 {
-    public static List<Wrestler> LoadWrestlers(string filePath)
+    private const string JsonFolder = "JSON";
+
+    private static readonly JsonSerializerOptions Options = new()
     {
-        string json = File.ReadAllText(@"C:\Users\mjmak\source\repos\WrestlingSim\WrestlingSim\JSON\Wrestlers.json");
-        //string json = File.ReadAllText(@"C:\Users\Callum\Source\Repos\WrestleSim\WrestlingSim\JSON\Wrestlers.json");;
+        PropertyNameCaseInsensitive = true,
+        ReadCommentHandling = JsonCommentHandling.Skip,
+        AllowTrailingCommas = true,
+        Converters = { new JsonStringEnumConverter() }
+    };
 
-        var options = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true,
-            Converters = { new JsonStringEnumConverter() }
-        };
+    public static List<Wrestler> LoadWrestlers(string fileName) =>
+        Load<Wrestler>(fileName);
 
-        List<Wrestler> wrestlers = JsonSerializer.Deserialize<List<Wrestler>>(json, options);
+    public static List<Move> LoadMoves(string fileName) =>
+        Load<Move>(fileName);
 
-        // List<Move> moves = LoadMoves("MoveList.json");
+    /// <summary>
+    /// Deserialises a list of <typeparamref name="T"/> from a JSON data file.
+    /// Accepts a bare file name ("Wrestlers.json"), a path relative to the
+    /// working directory, or an absolute path.
+    /// </summary>
+    public static List<T> Load<T>(string fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+            throw new ArgumentException("A file name is required.", nameof(fileName));
 
-        return wrestlers;
+        string path = ResolvePath(fileName);
+        string json = File.ReadAllText(path);
+
+        return JsonSerializer.Deserialize<List<T>>(json, Options) ?? new List<T>();
     }
 
-    public static List<Move> LoadMoves(string filePath)
+    /// <summary>
+    /// Finds a data file without depending on where the process was launched from.
+    /// Probes, in order: the path as given, the JSON folder beside the built
+    /// assembly, and the JSON folder in the current working directory.
+    /// </summary>
+    public static string ResolvePath(string fileName)
     {
-        string json = File.ReadAllText(@"C:\Users\mjmak\source\repos\WrestlingSim\WrestlingSim\JSON\MoveList.json");
-        //string json = File.ReadAllText(@"C:\Users\Callum\Source\Repos\WrestleSim\WrestlingSim\JSON\MoveList.json");
+        if (Path.IsPathRooted(fileName) && File.Exists(fileName))
+            return fileName;
 
-        var options = new JsonSerializerOptions
+        string assemblyDir =
+            Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? AppContext.BaseDirectory;
+
+        var candidates = new[]
         {
-            PropertyNameCaseInsensitive = true,
-            Converters = { new JsonStringEnumConverter() }
+            fileName,
+            Path.Combine(assemblyDir, fileName),
+            Path.Combine(assemblyDir, JsonFolder, fileName),
+            Path.Combine(Directory.GetCurrentDirectory(), fileName),
+            Path.Combine(Directory.GetCurrentDirectory(), JsonFolder, fileName)
         };
 
-        List<Wrestler> wrestlers = JsonSerializer.Deserialize<List<Wrestler>>(json, options);
+        foreach (string candidate in candidates)
+        {
+            if (File.Exists(candidate))
+                return candidate;
+        }
 
+        // Linux and macOS are case-sensitive where Windows is not, so a caller asking for
+        // "wrestlers.json" must still find "Wrestlers.json" on every platform.
+        foreach (string candidate in candidates)
+        {
+            string? match = FindIgnoringCase(candidate);
+            if (match != null)
+                return match;
+        }
 
-        return JsonSerializer.Deserialize<List<Move>>(json, options);
+        throw new FileNotFoundException(
+            $"Could not find data file '{fileName}'. Looked in: {string.Join("; ", candidates.Distinct())}",
+            fileName);
+    }
+
+    private static string? FindIgnoringCase(string candidate)
+    {
+        string? directory = Path.GetDirectoryName(candidate);
+        if (string.IsNullOrEmpty(directory) || !Directory.Exists(directory))
+            return null;
+
+        string target = Path.GetFileName(candidate);
+
+        return Directory
+            .EnumerateFiles(directory)
+            .FirstOrDefault(f => string.Equals(
+                Path.GetFileName(f), target, StringComparison.OrdinalIgnoreCase));
     }
 }
-
-
-

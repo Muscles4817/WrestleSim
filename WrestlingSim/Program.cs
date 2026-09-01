@@ -9,7 +9,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        string fileName = "wrestlers.json"; // Adjust path if needed
+        string fileName = "Wrestlers.json";
         List<Wrestler> wrestlers = DataLoaders.LoadWrestlers(fileName);
 
         if (wrestlers == null || wrestlers.Count < 2)
