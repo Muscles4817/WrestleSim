@@ -35,6 +35,9 @@ else
                 <div class="row mt small">
                     <span class="muted">Matches</span> <strong>@feud.MatchCount</strong>
                     <span class="faint">•</span>
+                    <span class="muted">Next one draws</span>
+                    <strong class="@(Familiarity(feud) < 0.8 ? "gold" : "")">@((int)Math.Round(Familiarity(feud) * 100))%</strong>
+                    <span class="faint">•</span>
                     <span class="muted">Starting crowd bonus</span> <strong>+@feud.StartingEnergyBonus</strong>
                     @if (feud.HeatToNextTier is > 0 and var toNext)
                     {
@@ -86,6 +89,13 @@ else
     protected override void OnInitialized() => feuds = State.FeudBook.All.ToList();
 
     private void BookBlowoff(Feud feud) => State.Go(Screen.Match);
+
+    /// <summary>
+    /// What another match between these two would be worth against the first one —
+    /// docs/wrestling-reference/20-storylines-and-feuds.md §9.1. Read against today,
+    /// because a rested pairing recovers.
+    /// </summary>
+    private double Familiarity(Feud feud) => feud.Familiarity(State.Career?.CurrentDate);
 
     /// <summary>Beats this feud's state makes legal, matching MatchPlan.Validate.</summary>
     private static IEnumerable<string> UnlockedBeats(Feud feud)

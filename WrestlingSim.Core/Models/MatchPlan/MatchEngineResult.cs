@@ -20,6 +20,23 @@ namespace WrestlingSim.Models.MatchPlan
         /// </summary>
         public double MatchTypeCoherence { get; init; } = 1.0;
 
+        /// <summary>
+        /// 0–1. How much the crowd still wanted to see this specific pairing, 1.0 being
+        /// the first time they had seen it. Below 1.0 the room was flatter than the work
+        /// deserved — docs/wrestling-reference/20-storylines-and-feuds.md §9.1.
+        /// </summary>
+        public double Familiarity { get; init; } = 1.0;
+
+        /// <summary>A plain-English reading of <see cref="Familiarity"/>, or null when fresh.</summary>
+        public string? StalenessNote => Familiarity switch
+        {
+            >= 0.99 => null,
+            >= 0.88 => "The crowd has seen this before, but they are still up for it.",
+            >= 0.75 => "A pairing the crowd knows well. Some of the novelty has gone.",
+            >= 0.60 => "They have seen this too often. The room never really came alive.",
+            _       => "Nobody needed to see this again, and the building said so."
+        };
+
         // Final rating
         public double FinalScore  { get; init; }  // 0–100
         public double StarRating  { get; init; }  // 0–5

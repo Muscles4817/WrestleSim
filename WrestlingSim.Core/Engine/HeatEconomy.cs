@@ -72,9 +72,18 @@ namespace WrestlingSim.Engine
 
         /// <summary>
         /// What a win does to both people. Deltas only — nothing is applied.
+        ///
+        /// <paramref name="familiarity"/> is how much the crowd still wanted to see this
+        /// pairing (docs/wrestling-reference/20-storylines-and-feuds.md §9.1). It damps the
+        /// whole transfer, both ways, because a result only moves standing to the extent
+        /// the audience registers it — and the fourth time they watch these two, they have
+        /// stopped reading the outcome as news. Beating the same man again is not a
+        /// statement; losing to him again is not a fall. Nobody gains, and nobody much
+        /// loses either, which is precisely why a stale series is dead weight on a card.
         /// </summary>
         public static MatchStatusOutcome ForMatch(
-            Wrestler winner, Wrestler loser, double starRating, FinishWeight finish)
+            Wrestler winner, Wrestler loser, double starRating, FinishWeight finish,
+            double familiarity = 1.0)
         {
             double w = winner.EffectiveOverness;
             double l = loser.EffectiveOverness;
@@ -108,7 +117,7 @@ namespace WrestlingSim.Engine
             double winnerMomentumScale = Math.Clamp(0.35 + gap * 1.40, 0.12, 1.40);
             double loserMomentumScale  = Math.Clamp(0.45 - gap * 0.80, 0.10, 1.20);
 
-            double common = prize * quality * decisiveness;
+            double common = prize * quality * decisiveness * Math.Clamp(familiarity, 0.0, 1.5);
 
             double winnerOverness = OvernessScale * common * winnerOvernessScale;
             double loserOverness  = OvernessScale * common * loserOvernessScale;

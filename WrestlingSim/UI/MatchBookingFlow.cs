@@ -20,13 +20,17 @@ namespace WrestlingSim.UI
             var booked = BuildMatch(wrestlers, feudBook);
             if (booked == null) return;
 
-            var result = new MatchEngine().Execute(booked.Plan);
+            // Read the pairing's freshness before this match is added to it — see
+            // docs/wrestling-reference/20-storylines-and-feuds.md §9.1. The console sandbox
+            // has no world clock, so no date is passed and nothing is ever forgotten.
+            var pairing = feudBook.GetOrCreate(booked.Plan.WrestlerA, booked.Plan.WrestlerB);
+            var result = new MatchEngine().Execute(booked.Plan, pairing.Familiarity(null));
 
             var update = feudBook.Record(
                 booked.Plan.WrestlerA, booked.Plan.WrestlerB,
                 heat: result.StarRating * 2.0,
                 tags: new[] { FeudHistoryTag.PriorMatch });
-            update.Feud.MatchCount++;
+            update.Feud.RecordMatch(null);
 
             DisplayResults(result, booked.Plan.WrestlerA, booked.Plan.WrestlerB);
             SegmentBookingFlow.DisplayFeudUpdates(new[] { update });
@@ -85,7 +89,7 @@ namespace WrestlingSim.UI
                 var w = pool[i];
                 Write($"  [{i + 1,2}] ", ConsoleColor.DarkGray);
                 Write(Fit(w.RingName, 22), ConsoleColor.White);
-                WriteLine($"Pop {w.Overness,3}  Skill {w.RingSkills.GetOverallSkill():F1}  Cha {w.Charisma:F1}",
+                WriteLine($"Over {w.OvernessDisplay,3}  Skill {w.RingSkills.GetOverallSkill():F1}  Cha {w.Charisma:F1}",
                           ConsoleColor.DarkGray);
             }
 
@@ -120,6 +124,8 @@ namespace WrestlingSim.UI
                 WriteLine($"\n  {a.RingName} and {b.RingName} have history:", ConsoleColor.Cyan);
                 WriteLine($"    Intensity : {existing.Intensity}  ({existing.Heat:F0} heat)", ConsoleColor.White);
                 WriteLine($"    Matches   : {existing.MatchCount}", ConsoleColor.DarkGray);
+                WriteLine($"    Freshness : {existing.Familiarity(null) * 100:F0}% — meeting {existing.NextMeetingNumber(null):F1}",
+                          existing.Familiarity(null) < 0.8 ? ConsoleColor.Yellow : ConsoleColor.DarkGray);
                 WriteLine($"    History   : {(existing.History.Count > 0 ? string.Join(", ", existing.History) : "none")}",
                           ConsoleColor.DarkGray);
 

@@ -217,7 +217,8 @@ namespace WrestlingSim.Tests
                 Items =
                 [
                     new CardItemResult { Label = "1. A vs B", Kind = CardItemKind.Match,
-                                         Score = 68, DurationMinutes = 18, Notes = { "A def. B" } }
+                                         Score = 68, DurationMinutes = 18, StarRating = 3.4,
+                                         Notes = { "A def. B" } }
                 ]
             };
 
@@ -226,6 +227,10 @@ namespace WrestlingSim.Tests
 
             Assert.True(loadedShow.HasRun);
             Assert.Equal(72.5, loadedShow.Result!.OverallRating, 3);
+
+            // The full engine result is not persisted, so the star rating has to survive
+            // on its own or a reloaded card renders with no stars at all.
+            Assert.Equal(3.4, loadedShow.Result.Items[0].StarRating!.Value, 3);
             Assert.Equal("1. A vs B", loadedShow.Result.Items[0].Label);
             Assert.Contains("A def. B", loadedShow.Result.Items[0].Notes);
         }
@@ -263,7 +268,7 @@ namespace WrestlingSim.Tests
         public void ASaveFromANewerVersionIsRejectedWithAReadableMessage()
         {
             string json = SaveSerializer.ToJson(NewCareer(Roster()))
-                .Replace("\"Version\":1", "\"Version\":99");
+                .Replace($"\"Version\":{SaveGame.CurrentVersion}", "\"Version\":99");
 
             var ex = Assert.Throws<SaveLoadException>(() => SaveSerializer.FromJson(json, Roster()));
             Assert.Contains("newer version", ex.Message, StringComparison.OrdinalIgnoreCase);

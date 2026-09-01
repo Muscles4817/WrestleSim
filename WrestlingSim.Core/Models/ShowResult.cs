@@ -58,7 +58,17 @@ namespace WrestlingSim.Models
         /// <summary>Full simulator output when this item was a segment.</summary>
         public SegResult? SegmentResult { get; set; }
 
-        public double? StarRating => MatchResult?.StarRating;
+        /// <summary>
+        /// The match's star rating. Normally derived from <see cref="MatchResult"/>, but
+        /// settable so a loaded save can restore it: the full engine result is deliberately
+        /// not persisted, so without this a reloaded show's card rendered with no stars.
+        /// </summary>
+        public double? StarRating
+        {
+            get => _starRating ?? MatchResult?.StarRating;
+            set => _starRating = value;
+        }
+        private double? _starRating;
 
         public List<string> Notes { get; set; } = new();
     }

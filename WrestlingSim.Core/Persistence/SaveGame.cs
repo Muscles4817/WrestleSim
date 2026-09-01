@@ -85,6 +85,16 @@ namespace WrestlingSim.Persistence
         public string WrestlerB { get; set; } = "";
         public double Heat { get; set; }
         public int MatchCount { get; set; }
+
+        /// <summary>
+        /// Freshness state for the pairing — see Feud.RememberedMeetings. Absent from
+        /// saves written before match-count decay existed; those fall back to MatchCount
+        /// on load, which reads an old feud as fully remembered rather than as brand new.
+        /// </summary>
+        public double RememberedMeetings { get; set; }
+
+        public string? LastMatchDate { get; set; }
+
         public List<FeudHistoryTag> History { get; set; } = new();
     }
 

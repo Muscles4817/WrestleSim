@@ -124,7 +124,7 @@ namespace WrestlingSim.UI
                 string name  = Fit(w.RingName ?? "?", nW);
                 string align = Fit(w.Gimmick?.NaturalAlignment.ToString() ?? "-", aW);
                 string style = Fit(w.Style.ToString(), sW);
-                string pop   = w.Overness.ToString().PadLeft(pW);
+                string pop   = w.OvernessDisplay.ToString().PadLeft(pW);
                 string skill = w.RingSkills.GetOverallSkill().ToString("F2").PadLeft(skW);
                 string cha   = w.Charisma.ToString("F1").PadLeft(cW);
 

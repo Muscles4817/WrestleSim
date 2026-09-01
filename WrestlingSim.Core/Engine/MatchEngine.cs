@@ -40,6 +40,9 @@ namespace WrestlingSim.Engine
             public required PerformerProfile A { get; init; }
             public required PerformerProfile B { get; init; }
 
+            /// <summary>How much the crowd still wants to see this specific pairing, 0–1.</summary>
+            public double Familiarity { get; init; } = 1.0;
+
             public PerformerProfile For(Wrestler w) => w == Plan.WrestlerA ? A : B;
 
             /// <summary>Average of both performers on a factor — for beats nobody controls.</summary>
@@ -48,7 +51,20 @@ namespace WrestlingSim.Engine
 
         // ── Public entry point ───────────────────────────────────────────────
 
-        public MatchEngineResult Execute(MatchPlan plan)
+        /// <summary>
+        /// Runs the plan.
+        ///
+        /// <paramref name="familiarity"/> is how much the crowd still wants to see this
+        /// specific pairing, 1.0 being the first time — see
+        /// <see cref="Models.MatchPlan.Feud.Familiarity"/> and
+        /// docs/wrestling-reference/20-storylines-and-feuds.md §9.1.
+        ///
+        /// It is a parameter rather than a field on the plan because it is a property of
+        /// the audience on the night, not of the booking. A card written six weeks out
+        /// must be graded against how stale the pairing is when it actually goes on, and
+        /// a plan the player never runs should not carry a stale reading around with it.
+        /// </summary>
+        public MatchEngineResult Execute(MatchPlan plan, double familiarity = 1.0)
         {
             var errors = plan.Validate();
             if (errors.Any())
@@ -57,10 +73,11 @@ namespace WrestlingSim.Engine
 
             var ctx = new Ctx
             {
-                Plan  = plan,
-                State = new MatchEngineState(),
-                A     = new PerformerProfile(plan.WrestlerA),
-                B     = new PerformerProfile(plan.WrestlerB)
+                Plan        = plan,
+                State       = new MatchEngineState(),
+                A           = new PerformerProfile(plan.WrestlerA),
+                B           = new PerformerProfile(plan.WrestlerB),
+                Familiarity = Math.Clamp(familiarity, 0.0, 1.5)
             };
 
             InitialiseState(ctx);
@@ -116,10 +133,25 @@ namespace WrestlingSim.Engine
             double lengthStress   = Math.Max(0, plan.Beats.Count - 6) / 6.0;
             double staminaPenalty = lengthStress * (1.0 - ctx.Pair(p => p.Conditioning)) * 34.0;
 
-            state.CrowdCeiling = Math.Clamp(
-                40.0 + pairConnection * 46.0 + (pairCraft - 1.0) * 20.0 - staminaPenalty, 35, 100);
+            // Match-count decay lands here and only here, on the room rather than on the
+            // work — docs/wrestling-reference/20-storylines-and-feuds.md §9.1.
+            //
+            // Two good hands having their fifth match still wrestle it well: the holds are
+            // as clean, the timing is as sharp, the story is as coherent. What has gone is
+            // the appetite. So familiarity scales what the building will give — how loud it
+            // is at the bell and how loud it can ever get — and leaves the technical and
+            // storytelling accumulators completely alone. A stale rematch is a good match
+            // in a flat room, which is exactly what it looks like in life.
+            //
+            // The floor drops below the usual 35 because a pairing the crowd is sick of can
+            // be deader than any pairing they simply do not know.
+            double roomForThisPairing =
+                40.0 + pairConnection * 46.0 + (pairCraft - 1.0) * 20.0 - staminaPenalty;
 
-            state.CrowdEnergy = Math.Clamp(baseEnergy + feudBonus, 8, Math.Min(90, state.CrowdCeiling));
+            state.CrowdCeiling = Math.Clamp(roomForThisPairing * ctx.Familiarity, 22, 100);
+
+            state.CrowdEnergy = Math.Clamp(
+                (baseEnergy + feudBonus) * ctx.Familiarity, 8, Math.Min(90, state.CrowdCeiling));
             state.Advantage    = 0;
             state.CrowdPeakEnergy = state.CrowdEnergy;
 
@@ -1049,6 +1081,7 @@ namespace WrestlingSim.Engine
                 CrowdAverageEnergy = state.CrowdAverage,
                 FinishQuality      = state.FinishQuality,
                 MatchTypeCoherence = coherence,
+                Familiarity        = ctx.Familiarity,
                 FinalScore         = finalScore,
                 StarRating         = starRating
             };

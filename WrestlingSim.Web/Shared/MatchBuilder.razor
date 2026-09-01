@@ -39,7 +39,7 @@
                             <span class="pick__name">@w.RingName</span>
                             <span class="pick__desc">@w.Style · @(w.Gimmick?.NaturalAlignment.ToString() ?? "—")</span>
                         </span>
-                        <span class="pick__meta">Pop @w.Overness<br />Cha @w.Charisma.ToString("F1")</span>
+                        <span class="pick__meta">Pop @w.Overness.ToString("F0")<br />Cha @w.Charisma.ToString("F1")</span>
                     </button>
                 }
             </div>
@@ -73,7 +73,7 @@
                                 <span class="pick__name">@w.RingName</span>
                                 <span class="pick__desc">@w.Style · @(w.Gimmick?.NaturalAlignment.ToString() ?? "—")</span>
                             </span>
-                            <span class="pick__meta">Pop @w.Overness<br />Cha @w.Charisma.ToString("F1")</span>
+                            <span class="pick__meta">Pop @w.Overness.ToString("F0")<br />Cha @w.Charisma.ToString("F1")</span>
                         </button>
                     }
                 </div>
@@ -113,6 +113,15 @@
 {
     <div class="panel">
         <div class="panel__title">Feud</div>
+
+        @if (PairingHistory is { MatchCount: > 0 } history)
+        {
+            <div class="notice @(PairingFamiliarity < 0.8 ? "notice--warn" : "notice--info")">
+                <strong>Meeting @NextMeeting.ToString("F1") — @((int)Math.Round(PairingFamiliarity * 100))% of what the first one drew.</strong>
+                @a!.RingName and @b!.RingName have wrestled @history.MatchCount time@(history.MatchCount == 1 ? "" : "s").
+                @FreshnessAdvice
+            </div>
+        }
 
         @if (existingFeud is not null && existingFeud.Intensity > FeudIntensity.None)
         {
@@ -236,13 +245,13 @@
             <div class="versus__side">
                 <div class="versus__corner">Corner A</div>
                 <div class="versus__name">@a!.RingName</div>
-                <div class="versus__meta">Pop @a.Overness · Cha @a.Charisma.ToString("F1")</div>
+                <div class="versus__meta">Pop @a.Overness.ToString("F0") · Cha @a.Charisma.ToString("F1")</div>
             </div>
             <div class="versus__vs">VS</div>
             <div class="versus__side">
                 <div class="versus__corner">Corner B</div>
                 <div class="versus__name">@b!.RingName</div>
-                <div class="versus__meta">Pop @b.Overness · Cha @b.Charisma.ToString("F1")</div>
+                <div class="versus__meta">Pop @b.Overness.ToString("F0") · Cha @b.Charisma.ToString("F1")</div>
             </div>
         </div>
 
@@ -255,6 +264,14 @@
                 {
                     <text> History: @string.Join(", ", feud.History).</text>
                 }
+            </div>
+        }
+
+        @if (PairingFamiliarity < 0.99)
+        {
+            <div class="notice notice--warn mt">
+                <strong>Crowd interest in this pairing: @((int)Math.Round(PairingFamiliarity * 100))%.</strong>
+                The beat sheet is graded as written — the room is what shrinks.
             </div>
         }
     </div>
@@ -433,6 +450,37 @@
 
     private Feud? existingFeud;
     private Feud? feud;
+
+    // ── Pairing freshness ────────────────────────────────────────────────
+    // docs/wrestling-reference/20-storylines-and-feuds.md §9.1. Shown before the match is
+    // booked rather than after it is run: a booker needs to know a pairing is worn out
+    // while they can still book something else.
+
+    /// <summary>
+    /// The pair's record, feud or not. A pairing the crowd is sick of is sick of it
+    /// whether or not the booker attaches a story to tonight's match.
+    /// </summary>
+    private Feud? PairingHistory =>
+        a is not null && b is not null ? State.FeudBook.Find(a, b) : null;
+
+    /// <summary>
+    /// The night this would be seen. The card being written, if there is one, because
+    /// freshness recovers between now and then.
+    /// </summary>
+    private DateOnly? PairingDate => State.ActiveShow?.Date ?? State.Career?.CurrentDate;
+
+    private double PairingFamiliarity => PairingHistory?.Familiarity(PairingDate) ?? 1.0;
+
+    private double NextMeeting => PairingHistory?.NextMeetingNumber(PairingDate) ?? 1.0;
+
+    private string FreshnessAdvice => PairingFamiliarity switch
+    {
+        >= 0.99 => "Enough time has passed that the crowd will take it as new.",
+        >= 0.88 => "Still worth running.",
+        >= 0.75 => "Getting familiar. A hot feud makes the third one feel like an ending.",
+        >= 0.60 => "Three matches is the natural life of a pairing. This is past it.",
+        _       => "Rest this one. Time is the only thing that brings it back."
+    };
     private FeudChoice feudChoice = FeudChoice.None;
     private FeudIntensity declaredIntensity = FeudIntensity.Building;
     private readonly List<FeudHistoryTag> declaredTags = new();
