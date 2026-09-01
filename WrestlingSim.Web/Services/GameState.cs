@@ -18,6 +18,7 @@ public enum Screen
     Feuds,
     Titles,
     Shows,
+    Brands,
     BookShow,
 
     // Exhibition — the old sandbox, kept for trying the engine without a career
@@ -82,6 +83,15 @@ public class GameState
     /// <summary>The show currently being booked or reviewed. Career mode only.</summary>
     public ScheduledShow? ActiveShow { get; private set; }
 
+    /// <summary>
+    /// A draft in progress, or null. Held here rather than on the screen so a stray
+    /// navigation does not silently throw away a half-finished draft.
+    /// </summary>
+    public DraftBoard? DraftInProgress { get; private set; }
+
+    /// <summary>The most recent completed draft, for the screen to report.</summary>
+    public DraftOutcome? LastDraft { get; private set; }
+
     /// <summary>Saves found in this browser, refreshed on landing.</summary>
     public List<SaveSlot> Slots { get; private set; } = new();
 
@@ -96,6 +106,28 @@ public class GameState
     public FeudBook FeudBook => Career?.FeudBook ?? _exhibitionFeuds;
     public int ActiveFeudCount => FeudBook.All.Count;
     public IEnumerable<Wrestler> RosterByOverness => Roster.OrderByDescending(w => w.Overness);
+
+    // ── Brands ───────────────────────────────────────────────────────────────
+
+    /// <summary>The split, or an inert one outside a career so screens can read it safely.</summary>
+    public BrandSplit Split => Career?.Brands ?? _noSplit;
+
+    private readonly BrandSplit _noSplit = new();
+
+    public bool IsSplit => Career?.Brands.Active == true;
+
+    /// <summary>The brand running the show currently open, or null for a company-wide date.</summary>
+    public Brand? BookingBrand =>
+        Career is { } career && ActiveShow is { } show ? career.BrandOfShow(show) : null;
+
+    /// <summary>
+    /// Whether booking this person on the show currently open would be a crossover. The
+    /// booking screens ask this per name, so the cost is visible at the point of choosing
+    /// rather than after the show has run.
+    /// </summary>
+    public bool IsCrossover(Wrestler wrestler) => Split.IsCrossover(wrestler, BookingBrand);
+
+    public Brand? BrandOf(Wrestler wrestler) => IsSplit ? Split.BrandOf(wrestler) : null;
 
     // ── Startup ──────────────────────────────────────────────────────────────
 
@@ -412,7 +444,15 @@ public class GameState
     {
         if (Career == null || show.HasRun || show.Card.Count == 0) return;
 
-        var result = new ShowSimulator(Career.FeudBook, titles: Career.Titles).Simulate(show.ToShow());
+        // The brand context is what charges the night's crossovers to the split. A
+        // company-wide date passes a null home brand, which is how the inter-brand
+        // supercard stays free — docs/wrestling-reference/22-brand-splits.md §3.4.
+        var brands = Career.Brands.Active
+            ? new BrandContext(Career.Brands, Career.BrandOfShow(show))
+            : null;
+
+        var result = new ShowSimulator(Career.FeudBook, titles: Career.Titles, brands: brands)
+            .Simulate(show.ToShow());
         show.Result = result;
 
         if (Career.CurrentDate < show.Date) Career.CurrentDate = show.Date;
@@ -439,11 +479,51 @@ public class GameState
         Notify();
     }
 
+    // ── Brand split ──────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Divides the roster. The brands arrive with their rosters already picked, and any
+    /// show definition the player has assigned keeps its assignment.
+    ///
+    /// Nothing here checks whether the roster is deep enough. Doc 22 §3.6 says a viable
+    /// split wants 60–80 performers, and the screen says so plainly — but splitting too
+    /// early is a thing promotions genuinely do, so the game lets the player do it.
+    /// </summary>
+    public async Task BeginSplitAsync(IEnumerable<Brand> brands)
+    {
+        if (Career == null) return;
+
+        Career.BeginSplit(brands);
+        await SaveAsync();
+        Notify();
+    }
+
+    public async Task EndSplitAsync()
+    {
+        if (Career == null) return;
+
+        Career.EndSplit();
+        DraftInProgress = null;
+        LastDraft = null;
+
+        await SaveAsync();
+        Notify();
+    }
+
     public async Task RetireTitleAsync(Title title)
     {
         if (Career == null) return;
 
         Career.Titles.Retire(title, Career.CurrentDate);
+        await SaveAsync();
+        Notify();
+    }
+
+    public async Task AssignToBrandAsync(Wrestler wrestler, Brand? brand)
+    {
+        if (Career == null) return;
+
+        Career.Brands.Assign(wrestler, brand);
         await SaveAsync();
         Notify();
     }
@@ -457,12 +537,85 @@ public class GameState
         Notify();
     }
 
+    /// <summary>
+    /// Hands a recurring show to a brand, or to nobody. Future dates that have not been
+    /// booked follow it; anything already booked or run keeps the brand it ran under.
+    /// </summary>
+    public async Task SetShowBrandAsync(ShowDefinition definition, string? brandId)
+    {
+        if (Career == null) return;
+
+        definition.BrandId = brandId;
+
+        foreach (var show in Career.Shows.Where(s =>
+                     s.DefinitionId == definition.Id
+                     && !s.HasRun && !s.IsBooked && s.Date >= Career.CurrentDate))
+            show.BrandId = brandId;
+
+        await SaveAsync();
+        Notify();
+    }
+
     public async Task VacateTitleAsync(Title title, string reason = "Vacated")
     {
         if (Career == null || title.IsVacant) return;
 
         TitleEconomy.Vacate(title, Career.CurrentDate, reason);
         await SaveAsync();
+        Notify();
+    }
+
+    // ── The draft ────────────────────────────────────────────────────────────
+
+    public void StartDraft(int? seed = null)
+    {
+        if (Career == null || !Career.Brands.Active) return;
+
+        DraftInProgress = DraftBoard.Create(Career, seed);
+        LastDraft = null;
+        Notify();
+    }
+
+    public void DraftPick(Wrestler wrestler)
+    {
+        DraftInProgress?.Pick(wrestler);
+        Notify();
+    }
+
+    public void DraftAutoPick()
+    {
+        DraftInProgress?.AutoPick();
+        Notify();
+    }
+
+    public void DraftAutoComplete()
+    {
+        DraftInProgress?.AutoComplete();
+        Notify();
+    }
+
+    public void CancelDraft()
+    {
+        DraftInProgress = null;
+        Notify();
+    }
+
+    /// <summary>Commits a completed draft. Refuses a partial one — a half-drafted roster is not a roster.</summary>
+    public async Task CompleteDraftAsync()
+    {
+        if (Career == null || DraftInProgress is not { Complete: true } board) return;
+
+        LastDraft = Draft.Apply(Career, board);
+        DraftInProgress = null;
+
+        await SaveAsync();
+        Notify();
+    }
+
+
+    public void ClearDraftReport()
+    {
+        LastDraft = null;
         Notify();
     }
 

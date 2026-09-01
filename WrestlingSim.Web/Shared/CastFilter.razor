@@ -6,6 +6,19 @@
     duplicated with slightly different behaviour in each.
 *@
 
+@if (HomeBrand is { } brand)
+{
+    @* The crossover is deliberately one click away and deliberately labelled. Doc 22 §4.1:
+       the decision has to be easy and defensible, or the mechanic is not the one the
+       reference describes. *@
+    <div class="chips">
+        <button class="chip @(IncludeCrossover ? "" : "is-active")"
+                @onclick="() => SetCrossover(false)">@brand.Name only</button>
+        <button class="chip @(IncludeCrossover ? "is-active" : "")"
+                @onclick="() => SetCrossover(true)">All brands — crossover</button>
+    </div>
+}
+
 <div class="searchbar">
     <input class="input" type="search" placeholder="@Placeholder"
            value="@Query" @oninput="OnQuery" />
@@ -27,6 +40,15 @@
     [Parameter] public EventCallback<Division?> DivisionChanged { get; set; }
 
     [Parameter] public string Placeholder { get; set; } = "Search the roster…";
+
+    /// <summary>The brand running the show being booked, or null when brands do not apply.</summary>
+    [Parameter] public Brand? HomeBrand { get; set; }
+
+    /// <summary>Whether the other brands' rosters are on offer.</summary>
+    [Parameter] public bool IncludeCrossover { get; set; }
+    [Parameter] public EventCallback<bool> IncludeCrossoverChanged { get; set; }
+
+    private Task SetCrossover(bool value) => IncludeCrossoverChanged.InvokeAsync(value);
 
     private Task OnQuery(ChangeEventArgs e) =>
         QueryChanged.InvokeAsync(e.Value?.ToString() ?? "");

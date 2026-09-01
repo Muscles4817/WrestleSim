@@ -1,0 +1,712 @@
+@inherits StateComponent
+
+@if (State.Career is not { } career)
+{
+    <div class="empty"><div class="empty__mark">◫</div>No career loaded.</div>
+}
+else if (State.DraftInProgress is { } board)
+{
+    <DraftPanel Board="board" />
+}
+else if (mode == Mode.Wizard)
+{
+    @* ── Splitting the roster ────────────────────────────────────────────── *@
+    <div class="screen__head">
+        <div class="screen__eyebrow">Step @(step + 1) of 3</div>
+        <h1 class="screen__title">Split the roster</h1>
+        <p class="screen__lede">
+            Two brands, each with its own exclusive roster and its own shows. The performers
+            all work for you; the fiction is that the brands are separate companies. Keeping
+            that fiction is the whole job.
+        </p>
+    </div>
+
+    @if (step == 0)
+    {
+        <div class="panel">
+            <div class="panel__title">The brands</div>
+            @foreach (var brand in draftBrands)
+            {
+                <div class="panel panel--flat">
+                    <div class="fields">
+                        <div class="field">
+                            <span class="field__label">Name</span>
+                            <input class="input" @bind="brand.Name" @bind:event="oninput" maxlength="32" />
+                        </div>
+                        <div class="field">
+                            <span class="field__label">What it is for</span>
+                            <input class="input" @bind="brand.Identity" @bind:event="oninput" maxlength="80"
+                                   placeholder="e.g. sports-focused, harder-hitting, older audience" />
+                        </div>
+                    </div>
+                </div>
+            }
+            <div class="notice notice--tip">
+                Two brands that feel identical add administrative work and nothing the audience
+                can see. Write down what makes them different before you divide anyone.
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel__title">Roster depth</div>
+            @{ var depth = BrandIntegrity.Depth(career.Roster, draftBrands.Count); }
+            <div class="score-hero">
+                <div>
+                    <div class="score-hero__label">Under contract</div>
+                    <div class="score-hero__main">@depth.RosterSize <span class="muted">/ 60 wanted</span></div>
+                </div>
+                <div>
+                    <div class="score-hero__label">Per brand</div>
+                    <div class="score-hero__main">@depth.PerBrand <span class="muted">/ 25 wanted</span></div>
+                </div>
+            </div>
+
+            @if (depth.IsThin)
+            {
+                <div class="notice notice--warn mt">
+                    <strong>This roster is thin for a split.</strong>
+                    <ul>@foreach (var w in depth.Warnings) { <li>@w</li> }</ul>
+                    You can go ahead. Splitting too early gives you two thin shows instead of one
+                    strong one, and that is a thing promotions do — you will be able to see it
+                    happening.
+                </div>
+            }
+            else
+            {
+                <div class="notice notice--info mt">Deep enough to carry two brands.</div>
+            }
+        </div>
+    }
+    else if (step == 1)
+    {
+        <div class="panel">
+            <div class="panel__title">
+                Who goes where
+                <span class="spacer"></span>
+                <button class="btn btn--sm btn--ghost" @onclick="Balance">Re-balance</button>
+            </div>
+            <p class="small muted">
+                Started from a snake draft down the card, so neither brand gets every
+                odd-ranked name. Move anyone you disagree with.
+            </p>
+
+            @foreach (var w in career.RosterByOverness)
+            {
+                var current = WizardBrandOf(w);
+                <div class="editor-row">
+                    <div class="editor-row__n">@w.OvernessDisplay</div>
+                    <div>
+                        <div class="editor-row__name">@w.RingName</div>
+                        <div class="editor-row__sub">@w.CardPosition.Label() · @w.Style</div>
+                    </div>
+                    <div class="editor-row__tools">
+                        @foreach (var brand in draftBrands)
+                        {
+                            <button class="btn btn--sm @(current == brand ? "btn--primary" : "btn--ghost")"
+                                    @onclick="() => WizardAssign(w, brand)">
+                                @ShortName(brand)
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="panel">
+            <div class="panel__title">Which brand runs which show</div>
+            <p class="small muted">
+                A brand needs its own television to be a brand. Leave a date company-wide and
+                both rosters work it — that is the inter-brand supercard, and it is the one
+                place a crossover costs you nothing.
+            </p>
+
+            @foreach (var definition in career.ShowDefinitions.Where(d => d.Active).Concat(newDefinitions))
+            {
+                <div class="editor-row">
+                    <div class="editor-row__n">@(definition.Type == ShowType.PremiumEvent ? "★" : "▦")</div>
+                    <div>
+                        <div class="editor-row__name">@definition.Name</div>
+                        <div class="editor-row__sub">@definition.RecurrenceLabel</div>
+                    </div>
+                    <div class="editor-row__tools">
+                        @foreach (var brand in draftBrands)
+                        {
+                            <button class="btn btn--sm @(definition.BrandId == brand.Id ? "btn--primary" : "btn--ghost")"
+                                    @onclick="() => definition.BrandId = brand.Id">
+                                @ShortName(brand)
+                            </button>
+                        }
+                        <button class="btn btn--sm @(definition.BrandId is null ? "btn--primary" : "btn--ghost")"
+                                @onclick="() => definition.BrandId = null">
+                            Both
+                        </button>
+                    </div>
+                </div>
+            }
+
+            @if (!career.ShowDefinitions.Any(d => d.Active) && newDefinitions.Count == 0)
+            {
+                <div class="empty">
+                    <div class="empty__mark">◷</div>
+                    No standing shows yet. You can hand them to a brand later on the Shows screen.
+                </div>
+            }
+
+            @foreach (var brand in draftBrands.Where(b => !HasShow(career, b)))
+            {
+                <div class="notice notice--warn mt">
+                    <strong>@brand.Name has no show of its own.</strong>
+                    A brand without its own television is a roster with nowhere to appear.
+                    <span class="spacer"></span>
+                    <button class="btn btn--sm btn--primary" @onclick="() => GiveAShow(career, brand)">
+                        Add a weekly show for @ShortName(brand)
+                    </button>
+                </div>
+            }
+        </div>
+    }
+
+    <div class="wizard-bar wizard-bar--sticky">
+        <button class="btn btn--ghost" @onclick="WizardBack">@(step == 0 ? "← Cancel" : "← Back")</button>
+        <span class="wizard-bar__spacer"></span>
+        @if (step < 2)
+        {
+            <button class="btn btn--primary" disabled="@(!CanAdvance)" @onclick="WizardNext">Next →</button>
+        }
+        else
+        {
+            <button class="btn btn--primary" @onclick="Confirm">Split the roster ◫</button>
+        }
+    </div>
+}
+else if (!career.Brands.Active)
+{
+    @* ── One roster ──────────────────────────────────────────────────────── *@
+    <div class="screen__head">
+        <div class="screen__eyebrow">One roster</div>
+        <h1 class="screen__title">Brands</h1>
+        <p class="screen__lede">
+            A split divides the promotion into semi-autonomous brands, each with an exclusive
+            roster and its own shows. It buys screen time and main-event slots. It costs the
+            discipline to keep your biggest star off half your television.
+        </p>
+    </div>
+
+    @if (career.Brands.Ceiling < 100)
+    {
+        @* A promotion that has split before does not get a clean sheet. Doc 22 §4.1. *@
+        <div class="notice notice--warn">
+            <strong>You have split before.</strong>
+            @((100 - career.Brands.Ceiling).ToString("F1")) points of split integrity are gone
+            for good, so a new split would start at @career.Brands.Ceiling.ToString("F1") rather
+            than whole. The audience remembers being told the line moves when it is convenient.
+        </div>
+    }
+
+    <div class="panel">
+        <div class="panel__title">What a split gets you</div>
+        <ul class="small">
+            <li>Twice the screen time per performer — the roster stops being bigger than the television.</li>
+            <li>Two main-event scenes, so the people ranked sixth to fifteenth get a card where they are the top.</li>
+            <li>A draft every year, which resets every stale pairing at once.</li>
+        </ul>
+        <div class="panel__title mt">What it costs</div>
+        <ul class="small">
+            <li>Every crossover appearance permanently erodes how much the split means.</li>
+            <li>Book one brand better than the other for long enough and it becomes the B-show.</li>
+            <li>Twice the shows to fill from the same roster.</li>
+        </ul>
+    </div>
+
+    <div class="panel">
+        <div class="panel__title">Can this roster carry it</div>
+        @if (Depth(career, 2) is { IsThin: true } depth)
+        {
+            <div class="notice notice--warn">
+                <strong>Not really — @depth.RosterSize under contract, about @depth.PerBrand a brand.</strong>
+                <ul>@foreach (var w in depth.Warnings) { <li>@w</li> }</ul>
+                Nothing stops you. This is the most common way a split fails, and it fails
+                slowly enough to be worth watching happen.
+            </div>
+        }
+        else
+        {
+            <div class="notice notice--info">
+                @career.Roster.Count under contract, about @(career.Roster.Count / 2) a brand. Deep enough.
+            </div>
+        }
+    </div>
+
+    <div class="wizard-bar">
+        <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Dashboard)">← Dashboard</button>
+        <span class="wizard-bar__spacer"></span>
+        <button class="btn btn--primary" @onclick="OpenWizard">Split the roster ◫</button>
+    </div>
+}
+else
+{
+    @* ── The split, running ──────────────────────────────────────────────── *@
+    var split = career.Brands;
+
+    <div class="screen__head">
+        <div class="screen__eyebrow">
+            Split since @(split.StartedOn?.ToString("d MMM yyyy") ?? "—")
+            · @split.CrossoverCount crossover@(split.CrossoverCount == 1 ? "" : "s")
+        </div>
+        <h1 class="screen__title">Brands</h1>
+    </div>
+
+    @if (State.LastDraft is { } report)
+    {
+        <div class="notice notice--info">
+            <strong>Draft complete.</strong>
+            @report.Moved of @report.Picks.Count changed brand.
+            @report.PairingsRefreshed pairing@(report.PairingsRefreshed == 1 ? "" : "s") went back to fresh
+            and @report.FeudsEnded feud@(report.FeudsEnded == 1 ? "" : "s") ended for want of a shared show.
+            Integrity @report.IntegrityBefore.ToString("F1") → @report.IntegrityAfter.ToString("F1")
+            (ceiling @report.Ceiling.ToString("F1")).
+            @if (report.WasEarly)
+            {
+                <text>
+                    It came round after @report.DaysSincePrevious days rather than a year, so it
+                    read as a reshuffle rather than an event and repaired less.
+                </text>
+            }
+            <span class="spacer"></span>
+            <button class="btn btn--sm btn--ghost" @onclick="State.ClearDraftReport">Dismiss</button>
+        </div>
+    }
+
+    <div class="panel">
+        <div class="panel__title">
+            Split integrity
+            <span class="spacer"></span>
+            <span class="badge @IntegrityBadge(split.Integrity)">@BrandIntegrity.Phase(split.Integrity)</span>
+        </div>
+
+        <Meter Label="How much the split still means" Value="@split.Integrity" Max="100"
+               ValueText="@($"{split.Integrity:F1} / 100")"
+               Variant="@IntegrityVariant(split.Integrity)" />
+
+        <p class="small muted mt">@BrandIntegrity.PhaseNote(split.Integrity)</p>
+
+        <div class="score-hero">
+            <div>
+                <div class="score-hero__label">Ceiling</div>
+                <div class="score-hero__main">@split.Ceiling.ToString("F1")</div>
+            </div>
+            <div>
+                <div class="score-hero__label">Star-making</div>
+                <div class="score-hero__main">
+                    @((BrandIntegrity.StarMakingFactor(split.Integrity) * 100).ToString("F0"))<span class="muted">%</span>
+                </div>
+            </div>
+            <div>
+                <div class="score-hero__label">Exclusivity worth</div>
+                <div class="score-hero__main">
+                    +@((BrandIntegrity.ExclusivityBonus(split.Integrity) * 100).ToString("F1"))<span class="muted">%</span>
+                </div>
+            </div>
+        </div>
+
+        <p class="small muted mt">
+            The ceiling is what a draft can restore integrity to. It falls a little with every
+            crossover and never rises. Star-making is the share of the overness won on a brand
+            show that the winner actually keeps — when brand membership stops meaning anything,
+            topping a brand stops making anyone.
+        </p>
+    </div>
+
+    @* ── The draft ───────────────────────────────────────────────────────── *@
+    <div class="panel">
+        <div class="panel__title">
+            The draft
+            <span class="spacer"></span>
+            @if (Draft.IsDue(split, career.CurrentDate))
+            {
+                <span class="badge badge--gold">Due</span>
+            }
+        </div>
+        <div class="row small">
+            <span class="muted">
+                @if (Draft.DueOn(split) is { } due)
+                {
+                    <text>
+                        Last held @(split.LastDraftOn?.ToString("d MMM yyyy") ?? "never")
+                        · next due @due.ToString("d MMM yyyy")
+                        · a draft today would restore
+                        @((Draft.RepairShare(Draft.DaysSince(split, career.CurrentDate)) * 100).ToString("F0"))%
+                        of the @((split.Ceiling - split.Integrity).ToString("F1")) integrity you are down.
+                    </text>
+                }
+            </span>
+            <span class="spacer"></span>
+            <button class="btn btn--sm btn--primary" @onclick="() => State.StartDraft()">Hold a draft</button>
+        </div>
+        <p class="small muted mt">
+            Annual is right. It refreshes every roster and every possible pairing at once, ends
+            the feuds it separates, and re-establishes that brand membership is real. Held more
+            often it stops being an event and repairs much less.
+        </p>
+    </div>
+
+    @* ── The brands ──────────────────────────────────────────────────────── *@
+    @foreach (var brand in split.Brands)
+    {
+        var roster = career.RosterOf(brand).ToList();
+        var secondary = BrandIntegrity.IsSecondary(brand, split);
+
+        <div class="panel">
+            <div class="panel__title">
+                <span style="color:@brand.Colour">@brand.Name</span>
+                @if (secondary)
+                {
+                    <span class="badge badge--heel">B-show</span>
+                }
+                <span class="spacer"></span>
+                <span class="small muted">
+                    @roster.Count on the roster
+                    @if (brand.Form is { } form)
+                    {
+                        <text> · form @form.ToString("F1") over @brand.RecentRatings.Count show@(brand.RecentRatings.Count == 1 ? "" : "s")</text>
+                    }
+                </span>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(brand.Identity))
+            {
+                <p class="small muted">@brand.Identity</p>
+            }
+
+            @if (secondary)
+            {
+                <div class="notice notice--warn">
+                    <strong>@brand.Name is rating below the other brand.</strong>
+                    Wins on it are worth
+                    @((BrandIntegrity.StandingFactor(brand, split) * 100).ToString("F0"))% of what they
+                    are worth on the A-show, which makes its roster harder to lift, which makes it
+                    rate worse. Book it as though it mattered or it will not.
+                </div>
+            }
+
+            <div class="row small mt">
+                <span class="muted">Shows:</span>
+                @foreach (var definition in career.ShowDefinitions.Where(d => d.Active && d.BrandId == brand.Id))
+                {
+                    <span class="badge badge--cyan">@definition.Name</span>
+                }
+                @if (!career.ShowDefinitions.Any(d => d.Active && d.BrandId == brand.Id))
+                {
+                    <span class="badge badge--heel">no show of its own</span>
+                }
+            </div>
+
+            @if (!career.ShowDefinitions.Any(d => d.Active && d.BrandId == brand.Id))
+            {
+                <div class="notice notice--warn">
+                    <strong>@brand.Name has no show of its own.</strong>
+                    A brand needs its own television to be a brand — without one its roster
+                    only ever appears as guests on somebody else's show. Hand it a date on the
+                    Shows screen.
+                    <span class="spacer"></span>
+                    <button class="btn btn--sm" @onclick="() => State.Go(Screen.Shows)">Shows</button>
+                </div>
+            }
+
+            <div class="row small mt">
+                <span class="muted">Top of the card:</span>
+                <span>@string.Join(", ", roster.Take(4).Select(w => w.RingName))</span>
+            </div>
+
+            <button class="rcard__toggle" @onclick="() => Toggle(brand.Id)">
+                @(expanded.Contains(brand.Id) ? "Hide the roster ▲" : "Show the roster ▼")
+            </button>
+
+            @if (expanded.Contains(brand.Id))
+            {
+                @foreach (var w in roster)
+                {
+                    <div class="editor-row">
+                        <div class="editor-row__n">@w.OvernessDisplay</div>
+                        <div>
+                            <div class="editor-row__name">@w.RingName</div>
+                            <div class="editor-row__sub">@w.CardPosition.Label()</div>
+                        </div>
+                        <div class="editor-row__tools">
+                            @foreach (var other in split.Brands.Where(b => b.Id != brand.Id))
+                            {
+                                <button class="btn btn--sm btn--ghost"
+                                        @onclick="() => State.AssignToBrandAsync(w, other)">
+                                    → @ShortName(other)
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    }
+
+    @if (Unassigned(career).Count > 0)
+    {
+        <div class="panel">
+            <div class="panel__title">
+                Unassigned
+                <span class="spacer"></span>
+                <span class="small muted">@Unassigned(career).Count free agent@(Unassigned(career).Count == 1 ? "" : "s")</span>
+            </div>
+            <p class="small muted">
+                Nobody's brand, so they can work anywhere without it counting as a crossover.
+                Useful, and a way of quietly not having a split at all.
+            </p>
+            @foreach (var w in Unassigned(career))
+            {
+                <div class="editor-row">
+                    <div class="editor-row__n">@w.OvernessDisplay</div>
+                    <div><div class="editor-row__name">@w.RingName</div></div>
+                    <div class="editor-row__tools">
+                        @foreach (var brand in split.Brands)
+                        {
+                            <button class="btn btn--sm btn--ghost"
+                                    @onclick="() => State.AssignToBrandAsync(w, brand)">
+                                → @ShortName(brand)
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @* ── The ledger ──────────────────────────────────────────────────────── *@
+    <div class="panel">
+        <div class="panel__title">
+            Crossovers
+            <span class="spacer"></span>
+            <span class="small muted">
+                @split.CrossoverCount booked · @((100 - split.Ceiling).ToString("F1")) permanently lost
+            </span>
+        </div>
+
+        @if (split.Crossovers.Count == 0)
+        {
+            <div class="empty">
+                <div class="empty__mark">✓</div>
+                Nobody has worked the wrong show yet. This is the state the split is worth having in.
+            </div>
+        }
+        else
+        {
+            <p class="small muted">
+                Every one of these was the right call on the night. Read them together.
+            </p>
+            @foreach (var crossover in split.Crossovers.AsEnumerable().Reverse().Take(12))
+            {
+                <div class="editor-row">
+                    <div class="editor-row__n">−@crossover.Cost.ToString("F1")</div>
+                    <div>
+                        <div class="editor-row__name">@crossover.WrestlerName on @crossover.ShowName</div>
+                        <div class="editor-row__sub">
+                            @crossover.HomeBrandName → @crossover.ShowBrandName
+                            · @crossover.Date.ToString("d MMM yyyy")
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+
+    <div class="wizard-bar">
+        <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Dashboard)">← Dashboard</button>
+        <span class="wizard-bar__spacer"></span>
+        @if (confirmingEnd)
+        {
+            <span class="small muted">Both rosters merge back. The erosion stays on the books.</span>
+            <button class="btn btn--sm btn--ghost" @onclick="() => confirmingEnd = false">Keep it</button>
+            <button class="btn btn--sm btn--danger" @onclick="EndSplit">End the split</button>
+        }
+        else
+        {
+            <button class="btn btn--sm btn--ghost" @onclick="() => confirmingEnd = true">End the split</button>
+        }
+    </div>
+}
+
+@code {
+    private static SplitDepthReport Depth(Career career, int brandCount) =>
+        BrandIntegrity.Depth(career.Roster, brandCount);
+
+    /// <summary>Free agents, most over first. Nobody's brand, so nobody's crossover.</summary>
+    private static List<Wrestler> Unassigned(Career career) =>
+        career.Brands.Unassigned(career.Roster).OrderByDescending(w => w.EffectiveOverness).ToList();
+
+    private enum Mode { Overview, Wizard }
+
+    private Mode mode = Mode.Overview;
+    private int step;
+    private bool confirmingEnd;
+
+    private readonly HashSet<string> expanded = new();
+
+    /// <summary>
+    /// The brands being built by the wizard. They are not on the career until the player
+    /// confirms, so backing out of a half-made split leaves nothing behind.
+    /// </summary>
+    private List<Brand> draftBrands = new();
+
+    /// <summary>Provisional assignment, held here rather than on the live split.</summary>
+    private readonly Dictionary<string, string> wizardAssignment = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Shows the wizard is offering to create, not yet on the career. A split abandoned
+    /// halfway should leave no shows behind any more than it leaves brands behind.
+    /// </summary>
+    private readonly List<ShowDefinition> newDefinitions = new();
+
+    private bool HasShow(Career career, Brand brand) =>
+        career.ShowDefinitions.Any(d => d.Active && d.BrandId == brand.Id)
+        || newDefinitions.Any(d => d.BrandId == brand.Id);
+
+    /// <summary>
+    /// A brand needs its own television to be a brand at all
+    /// (docs/wrestling-reference/22-brand-splits.md §1), so the wizard offers one rather
+    /// than letting the player finish a split with a roster that has nowhere to appear.
+    /// </summary>
+    private void GiveAShow(Career career, Brand brand)
+    {
+        var type = career.Promotion.HasTelevision ? ShowType.Television : ShowType.HouseShow;
+
+        newDefinitions.Add(new ShowDefinition
+        {
+            Name       = $"{brand.Name} Weekly",
+            Type       = type,
+            Recurrence = RecurrenceKind.Weekly,
+            Day        = NextFreeDay(career),
+            BrandId    = brand.Id
+        });
+    }
+
+    /// <summary>A weekday nothing already runs on, so the two brands do not clash.</summary>
+    private DayOfWeek NextFreeDay(Career career)
+    {
+        var taken = career.ShowDefinitions.Where(d => d.Active && d.Recurrence == RecurrenceKind.Weekly)
+            .Select(d => d.Day)
+            .Concat(newDefinitions.Where(d => d.Recurrence == RecurrenceKind.Weekly).Select(d => d.Day))
+            .ToHashSet();
+
+        foreach (var day in new[] { DayOfWeek.Friday, DayOfWeek.Tuesday, DayOfWeek.Wednesday,
+                                    DayOfWeek.Thursday, DayOfWeek.Monday, DayOfWeek.Sunday })
+            if (!taken.Contains(day)) return day;
+
+        return DayOfWeek.Friday;
+    }
+
+    private bool CanAdvance => step != 0 || draftBrands.All(b => !string.IsNullOrWhiteSpace(b.Name));
+
+    private void OpenWizard()
+    {
+        draftBrands =
+        [
+            new Brand { Name = "Monday Night", Colour = "#d4af37" },
+            new Brand { Name = "Friday Night", Colour = "#4fc3f7" }
+        ];
+
+        wizardAssignment.Clear();
+        newDefinitions.Clear();
+        step = 0;
+        mode = Mode.Wizard;
+    }
+
+    private void WizardBack()
+    {
+        if (step == 0) { mode = Mode.Overview; return; }
+        step--;
+    }
+
+    private void WizardNext()
+    {
+        if (step == 0 && wizardAssignment.Count == 0) Balance();
+        step++;
+    }
+
+    /// <summary>
+    /// Fills the provisional assignment with a snake draft down the card, so neither brand
+    /// ends up with every odd-ranked name. Same code path as the annual draft.
+    /// </summary>
+    private void Balance()
+    {
+        if (State.Career is not { } career) return;
+
+        var board = DraftBoard.Create(draftBrands, career.Roster, career.Brands);
+        board.AutoComplete();
+
+        wizardAssignment.Clear();
+        foreach (var pick in board.Picks) wizardAssignment[pick.Wrestler.Id] = pick.To.Id;
+    }
+
+    private Brand? WizardBrandOf(Wrestler w) =>
+        wizardAssignment.TryGetValue(w.Id, out var id)
+            ? draftBrands.FirstOrDefault(b => b.Id == id)
+            : null;
+
+    private void WizardAssign(Wrestler w, Brand brand) => wizardAssignment[w.Id] = brand.Id;
+
+    private async Task Confirm()
+    {
+        if (State.Career is not { } career) return;
+
+        foreach (var brand in draftBrands) brand.RosterIds.Clear();
+
+        foreach (var w in career.Roster)
+        {
+            if (!wizardAssignment.TryGetValue(w.Id, out var id)) continue;
+            draftBrands.FirstOrDefault(b => b.Id == id)?.RosterIds.Add(w.Id);
+        }
+
+        await State.BeginSplitAsync(draftBrands);
+
+        foreach (var definition in newDefinitions)
+            await State.AddShowDefinitionAsync(definition);
+
+        // Show definitions were assigned in place during step 3; push those onto the dates
+        // already sitting on the calendar.
+        foreach (var definition in career.ShowDefinitions)
+            await State.SetShowBrandAsync(definition, definition.BrandId);
+
+        newDefinitions.Clear();
+
+        mode = Mode.Overview;
+        step = 0;
+    }
+
+    private async Task EndSplit()
+    {
+        confirmingEnd = false;
+        await State.EndSplitAsync();
+    }
+
+    private void Toggle(string id)
+    {
+        if (!expanded.Remove(id)) expanded.Add(id);
+    }
+
+    /// <summary>First word of a brand name, for buttons that have room for one.</summary>
+    private static string ShortName(Brand brand) =>
+        brand.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? brand.Name;
+
+    private static string IntegrityBadge(double integrity) => integrity switch
+    {
+        >= 85 => "badge--face",
+        >= 45 => "badge--gold",
+        _     => "badge--heel"
+    };
+
+    private static string IntegrityVariant(double integrity) => integrity switch
+    {
+        >= 85 => "face",
+        >= 45 => "gold",
+        _     => "heel"
+    };
+}

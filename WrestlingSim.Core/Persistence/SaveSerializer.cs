@@ -96,8 +96,11 @@ namespace WrestlingSim.Persistence
                 Ordinal        = d.Ordinal,
                 Venue          = d.Venue,
                 RuntimeMinutes = d.RuntimeMinutes,
-                Active         = d.Active
+                Active         = d.Active,
+                BrandId        = d.BrandId
             }).ToList(),
+
+            Brands = ToDto(career.Brands),
 
             Feuds = career.FeudBook.AllIncludingDormant
                 .Select(f => new FeudDto
@@ -140,6 +143,47 @@ namespace WrestlingSim.Persistence
             }).ToList()
         };
 
+        /// <summary>
+        /// The split, or null when the promotion has never divided — so a save from a
+        /// promotion with no brands looks exactly as it did before this existed.
+        /// </summary>
+        private static BrandSplitDto? ToDto(BrandSplit split)
+        {
+            if (!split.Active && split.Brands.Count == 0 && split.CrossoverCount == 0) return null;
+
+            return new BrandSplitDto
+            {
+                Active           = split.Active,
+                Integrity        = Math.Round(split.Integrity, 3),
+                PermanentErosion = Math.Round(split.PermanentErosion, 3),
+                CrossoverCount   = split.CrossoverCount,
+                StartedOn        = split.StartedOn is { } s ? Iso(s) : null,
+                LastDraftOn      = split.LastDraftOn is { } d ? Iso(d) : null,
+
+                Brands = split.Brands.Select(b => new BrandDto
+                {
+                    Id            = b.Id,
+                    Name          = b.Name,
+                    Identity      = b.Identity,
+                    Colour        = b.Colour,
+                    // By id, never by value — the roster instances belong to the career.
+                    RosterIds     = b.RosterIds.ToList(),
+                    RecentRatings = b.RecentRatings.Select(r => Math.Round(r, 2)).ToList()
+                }).ToList(),
+
+                Crossovers = split.Crossovers.Select(c => new CrossoverDto
+                {
+                    WrestlerId    = c.WrestlerId,
+                    WrestlerName  = c.WrestlerName,
+                    HomeBrandName = c.HomeBrandName,
+                    ShowBrandName = c.ShowBrandName,
+                    ShowName      = c.ShowName,
+                    Date          = Iso(c.Date),
+                    Cost          = Math.Round(c.Cost, 3)
+                }).ToList()
+            };
+        }
+
         private static ShowDto ToDto(ScheduledShow show) => new()
         {
             Id             = show.Id,
@@ -148,6 +192,7 @@ namespace WrestlingSim.Persistence
             Date           = Iso(show.Date),
             Type           = show.Type,
             Venue          = show.Venue,
+            BrandId        = show.BrandId,
             RuntimeMinutes = show.RuntimeMinutes,
             Attendance     = show.Attendance,
             Card           = show.Card.Select(ToDto).Where(c => c != null).Select(c => c!).ToList(),
@@ -260,8 +305,11 @@ namespace WrestlingSim.Persistence
                 Ordinal        = d.Ordinal,
                 Venue          = d.Venue,
                 RuntimeMinutes = d.RuntimeMinutes,
-                Active         = d.Active
+                Active         = d.Active,
+                BrandId        = d.BrandId
             }));
+
+            if (dto.Brands is { } brands) career.Brands = FromDto(brands, byId);
 
             foreach (var f in dto.Feuds)
             {
@@ -351,6 +399,60 @@ namespace WrestlingSim.Persistence
             career.Titles.Rebalance();
         }
 
+        /// Rebuilds the split. Roster ids that are not in the supplied roster are dropped,
+        /// for the same reason a feud with a missing participant is: the save must never
+        /// leave a brand holding a person the game cannot produce.
+        /// </summary>
+        private static BrandSplit FromDto(BrandSplitDto dto, Dictionary<string, Wrestler> byId)
+        {
+            var split = new BrandSplit
+            {
+                Active           = dto.Active,
+                Integrity        = Math.Clamp(dto.Integrity, 0, 100),
+                PermanentErosion = Math.Clamp(dto.PermanentErosion, 0, 100),
+                CrossoverCount   = Math.Max(0, dto.CrossoverCount),
+                StartedOn        = ParseOptionalDate(dto.StartedOn),
+                LastDraftOn      = ParseOptionalDate(dto.LastDraftOn)
+            };
+
+            foreach (var b in dto.Brands)
+            {
+                var brand = new Brand
+                {
+                    Id       = string.IsNullOrWhiteSpace(b.Id) ? Guid.NewGuid().ToString("N") : b.Id,
+                    Name     = b.Name,
+                    Identity = b.Identity,
+                    Colour   = string.IsNullOrWhiteSpace(b.Colour) ? "#d4af37" : b.Colour
+                };
+
+                foreach (var id in b.RosterIds)
+                    if (byId.ContainsKey(id)) brand.RosterIds.Add(id);
+
+                brand.RecentRatings.AddRange(b.RecentRatings.TakeLast(Brand.FormWindow));
+                split.Brands.Add(brand);
+            }
+
+            // Someone who has since left the roster still crossed over at the time, so the
+            // ledger keeps them: the erosion happened whether or not they are still here.
+            split.Crossovers.AddRange(dto.Crossovers.Select(c => new CrossoverRecord
+            {
+                WrestlerId    = c.WrestlerId,
+                WrestlerName  = c.WrestlerName,
+                HomeBrandName = c.HomeBrandName,
+                ShowBrandName = c.ShowBrandName,
+                ShowName      = c.ShowName,
+                Date          = ParseDate(c.Date),
+                Cost          = c.Cost
+            }));
+
+            // Older saves predate the running total; the ledger is the best count available.
+            if (split.CrossoverCount < split.Crossovers.Count)
+                split.CrossoverCount = split.Crossovers.Count;
+
+            split.Integrity = Math.Min(split.Integrity, split.Ceiling);
+            return split;
+        }
+
         private static ScheduledShow FromDto(
             ShowDto dto, Dictionary<string, Wrestler> byId, FeudBook feudBook, TitleRegistry titles)
         {
@@ -362,6 +464,7 @@ namespace WrestlingSim.Persistence
                 Date           = ParseDate(dto.Date),
                 Type           = dto.Type,
                 Venue          = dto.Venue,
+                BrandId        = dto.BrandId,
                 RuntimeMinutes = dto.RuntimeMinutes > 0 ? dto.RuntimeMinutes : 120,
                 Attendance     = dto.Attendance
             };
@@ -465,6 +568,7 @@ namespace WrestlingSim.Persistence
 
         private static string Iso(DateOnly date) => date.ToString("yyyy-MM-dd");
 
+        /// <summary>A date that is allowed to be absent, unlike the clock's.</summary>
         private static DateOnly? ParseOptionalDate(string? value) =>
             DateOnly.TryParse(value, System.Globalization.CultureInfo.InvariantCulture,
                               System.Globalization.DateTimeStyles.None, out var d)

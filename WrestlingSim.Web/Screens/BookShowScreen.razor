@@ -48,6 +48,62 @@ else if (show.HasRun)
         </div>
     }
 
+    @* The bill for the night's crossovers, presented after the rating they bought.
+       docs/wrestling-reference/22-brand-splits.md §4.1. *@
+    @if (result.Brand is { } brandReport)
+    {
+        <div class="panel">
+            <div class="panel__title">
+                @brandReport.BrandName
+                <span class="spacer"></span>
+                <span class="small muted">
+                    Split integrity @brandReport.IntegrityBefore.ToString("F1")
+                    → @brandReport.IntegrityAfter.ToString("F1")
+                </span>
+            </div>
+
+            @if (brandReport.Crossovers.Count == 0)
+            {
+                <div class="notice notice--info">
+                    Kept to its own roster. Worth
+                    +@((brandReport.ExclusivityBonus * 100).ToString("F1"))% on the night, and it
+                    is worth that only for as long as the split means something.
+                </div>
+            }
+            else
+            {
+                <div class="notice notice--warn">
+                    <strong>
+                        @brandReport.Crossovers.Count crossover@(brandReport.Crossovers.Count == 1 ? "" : "s")
+                        — split integrity down
+                        @((brandReport.IntegrityBefore - brandReport.IntegrityAfter).ToString("F1")),
+                        ceiling now @brandReport.Ceiling.ToString("F1").
+                    </strong>
+                    <ul>
+                        @foreach (var crossover in brandReport.Crossovers)
+                        {
+                            <li>
+                                @crossover.Wrestler (@crossover.HomeBrand) —
+                                worth +@((crossover.Attraction * 100).ToString("F0"))% on the items they
+                                worked, cost @crossover.Cost.ToString("F1") integrity, of which
+                                @((crossover.Cost * BrandIntegrity.PermanentShare).ToString("F1")) does not come back.
+                            </li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            @if (brandReport.StarMakingFactor < 0.995)
+            {
+                <div class="notice notice--warn">
+                    Winners on this show kept
+                    @((brandReport.StarMakingFactor * 100).ToString("F0"))% of the standing they earned.
+                    A brand that does not mean anything cannot make anybody.
+                </div>
+            }
+        </div>
+    }
+
     <div class="panel">
         <div class="panel__title">Card</div>
         @foreach (var item in result.Items)
@@ -125,6 +181,13 @@ else
     @* ── Card sheet ──────────────────────────────────────────────────────── *@
     <div class="screen__head">
         <div class="screen__eyebrow">
+            @if (career.Brands.Active)
+            {
+                <span class="badge @(career.BrandOfShow(show) is null ? "badge--muted" : "badge--face")">
+                    @(career.BrandOfShow(show)?.Name ?? "Both brands")
+                </span>
+                <text>&#32;</text>
+            }
             @show.TypeLabel · @show.Date.ToString("dddd d MMMM yyyy")
             @if (career.DaysUntil(show) > 0)
             {
@@ -155,6 +218,23 @@ else
                 <input class="input" type="number" min="20" max="480"
                        @bind="show.RuntimeMinutes" @bind:after="Persist" />
             </div>
+
+            @if (career.Brands.Active)
+            {
+                @* Per date rather than per series: moving one night to the other brand is a
+                   thing a promotion does, and it should not move the whole show with it. *@
+                <div class="field">
+                    <span class="field__label">Whose show this is</span>
+                    <select class="input" value="@(show.BrandId ?? "")"
+                            @onchange="e => SetBrand(show, e.Value?.ToString())">
+                        @foreach (var brand in career.Brands.Brands)
+                        {
+                            <option value="@brand.Id">@brand.Name</option>
+                        }
+                        <option value="">Both brands — nobody crosses over</option>
+                    </select>
+                </div>
+            }
         </div>
     </div>
 
@@ -220,6 +300,19 @@ else
             </div>
         }
 
+        @if (Crossovers(career, show) is { Count: > 0 } crossing)
+        {
+            <div class="notice notice--warn mt">
+                <strong>
+                    @crossing.Count crossover@(crossing.Count == 1 ? "" : "s") on this card —
+                    @CrossoverCost(career, show).ToString("F1") split integrity if you run it.
+                </strong>
+                @string.Join(", ", crossing.Select(c => $"{c.Wrestler.RingName} ({c.Home.Name})")).
+                Each of these is worth something tonight.
+                @((BrandIntegrity.PermanentShare * 100).ToString("F0"))% of the cost never comes back.
+            </div>
+        }
+
         <div class="row mt">
             <button class="btn" @onclick="() => mode = Mode.AddMatch">+ Add a match</button>
             <button class="btn" @onclick="() => mode = Mode.AddSegment">+ Add a segment</button>
@@ -249,6 +342,19 @@ else
     private enum Mode { Card, AddMatch, AddSegment }
 
     private Mode mode = Mode.Card;
+
+    private async Task SetBrand(ScheduledShow show, string? brandId)
+    {
+        show.BrandId = string.IsNullOrWhiteSpace(brandId) ? null : brandId;
+        await Persist();
+    }
+
+    /// <summary>Everyone booked on this card who does not belong on this show.</summary>
+    private static List<Crossover> Crossovers(Career career, ScheduledShow show) =>
+        BrandIntegrity.Detect(show.Card, career.Brands, career.BrandOfShow(show)).ToList();
+
+    private static double CrossoverCost(Career career, ScheduledShow show) =>
+        Crossovers(career, show).Sum(c => c.Cost);
 
     private static string RuntimeText(ScheduledShow show) => show.IsOverrunning
         ? $"{show.BookedMinutes} / {show.RuntimeMinutes} min — over by {show.BookedMinutes - show.RuntimeMinutes}"

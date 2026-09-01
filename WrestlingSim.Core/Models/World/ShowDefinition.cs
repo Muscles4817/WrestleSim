@@ -27,6 +27,17 @@ namespace WrestlingSim.Models.World
         public string Venue { get; set; } = "";
 
         /// <summary>
+        /// The brand that owns this show, by <see cref="Brand.Id"/>, or null for a
+        /// company-wide date.
+        ///
+        /// A brand needs its own television to be a brand at all
+        /// (docs/wrestling-reference/22-brand-splits.md §1). Leaving it null is the
+        /// inter-brand event of §3.4 — the supercard both rosters work, where nobody is
+        /// crossing over because there is no line to cross.
+        /// </summary>
+        public string? BrandId { get; set; }
+
+        /// <summary>
         /// Runtime override in minutes. Null means take the promotion's default for the
         /// show type, so a tier change moves it without the player editing anything.
         /// </summary>

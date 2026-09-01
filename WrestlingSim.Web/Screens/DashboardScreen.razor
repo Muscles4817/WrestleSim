@@ -103,6 +103,35 @@ else
             </div>
         </div>
 
+        @* The split *@
+        @if (career.Brands.Active)
+        {
+            <div class="tile" style="cursor:default">
+                <div class="tile__key">SPLIT</div>
+                <div class="tile__name">
+                    @career.Brands.Integrity.ToString("F0") integrity
+                    <span class="muted small">/ @career.Brands.Ceiling.ToString("F0") ceiling</span>
+                </div>
+                <div class="tile__desc">
+                    @BrandIntegrity.Phase(career.Brands.Integrity).
+                    @career.Brands.CrossoverCount crossover@(career.Brands.CrossoverCount == 1 ? "" : "s") booked.
+                    @if (career.Brands.Brands.FirstOrDefault(b => BrandIntegrity.IsSecondary(b, career.Brands)) is { } weak)
+                    {
+                        <text><br />@weak.Name is rating as the B-show.</text>
+                    }
+                </div>
+                <div class="row mt">
+                    <button class="btn btn--sm" @onclick="() => State.Go(Screen.Brands)">Brands</button>
+                    @if (Draft.IsDue(career.Brands, career.CurrentDate))
+                    {
+                        <button class="btn btn--sm btn--primary" @onclick="() => State.Go(Screen.Brands)">
+                            Draft due
+                        </button>
+                    }
+                </div>
+            </div>
+        }
+
         @* Roster *@
         <div class="tile" style="cursor:default">
             <div class="tile__key">ROSTER</div>

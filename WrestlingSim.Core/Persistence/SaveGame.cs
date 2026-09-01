@@ -24,9 +24,10 @@ namespace WrestlingSim.Persistence
         /// <summary>
         /// Bumped when the shape below changes incompatibly.
         ///
-        /// v2 added championships. A v1 save has never had any, so loading one seeds the
-        /// standard slate rather than leaving the promotion with no belts at all —
-        /// see <see cref="SaveSerializer.FromDto"/>.
+        /// v2 added championships and the brand split. A v1 save has never had belts, so
+        /// loading one seeds the standard slate rather than leaving the promotion with
+        /// none at all (see <see cref="SaveSerializer.FromDto"/>); it simply has no
+        /// brands, which needs no seeding because an undivided promotion is a valid state.
         /// </summary>
         public const int CurrentVersion = 2;
 
@@ -47,6 +48,9 @@ namespace WrestlingSim.Persistence
         public List<FeudDto> Feuds { get; set; } = new();
         public List<ShowDto> Shows { get; set; } = new();
         public List<TitleDto> Titles { get; set; } = new();
+
+        /// <summary>The brand split, or null for a promotion that has never divided.</summary>
+        public BrandSplitDto? Brands { get; set; }
     }
 
     /// <summary>
@@ -81,6 +85,50 @@ namespace WrestlingSim.Persistence
         public string LostAt { get; set; } = "";
         public int Defences { get; set; }
         public bool Vacated { get; set; }
+    }
+
+    /// <summary>
+    /// The brand structure and its erosion. Rosters are lists of
+    /// <see cref="Models.Wrestler.Id"/> for the same reason everything else here is: the
+    /// live graph shares wrestler references, and a second copy would break identity.
+    /// </summary>
+    public class BrandSplitDto
+    {
+        public bool Active { get; set; }
+        public double Integrity { get; set; } = 100;
+        public double PermanentErosion { get; set; }
+        public int CrossoverCount { get; set; }
+
+        /// <summary>ISO yyyy-MM-dd, or null.</summary>
+        public string? StartedOn { get; set; }
+        public string? LastDraftOn { get; set; }
+
+        public List<BrandDto> Brands { get; set; } = new();
+        public List<CrossoverDto> Crossovers { get; set; } = new();
+    }
+
+    public class BrandDto
+    {
+        public string Id { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string Identity { get; set; } = "";
+        public string Colour { get; set; } = "";
+
+        /// <summary>Roster membership, by wrestler id.</summary>
+        public List<string> RosterIds { get; set; } = new();
+
+        public List<double> RecentRatings { get; set; } = new();
+    }
+
+    public class CrossoverDto
+    {
+        public string WrestlerId { get; set; } = "";
+        public string WrestlerName { get; set; } = "";
+        public string HomeBrandName { get; set; } = "";
+        public string ShowBrandName { get; set; } = "";
+        public string ShowName { get; set; } = "";
+        public string Date { get; set; } = "";
+        public double Cost { get; set; }
     }
 
     /// <summary>Per-wrestler mutable state. Structure comes from the embedded roster.</summary>
@@ -118,6 +166,9 @@ namespace WrestlingSim.Persistence
         public string Venue { get; set; } = "";
         public int? RuntimeMinutes { get; set; }
         public bool Active { get; set; } = true;
+
+        /// <summary>Owning brand, or null for a company-wide show.</summary>
+        public string? BrandId { get; set; }
     }
 
     public class FeudDto
@@ -147,6 +198,7 @@ namespace WrestlingSim.Persistence
         public string Date { get; set; } = "";
         public ShowType Type { get; set; }
         public string Venue { get; set; } = "";
+        public string? BrandId { get; set; }
         public int RuntimeMinutes { get; set; }
         public int Attendance { get; set; }
 
