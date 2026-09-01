@@ -12,7 +12,7 @@ namespace WrestlingSim.Tests
     ///
     /// These wrestlers are not interchangeable main-eventers — the JSON already encodes
     /// distinct archetypes. Shayna Baszler is the best pure worker on the roster (3.82
-    /// overall, 4.7 grappler) who cannot get a crowd (charisma 2.5, popularity 70).
+    /// overall, 4.7 grappler) who cannot get a crowd (charisma 2.5, overness 70).
     /// Liv Morgan is the inverse: charisma 4.2 on 2.83 ring skill. Becky Lynch is elite
     /// at both.
     ///
@@ -133,10 +133,10 @@ namespace WrestlingSim.Tests
 
             // The bottom of the card should be whoever is genuinely worst across the board,
             // not an artefact. Von Wagner is the roster's floor on every axis at once
-            // (popularity 23, charisma 1.6, 2.17 overall skill, Psychology 44).
+            // (overness 23, charisma 1.6, 2.17 overall skill, Psychology 44).
             var bottom = byWrestler.OrderBy(k => k.Value).First().Key;
             var expectedBottom = Roster
-                .OrderBy(w => w.Popularity / 100.0 + w.Charisma / 5.0 + w.RingSkills.GetOverallSkill() / 5.0)
+                .OrderBy(w => w.Overness / 100.0 + w.Charisma / 5.0 + w.RingSkills.GetOverallSkill() / 5.0)
                 .First().RingName;
 
             Assert.Equal(expectedBottom, bottom);
@@ -188,8 +188,8 @@ namespace WrestlingSim.Tests
         [Fact]
         public void CharismaBeatsWorkrate_ForOverallRating_ButNotForMatchQuality()
         {
-            // Chad Gable (Grappler 4.9 / Technical 4.7 / Psychology 93, but popularity 59
-            // and charisma 3.0) against LA Knight (2.67 overall skill, but popularity 77 and
+            // Chad Gable (Grappler 4.9 / Technical 4.7 / Psychology 93, but overness 59
+            // and charisma 3.0) against LA Knight (2.67 overall skill, but overness 77 and
             // charisma 4.9). The pure-charisma act should draw the better *rating*; the pure
             // worker should produce the better *wrestling*. Both halves matter.
             var gable = Mean(W("Chad Gable"), W("Cody Rhodes"), "Technical Showcase");
@@ -265,7 +265,7 @@ namespace WrestlingSim.Tests
                     $"{name} only spans {usage * 100:F0}% of its legal range — the roster is too compressed.");
             }
 
-            Check("Popularity", Roster.Min(w => w.Popularity), Roster.Max(w => w.Popularity), 0, 100, 0.60);
+            Check("Popularity", Roster.Min(w => w.Overness), Roster.Max(w => w.Overness), 0, 100, 0.60);
             Check("Charisma", Roster.Min(w => w.Charisma), Roster.Max(w => w.Charisma), 0, 5, 0.60);
             Check("Skill", Roster.Min(w => w.RingSkills.GetOverallSkill()),
                            Roster.Max(w => w.RingSkills.GetOverallSkill()), 1, 5, 0.40);
@@ -276,7 +276,7 @@ namespace WrestlingSim.Tests
         [Fact]
         public void BeckyLynch_TheMostOverWrestler_DrawsTheLoudestCrowd()
         {
-            // Becky: popularity 95, charisma 4.7, appeal 0.95/0.96 — the most connected
+            // Becky: overness 95, charisma 4.7, appeal 0.95/0.96 — the most connected
             // person on the roster. Her matches should be the loudest, full stop.
             var withBecky  = Mean(W("Becky Lynch"),    W("Charlotte Flair"), "Big Match Epic");
             var withShayna = Mean(W("Shayna Baszler"), W("Charlotte Flair"), "Big Match Epic");
@@ -323,7 +323,7 @@ namespace WrestlingSim.Tests
             // sheet that shows a stat which provably does nothing is a lie to the player.
             Wrestler Build(int value)
             {
-                var w = TestRoster.Make($"Probe-{attribute}-{value}", popularity: 80, charisma: 4.0, skill: 3.5);
+                var w = TestRoster.Make($"Probe-{attribute}-{value}", overness: 80, charisma: 4.0, skill: 3.5);
                 w.Mental = new Models.Person.MentalAttributes
                 {
                     Psychology = 80,
@@ -365,8 +365,8 @@ namespace WrestlingSim.Tests
             // rating by exactly 0.00.
             foreach (var structure in new[] { "TV Formula", "Face-in-Peril", "Technical Showcase", "Big Match Epic" })
             {
-                var dull    = TestRoster.Make("Dull",    popularity: 80, charisma: 0.5, skill: 3.5);
-                var magnet  = TestRoster.Make("Magnet",  popularity: 80, charisma: 5.0, skill: 3.5);
+                var dull    = TestRoster.Make("Dull",    overness: 80, charisma: 0.5, skill: 3.5);
+                var magnet  = TestRoster.Make("Magnet",  overness: 80, charisma: 5.0, skill: 3.5);
 
                 double low  = Mean(dull, dull, structure, runs: 150).stars;
                 double high = Mean(magnet, magnet, structure, runs: 150).stars;

@@ -36,7 +36,7 @@
     {
         <div class="group-label">@group.Key.Label()</div>
 
-        @foreach (var w in group.OrderByDescending(x => x.Popularity))
+        @foreach (var w in group.OrderByDescending(x => x.EffectiveOverness))
         {
             <div class="rcard">
                 <div class="rcard__top">
@@ -45,12 +45,13 @@
                         <div class="rcard__real">@w.RealName · @w.Style</div>
                     </div>
                     <div class="rcard__badges">
+                        <Trend Momentum="w.Momentum" ShowLabel="false" />
                         <span class="badge @AlignBadge(w)">@(w.Gimmick?.NaturalAlignment.ToString() ?? "—")</span>
                     </div>
                 </div>
 
                 <div class="rcard__stats">
-                    <div class="rcard__stat"><b>@w.Popularity</b><span>Pop</span></div>
+                    <div class="rcard__stat"><b>@w.OvernessDisplay</b><span>Over</span></div>
                     <div class="rcard__stat"><b>@w.Charisma.ToString("F1")</b><span>Cha</span></div>
                     <div class="rcard__stat"><b>@w.RingSkills.GetOverallSkill().ToString("F2")</b><span>Skill</span></div>
                     <div class="rcard__stat"><b class="gold">@Disposition(w).ToString("F2")</b><span>Disp</span></div>
@@ -108,10 +109,11 @@
                     <th class="num">Skill</th>
                     <th class="num">Cha</th>
                     <th class="num">Disp</th>
+                    <th>Trend</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach (var w in Filtered.OrderByDescending(x => x.Popularity))
+                @foreach (var w in Filtered.OrderByDescending(x => x.EffectiveOverness))
                 {
                     <tr>
                         <td>
@@ -122,10 +124,11 @@
                         <td class="small muted">@(w.Gimmick?.Type.ToString() ?? "—")</td>
                         <td><span class="badge @AlignBadge(w)">@(w.Gimmick?.NaturalAlignment.ToString() ?? "—")</span></td>
                         <td class="small muted nowrap">@w.Style</td>
-                        <td class="num">@w.Popularity</td>
+                        <td class="num">@w.OvernessDisplay</td>
                         <td class="num">@w.RingSkills.GetOverallSkill().ToString("F2")</td>
                         <td class="num">@w.Charisma.ToString("F1")</td>
                         <td class="num gold">@Disposition(w).ToString("F2")</td>
+                        <td><Trend Momentum="w.Momentum" /></td>
                     </tr>
                 }
             </tbody>
@@ -152,7 +155,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var w in Filtered.OrderByDescending(x => x.Popularity))
+                @foreach (var w in Filtered.OrderByDescending(x => x.Overness))
                 {
                     <tr>
                         <td><strong>@w.RingName</strong></td>
@@ -219,7 +222,7 @@
     /// </summary>
     private static double Disposition(Wrestler w)
     {
-        double pop = w.Popularity / 100.0;
+        double pop = w.Overness / 100.0;
 
         if (w.Gimmick?.AppealRatings is { Count: > 0 } ratings)
             return (pop + ratings.Average(r => r.AppealScore)) / 2.0;

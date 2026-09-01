@@ -20,9 +20,9 @@ namespace WrestlingSim.Tests
     {
         private static List<Wrestler> Roster() =>
         [
-            TestRoster.Make("Alpha One", popularity: 80),
-            TestRoster.Make("Beta Two", popularity: 60),
-            TestRoster.Make("Gamma Three", popularity: 40)
+            TestRoster.Make("Alpha One", overness: 80),
+            TestRoster.Make("Beta Two", overness: 60),
+            TestRoster.Make("Gamma Three", overness: 40)
         ];
 
         private static Career NewCareer(List<Wrestler> roster)
@@ -64,11 +64,11 @@ namespace WrestlingSim.Tests
             var roster = Roster();
             var career = NewCareer(roster);
 
-            roster[0].Popularity = 93;
+            roster[0].Overness = 93;
 
             var loaded = RoundTrip(career);
 
-            Assert.Equal(93, loaded.FindWrestler("alpha-one")!.Popularity);
+            Assert.Equal(93, loaded.FindWrestler("alpha-one")!.Overness);
         }
 
         [Fact]
@@ -104,7 +104,7 @@ namespace WrestlingSim.Tests
             var feud = loaded.FeudBook.AllIncludingDormant.Single();
 
             // This is the whole point: a feud's wrestlers must BE the roster's wrestlers,
-            // not equal-looking copies, or popularity changes land on the wrong object.
+            // not equal-looking copies, or overness changes land on the wrong object.
             Assert.Same(loaded.FindWrestler(feud.WrestlerA.Id), feud.WrestlerA);
             Assert.Same(loaded.FindWrestler(feud.WrestlerB.Id), feud.WrestlerB);
         }

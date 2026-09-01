@@ -37,6 +37,15 @@ namespace WrestlingSim.Models.Segment
     public class OvernessChange
     {
         public required Wrestler Wrestler { get; init; }
-        public int Delta { get; init; }
+
+        /// <summary>Change in overness — the stock. Usually a fraction of a point.</summary>
+        public double Delta { get; init; }
+
+        /// <summary>
+        /// Change in momentum — the flow. Swings much harder than overness: a good angle
+        /// makes you hot this week without changing how much the audience fundamentally
+        /// cares about you.
+        /// </summary>
+        public double MomentumDelta { get; set; }
     }
 }

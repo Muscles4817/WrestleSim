@@ -17,8 +17,8 @@ namespace WrestlingSim.Tests
     /// </summary>
     public class MatchVarietyTests(ITestOutputHelper output)
     {
-        private static Wrestler A => TestRoster.Make("Alpha", popularity: 85, charisma: 4.0, skill: 3.6);
-        private static Wrestler B => TestRoster.Make("Bravo", popularity: 82, charisma: 3.8, skill: 3.4);
+        private static Wrestler A => TestRoster.Make("Alpha", overness: 85, charisma: 4.0, skill: 3.6);
+        private static Wrestler B => TestRoster.Make("Bravo", overness: 82, charisma: 3.8, skill: 3.4);
 
         private static MatchBeat T(string template, BeatControl control) =>
             BeatLibrary.Find(template)!.ToMatchBeat(control);

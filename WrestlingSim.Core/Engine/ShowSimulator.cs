@@ -89,6 +89,12 @@ namespace WrestlingSim.Engine
 
             double overall = weightSum > 0 ? totalScore / weightSum : 0;
 
+            // Everyone who worked the show was seen tonight. Absence is measured from here,
+            // so this has to happen for every appearance, not just the ones that won.
+            var date = DateOnly.FromDateTime(show.Date);
+            foreach (var wrestler in show.Card.SelectMany(i => i.Wrestlers).Distinct())
+                wrestler.LastAppearance = date;
+
             // ── Running long ─────────────────────────────────────────────────
             double overrun = Math.Min(MaxOverrunPenalty, show.OverrunFraction);
             if (overrun > 0)
@@ -111,6 +117,24 @@ namespace WrestlingSim.Engine
             itemResult.MatchResult = engineResult;
             itemResult.Notes.Add($"{engineResult.Winner.RingName} def. {engineResult.Loser.RingName} — {engineResult.StarDisplay}");
 
+            // ── Status ───────────────────────────────────────────────────────
+            // The result is not just a rating. A win moves standing, and how much depends
+            // on who was beaten and how decisively — see HeatEconomy.
+            var finishBeat = match.Plan.Beats.LastOrDefault(b => b.IsFinish);
+            var weight = finishBeat is null
+                ? FinishWeight.Decisive
+                : HeatEconomy.WeightOf(finishBeat.Type);
+
+            var outcome = HeatEconomy.ForMatch(
+                engineResult.Winner, engineResult.Loser, engineResult.StarRating, weight);
+
+            foreach (var change in outcome.All)
+            {
+                HeatEconomy.Apply(change);
+                if (change.IsMeaningful) showResult.StatusChanges.Add(change);
+            }
+
+            // ── Feud ─────────────────────────────────────────────────────────
             // A match between rivals is itself a chapter in the feud.
             var update = _feudBook.Record(
                 match.Plan.WrestlerA,

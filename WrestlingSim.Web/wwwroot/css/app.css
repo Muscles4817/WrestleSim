@@ -901,3 +901,19 @@ table.data tr:last-child td { border-bottom: 0; }
 
 /* A retired show definition stays visible but reads as inactive. */
 .panel.is-retired { opacity: .55; }
+
+/* ── Momentum trend ───────────────────────────────────────────────────────
+   Overness is the stock and reads as a number; momentum is the flow and reads
+   as a direction. Colour carries the sign, the arrow carries it again for
+   anyone who cannot use the colour. */
+.trend {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11.5px; font-weight: 700; letter-spacing: .02em;
+  white-space: nowrap; color: var(--muted);
+}
+.trend__arrow { font-size: 10px; line-height: 1; }
+.trend.is-hot     { color: #ff9d5c; }
+.trend.is-rising  { color: var(--face); }
+.trend.is-steady  { color: var(--muted); }
+.trend.is-cooling { color: #d59a9a; }
+.trend.is-cold    { color: var(--heel); }

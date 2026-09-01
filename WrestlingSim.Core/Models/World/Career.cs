@@ -87,8 +87,8 @@ namespace WrestlingSim.Models.World
         public Wrestler? FindWrestler(string id) =>
             Roster.FirstOrDefault(w => w.Id == id);
 
-        public IEnumerable<Wrestler> RosterByPopularity =>
-            Roster.OrderByDescending(w => w.Popularity);
+        public IEnumerable<Wrestler> RosterByOverness =>
+            Roster.OrderByDescending(w => w.EffectiveOverness);
 
         // ── Mutation ─────────────────────────────────────────────────────────
 
@@ -101,6 +101,11 @@ namespace WrestlingSim.Models.World
             if (HasShowDue) return false;
 
             CurrentDate = CurrentDate.AddDays(1);
+
+            // Nothing stays hot. Momentum bleeds toward zero every day, and someone off
+            // screen long enough starts to be forgotten — doc 17 §3 and §4.
+            foreach (var wrestler in Roster)
+                HeatEconomy.ApplyDailyDecay(wrestler, CurrentDate);
 
             // Keep the rolling window full, so the calendar never runs dry ahead of you.
             MaterialiseSchedule();

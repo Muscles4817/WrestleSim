@@ -2,7 +2,7 @@
   {
     "RealName": "Demi Bennett",
     "Division": "Womens",
-    "Popularity": 95,
+    "Overness": 95,
     "Charisma": 4.5,
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
@@ -36,7 +36,7 @@
   {
     "RealName": "Rebecca Quin",
     "Division": "Womens",
-    "Popularity": 95,
+    "Overness": 95,
     "Charisma": 4.7,
     "Style": "Brawler",
     "PreviousGimmicks": [],
@@ -70,7 +70,7 @@
   {
     "RealName": "Ashley Fliehr",
     "Division": "Womens",
-    "Popularity": 92,
+    "Overness": 92,
     "Charisma": 4.3,
     "Style": "Technical",
     "PreviousGimmicks": [],
@@ -104,7 +104,7 @@
   {
     "RealName": "Bianca Blair",
     "Division": "Womens",
-    "Popularity": 90,
+    "Overness": 90,
     "Charisma": 4.2,
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
@@ -138,7 +138,7 @@
   {
     "RealName": "Kanako Urai",
     "Division": "Womens",
-    "Popularity": 85,
+    "Overness": 85,
     "Charisma": 3.8,
     "Style": "Striker",
     "PreviousGimmicks": [],
@@ -172,7 +172,7 @@
   {
     "RealName": "Pamela Rose Martinez",
     "Division": "Womens",
-    "Popularity": 83,
+    "Overness": 83,
     "Charisma": 4.1,
     "Style": "Technical",
     "PreviousGimmicks": [],
@@ -206,7 +206,7 @@
   {
     "RealName": "Masami Odate",
     "Division": "Womens",
-    "Popularity": 80,
+    "Overness": 80,
     "Charisma": 3.5,
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
@@ -240,7 +240,7 @@
   {
     "RealName": "Gionna Daddio",
     "Division": "Womens",
-    "Popularity": 78,
+    "Overness": 78,
     "Charisma": 4.2,
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
@@ -274,7 +274,7 @@
   {
     "RealName": "Shayna Baszler",
     "Division": "Womens",
-    "Popularity": 70,
+    "Overness": 70,
     "Charisma": 2.5,
     "Style": "Grappler",
     "PreviousGimmicks": [],
@@ -308,7 +308,7 @@
   {
     "RealName": "Victoria Gonzalez",
     "Division": "Womens",
-    "Popularity": 66,
+    "Overness": 66,
     "Charisma": 3.2,
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
@@ -342,7 +342,7 @@
   {
     "RealName": "Thea Trinidad",
     "Division": "Womens",
-    "Popularity": 58,
+    "Overness": 58,
     "Charisma": 4.0,
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
@@ -376,7 +376,7 @@
   {
     "RealName": "Kimberly Benson",
     "Division": "Womens",
-    "Popularity": 50,
+    "Overness": 50,
     "Charisma": 3.4,
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
@@ -410,7 +410,7 @@
   {
     "RealName": "Steffanie Newell",
     "Division": "Womens",
-    "Popularity": 43,
+    "Overness": 43,
     "Charisma": 2.8,
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
@@ -444,7 +444,7 @@
   {
     "RealName": "Kiah Dean",
     "Division": "Womens",
-    "Popularity": 33,
+    "Overness": 33,
     "Charisma": 2.6,
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
@@ -478,7 +478,7 @@
   {
     "RealName": "Cynthia Lopez",
     "Division": "Womens",
-    "Popularity": 25,
+    "Overness": 25,
     "Charisma": 2.2,
     "Style": "Brawler",
     "PreviousGimmicks": [],
@@ -513,7 +513,7 @@
   {
     "RealName": "Joe Anoa'i",
     "Division": "Mens",
-    "Popularity": 96,
+    "Overness": 96,
     "Charisma": 4.6,
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
@@ -547,7 +547,7 @@
   {
     "RealName": "Cody Runnels",
     "Division": "Mens",
-    "Popularity": 93,
+    "Overness": 93,
     "Charisma": 4.5,
     "Style": "Technical",
     "PreviousGimmicks": [],
@@ -581,7 +581,7 @@
   {
     "RealName": "Colby Lopez",
     "Division": "Mens",
-    "Popularity": 90,
+    "Overness": 90,
     "Charisma": 4.8,
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
@@ -615,7 +615,7 @@
   {
     "RealName": "Randal Orton",
     "Division": "Mens",
-    "Popularity": 88,
+    "Overness": 88,
     "Charisma": 4.2,
     "Style": "Technical",
     "PreviousGimmicks": [],
@@ -649,7 +649,7 @@
   {
     "RealName": "Walter Hahn",
     "Division": "Mens",
-    "Popularity": 86,
+    "Overness": 86,
     "Charisma": 3.2,
     "Style": "Striker",
     "PreviousGimmicks": [],
@@ -683,7 +683,7 @@
   {
     "RealName": "Andrew Galloway",
     "Division": "Mens",
-    "Popularity": 83,
+    "Overness": 83,
     "Charisma": 4.1,
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
@@ -717,7 +717,7 @@
   {
     "RealName": "Rami Sebei",
     "Division": "Mens",
-    "Popularity": 80,
+    "Overness": 80,
     "Charisma": 4.4,
     "Style": "Brawler",
     "PreviousGimmicks": [],
@@ -751,7 +751,7 @@
   {
     "RealName": "Shaun Ricker",
     "Division": "Mens",
-    "Popularity": 77,
+    "Overness": 77,
     "Charisma": 4.9,
     "Style": "Brawler",
     "PreviousGimmicks": [],
@@ -785,7 +785,7 @@
   {
     "RealName": "Kevin Steen",
     "Division": "Mens",
-    "Popularity": 74,
+    "Overness": 74,
     "Charisma": 4.3,
     "Style": "Brawler",
     "PreviousGimmicks": [],
@@ -819,7 +819,7 @@
   {
     "RealName": "Bronson Rechsteiner",
     "Division": "Mens",
-    "Popularity": 70,
+    "Overness": 70,
     "Charisma": 3.3,
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
@@ -853,7 +853,7 @@
   {
     "RealName": "Trevor Mann",
     "Division": "Mens",
-    "Popularity": 64,
+    "Overness": 64,
     "Charisma": 2.9,
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
@@ -887,7 +887,7 @@
   {
     "RealName": "Charles Betts",
     "Division": "Mens",
-    "Popularity": 59,
+    "Overness": 59,
     "Charisma": 3.0,
     "Style": "Grappler",
     "PreviousGimmicks": [],
@@ -921,7 +921,7 @@
   {
     "RealName": "Nikola Bogojevic",
     "Division": "Mens",
-    "Popularity": 54,
+    "Overness": 54,
     "Charisma": 3.6,
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
@@ -955,7 +955,7 @@
   {
     "RealName": "Akira Tozawa",
     "Division": "Mens",
-    "Popularity": 40,
+    "Overness": 40,
     "Charisma": 2.4,
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
@@ -989,7 +989,7 @@
   {
     "RealName": "Cal Bloom",
     "Division": "Mens",
-    "Popularity": 23,
+    "Overness": 23,
     "Charisma": 1.6,
     "Style": "Powerhouse",
     "PreviousGimmicks": [],

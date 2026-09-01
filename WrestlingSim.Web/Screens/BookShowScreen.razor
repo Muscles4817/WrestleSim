@@ -73,8 +73,13 @@ else if (show.HasRun)
         }
     </div>
 
-    @* Feud movement and play-by-play exist only for a show run this session — a
-       reloaded save keeps the result summary, not the beat-by-beat detail. *@
+    @* Status movement, feud movement and play-by-play exist only for a show run this
+       session — a reloaded save keeps the result summary, not the beat-by-beat detail. *@
+    @if (result.StatusChanges.Count > 0)
+    {
+        <StatusChanges Changes="@result.StatusChanges" />
+    }
+
     @if (result.FeudUpdates.Count > 0)
     {
         <FeudUpdates Updates="@result.FeudUpdates" />

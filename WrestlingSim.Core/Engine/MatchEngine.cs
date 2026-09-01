@@ -87,7 +87,7 @@ namespace WrestlingSim.Engine
             var plan  = ctx.Plan;
             var state = ctx.State;
 
-            double avgPop = (plan.WrestlerA.Popularity + plan.WrestlerB.Popularity) / 2.0;
+            double avgPop = (plan.WrestlerA.EffectiveOverness + plan.WrestlerB.EffectiveOverness) / 2.0;
 
             // Crowd disposition modifier: rewards having BOTH wrestlers over, not just one.
             // Using Min rather than average means one nobody eliminates the bonus —
@@ -120,7 +120,7 @@ namespace WrestlingSim.Engine
                 40.0 + pairConnection * 46.0 + (pairCraft - 1.0) * 20.0 - staminaPenalty, 35, 100);
 
             state.CrowdEnergy = Math.Clamp(baseEnergy + feudBonus, 8, Math.Min(90, state.CrowdCeiling));
-            state.Momentum    = 0;
+            state.Advantage    = 0;
             state.CrowdPeakEnergy = state.CrowdEnergy;
 
             state.RecordEnergy();
@@ -254,13 +254,13 @@ namespace WrestlingSim.Engine
             // Commit deltas to state
             result.CrowdEnergyBefore = state.CrowdEnergy;
             state.ApplyEnergy(result.CrowdEnergyDelta);
-            state.ApplyMomentum(result.MomentumDelta);
+            state.ApplyAdvantage(result.AdvantageDelta);
             state.TechnicalScore    += result.TechnicalContribution;
             state.StorytellingScore += result.StorytellingContribution;
 
             // Snapshot state into result
             result.CrowdEnergyAfter       = state.CrowdEnergy;
-            result.MomentumAfter          = state.Momentum;
+            result.AdvantageAfter          = state.Advantage;
             result.TechnicalScoreAfter    = state.TechnicalScore;
             result.StorytellingScoreAfter = state.StorytellingScore;
 
@@ -369,7 +369,7 @@ namespace WrestlingSim.Engine
             double pace = PerformerProfile.Blend(ctx.Pair(p => p.Athleticism), 0.50);
 
             r.CrowdEnergyDelta      = Rng(8, 14) * iMod * (0.7 + avgCharisma / 5.0 * 0.6) * connection * pace;
-            r.MomentumDelta         = Rng(-5, 5);
+            r.AdvantageDelta         = Rng(-5, 5);
             r.TechnicalContribution = 4.0 * (avgRing / 5.0) * iMod * ctx.Pair(p => p.Workrate) * pace;
             r.StorytellingContribution = 2.5 * iMod * PerformerProfile.Blend(connection, 0.6);
 
@@ -398,7 +398,7 @@ namespace WrestlingSim.Engine
             double patience = PerformerProfile.Blend(ctx.Pair(p => p.Connection), 0.7);
 
             r.CrowdEnergyDelta      = Rng(-2, 4) * iMod * patience;
-            r.MomentumDelta         = Rng(-3, 3);
+            r.AdvantageDelta         = Rng(-3, 3);
             r.TechnicalContribution = 5.5 * (avgTech / 5.0) * dMod
                                       * ctx.Pair(p => p.WorkrateFor(WrestlingStyle.Technical))
                                       * PerformerProfile.Blend(ctx.Pair(p => p.RingPsych), 0.7);
@@ -426,7 +426,7 @@ namespace WrestlingSim.Engine
             double avgRing = AvgRingSkill(plan);
 
             r.CrowdEnergyDelta      = Rng(3, 8) * iMod * ctx.Pair(p => p.Connection);
-            r.MomentumDelta         = Rng(-4, 4);
+            r.AdvantageDelta         = Rng(-4, 4);
             r.TechnicalContribution = 4.5 * (avgRing / 5.0) * dMod * ctx.Pair(p => p.Workrate);
             r.StorytellingContribution = 2.0 * dMod * PerformerProfile.Blend(ctx.Pair(p => p.RingPsych), 0.5);
 
@@ -459,11 +459,11 @@ namespace WrestlingSim.Engine
 
             r.CrowdEnergyDelta = Rng(3, 9) * tensionFactor * iMod * dMod * sympathy;
 
-            // Momentum: heavy swing toward control. Deliberately smaller than the raw
+            // Advantage: heavy swing toward control. Deliberately smaller than the raw
             // 20–40 this used to be — one beat should not consume half the momentum scale,
             // or no single comeback can ever recover from two of them.
-            double momSwing = Rng(12, 26) * iMod * dMod;
-            r.MomentumDelta = ControlSign(ctx, control) * momSwing;
+            double swing = Rng(12, 26) * iMod * dMod;
+            r.AdvantageDelta = ControlSign(ctx, control) * swing;
 
             // Technical: use the beat's style hint if set (makes template choice meaningful),
             // otherwise fall back to the wrestler's natural style. The victim's selling is
@@ -513,10 +513,10 @@ namespace WrestlingSim.Engine
             var pControl = ctx.For(control);
 
             // Bigger comeback pop when the accumulated heat is deeper (more earned).
-            // RawMomentum is uncapped, so two consecutive heat segments produce a larger bonus
-            // than one — the clamped Momentum value cannot distinguish between them.
-            double momentumDeficit = Math.Abs(state.RawMomentum);
-            double earnedBonus = Math.Min(momentumDeficit / 120.0 * 0.5, 0.5); // up to +50% bonus
+            // RawAdvantage is uncapped, so two consecutive heat segments produce a larger bonus
+            // than one — the clamped Advantage value cannot distinguish between them.
+            double advantageDeficit = Math.Abs(state.RawAdvantage);
+            double earnedBonus = Math.Min(advantageDeficit / 120.0 * 0.5, 0.5); // up to +50% bonus
 
             // The pop belongs to the person making the comeback. A crowd that does not care
             // about them does not come alive no matter how well the spot is executed.
@@ -536,10 +536,10 @@ namespace WrestlingSim.Engine
             // booking mistake, not a licence to double their lead — without the sign check
             // the recovery term compounded a favourable momentum instead of reversing an
             // unfavourable one.
-            double deficit = sign > 0 ? Math.Max(0, -state.Momentum) : Math.Max(0, state.Momentum);
-            double momSwing = baseSwing + deficit * recoveryShare;
+            double deficit = sign > 0 ? Math.Max(0, -state.Advantage) : Math.Max(0, state.Advantage);
+            double swing = baseSwing + deficit * recoveryShare;
 
-            r.MomentumDelta = sign * momSwing;
+            r.AdvantageDelta = sign * swing;
 
             r.TechnicalContribution    = 4.5 * (AvgRingSkill(ctx.Plan) / 5.0) * iMod * pControl.Workrate
                                          * PerformerProfile.Blend(pControl.Athleticism, 0.40);
@@ -589,7 +589,7 @@ namespace WrestlingSim.Engine
 
             // Slight moral momentum to the one who kicked out. Kept small — stacking
             // near-falls in the winner's favour should not sabotage their own finish.
-            r.MomentumDelta = -ControlSign(ctx, control)
+            r.AdvantageDelta = -ControlSign(ctx, control)
                               * Rng(2, 5) * PerformerProfile.Blend(pOther.Resilience, 0.5);
 
             // Psychology / selling drive near-fall quality
@@ -632,7 +632,7 @@ namespace WrestlingSim.Engine
 
             r.CrowdEnergyDelta      = Rng(8, 14) * (0.6 + flyerSkill / 5.0 * 0.8) * iMod
                                       * execution * PerformerProfile.Blend(pControl.Connection, 0.55);
-            r.MomentumDelta         = ControlSign(ctx, control) * Rng(5, 15);
+            r.AdvantageDelta         = ControlSign(ctx, control) * Rng(5, 15);
             r.TechnicalContribution = 5.0 * (flyerSkill / 5.0) * iMod
                                       * pControl.WorkrateFor(WrestlingStyle.HighFlyer) * execution;
             r.StorytellingContribution = 3.0 * iMod * PerformerProfile.Blend(pControl.Connection, 0.5);
@@ -659,7 +659,7 @@ namespace WrestlingSim.Engine
             drain *= 2.0 - PerformerProfile.Blend(pControl.Connection, 0.55); // low connection = steeper drain
 
             r.CrowdEnergyDelta      = drain;
-            r.MomentumDelta         = ControlSign(ctx, control) * Rng(4, 9);
+            r.AdvantageDelta         = ControlSign(ctx, control) * Rng(4, 9);
             r.TechnicalContribution = 1.5 * (control.RingSkills.Technical / 5.0) * dMod
                                       * pControl.WorkrateFor(WrestlingStyle.Technical);
             r.StorytellingContribution = 2.0 * dMod * PerformerProfile.Blend(pControl.RingPsych, 0.7);
@@ -692,7 +692,7 @@ namespace WrestlingSim.Engine
 
             r.CrowdEnergyDelta      = Rng(6, 12) * iMod * dMod * brawlFactor
                                       * PerformerProfile.Blend(connection, 0.6);
-            r.MomentumDelta         = Rng(-8, 8);
+            r.AdvantageDelta         = Rng(-8, 8);
             r.TechnicalContribution = 3.0 * (brawlerSkill / 5.0) * iMod * workrate;
             r.StorytellingContribution = 4.5 * iMod * dMod * PerformerProfile.Blend(connection, 0.5);
 
@@ -717,7 +717,7 @@ namespace WrestlingSim.Engine
             double charismaFactor = control.Charisma / 5.0;
 
             r.CrowdEnergyDelta = Rng(3, 7) * iMod * feudMult * pControl.Connection;
-            r.MomentumDelta    = ControlSign(ctx, control) * Rng(3, 10);
+            r.AdvantageDelta    = ControlSign(ctx, control) * Rng(3, 10);
 
             r.TechnicalContribution    = 1.5 * psychSkill * iMod * pControl.RingPsych;
 
@@ -758,7 +758,7 @@ namespace WrestlingSim.Engine
             double connection = ctx.Pair(p => p.Connection);
 
             r.CrowdEnergyDelta = Rng(14, 24) * iMod * feudMult * connection;
-            r.MomentumDelta    = Rng(-5, 5); // contested — both wrestlers go at it
+            r.AdvantageDelta    = Rng(-5, 5); // contested — both wrestlers go at it
             r.TechnicalContribution    = 2.0 * iMod;
             r.StorytellingContribution = 14.0 * iMod * feudMult
                                          * PerformerProfile.Blend(connection, 0.5);
@@ -796,8 +796,8 @@ namespace WrestlingSim.Engine
             // recover enough for the booked winner to actually earn the finish.
             double baseSwing = Rng(10, 20) * iMod;
             int sign = ControlSign(ctx, control);
-            double deficit = sign > 0 ? Math.Max(0, -state.Momentum) : Math.Max(0, state.Momentum);
-            r.MomentumDelta  = sign * (baseSwing + deficit * 0.62);
+            double deficit = sign > 0 ? Math.Max(0, -state.Advantage) : Math.Max(0, state.Advantage);
+            r.AdvantageDelta  = sign * (baseSwing + deficit * 0.62);
 
             r.TechnicalContribution    = 3.0 * iMod * pControl.Workrate;
             r.StorytellingContribution = 10.0 * iMod * feudMult
@@ -817,7 +817,7 @@ namespace WrestlingSim.Engine
             double connection = ctx.Pair(p => p.Connection);
 
             r.CrowdEnergyDelta = Rng(10, 16) * iMod * feudMult * PerformerProfile.Blend(connection, 0.7);
-            r.MomentumDelta    = Rng(-10, 10);
+            r.AdvantageDelta    = Rng(-10, 10);
             r.TechnicalContribution    = 1.0;
             r.StorytellingContribution = 9.0 * iMod * feudMult * PerformerProfile.Blend(connection, 0.5);
 
@@ -841,7 +841,7 @@ namespace WrestlingSim.Engine
             double dispControl = pControl.Disposition;
 
             r.CrowdEnergyDelta         = Rng(10, 20) * iMod * (0.5 + dispControl) * pControl.Connection;
-            r.MomentumDelta            = ControlSign(ctx, control) * Rng(12, 22);
+            r.AdvantageDelta            = ControlSign(ctx, control) * Rng(12, 22);
             r.TechnicalContribution    = 1.0;
             r.StorytellingContribution = 10.0 * iMod * (0.5 + dispControl) * pControl.Connection;
 
@@ -871,11 +871,11 @@ namespace WrestlingSim.Engine
             var pControl = ctx.For(control);
             var pOther   = ctx.For(other);
 
-            // Was the finish earned? Momentum should favour the winner
-            bool momentumFavours = (beat.Control == BeatControl.WrestlerA && state.Momentum > 0)
-                                || (beat.Control == BeatControl.WrestlerB && state.Momentum < 0);
+            // Was the finish earned? Advantage should favour the winner
+            bool advantageFavours = (beat.Control == BeatControl.WrestlerA && state.Advantage > 0)
+                                || (beat.Control == BeatControl.WrestlerB && state.Advantage < 0);
 
-            double earnedMultiplier = momentumFavours ? 1.0 : 0.55;
+            double earnedMultiplier = advantageFavours ? 1.0 : 0.55;
 
             // The finish only means anything if the crowd is invested in who is winning
             // and believes the loser was beaten.
@@ -979,14 +979,14 @@ namespace WrestlingSim.Engine
                                       * PerformerProfile.Blend(pOther.Selling, 0.5);
 
             // Final momentum swing in winner's direction
-            r.MomentumDelta = ControlSign(ctx, control) * 30;
+            r.AdvantageDelta = ControlSign(ctx, control) * 30;
 
             // Record finish quality (used in final rating)
             state.FinishQuality = Math.Clamp(
                 (earnedMultiplier * 80) + (state.CrowdEnergy * 0.2),
                 0, 100);
 
-            r.Commentary.Add(momentumFavours
+            r.Commentary.Add(advantageFavours
                 ? $"A fitting end — {control.RingName} earned that victory."
                 : $"A controversial finish — did {control.RingName} really deserve that outcome?");
         }

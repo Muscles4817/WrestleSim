@@ -356,7 +356,7 @@ namespace WrestlingSim.UI
                 var w = choices[i];
                 Write($"  [{i + 1,2}] ", ConsoleColor.DarkGray);
                 Write(Fit(w.RingName, 22), ConsoleColor.White);
-                WriteLine($"Pop {w.Popularity,3}  Cha {w.Charisma:F1}", ConsoleColor.DarkGray);
+                WriteLine($"Pop {w.Overness,3}  Cha {w.Charisma:F1}", ConsoleColor.DarkGray);
             }
 
             Console.Write("\n  Select (0 to cancel): ");
@@ -391,7 +391,7 @@ namespace WrestlingSim.UI
                 Console.WriteLine();
                 foreach (var change in result.OvernessChanges)
                     WriteLine($"  {change.Wrestler.RingName} popularity {change.Delta:+0;-0} " +
-                              $"(now {change.Wrestler.Popularity})",
+                              $"(now {change.Wrestler.Overness})",
                               change.Delta >= 0 ? ConsoleColor.Green : ConsoleColor.Red);
             }
 

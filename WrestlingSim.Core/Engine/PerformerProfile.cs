@@ -82,7 +82,9 @@ namespace WrestlingSim.Engine
         {
             _wrestler = w;
 
-            double popNorm    = Math.Clamp(w.Popularity / 100.0, 0, 1);
+            // EffectiveOverness, not raw Overness: a performer on a hot streak reads to
+            // the crowd as bigger than their standing, and a cold one reads smaller.
+            double popNorm    = Math.Clamp(w.EffectiveOverness / 100.0, 0, 1);
             double appealNorm = AverageAppeal(w) ?? popNorm;
             double chaNorm    = Math.Clamp(w.Charisma / 5.0, 0, 1);
 

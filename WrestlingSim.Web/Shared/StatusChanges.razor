@@ -1,0 +1,40 @@
+@using WrestlingSim.Engine
+
+@* What a show did to people's standing. Without this the heat economy is invisible and
+   a result is still just a star rating. *@
+
+@if (Changes.Count > 0)
+{
+    <div class="panel">
+        <div class="panel__title">
+            Who moved
+            <span class="spacer"></span>
+            <span class="small muted">overness · momentum</span>
+        </div>
+
+        @foreach (var change in Ordered)
+        {
+            <div class="editor-row">
+                <div class="editor-row__n">@(change.OvernessDelta >= 0 ? "▲" : "▼")</div>
+                <div>
+                    <div class="editor-row__name">@change.Wrestler.RingName</div>
+                    <div class="editor-row__sub">@change.Reason</div>
+                </div>
+                <div class="editor-row__tools">
+                    <strong class="tabnum @(change.OvernessDelta >= 0 ? "gold" : "")">
+                        @change.OvernessDelta.ToString("+0.00;-0.00;0")
+                    </strong>
+                    <span class="tabnum muted">@change.MomentumDelta.ToString("+0;-0;0")</span>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public List<StatusChange> Changes { get; set; } = new();
+
+    /// <summary>Biggest movers first, in either direction.</summary>
+    private IEnumerable<StatusChange> Ordered =>
+        Changes.OrderByDescending(c => Math.Abs(c.OvernessDelta) + Math.Abs(c.MomentumDelta) / 20.0);
+}

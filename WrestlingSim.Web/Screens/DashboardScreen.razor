@@ -108,8 +108,22 @@ else
             <div class="tile__key">ROSTER</div>
             <div class="tile__name">@career.Roster.Count under contract</div>
             <div class="tile__desc">
-                Top of the card: @string.Join(", ", career.RosterByPopularity.Take(3).Select(w => w.RingName))
+                Top of the card: @string.Join(", ", career.RosterByOverness.Take(3).Select(w => w.RingName))
             </div>
+            @if (Movers(career).Any())
+            {
+                <div class="mt small">
+                    @foreach (var w in Movers(career))
+                    {
+                        <div class="row" style="padding:2px 0">
+                            <span>@w.RingName</span>
+                            <span class="spacer"></span>
+                            <span class="muted tabnum">@w.OvernessDisplay</span>
+                            <Trend Momentum="w.Momentum" />
+                        </div>
+                    }
+                </div>
+            }
             <div class="row mt">
                 <button class="btn btn--sm" @onclick="() => State.Go(Screen.Roster)">View roster</button>
             </div>
@@ -190,4 +204,19 @@ else
         <button class="btn btn--sm btn--ghost" @onclick="State.ExportAsync">Export save</button>
         <button class="btn btn--sm" @onclick="State.SaveAsync">Save now</button>
     </div>
+}
+
+@code {
+}
+
+@code {
+    /// <summary>
+    /// The people whose trend has actually moved, hottest and coldest first. Momentum is
+    /// invisible unless it is surfaced, and this is the readout a booker acts on.
+    /// </summary>
+    private static IEnumerable<WrestlingSim.Models.Wrestler> Movers(WrestlingSim.Models.World.Career career) =>
+        career.Roster
+            .Where(w => Math.Abs(w.Momentum) >= 6)
+            .OrderByDescending(w => Math.Abs(w.Momentum))
+            .Take(4);
 }

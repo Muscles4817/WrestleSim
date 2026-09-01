@@ -42,7 +42,7 @@ cd WrestlingSim
 
 dotnet run --project WrestlingSim.Web   # browser UI on http://localhost:5080
 dotnet run --project WrestlingSim       # terminal UI
-dotnet test                             # 159 tests
+dotnet test                             # 180 tests
 ```
 
 ---
@@ -134,6 +134,49 @@ Below Established there is no television, so the wizard does not offer it — th
 guaranteed-income dividing line from doc 01, made mechanical. Everything else (too many
 weekly shows, more than one monthly premium event) warns and lets you proceed.
 
+### Overness, momentum and the heat economy
+
+A performer carries two separate values, because being *over* and being *hot* are
+different things (doc 17 §1.1):
+
+| | What it is | Speed |
+|---|---|---|
+| **Overness** | The accumulated audience relationship — how much they care about you | A **stock**: slow to build, slow to lose |
+| **Momentum** | Which way you are currently trending, −100…+100 | A **flow**: fast to gain, fast to lose, decays toward zero |
+
+Someone can be very over and cold (a beloved veteran nobody is currently excited about) or
+barely over and red hot (a new signing with buzz and no depth). `EffectiveOverness` is the
+stock pushed around by the flow, and it is what the crowd actually responds to — momentum
+lets you punch above your weight, it does not make you a main eventer.
+
+**Results move standing.** `HeatEconomy` implements the transfer rules from doc 17 §6:
+
+- You can only take status from someone who **has** it.
+- Beating someone **above** you transfers a lot; they can afford it.
+- Beating someone **below** you gains you almost nothing and costs them a great deal —
+  a *net destruction of value*, and the most common booking waste in the business.
+- Two people the audience does not care about generate nothing, however good the match.
+- The audience forgives a loss it understands, so a DQ or run-in costs less than a clean pin.
+
+Worked from the shipped roster, both in a good match:
+
+```
+  Roman Reigns (96) beats Von Wagner (23)      Von Wagner (23) beats Roman Reigns (96)
+    Roman      overness  +0.00  momentum  +1     Von Wagner  overness  +5.12  momentum  +48
+    Von Wagner overness  −0.59  momentum −10     Roman       overness  −0.21  momentum   −3
+    → net status destroyed                       → a star is made, at almost no cost
+```
+
+**Nothing stays hot.** Momentum bleeds toward zero every day (a roughly three-week
+half-life), and after three weeks off screen overness itself starts to slip. Gains compress
+near the ceiling and losses near the floor, so the last ten points of overness are much
+harder to buy than the first ten and someone the crowd already ignores cannot be buried
+further.
+
+Overness is continuous rather than a whole number: a single result often moves standing by
+a fraction of a point, and rounding each one would discard every small change instead of
+letting them accumulate.
+
 ### Time
 
 The clock advances a day at a time, or jumps to the next show. **A show on the calendar is
@@ -206,7 +249,7 @@ which unlocks the feud-gated beats in the match editor.
 Selecting **Book a Match** walks you through a five-step flow:
 
 ### 1 — Pick your wrestlers
-Numbered list of the loaded roster showing Popularity, Skill, and Charisma.
+Numbered list of the loaded roster showing Overness, Skill, and Charisma.
 
 ### 2 — Set the match type
 Standard, Technical, Storytelling or Spotfest.
@@ -401,7 +444,7 @@ beat is doing, so two wrestlers with the same overall skill produce different ma
 
 | Factor | From | Drives |
 |---|---|---|
-| Connection | Popularity, gimmick appeal, **Charisma** | Crowd reaction on every beat, and the crowd ceiling |
+| Connection | Effective overness (stock + momentum), gimmick appeal, **Charisma** | Crowd reaction on every beat, and the crowd ceiling |
 | Workrate | Ring skill for the style being worked | Technical score |
 | RingPsych | Psychology, **RingIQ** | Storytelling, whether the match hangs together |
 | Selling | **Selling** | How good the *opponent's* offence looks |
@@ -474,7 +517,7 @@ Each wrestler has:
 - Freshness (0.0–1.0, decays with use)
 
 **Other**
-- Popularity (0–100), Charisma (0–5), Wrestling Style, Division, Moveset, Signatures
+- Overness (0–100), Momentum (−100…+100), Charisma (0–5), Wrestling Style, Division, Moveset, Signatures
 
 `CardPosition` (Main event → Enhancement) is derived from popularity rather than stored,
 so it can never drift out of sync. The booking screens group by it.
@@ -583,6 +626,7 @@ WrestlingSim.Core/                  — the engine. No UI, no I/O assumptions.
 │   ├── MatchEngineState.cs     — Mutable crowd energy + momentum state during execution
 │   ├── BeatLibrary.cs          — Catalogue of all named beat templates
 │   ├── MatchStructureLibrary.cs — Seven preset match structures
+│   ├── HeatEconomy.cs          — What a win is worth, and to whom; momentum decay
 │   ├── SegmentSimulator.cs     — Executes a Segment, returns SegmentResult
 │   ├── SegmentActionLibrary.cs — Catalogue of named segment actions
 │   ├── SegmentTemplateLibrary.cs — Eleven preset segment archetypes
@@ -677,6 +721,7 @@ WrestlingSim.Tests/
 ├── FeudBookTests.cs            — Heat thresholds, tag stamping, pair keying
 ├── ShowSimulatorTests.cs       — Card rules + the end-to-end booking loop
 ├── CareerTests.cs              — The clock, the calendar, tier-derived constraints
+├── HeatEconomyTests.cs         — Status transfer, decay curves, the stock/flow split
 ├── ShowDefinitionTests.cs      — Recurrence maths, materialisation, resync and retire
 ├── SaveSerializerTests.cs      — Save round-trips, including reference identity
 └── TestRoster.cs               — Shared wrestler factory

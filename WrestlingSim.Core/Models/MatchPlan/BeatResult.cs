@@ -11,7 +11,7 @@ namespace WrestlingSim.Models.MatchPlan
 
         // Raw deltas applied this beat
         public double CrowdEnergyDelta { get; set; }
-        public double MomentumDelta { get; set; }
+        public double AdvantageDelta { get; set; }
         public double TechnicalContribution { get; set; }
         public double StorytellingContribution { get; set; }
 
@@ -24,7 +24,7 @@ namespace WrestlingSim.Models.MatchPlan
         /// "after minus delta" reported a starting figure the crowd was never at.
         /// </summary>
         public double CrowdEnergyBefore { get; set; }
-        public double MomentumAfter { get; set; }
+        public double AdvantageAfter { get; set; }
         public double TechnicalScoreAfter { get; set; }
         public double StorytellingScoreAfter { get; set; }
 
@@ -71,7 +71,7 @@ namespace WrestlingSim.Models.MatchPlan
                 double before = CrowdEnergyBefore;
                 string feudTag = FeudalResonanceActivated ? "  ★ Feud Resonance" : "";
                 return $"Crowd: {before:F0}→{CrowdEnergyAfter:F0}  |  " +
-                       $"Momentum: {MomentumAfter:+0.0;-0.0;0.0}  |  " +
+                       $"Advantage: {AdvantageAfter:+0.0;-0.0;0.0}  |  " +
                        $"+Tech: {TechnicalContribution:F1}  |  " +
                        $"+Story: {StorytellingContribution:F1}" +
                        feudTag;

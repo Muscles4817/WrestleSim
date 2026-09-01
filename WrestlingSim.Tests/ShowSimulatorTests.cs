@@ -166,8 +166,8 @@ namespace WrestlingSim.Tests
         {
             // The whole point of the branch: you should be able to *earn* a feud by
             // booking segments rather than declaring one in a menu.
-            var a = TestRoster.Make("Babyface Bill", popularity: 80, charisma: 4.0);
-            var b = TestRoster.Make("Heel Harry",    popularity: 75, charisma: 3.5);
+            var a = TestRoster.Make("Babyface Bill", overness: 80, charisma: 4.0);
+            var b = TestRoster.Make("Heel Harry",    overness: 75, charisma: 3.5);
             var book = new FeudBook();
 
             List<MatchBeat> FeudMatch() =>
@@ -208,8 +208,8 @@ namespace WrestlingSim.Tests
         [Fact]
         public void EarnedFeud_ImprovesTheMatchItPaysOff()
         {
-            var a = TestRoster.Make("Babyface Bill", popularity: 80, charisma: 4.0);
-            var b = TestRoster.Make("Heel Harry",    popularity: 75, charisma: 3.5);
+            var a = TestRoster.Make("Babyface Bill", overness: 80, charisma: 4.0);
+            var b = TestRoster.Make("Heel Harry",    overness: 75, charisma: 3.5);
 
             var book = new FeudBook();
             for (int i = 0; i < 4; i++)

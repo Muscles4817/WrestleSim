@@ -364,7 +364,7 @@
             .Where(w => string.IsNullOrWhiteSpace(castQuery)
                      || (w.RingName?.Contains(castQuery, StringComparison.OrdinalIgnoreCase) ?? false)
                      || (w.RealName?.Contains(castQuery, StringComparison.OrdinalIgnoreCase) ?? false))
-            .OrderByDescending(w => w.Popularity);
+            .OrderByDescending(w => w.Overness);
     private readonly List<Wrestler> extras = new();
     private string dialogue = "";
 
