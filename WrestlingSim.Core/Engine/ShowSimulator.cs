@@ -35,6 +35,10 @@ namespace WrestlingSim.Engine
             double weightSum  = 0;
             double crowdMood  = 5.0; // baseline excitement, 0–10
 
+            // Freshness is measured against the night the show happens, not the night it
+            // was written — see MatchEngine.Execute.
+            var showDate = DateOnly.FromDateTime(show.Date);
+
             for (int i = 0; i < show.Card.Count; i++)
             {
                 var item = show.Card[i];
@@ -50,7 +54,7 @@ namespace WrestlingSim.Engine
                 // ── Run it ───────────────────────────────────────────────────
                 double raw = item switch
                 {
-                    BookedMatch match => RunMatch(match, itemResult, result, i),
+                    BookedMatch match => RunMatch(match, itemResult, result, i, showDate),
                     Segment segment   => RunSegment(segment, itemResult, result),
                     _                 => 0
                 };
@@ -91,9 +95,8 @@ namespace WrestlingSim.Engine
 
             // Everyone who worked the show was seen tonight. Absence is measured from here,
             // so this has to happen for every appearance, not just the ones that won.
-            var date = DateOnly.FromDateTime(show.Date);
             foreach (var wrestler in show.Card.SelectMany(i => i.Wrestlers).Distinct())
-                wrestler.LastAppearance = date;
+                wrestler.LastAppearance = showDate;
 
             // ── Running long ─────────────────────────────────────────────────
             double overrun = Math.Min(MaxOverrunPenalty, show.OverrunFraction);
@@ -111,11 +114,23 @@ namespace WrestlingSim.Engine
 
         // ── Item execution ───────────────────────────────────────────────────
 
-        private double RunMatch(BookedMatch match, CardItemResult itemResult, ShowResult showResult, int index)
+        private double RunMatch(
+            BookedMatch match, CardItemResult itemResult, ShowResult showResult, int index, DateOnly showDate)
         {
-            var engineResult = new MatchEngine(_seed.HasValue ? _seed + index : null).Execute(match.Plan);
+            // How sick of this pairing the crowd is, read before the match is recorded
+            // against it — docs/wrestling-reference/20-storylines-and-feuds.md §9.1.
+            // Taken from the feud book rather than match.Plan.Feud, because a booker who
+            // declines to attach a feud has still booked the same two men for the fifth
+            // time and the audience does not care what the plan says.
+            var feud = _feudBook.GetOrCreate(match.Plan.WrestlerA, match.Plan.WrestlerB);
+            double familiarity = feud.Familiarity(showDate);
+
+            var engineResult = new MatchEngine(_seed.HasValue ? _seed + index : null)
+                .Execute(match.Plan, familiarity);
+
             itemResult.MatchResult = engineResult;
             itemResult.Notes.Add($"{engineResult.Winner.RingName} def. {engineResult.Loser.RingName} — {engineResult.StarDisplay}");
+            if (engineResult.StalenessNote is { } stale) itemResult.Notes.Add(stale);
 
             // ── Status ───────────────────────────────────────────────────────
             // The result is not just a rating. A win moves standing, and how much depends
@@ -126,7 +141,7 @@ namespace WrestlingSim.Engine
                 : HeatEconomy.WeightOf(finishBeat.Type);
 
             var outcome = HeatEconomy.ForMatch(
-                engineResult.Winner, engineResult.Loser, engineResult.StarRating, weight);
+                engineResult.Winner, engineResult.Loser, engineResult.StarRating, weight, familiarity);
 
             foreach (var change in outcome.All)
             {
@@ -142,7 +157,7 @@ namespace WrestlingSim.Engine
                 heat: engineResult.StarRating * 2.0,
                 tags: new[] { FeudHistoryTag.PriorMatch });
 
-            update.Feud.MatchCount++;
+            update.Feud.RecordMatch(showDate);
             showResult.FeudUpdates.Add(update);
 
             return engineResult.StarRating * 20.0; // 0–5★ → 0–100

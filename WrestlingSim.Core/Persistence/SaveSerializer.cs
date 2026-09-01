@@ -102,11 +102,13 @@ namespace WrestlingSim.Persistence
             Feuds = career.FeudBook.AllIncludingDormant
                 .Select(f => new FeudDto
                 {
-                    WrestlerA  = f.WrestlerA.Id,
-                    WrestlerB  = f.WrestlerB.Id,
-                    Heat       = f.Heat,
-                    MatchCount = f.MatchCount,
-                    History    = new List<FeudHistoryTag>(f.History)
+                    WrestlerA          = f.WrestlerA.Id,
+                    WrestlerB          = f.WrestlerB.Id,
+                    Heat               = f.Heat,
+                    MatchCount         = f.MatchCount,
+                    RememberedMeetings = f.RememberedMeetings,
+                    LastMatchDate      = f.LastMatchDate is { } met ? Iso(met) : null,
+                    History            = new List<FeudHistoryTag>(f.History)
                 })
                 .ToList(),
 
@@ -243,6 +245,14 @@ namespace WrestlingSim.Persistence
                 var feud = career.FeudBook.GetOrCreate(a, b);
                 feud.RestoreHeat(f.Heat);
                 feud.MatchCount = f.MatchCount;
+
+                // A save from before match-count decay has no freshness state. Seeding it
+                // from MatchCount treats those meetings as still remembered, which is the
+                // conservative reading — the alternative would hand every old save a free
+                // reset on every pairing it has already run into the ground.
+                feud.RestoreMeetings(
+                    f.RememberedMeetings > 0 ? f.RememberedMeetings : f.MatchCount,
+                    ParseOptionalDate(f.LastMatchDate));
                 foreach (var tag in f.History) feud.AddTag(tag);
             }
 
@@ -361,6 +371,12 @@ namespace WrestlingSim.Persistence
         // regardless of the host's culture settings.
 
         private static string Iso(DateOnly date) => date.ToString("yyyy-MM-dd");
+
+        private static DateOnly? ParseOptionalDate(string? value) =>
+            DateOnly.TryParse(value, System.Globalization.CultureInfo.InvariantCulture,
+                              System.Globalization.DateTimeStyles.None, out var d)
+                ? d
+                : null;
 
         private static DateOnly ParseDate(string? value) =>
             DateOnly.TryParse(value, System.Globalization.CultureInfo.InvariantCulture,
