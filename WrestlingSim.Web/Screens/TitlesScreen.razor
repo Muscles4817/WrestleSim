@@ -187,7 +187,7 @@ else
                 <select class="select" @bind="newTier">
                     @foreach (var t in Enum.GetValues<TitleTier>())
                     {
-                        <option value="@t">@t</option>
+                        <option value="@t">@TierLabel(t)</option>
                     }
                 </select>
             </div>
@@ -201,7 +201,7 @@ else
         </div>
 
         <div class="notice notice--warn mt">
-            <strong>This costs.</strong> A @newTier.ToString().ToLowerInvariant() title claims
+            <strong>This costs.</strong> A @TierLabel(newTier).ToLowerInvariant() title claims
             @ClaimOf(newTier).ToString("F2") of the attention pool, which would take
             @((registry.DilutionCostOfAdding(newTier) * 100).ToString("F0"))% off the prestige of
             every belt you already have. It also starts with no lineage —
@@ -231,6 +231,14 @@ else
         await State.CreateTitleAsync(newName, newTier, newDivision);
         newName = "";
     }
+
+    /// <summary>Matches the badge on each belt, so the picker and the list agree.</summary>
+    private static string TierLabel(TitleTier tier) => tier switch
+    {
+        TitleTier.World     => "World",
+        TitleTier.Secondary => "Secondary",
+        _                   => "Specialty"
+    };
 
     private static double ClaimOf(TitleTier tier) => tier switch
     {
