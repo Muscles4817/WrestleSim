@@ -62,6 +62,17 @@ namespace WrestlingSim.Models.MatchPlan
             return Intensity > before;
         }
 
+        /// <summary>
+        /// Sets Heat directly and re-derives Intensity. For loading a save only — normal
+        /// play must go through AddHeat so a feud is something you book, not something
+        /// you assign.
+        /// </summary>
+        public void RestoreHeat(double heat)
+        {
+            Heat = Math.Max(0, heat);
+            Intensity = IntensityFor(Heat);
+        }
+
         /// <summary>Stamps a history tag onto the feud. Duplicates are ignored.</summary>
         public bool AddTag(FeudHistoryTag tag)
         {

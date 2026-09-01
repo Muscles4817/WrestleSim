@@ -42,7 +42,7 @@ cd WrestlingSim
 
 dotnet run --project WrestlingSim.Web   # browser UI on http://localhost:5080
 dotnet run --project WrestlingSim       # terminal UI
-dotnet test                             # 85 tests
+dotnet test                             # 146 tests
 ```
 
 ---
@@ -67,7 +67,76 @@ uncompressed on first load, then cached.
 
 ---
 
-## Main Menu
+## Career Mode
+
+The browser build opens on a landing page, not a booking screen. You either start a
+career or drop into **Exhibition** — the old sandbox, where you can book a one-off match,
+segment or card with no clock and nothing saved.
+
+A **career** is a save. It owns the promotion, the world clock, the roster whose state
+actually changes, the feud book, and the calendar of shows scheduled and run.
+
+```
+   Landing ──► New Career ──► Dashboard ◄──────────────┐
+      │         (name, tier)      │                    │
+      │                           ▼                    │
+      └── Continue ──────►    Calendar                 │
+                                  │                    │
+                        schedule / open a date         │
+                                  ▼                    │
+                             Book the card             │
+                          (matches + segments)         │
+                                  ▼                    │
+                            Run the show ──────────────┘
+                     results persist · clock advances
+```
+
+**Tier is not a difficulty setting — it is a set of constraints.** It decides whether you
+have television at all, how often you run, how long your shows are, how big a card the
+audience expects, and what buildings you can fill.
+
+| Tier | Television | Runs about every | Big-night attendance |
+|---|---|---|---|
+| Local | — | 45 days | 240 |
+| Regional Independent | — | 30 days | 720 |
+| Super Indie | — | 21 days | 2,240 |
+| Established | Weekly | 7 days | 6,400 |
+| National | Weekly | 4 days | 12,800 |
+| Global Major | Weekly | 3 days | 20,800 |
+
+A new career gets its opening shows put on the calendar automatically at its tier's
+cadence, so it opens onto something to do rather than an empty month.
+
+### Time
+
+The clock advances a day at a time, or jumps to the next show. **A show on the calendar is
+a commitment**: the clock will not move past one until it has been run or taken off the
+calendar. Running a show advances the clock to its date.
+
+This is the layer the rest of the design depends on. Heat, freshness and momentum are only
+meaningful relative to a clock that advances and results that are kept — see
+[docs/wrestling-reference/17-heat-and-getting-over.md](docs/wrestling-reference/17-heat-and-getting-over.md).
+
+### Saving
+
+The web build publishes to static files and has no server, so saves live in the browser.
+
+- **Autosave** to `localStorage` after every meaningful change — scheduling, booking a card,
+  running a show, advancing the clock.
+- **Export / Import** a `.json` save file, for backup or moving between browsers.
+- If the browser blocks site data, the game says so plainly and stays playable — Export is
+  then the only way to keep a career.
+
+Saves store *state*, not roster structure: wrestlers are referenced by a stable `Id`
+derived from their real name, and the shipped roster is re-loaded on open. That keeps saves
+small and lets the roster be corrected without invalidating them. Anyone missing from the
+roster on load is dropped, along with any feud or card item that referenced them.
+
+---
+
+## Main Menu (terminal build)
+
+The console app is still the original session-scoped sandbox — no save, no clock.
 
 ```
   ╔══════════════════════════════════════════════════════╗
@@ -493,7 +562,14 @@ WrestlingSim.Core/                  — the engine. No UI, no I/O assumptions.
 │   ├── FeudBook.cs             — Session feud store; the segment↔match connector
 │   ├── ShowSimulator.cs        — Full card execution on ICardItem
 │   └── MatchSimulator.cs       — Legacy match simulator (no longer on any path)
+├── Persistence/
+│   ├── SaveGame.cs             — Serialisable form of a career (people referenced by id)
+│   └── SaveSerializer.cs       — Career ⇄ save JSON, rebinding against the shipped roster
 ├── Models/
+│   ├── World/
+│   │   ├── Career.cs           — A save: promotion, clock, roster, feuds, calendar
+│   │   ├── Promotion.cs        — Name + tier, and the constraints tier derives
+│   │   └── ScheduledShow.cs    — A show on the calendar, its card and its result
 │   ├── Wrestler.cs             — Core wrestler model
 │   ├── Gimmick.cs              — Character, alignment, fan appeal
 │   ├── RingSkills.cs           — Six-skill matrix + scoring
@@ -535,7 +611,12 @@ WrestlingSim/                       — terminal front end
 
 WrestlingSim.Web/                   — browser front end (Blazor WebAssembly)
 ├── Screens/
-│   ├── MainMenuScreen.razor    — Landing screen + live feud summary
+│   ├── LandingScreen.razor     — Out-of-save front door: new / continue / import
+│   ├── NewSaveScreen.razor     — Name the promotion, pick the tier
+│   ├── DashboardScreen.razor   — In-save home: date, next show, feuds, history
+│   ├── CalendarScreen.razor    — Month grid; schedule and open shows by date
+│   ├── BookShowScreen.razor    — Book and run a scheduled show; its result
+│   ├── MainMenuScreen.razor    — Exhibition hub + live feud summary
 │   ├── RosterScreen.razor      — Roster and ring-skill tables
 │   ├── FeudsScreen.razor       — Feud book with unlocked-beat hints
 │   ├── MatchScreen.razor       — Match wizard + scorecard + play-by-play
@@ -549,7 +630,11 @@ WrestlingSim.Web/                   — browser front end (Blazor WebAssembly)
 │   ├── FeudUpdates.razor       — What a booking did to each feud
 │   ├── Stars.razor / Meter.razor — Rating and bar primitives
 │   └── ConsoleUi-equivalent styling in wwwroot/css/app.css
-├── Services/GameState.cs       — Roster + the shared FeudBook for the session
+├── Services/
+│   ├── GameState.cs            — App state: mode, the open career, navigation
+│   ├── SaveStore.cs            — localStorage autosave + export/import
+│   └── SaveHeader.cs           — Cheap header read for listing saves
+├── Shared/StateComponent.cs    — Base for screens that re-render on state changes
 └── wwwroot/                    — index.html, app.css, .nojekyll
 
 WrestlingSim.Tests/
@@ -560,6 +645,8 @@ WrestlingSim.Tests/
 ├── SegmentLibraryTests.cs      — Every template builds, casts and simulates
 ├── FeudBookTests.cs            — Heat thresholds, tag stamping, pair keying
 ├── ShowSimulatorTests.cs       — Card rules + the end-to-end booking loop
+├── CareerTests.cs              — The clock, the calendar, tier-derived constraints
+├── SaveSerializerTests.cs      — Save round-trips, including reference identity
 └── TestRoster.cs               — Shared wrestler factory
 ```
 

@@ -11,7 +11,7 @@
         </p>
     </div>
 
-    <MatchBuilder OnDone="Run" OnCancel="@(() => State.Go(Screen.Menu))" ConfirmLabel="Run the match ★" />
+    <MatchBuilder OnDone="Run" OnCancel="@(() => State.Go(Screen.Exhibition))" ConfirmLabel="Run the match ★" />
 }
 else
 {
@@ -57,7 +57,7 @@ else
     </div>
 
     <div class="wizard-bar">
-        <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Menu)">← Main menu</button>
+        <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Exhibition)">← Main menu</button>
         <span class="wizard-bar__spacer"></span>
         <button class="btn" @onclick="RunAgain">Run the same plan again</button>
         <button class="btn btn--primary" @onclick="Reset">Book another match</button>

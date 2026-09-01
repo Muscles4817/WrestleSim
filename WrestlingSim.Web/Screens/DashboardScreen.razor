@@ -1,0 +1,193 @@
+@using WrestlingSim.Enums
+@using WrestlingSim.Models.World
+@inherits StateComponent
+
+@if (State.Career is not { } career)
+{
+    <div class="empty"><div class="empty__mark">★</div>No career loaded.</div>
+}
+else
+{
+    <div class="screen__head">
+        <div class="screen__eyebrow">@career.Promotion.TierLabel</div>
+        <h1 class="screen__title">@career.Promotion.Name</h1>
+        <p class="screen__lede">
+            @career.CurrentDate.ToString("dddd d MMMM yyyy")
+            · week @(career.WeeksElapsed + 1)
+            · @career.Completed.Count() show@(career.Completed.Count() == 1 ? "" : "s") run
+        </p>
+    </div>
+
+    @if (State.SaveMessage is { } message)
+    {
+        <div class="notice notice--warn">
+            @message
+            <span class="spacer"></span>
+            <button class="btn btn--sm btn--ghost" @onclick="State.ClearMessage">Dismiss</button>
+        </div>
+    }
+
+    @* ── What needs doing ────────────────────────────────────────────────── *@
+    @if (career.Due.FirstOrDefault() is { } due)
+    {
+        <div class="notice notice--warn">
+            <strong>@due.Name is today@(due.Date < career.CurrentDate ? " (overdue)" : "").</strong>
+            The clock will not move until you run it or take it off the calendar.
+            <span class="spacer"></span>
+            <button class="btn btn--sm btn--primary" @onclick="() => State.OpenShow(due)">
+                @(due.IsBooked ? "Open the card" : "Book the card")
+            </button>
+        </div>
+    }
+
+    <div class="tiles">
+        @* Next show *@
+        <div class="tile" style="cursor:default">
+            <div class="tile__key">NEXT</div>
+            @if (career.NextShow is { } next)
+            {
+                <div class="tile__name">@next.Name</div>
+                <div class="tile__desc">
+                    @next.TypeLabel · @next.Date.ToString("ddd d MMM")
+                    @if (career.DaysUntil(next) > 0)
+                    {
+                        <text> · in @career.DaysUntil(next) day@(career.DaysUntil(next) == 1 ? "" : "s")</text>
+                    }
+                    <br />
+                    @if (next.IsBooked)
+                    {
+                        <text>@next.Card.Count item@(next.Card.Count == 1 ? "" : "s") booked · @next.BookedMinutes / @next.RuntimeMinutes min</text>
+                    }
+                    else
+                    {
+                        <text>Nothing booked yet.</text>
+                    }
+                </div>
+                <div class="row mt">
+                    <button class="btn btn--sm btn--primary" @onclick="() => State.OpenShow(next)">
+                        @(next.IsBooked ? "Open the card" : "Book the card")
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="tile__name">Nothing scheduled</div>
+                <div class="tile__desc">The calendar is empty. Put a show on it.</div>
+                <div class="row mt">
+                    <button class="btn btn--sm" @onclick="() => State.Go(Screen.Calendar)">Open the calendar</button>
+                </div>
+            }
+        </div>
+
+        @* Time *@
+        <div class="tile" style="cursor:default">
+            <div class="tile__key">TIME</div>
+            <div class="tile__name">@career.CurrentDate.ToString("d MMM yyyy")</div>
+            <div class="tile__desc">
+                @if (career.HasShowDue)
+                {
+                    <text>A show is due. Time is held until it is dealt with.</text>
+                }
+                else
+                {
+                    <text>Advance the clock. Nothing ages until you do.</text>
+                }
+            </div>
+            <div class="row mt">
+                <button class="btn btn--sm" disabled="@career.HasShowDue" @onclick="() => State.AdvanceAsync(1)">+1 day</button>
+                <button class="btn btn--sm" disabled="@career.HasShowDue" @onclick="() => State.AdvanceAsync(7)">+1 week</button>
+                <button class="btn btn--sm btn--primary" disabled="@(career.HasShowDue || career.NextShow is null)"
+                        @onclick="State.AdvanceToNextShowAsync">
+                    To next show
+                </button>
+            </div>
+        </div>
+
+        @* Roster *@
+        <div class="tile" style="cursor:default">
+            <div class="tile__key">ROSTER</div>
+            <div class="tile__name">@career.Roster.Count under contract</div>
+            <div class="tile__desc">
+                Top of the card: @string.Join(", ", career.RosterByPopularity.Take(3).Select(w => w.RingName))
+            </div>
+            <div class="row mt">
+                <button class="btn btn--sm" @onclick="() => State.Go(Screen.Roster)">View roster</button>
+            </div>
+        </div>
+    </div>
+
+    @* ── Feuds ───────────────────────────────────────────────────────────── *@
+    <div class="panel mt-2">
+        <div class="panel__title">
+            Live feuds
+            <span class="spacer"></span>
+            @if (State.ActiveFeudCount > 0)
+            {
+                <button class="btn btn--sm btn--ghost" @onclick="() => State.Go(Screen.Feuds)">View all</button>
+            }
+        </div>
+
+        @if (State.ActiveFeudCount == 0)
+        {
+            <div class="empty">
+                <div class="empty__mark">✕</div>
+                Nobody has any history yet. Book a segment on your next show — a betrayal or a
+                beatdown generates the most heat — and the rivalry will show up here.
+            </div>
+        }
+        else
+        {
+            @foreach (var feud in State.FeudBook.All.Take(4))
+            {
+                <div class="feud">
+                    <div class="feud__top">
+                        <span class="feud__names">
+                            @feud.WrestlerA.RingName <span class="faint">vs</span> @feud.WrestlerB.RingName
+                        </span>
+                        <span class="badge @FeudUpdates.IntensityBadge(feud.Intensity)">@feud.Intensity</span>
+                        <span class="spacer"></span>
+                        <span class="small muted">@feud.MatchCount match@(feud.MatchCount == 1 ? "" : "es")</span>
+                    </div>
+                    <Meter Label="Heat" Value="@feud.Heat" Max="50" ValueText="@($"{feud.Heat:F0} / 50")" />
+                </div>
+            }
+        }
+    </div>
+
+    @* ── Recent shows ────────────────────────────────────────────────────── *@
+    @if (career.Completed.Any())
+    {
+        <div class="panel">
+            <div class="panel__title">
+                Recent shows
+                <span class="spacer"></span>
+                <button class="btn btn--sm btn--ghost" @onclick="() => State.Go(Screen.Calendar)">Calendar</button>
+            </div>
+
+            @foreach (var show in career.Completed.Take(5))
+            {
+                <div class="editor-row">
+                    <div class="editor-row__n">★</div>
+                    <div>
+                        <div class="editor-row__name">@show.Name</div>
+                        <div class="editor-row__sub">
+                            @show.TypeLabel · @show.Date.ToString("d MMM yyyy") · @show.Card.Count items
+                        </div>
+                    </div>
+                    <div class="editor-row__tools">
+                        <strong class="tabnum gold">@show.Result!.OverallRating.ToString("F1")</strong>
+                        <button class="btn btn--sm btn--ghost" @onclick="() => State.OpenShow(show)">Review</button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @* ── Save controls ───────────────────────────────────────────────────── *@
+    <div class="wizard-bar">
+        <button class="btn btn--ghost" @onclick="State.ExitToLandingAsync">← Save and exit</button>
+        <span class="wizard-bar__spacer"></span>
+        <button class="btn btn--sm btn--ghost" @onclick="State.ExportAsync">Export save</button>
+        <button class="btn btn--sm" @onclick="State.SaveAsync">Save now</button>
+    </div>
+}

@@ -3,13 +3,17 @@
 
 <div class="shell">
     <header class="topbar">
-        <button class="brand" @onclick="() => State.Go(Screen.Menu)" title="Main menu">
+        <button class="brand" @onclick="Home" title="@(State.InCareer ? "Dashboard" : "Main menu")">
             <span class="brand__star">★</span>
-            <span class="brand__name">Wrestling Sim</span>
-            <span class="brand__sub">Booking System</span>
+            <span class="brand__name">@(State.InCareer ? State.Career!.Promotion.Name : "Wrestling Sim")</span>
+            <span class="brand__sub">
+                @(State.InCareer
+                    ? State.Career!.CurrentDate.ToString("d MMM yyyy")
+                    : State.Mode == AppMode.Exhibition ? "Exhibition" : "Booking System")
+            </span>
         </button>
 
-        @if (State.Loaded && State.Roster.Count >= 2)
+        @if (ShowNav)
         {
             <nav class="nav">
                 @foreach (var (screen, label, _) in NavItems)
@@ -43,18 +47,30 @@
         {
             @switch (State.Current)
             {
-                case Screen.Menu:    <MainMenuScreen />; break;
-                case Screen.Roster:  <RosterScreen />;   break;
-                case Screen.Feuds:   <FeudsScreen />;    break;
-                case Screen.Match:   <MatchScreen />;    break;
-                case Screen.Segment: <SegmentScreen />;  break;
-                case Screen.Show:    <ShowScreen />;     break;
+                // Outside a save
+                case Screen.Landing:    <LandingScreen />;   break;
+                case Screen.NewSave:    <NewSaveScreen />;   break;
+
+                // Inside a save
+                case Screen.Dashboard:  <DashboardScreen />; break;
+                case Screen.Calendar:   <CalendarScreen />;  break;
+                case Screen.BookShow:   <BookShowScreen />;  break;
+
+                // Shared between career and exhibition
+                case Screen.Roster:     <RosterScreen />;    break;
+                case Screen.Feuds:      <FeudsScreen />;     break;
+
+                // Exhibition only
+                case Screen.Exhibition: <MainMenuScreen />;  break;
+                case Screen.Match:      <MatchScreen />;     break;
+                case Screen.Segment:    <SegmentScreen />;   break;
+                case Screen.Show:       <ShowScreen />;      break;
             }
         }
     </main>
 
     @* On phones the top nav is hidden and navigation moves to the thumb zone. *@
-    @if (State.Loaded && State.Roster.Count >= 2)
+    @if (ShowNav)
     {
         <nav class="tabbar" aria-label="Main">
             @foreach (var (screen, label, glyph) in NavItems)
@@ -75,7 +91,15 @@
 </div>
 
 @code {
-    private static readonly (Screen Screen, string Label, string Glyph)[] NavItems =
+    private static readonly (Screen Screen, string Label, string Glyph)[] CareerNav =
+    [
+        (Screen.Dashboard, "Home",     "◆"),
+        (Screen.Calendar,  "Calendar", "📅"),
+        (Screen.Roster,    "Roster",   "👥"),
+        (Screen.Feuds,     "Feuds",    "🔥"),
+    ];
+
+    private static readonly (Screen Screen, string Label, string Glyph)[] ExhibitionNav =
     [
         (Screen.Match,   "Match",   "★"),
         (Screen.Segment, "Segment", "🎤"),
@@ -84,10 +108,29 @@
         (Screen.Feuds,   "Feuds",   "🔥"),
     ];
 
-    protected override void OnInitialized()
+    /// <summary>
+    /// The landing screens deliberately have no nav: there is nowhere to go until you are
+    /// inside a save or inside exhibition mode, and showing a disabled bar would imply
+    /// otherwise.
+    /// </summary>
+    private bool ShowNav =>
+        State.Loaded
+        && State.LoadError is null
+        && State.Roster.Count >= 2
+        && State.Mode != AppMode.Landing;
+
+    private (Screen, string, string)[] NavItems =>
+        State.Mode == AppMode.Career ? CareerNav : ExhibitionNav;
+
+    private void Home() =>
+        State.Go(State.InCareer ? Screen.Dashboard
+                : State.Mode == AppMode.Exhibition ? Screen.Exhibition
+                : Screen.Landing);
+
+    protected override async Task OnInitializedAsync()
     {
         State.Changed += OnChanged;
-        State.Load();
+        await State.InitialiseAsync();
     }
 
     private void OnChanged() => StateHasChanged();

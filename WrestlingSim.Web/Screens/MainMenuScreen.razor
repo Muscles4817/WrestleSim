@@ -1,12 +1,12 @@
 @inject GameState State
 
 <div class="screen__head">
-    <div class="screen__eyebrow">You are the booker</div>
-    <h1 class="screen__title">What are we running tonight?</h1>
+    <div class="screen__eyebrow">Exhibition</div>
+    <h1 class="screen__title">Book something, see what happens</h1>
     <p class="screen__lede">
-        Build feuds with segments, design matches beat by beat, then put it all on a card.
-        Everything you book feeds the same feud book — a betrayal tonight is worth more heat
-        in the blowoff.
+        A sandbox for the engine: build feuds with segments, design matches beat by beat, then
+        put it all on a card. There is no clock and nothing is saved — close the tab and it is
+        gone. For a promotion that persists, start a career.
     </p>
 </div>
 
@@ -53,6 +53,10 @@ else
         weapon shot generates the most heat — and the feud will show up here and in the match booker.
     </div>
 }
+
+<div class="wizard-bar">
+    <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Landing)">← Main menu</button>
+</div>
 
 @code {
     private static readonly (Screen Screen, string Key, string Name, string Desc)[] Tiles =
