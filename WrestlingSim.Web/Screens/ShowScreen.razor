@@ -62,6 +62,8 @@
         }
     </div>
 
+    <StatusChanges Changes="@result.StatusChanges" />
+
     <FeudUpdates Updates="@result.FeudUpdates" />
 
     @foreach (var item in result.Items.Where(i => i.MatchResult is not null))

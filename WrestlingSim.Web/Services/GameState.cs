@@ -91,7 +91,7 @@ public class GameState
     public List<Wrestler> Roster => Career?.Roster ?? BaseRoster;
     public FeudBook FeudBook => Career?.FeudBook ?? _exhibitionFeuds;
     public int ActiveFeudCount => FeudBook.All.Count;
-    public IEnumerable<Wrestler> RosterByPopularity => Roster.OrderByDescending(w => w.Popularity);
+    public IEnumerable<Wrestler> RosterByOverness => Roster.OrderByDescending(w => w.Overness);
 
     // ── Startup ──────────────────────────────────────────────────────────────
 

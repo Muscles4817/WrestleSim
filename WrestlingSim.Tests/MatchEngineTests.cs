@@ -36,7 +36,7 @@ namespace WrestlingSim.Tests
                     new FanGroupAppeal { Group = "LongTermFans", AppealScore = 0.15 }
                 ]
             },
-            popularity : 48, // real pop tanked by the walk-out context
+            overness: 48, // real pop tanked by the walk-out context
             ringSkills : new RingSkills(
                 highFlyer  : 0.5,
                 grappler   : 1.5,
@@ -71,7 +71,7 @@ namespace WrestlingSim.Tests
                     new FanGroupAppeal { Group = "LongTermFans", AppealScore = 0.18 }
                 ]
             },
-            popularity : 50, // also being booed — leaving for the NFL
+            overness: 50, // also being booed — leaving for the NFL
             ringSkills : new RingSkills(
                 highFlyer  : 1.0,
                 grappler   : 4.8,
@@ -109,7 +109,7 @@ namespace WrestlingSim.Tests
                     new FanGroupAppeal { Group = "Children",     AppealScore = 0.58 }
                 ]
             },
-            popularity : 72,
+            overness: 72,
             ringSkills : new RingSkills(
                 highFlyer  : 1.5,
                 grappler   : 3.0,
@@ -144,7 +144,7 @@ namespace WrestlingSim.Tests
                     new FanGroupAppeal { Group = "LongTermFans", AppealScore = 0.76 }
                 ]
             },
-            popularity : 85, // champion, widely cheered despite the heel character
+            overness: 85, // champion, widely cheered despite the heel character
             ringSkills : new RingSkills(
                 highFlyer  : 1.0,
                 grappler   : 5.0,
@@ -180,7 +180,7 @@ namespace WrestlingSim.Tests
                     new FanGroupAppeal { Group = "ChildrenKids", AppealScore = 0.45 }
                 ]
             },
-            popularity : 90,
+            overness: 90,
             ringSkills : new RingSkills(
                 highFlyer  : 2.5,
                 grappler   : 3.5,
@@ -214,7 +214,7 @@ namespace WrestlingSim.Tests
                     new FanGroupAppeal { Group = "ChildrenKids", AppealScore = 0.78 }
                 ]
             },
-            popularity : 92,
+            overness: 92,
             ringSkills : new RingSkills(
                 highFlyer  : 2.8,
                 grappler   : 3.8,
@@ -248,7 +248,7 @@ namespace WrestlingSim.Tests
                     new FanGroupAppeal { Group = "LongTermFans", AppealScore = 0.80 }
                 ]
             },
-            popularity : 85,
+            overness: 85,
             ringSkills : new RingSkills(
                 highFlyer  : 3.2,
                 grappler   : 4.0,
@@ -282,7 +282,7 @@ namespace WrestlingSim.Tests
                     new FanGroupAppeal { Group = "Casuals",      AppealScore = 0.65 }
                 ]
             },
-            popularity : 82,
+            overness: 82,
             ringSkills : new RingSkills(
                 highFlyer  : 3.5,
                 grappler   : 4.2,

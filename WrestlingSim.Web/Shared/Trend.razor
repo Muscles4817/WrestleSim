@@ -1,0 +1,45 @@
+@* Which way someone is trending. Momentum is invisible unless it is shown, and "who is
+   hot right now" is the single thing a booker most needs to read off a roster. *@
+
+<span class="trend @Cls" title="@Title">
+    <span class="trend__arrow" aria-hidden="true">@Arrow</span>
+    @if (ShowLabel)
+    {
+        <span>@Label</span>
+    }
+</span>
+
+@code {
+    [Parameter, EditorRequired] public double Momentum { get; set; }
+    [Parameter] public bool ShowLabel { get; set; } = true;
+
+    /// <summary>Below this, a performer is neither rising nor cooling in any way worth showing.</summary>
+    private const double Steady = 6;
+
+    private string Cls => Momentum switch
+    {
+        >= 35     => "is-hot",
+        >= Steady => "is-rising",
+        <= -35    => "is-cold",
+        <= -Steady => "is-cooling",
+        _         => "is-steady"
+    };
+
+    private string Arrow => Momentum switch
+    {
+        >= Steady  => "▲",
+        <= -Steady => "▼",
+        _          => "—"
+    };
+
+    private string Label => Momentum switch
+    {
+        >= 35      => "Hot",
+        >= Steady  => "Rising",
+        <= -35     => "Cold",
+        <= -Steady => "Cooling",
+        _          => "Steady"
+    };
+
+    private string Title => $"Momentum {Momentum:+0;-0;0} — {Label.ToLowerInvariant()}";
+}

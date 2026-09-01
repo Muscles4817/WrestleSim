@@ -77,7 +77,13 @@ namespace WrestlingSim.Persistence
 
             // Only state that actually changes. Everything else comes from the roster.
             Wrestlers = career.Roster
-                .Select(w => new WrestlerStateDto { Id = w.Id, Popularity = w.Popularity })
+                .Select(w => new WrestlerStateDto
+                {
+                    Id             = w.Id,
+                    Overness       = Math.Round(w.Overness, 3),
+                    Momentum       = Math.Round(w.Momentum, 3),
+                    LastAppearance = w.LastAppearance is { } seen ? Iso(seen) : null
+                })
                 .ToList(),
 
             ShowDefinitions = career.ShowDefinitions.Select(d => new ShowDefinitionDto
@@ -191,8 +197,20 @@ namespace WrestlingSim.Persistence
 
             // Apply saved state onto the freshly-loaded roster.
             foreach (var state in dto.Wrestlers)
-                if (byId.TryGetValue(state.Id, out var w))
-                    w.Popularity = Math.Clamp(state.Popularity, 0, 100);
+            {
+                if (!byId.TryGetValue(state.Id, out var w)) continue;
+
+                // ResolvedOverness falls back to the pre-split "Popularity" field, so a
+                // save written before the stock/flow split still opens with its roster
+                // standings intact rather than silently resetting everyone to zero.
+                w.Overness = Math.Clamp(state.ResolvedOverness, 0, 100);
+                w.Momentum = Math.Clamp(state.Momentum, -100, 100);
+                w.LastAppearance = DateOnly.TryParse(
+                    state.LastAppearance, System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.None, out var seen)
+                        ? seen
+                        : null;
+            }
 
             var career = new Career
             {

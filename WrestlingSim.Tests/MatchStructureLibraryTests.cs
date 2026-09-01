@@ -159,7 +159,7 @@ namespace WrestlingSim.Tests
         private static Wrestler MakeDummy(string name) => new(
             realName  : name,
             gimmick   : new Models.Gimmick(name),
-            popularity: 75,
+            overness: 75,
             ringSkills: new Models.RingSkills(3, 3, 3, 3, 3, 3),
             charisma  : 3.5,
             style     : WrestlingStyle.Brawler

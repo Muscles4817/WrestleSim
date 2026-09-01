@@ -9,7 +9,7 @@ namespace WrestlingSim.Tests
     {
         public static Wrestler Make(
             string name,
-            int popularity = 70,
+            double overness = 70,
             double charisma = 3.0,
             int psychology = 80,
             int toughness = 80,
@@ -29,7 +29,7 @@ namespace WrestlingSim.Tests
             return new Wrestler(
                 realName   : name,
                 gimmick    : gimmick,
-                popularity : popularity,
+                overness: overness,
                 ringSkills : new RingSkills(skill, skill, skill, skill, skill, skill),
                 charisma   : charisma,
                 style      : WrestlingStyle.Technical)
@@ -39,7 +39,7 @@ namespace WrestlingSim.Tests
             };
         }
 
-        public static Wrestler Babyface => Make("Babyface Bill", popularity: 80, charisma: 4.0);
-        public static Wrestler Heel     => Make("Heel Harry",    popularity: 75, charisma: 3.5);
+        public static Wrestler Babyface => Make("Babyface Bill", overness: 80, charisma: 4.0);
+        public static Wrestler Heel     => Make("Heel Harry",    overness: 75, charisma: 3.5);
     }
 }

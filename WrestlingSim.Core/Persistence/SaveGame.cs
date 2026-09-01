@@ -46,7 +46,24 @@ namespace WrestlingSim.Persistence
     public class WrestlerStateDto
     {
         public string Id { get; set; } = "";
-        public int Popularity { get; set; }
+
+        /// <summary>The stock: how over they are.</summary>
+        public double Overness { get; set; }
+
+        /// <summary>The flow: which way they are trending.</summary>
+        public double Momentum { get; set; }
+
+        /// <summary>Last show they worked, ISO yyyy-MM-dd. Null if they have not yet.</summary>
+        public string? LastAppearance { get; set; }
+
+        /// <summary>
+        /// What Overness was called before the stock/flow split. Read only as a fallback so
+        /// saves written by earlier builds still open; never written.
+        /// </summary>
+        public int? Popularity { get; set; }
+
+        /// <summary>Overness, taking the legacy field when a pre-split save omits it.</summary>
+        public double ResolvedOverness => Overness > 0 ? Overness : Popularity ?? 0;
     }
 
     public class ShowDefinitionDto

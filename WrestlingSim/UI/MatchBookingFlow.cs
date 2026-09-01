@@ -85,7 +85,7 @@ namespace WrestlingSim.UI
                 var w = pool[i];
                 Write($"  [{i + 1,2}] ", ConsoleColor.DarkGray);
                 Write(Fit(w.RingName, 22), ConsoleColor.White);
-                WriteLine($"Pop {w.Popularity,3}  Skill {w.RingSkills.GetOverallSkill():F1}  Cha {w.Charisma:F1}",
+                WriteLine($"Pop {w.Overness,3}  Skill {w.RingSkills.GetOverallSkill():F1}  Cha {w.Charisma:F1}",
                           ConsoleColor.DarkGray);
             }
 

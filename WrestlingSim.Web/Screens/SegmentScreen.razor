@@ -59,11 +59,11 @@ else
         @if (result.OvernessChanges.Count > 0)
         {
             <div class="row mt small">
-                <span class="muted">Popularity:</span>
+                <span class="muted">Overness:</span>
                 @foreach (var change in result.OvernessChanges)
                 {
                     <span class="badge @(change.Delta >= 0 ? "badge--face" : "badge--heel")">
-                        @change.Wrestler.RingName @change.Delta.ToString("+0;-0") → @change.Wrestler.Popularity
+                        @change.Wrestler.RingName @change.Delta.ToString("+0;-0") → @change.Wrestler.Overness
                     </span>
                 }
             </div>

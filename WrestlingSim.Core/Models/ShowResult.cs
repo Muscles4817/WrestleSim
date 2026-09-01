@@ -14,6 +14,12 @@ namespace WrestlingSim.Models
         /// <summary>Every feud that moved as a result of this show.</summary>
         public List<FeudUpdate> FeudUpdates { get; set; } = new();
 
+        /// <summary>
+        /// Who gained and who lost standing tonight. This is where a result stops being a
+        /// star rating and starts being a consequence.
+        /// </summary>
+        public List<StatusChange> StatusChanges { get; set; } = new();
+
         public int BookedMinutes { get; set; }
         public int BudgetMinutes { get; set; }
 

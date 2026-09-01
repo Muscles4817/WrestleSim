@@ -10,17 +10,20 @@ namespace WrestlingSim.Engine
         public double CrowdEnergy { get; set; }
 
         /// <summary>
-        /// –100 to +100.  Positive = WrestlerA has the advantage.
-        /// Negative = WrestlerB has the advantage.
+        /// –100 to +100. Positive = WrestlerA has the advantage, negative = WrestlerB.
+        ///
+        /// This is *in-match* advantage — who is on top right now — and it resets every
+        /// match. Not to be confused with <see cref="Models.Wrestler.Momentum"/>, which is
+        /// a career-level hot/cold trend that persists between shows.
         /// </summary>
-        public double Momentum { get; set; }
+        public double Advantage { get; set; }
 
         /// <summary>
-        /// Uncapped running total of all momentum deltas. Unlike Momentum, this is never
+        /// Uncapped running total of all momentum deltas. Unlike Advantage, this is never
         /// clamped, so it accumulates across multiple heat segments and correctly measures
         /// how deep a hole a wrestler has dug — used to scale the comeback earned bonus.
         /// </summary>
-        public double RawMomentum { get; private set; }
+        public double RawAdvantage { get; private set; }
 
         // ── Accumulators ─────────────────────────────────────────────────────
 
@@ -105,10 +108,10 @@ namespace WrestlingSim.Engine
             RecordEnergy();
         }
 
-        public void ApplyMomentum(double delta)
+        public void ApplyAdvantage(double delta)
         {
-            RawMomentum += delta;
-            Momentum = Math.Clamp(Momentum + delta, -100, 100);
+            RawAdvantage += delta;
+            Advantage = Math.Clamp(Advantage + delta, -100, 100);
         }
 
         /// <summary>

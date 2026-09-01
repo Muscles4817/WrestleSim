@@ -133,48 +133,48 @@ namespace WrestlingSim.Tests
         // ── Overness ─────────────────────────────────────────────────────────
 
         [Fact]
-        public void GoodSegment_RaisesPopularity()
+        public void GoodSegment_RaisesOverness()
         {
-            var speaker = TestRoster.Make("Talker", popularity: 50, charisma: 5.0);
-            int before  = speaker.Popularity;
+            var speaker = TestRoster.Make("Talker", overness: 50, charisma: 5.0);
+            double before = speaker.Overness;
 
             var result = new SegmentSimulator(5).Simulate(Promo(speaker));
 
-            Assert.True(speaker.Popularity > before);
+            Assert.True(speaker.Overness > before);
             Assert.Contains(result.OvernessChanges, c => c.Wrestler == speaker && c.Delta > 0);
         }
 
         [Fact]
-        public void BotchedSegment_CostsPopularity()
+        public void BotchedSegment_CostsOverness()
         {
             // Regression: overness was clamped to 0.5..3.0 and only ever added, so a promo
-            // was free popularity however badly it went.
-            var speaker = TestRoster.Make("Green Rookie", popularity: 50, charisma: 4.0, psychology: 20);
+            // was free overness however badly it went.
+            var speaker = TestRoster.Make("Green Rookie", overness: 50, charisma: 4.0, psychology: 20);
 
             for (int seed = 0; seed < 600; seed++)
             {
-                var subject = TestRoster.Make("Green Rookie", popularity: 50, charisma: 4.0, psychology: 20);
+                var subject = TestRoster.Make("Green Rookie", overness: 50, charisma: 4.0, psychology: 20);
                 var result  = new SegmentSimulator(seed).Simulate(Promo(subject, scripted: false));
 
                 if (!result.Botched) continue;
 
-                Assert.True(subject.Popularity < 50,
-                    $"A botched segment should cost popularity, got {subject.Popularity}.");
+                Assert.True(subject.Overness < 50,
+                    $"A botched segment should cost overness, got {subject.Overness}.");
                 return;
             }
 
-            Assert.Fail("No botch occurred across 600 seeds — cannot verify the popularity penalty.");
+            Assert.Fail("No botch occurred across 600 seeds — cannot verify the overness penalty.");
         }
 
         [Fact]
         public void Popularity_IsClampedToOneHundred()
         {
-            var speaker = TestRoster.Make("Megastar", popularity: 99, charisma: 5.0);
+            var speaker = TestRoster.Make("Megastar", overness: 99, charisma: 5.0);
 
             for (int seed = 0; seed < 20; seed++)
                 new SegmentSimulator(seed).Simulate(Promo(speaker));
 
-            Assert.True(speaker.Popularity <= 100, $"Popularity ran away to {speaker.Popularity}.");
+            Assert.True(speaker.Overness <= 100, $"Popularity ran away to {speaker.Overness}.");
         }
 
         // ── Injury ───────────────────────────────────────────────────────────

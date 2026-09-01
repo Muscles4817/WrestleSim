@@ -32,14 +32,14 @@
         {
             <div class="group-label">@group.Key.Label()</div>
             <div class="picks picks--2">
-                @foreach (var w in group.OrderByDescending(x => x.Popularity))
+                @foreach (var w in group.OrderByDescending(x => x.Overness))
                 {
                     <button class="pick @(a == w ? "is-selected" : "")" @onclick="() => PickA(w)">
                         <span class="pick__body">
                             <span class="pick__name">@w.RingName</span>
                             <span class="pick__desc">@w.Style · @(w.Gimmick?.NaturalAlignment.ToString() ?? "—")</span>
                         </span>
-                        <span class="pick__meta">Pop @w.Popularity<br />Cha @w.Charisma.ToString("F1")</span>
+                        <span class="pick__meta">Pop @w.Overness<br />Cha @w.Charisma.ToString("F1")</span>
                     </button>
                 }
             </div>
@@ -66,14 +66,14 @@
             {
                 <div class="group-label">@group.Key.Label()</div>
                 <div class="picks picks--2">
-                    @foreach (var w in group.OrderByDescending(x => x.Popularity))
+                    @foreach (var w in group.OrderByDescending(x => x.Overness))
                     {
                         <button class="pick @(b == w ? "is-selected" : "")" @onclick="() => PickB(w)">
                             <span class="pick__body">
                                 <span class="pick__name">@w.RingName</span>
                                 <span class="pick__desc">@w.Style · @(w.Gimmick?.NaturalAlignment.ToString() ?? "—")</span>
                             </span>
-                            <span class="pick__meta">Pop @w.Popularity<br />Cha @w.Charisma.ToString("F1")</span>
+                            <span class="pick__meta">Pop @w.Overness<br />Cha @w.Charisma.ToString("F1")</span>
                         </button>
                     }
                 </div>
@@ -236,13 +236,13 @@
             <div class="versus__side">
                 <div class="versus__corner">Corner A</div>
                 <div class="versus__name">@a!.RingName</div>
-                <div class="versus__meta">Pop @a.Popularity · Cha @a.Charisma.ToString("F1")</div>
+                <div class="versus__meta">Pop @a.Overness · Cha @a.Charisma.ToString("F1")</div>
             </div>
             <div class="versus__vs">VS</div>
             <div class="versus__side">
                 <div class="versus__corner">Corner B</div>
                 <div class="versus__name">@b!.RingName</div>
-                <div class="versus__meta">Pop @b.Popularity · Cha @b.Charisma.ToString("F1")</div>
+                <div class="versus__meta">Pop @b.Overness · Cha @b.Charisma.ToString("F1")</div>
             </div>
         </div>
 

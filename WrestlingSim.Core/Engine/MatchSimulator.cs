@@ -120,10 +120,10 @@ namespace WrestlingSim.Engine
 
         public (string, string) CalculateWinner(Match match)
         {
-            int total = match.WrestlerA.Popularity + match.WrestlerB.Popularity;
-            int roll = rand.Next(1, total + 1);
+            int total = (int)Math.Round(match.WrestlerA.Overness + match.WrestlerB.Overness);
+            int roll = rand.Next(1, Math.Max(2, total + 1));
 
-            return roll <= match.WrestlerA.Popularity
+            return roll <= match.WrestlerA.Overness
                 ? (match.WrestlerA.RingName, match.WrestlerB.RingName)
                 : (match.WrestlerB.RingName, match.WrestlerA.RingName);
         }

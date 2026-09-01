@@ -210,15 +210,28 @@ namespace WrestlingSim.Engine
 
             foreach (var (wrestler, raw) in deltas)
             {
-                int delta = (int)Math.Round(raw);
-                if (delta == 0) continue;
+                // Segments move momentum far more than overness. A hot angle makes you hot
+                // this week; it does not by itself make the audience care about you.
+                double momentum = raw * 3.0;
 
-                int before = wrestler.Popularity;
-                wrestler.Popularity = Math.Clamp(before + delta, 0, 100);
+                // Gains compress near the ceiling and losses near the floor, so a promo is
+                // no longer a free point that ratchets everyone toward 100 over a career.
+                double overness = raw >= 0
+                    ? HeatEconomy.DampenGain(wrestler.Overness, raw * 0.5)
+                    : -HeatEconomy.DampenLoss(wrestler.Overness, -raw * 0.5);
 
-                int applied = wrestler.Popularity - before;
-                if (applied != 0)
-                    result.OvernessChanges.Add(new OvernessChange { Wrestler = wrestler, Delta = applied });
+                double before = wrestler.Overness;
+                wrestler.Overness = Math.Clamp(before + overness, 0, 100);
+                wrestler.Momentum = Math.Clamp(wrestler.Momentum + momentum, -100, 100);
+
+                double applied = wrestler.Overness - before;
+                if (Math.Abs(applied) >= 0.01 || Math.Abs(momentum) >= 0.5)
+                    result.OvernessChanges.Add(new OvernessChange
+                    {
+                        Wrestler      = wrestler,
+                        Delta         = applied,
+                        MomentumDelta = momentum
+                    });
             }
         }
 
