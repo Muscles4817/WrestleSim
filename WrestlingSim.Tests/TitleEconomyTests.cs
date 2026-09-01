@@ -337,6 +337,35 @@ namespace WrestlingSim.Tests
         }
 
         [Fact]
+        public void FillingAVacancyIsNotChargedAsAHotPotatoChange()
+        {
+            // Regression: the vacant case was routed through ChangeDelta with a reign
+            // length of zero, so every belt that was won from vacant took the full
+            // hot-potato churn penalty for a reign that never existed.
+            var title = Belt(standing: 60);
+            var winner = TestRoster.Make("Winner", overness: 80);
+
+            var update = TitleEconomy.ResolveTitleMatch(
+                title, winner, TestRoster.Make("Loser", overness: 75),
+                FinishWeight.Decisive, starRating: 4.0, Day0);
+
+            Assert.True(update.PrestigeDelta > 0,
+                $"a credible winner settling a vacancy in a good match should help, got {update.PrestigeDelta:F2}");
+        }
+
+        [Fact]
+        public void AVacancySettledOnSomeoneTheAudienceRejectsStillHurts()
+        {
+            var title = Belt(standing: 70);
+
+            var update = TitleEconomy.ResolveTitleMatch(
+                title, TestRoster.Make("Nobody", overness: 15), TestRoster.Make("Other", overness: 20),
+                FinishWeight.Decisive, starRating: 2.0, Day0);
+
+            Assert.True(update.PrestigeDelta < 0, $"got {update.PrestigeDelta:F2}");
+        }
+
+        [Fact]
         public void AVacantTitleCanBeWonAndTheLineageResumes()
         {
             var title = Belt(standing: 55);

@@ -186,6 +186,29 @@ namespace WrestlingSim.Engine
         }
 
         /// <summary>
+        /// What filling a vacancy does to the belt. No reign ended, so there is no churn
+        /// and no aura to hand back — the vacancy was already charged for when it
+        /// happened (§4). What is left is whether the audience believes the person now
+        /// carrying it, and whether the match that settled it was worth watching.
+        /// </summary>
+        public static double FillDelta(
+            double prestigeBefore, Wrestler newChampion, double starRating, FinishWeight finish)
+        {
+            double quality     = Math.Clamp(starRating, 0, 5) / 5.0;
+            double credibility = Math.Clamp(newChampion.EffectiveOverness / 100.0, 0, 1);
+
+            double rejection = Math.Clamp(
+                (prestigeBefore - newChampion.EffectiveOverness) / 100.0, 0, 1);
+
+            double delta = 5.0 * quality * credibility - 9.0 * rejection;
+
+            // Settling a vacant championship on a roll-up settles nothing.
+            if (finish == FinishWeight.Fluke) delta -= 1.5;
+
+            return delta;
+        }
+
+        /// <summary>
         /// A champion losing a match the belt was not on the line in — doc 21 §4.1.
         /// Small and cumulative by design: used once it sets up a challenger, used
         /// routinely it hollows the championship out.
@@ -232,13 +255,7 @@ namespace WrestlingSim.Engine
             // ── Vacant belt: somebody has to win it ──────────────────────────
             if (champion == null)
             {
-                double fillDelta = ChangeDelta(prestigeBefore, 0, winner, starRating, finish);
-
-                // No reign ended, so there is no churn to charge for. Only the credibility
-                // of the new champion and the size of the win are in play.
-                fillDelta = Math.Max(fillDelta, -9.0);
-
-                title.Standing = Clamp(standingBefore + fillDelta);
+                title.Standing = Clamp(standingBefore + FillDelta(prestigeBefore, winner, starRating, finish));
                 OpenReign(title, winner, date, showName);
 
                 return Build(title, TitleEvent.Filled, null, winner,
