@@ -11,6 +11,13 @@ namespace WrestlingSim.Models.World
     {
         public string Id { get; set; } = Guid.NewGuid().ToString("N");
 
+        /// <summary>
+        /// The recurring definition this came from, or null for a one-off put on the
+        /// calendar by hand. Lets an edited definition find and replace its own future
+        /// dates without disturbing anything else.
+        /// </summary>
+        public string? DefinitionId { get; set; }
+
         public string Name { get; set; } = "Untitled Show";
         public DateOnly Date { get; set; }
         public ShowType Type { get; set; } = ShowType.Television;

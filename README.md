@@ -42,7 +42,7 @@ cd WrestlingSim
 
 dotnet run --project WrestlingSim.Web   # browser UI on http://localhost:5080
 dotnet run --project WrestlingSim       # terminal UI
-dotnet test                             # 146 tests
+dotnet test                             # 159 tests
 ```
 
 ---
@@ -91,6 +91,32 @@ actually changes, the feud book, and the calendar of shows scheduled and run.
                      results persist · clock advances
 ```
 
+### Defining your shows
+
+A career opens with a three-step wizard: name the promotion and pick its tier, define the
+shows you run, then review. Show definitions are the promotion's **standing commitments** —
+the ones that come round on a rhythm:
+
+```
+   SmackDown   — Television    — every Tuesday
+   Raw         — Television    — every Thursday
+   Premium Event — Premium Event — last Saturday of the month
+```
+
+Two recurrence patterns: **every week on a weekday**, and **once a month on the Nth
+weekday** (first through fourth, or last). Definitions materialise dated shows onto the
+calendar out to a rolling 120-day horizon, topped up every time the clock moves, so the
+calendar never runs dry ahead of you.
+
+Individual dates are then yours to amend — rename a show, change its venue, adjust its
+runtime — without disturbing the pattern. The **Shows** screen adds, edits, retires and
+reinstates definitions later; a promotion that reaches Established gains television, and a
+second TV night is a definition away.
+
+**Editing a definition moves its future dates. Booked and run shows never move.** The line
+is booked-or-run, not future-or-past: a card you have written is work and stays where it
+is, an empty placeholder is a setting and follows the definition.
+
 **Tier is not a difficulty setting — it is a set of constraints.** It decides whether you
 have television at all, how often you run, how long your shows are, how big a card the
 audience expects, and what buildings you can fill.
@@ -104,8 +130,9 @@ audience expects, and what buildings you can fill.
 | National | Weekly | 4 days | 12,800 |
 | Global Major | Weekly | 3 days | 20,800 |
 
-A new career gets its opening shows put on the calendar automatically at its tier's
-cadence, so it opens onto something to do rather than an empty month.
+Below Established there is no television, so the wizard does not offer it — the
+guaranteed-income dividing line from doc 01, made mechanical. Everything else (too many
+weekly shows, more than one monthly premium event) warns and lets you proceed.
 
 ### Time
 
@@ -569,6 +596,7 @@ WrestlingSim.Core/                  — the engine. No UI, no I/O assumptions.
 │   ├── World/
 │   │   ├── Career.cs           — A save: promotion, clock, roster, feuds, calendar
 │   │   ├── Promotion.cs        — Name + tier, and the constraints tier derives
+│   │   ├── ShowDefinition.cs   — A recurring show and its recurrence maths
 │   │   └── ScheduledShow.cs    — A show on the calendar, its card and its result
 │   ├── Wrestler.cs             — Core wrestler model
 │   ├── Gimmick.cs              — Character, alignment, fan appeal
@@ -615,6 +643,7 @@ WrestlingSim.Web/                   — browser front end (Blazor WebAssembly)
 │   ├── NewSaveScreen.razor     — Name the promotion, pick the tier
 │   ├── DashboardScreen.razor   — In-save home: date, next show, feuds, history
 │   ├── CalendarScreen.razor    — Month grid; schedule and open shows by date
+│   ├── ShowsScreen.razor       — Manage the recurring show definitions
 │   ├── BookShowScreen.razor    — Book and run a scheduled show; its result
 │   ├── MainMenuScreen.razor    — Exhibition hub + live feud summary
 │   ├── RosterScreen.razor      — Roster and ring-skill tables
@@ -634,7 +663,9 @@ WrestlingSim.Web/                   — browser front end (Blazor WebAssembly)
 │   ├── GameState.cs            — App state: mode, the open career, navigation
 │   ├── SaveStore.cs            — localStorage autosave + export/import
 │   └── SaveHeader.cs           — Cheap header read for listing saves
-├── Shared/StateComponent.cs    — Base for screens that re-render on state changes
+├── Shared/
+│   ├── StateComponent.cs       — Base for screens that re-render on state changes
+│   └── ShowDefinitionEditor.razor — One recurring show as a form (wizard + Shows screen)
 └── wwwroot/                    — index.html, app.css, .nojekyll
 
 WrestlingSim.Tests/
@@ -646,6 +677,7 @@ WrestlingSim.Tests/
 ├── FeudBookTests.cs            — Heat thresholds, tag stamping, pair keying
 ├── ShowSimulatorTests.cs       — Card rules + the end-to-end booking loop
 ├── CareerTests.cs              — The clock, the calendar, tier-derived constraints
+├── ShowDefinitionTests.cs      — Recurrence maths, materialisation, resync and retire
 ├── SaveSerializerTests.cs      — Save round-trips, including reference identity
 └── TestRoster.cs               — Shared wrestler factory
 ```

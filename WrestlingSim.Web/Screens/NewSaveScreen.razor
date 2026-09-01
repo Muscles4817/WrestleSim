@@ -1,107 +1,347 @@
-@using WrestlingSim.Enums
 @using WrestlingSim.Models.World
-@inject GameState State
+@inherits StateComponent
 
-<div class="screen__head">
-    <div class="screen__eyebrow">New career</div>
-    <h1 class="screen__title">Start a promotion</h1>
-    <p class="screen__lede">
-        Tier is not a difficulty setting — it is a set of constraints. It decides how often you
-        can run, how long your shows are, how big a card the audience expects, and whether you
-        have television at all.
-    </p>
+<div class="steps">
+    @foreach (var (index, label) in StepLabels)
+    {
+        <div class="step @(step == index ? "is-current" : step > index ? "is-done" : "")">
+            <span class="step__n">@(step > index ? "✓" : (index + 1).ToString())</span>
+            @label
+        </div>
+    }
 </div>
 
-<div class="panel">
-    <div class="panel__title">Details</div>
-    <div class="fields">
-        <div class="field">
-            <span class="field__label">Promotion name</span>
-            <input class="input" @bind="name" @bind:event="oninput" maxlength="48"
-                   placeholder="e.g. Ironclad Championship Wrestling" />
-        </div>
-        <div class="field">
-            <span class="field__label">Start date</span>
-            <input class="input" type="date" @bind="startDate" />
+@if (step == 0)
+{
+    <div class="screen__head">
+        <div class="screen__eyebrow">New career · step 1</div>
+        <h1 class="screen__title">Start a promotion</h1>
+        <p class="screen__lede">
+            Tier is not a difficulty setting — it is a set of constraints. It decides how often
+            you can run, how long your shows are, how big a card the audience expects, and
+            whether you have television at all.
+        </p>
+    </div>
+
+    <div class="panel">
+        <div class="panel__title">Details</div>
+        <div class="fields">
+            <div class="field">
+                <span class="field__label">Promotion name</span>
+                <input class="input" @bind="name" @bind:event="oninput" @bind:after="RefreshSuggested"
+                       maxlength="48" placeholder="e.g. Ironclad Championship Wrestling" />
+            </div>
+            <div class="field">
+                <span class="field__label">Start date</span>
+                <input class="input" type="date" @bind="startDate" />
+            </div>
         </div>
     </div>
-</div>
 
-<div class="panel">
-    <div class="panel__title">Where does it sit?</div>
+    <div class="panel">
+        <div class="panel__title">Where does it sit?</div>
+        <div class="picks">
+            @foreach (var option in Tiers)
+            {
+                var promo = new Promotion { Tier = option };
+                <button class="pick @(tier == option ? "is-selected" : "")" @onclick="() => PickTier(option)">
+                    <div class="pick__body">
+                        <div class="pick__name">@promo.TierLabel</div>
+                        <div class="pick__desc">@promo.TierDescription</div>
+                        <div class="pick__meta">
+                            @(promo.HasTelevision ? "Weekly television" : "No television")
+                            · runs about every @promo.TypicalShowIntervalDays day@(promo.TypicalShowIntervalDays == 1 ? "" : "s")
+                            · @promo.TypicalAttendanceFor(ShowType.PremiumEvent).ToString("N0") for a big night
+                        </div>
+                    </div>
+                </button>
+            }
+        </div>
+    </div>
+}
+else if (step == 1)
+{
+    <div class="screen__head">
+        <div class="screen__eyebrow">New career · step 2</div>
+        <h1 class="screen__title">What do you run?</h1>
+        <p class="screen__lede">
+            Define your standing shows — the ones that come round every week or every month.
+            These go on the calendar automatically from here on, and you can rename or re-venue
+            any individual date later without disturbing the pattern.
+        </p>
+    </div>
 
-    <div class="picks">
-        @foreach (var option in Tiers)
+    @if (!Draft.HasTelevision)
+    {
+        <div class="notice notice--info">
+            <strong>@Draft.TierLabel has no television.</strong> Below Established there is no
+            rights fee and no weekly slot, so every show stands on its own gate. You can add
+            television once the promotion gets there.
+        </div>
+    }
+
+    @if (Warning is { } warning)
+    {
+        <div class="notice notice--warn">@warning</div>
+    }
+
+    @foreach (var definition in shows)
+    {
+        <ShowDefinitionEditor Definition="definition" Promotion="Draft"
+                              OnChanged="Touch"
+                              OnRemove="@(() => Remove(definition))" />
+    }
+
+    @if (shows.Count == 0)
+    {
+        <div class="empty">
+            <div class="empty__mark">◷</div>
+            No shows defined. You can start with none and put dates on the calendar by hand,
+            but most promotions run something on a rhythm.
+        </div>
+    }
+
+    <div class="row mt">
+        @foreach (var type in Draft.AvailableShowTypes)
         {
-            var promo = new Promotion { Tier = option };
-            <button class="pick @(tier == option ? "is-selected" : "")" @onclick="() => tier = option">
-                <div class="pick__body">
-                    <div class="pick__name">@promo.TierLabel</div>
-                    <div class="pick__desc">@promo.TierDescription</div>
-                    <div class="pick__meta">
-                        @(promo.HasTelevision ? "Weekly television" : "No television")
-                        · runs about every @promo.TypicalShowIntervalDays day@(promo.TypicalShowIntervalDays == 1 ? "" : "s")
-                        · @promo.TypicalAttendanceFor(ShowType.PremiumEvent).ToString("N0") for a big night
+            <button class="btn" @onclick="() => Add(type)">+ Add @Label(type).ToLowerInvariant()</button>
+        }
+        <span class="spacer"></span>
+        <button class="btn btn--sm btn--ghost" @onclick="ResetToDefaults">Reset to suggested</button>
+    </div>
+}
+else
+{
+    <div class="screen__head">
+        <div class="screen__eyebrow">New career · step 3</div>
+        <h1 class="screen__title">@DisplayName</h1>
+        <p class="screen__lede">
+            @Draft.TierLabel · starting @DateOnly.FromDateTime(startDate).ToString("d MMMM yyyy")
+        </p>
+    </div>
+
+    <div class="panel">
+        <div class="panel__title">Your slate</div>
+
+        @if (shows.Count == 0)
+        {
+            <div class="empty"><div class="empty__mark">◷</div>Nothing scheduled. The calendar starts empty.</div>
+        }
+
+        @foreach (var definition in shows)
+        {
+            <div class="editor-row">
+                <div class="editor-row__n">@(definition.Type == ShowType.PremiumEvent ? "★" : "▦")</div>
+                <div>
+                    <div class="editor-row__name">@(string.IsNullOrWhiteSpace(definition.Name) ? "Untitled show" : definition.Name)</div>
+                    <div class="editor-row__sub">
+                        @Label(definition.Type) · @definition.RecurrenceLabel
+                        · @(definition.RuntimeMinutes ?? Draft.DefaultRuntimeFor(definition.Type)) min
+                        @if (!string.IsNullOrWhiteSpace(definition.Venue)) { <text> · @definition.Venue</text> }
                     </div>
                 </div>
-            </button>
+                <div class="editor-row__tools">
+                    <span class="small muted tabnum">@FirstDates(definition)</span>
+                </div>
+            </div>
         }
     </div>
-</div>
 
-<div class="panel">
-    <div class="panel__title">What you are signing up for</div>
-    <div class="row small">
-        <span class="badge badge--gold">@Selected.TierLabel</span>
-        <span class="muted">
-            @if (Selected.HasTelevision)
+    <div class="panel">
+        <div class="panel__title">First month</div>
+        @if (Preview.Count == 0)
+        {
+            <div class="empty"><div class="empty__mark">◷</div>Nothing falls in the first month.</div>
+        }
+        else
+        {
+            @foreach (var (date, definition) in Preview)
             {
-                <text>
-                    Four weeks of television are put on your calendar to start.
-                    Episodes run @Selected.DefaultRuntimeFor(ShowType.Television) minutes
-                    with about @Selected.TypicalCardSizeFor(ShowType.Television) items on the card.
-                </text>
+                <div class="row small" style="padding:3px 0">
+                    <span class="tabnum muted" style="min-width:9em">@date.ToString("ddd d MMM yyyy")</span>
+                    <strong>@(string.IsNullOrWhiteSpace(definition.Name) ? "Untitled show" : definition.Name)</strong>
+                    <span class="badge badge--muted">@Label(definition.Type)</span>
+                </div>
             }
-            else
-            {
-                <text>
-                    Three live dates are put on your calendar to start, roughly
-                    @Selected.TypicalShowIntervalDays days apart. Shows run
-                    @Selected.DefaultRuntimeFor(ShowType.HouseShow) minutes.
-                    No television means no guaranteed income — every show stands on its own.
-                </text>
-            }
-        </span>
+        }
     </div>
-</div>
+}
 
 <div class="wizard-bar">
-    <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Landing)">← Back</button>
+    <button class="btn btn--ghost" @onclick="Back">@(step == 0 ? "← Cancel" : "← Back")</button>
     <span class="wizard-bar__spacer"></span>
-    <button class="btn btn--primary" disabled="@(!CanStart)" @onclick="Start">
-        Start the career ★
-    </button>
+    @if (step < 2)
+    {
+        <button class="btn btn--primary" disabled="@(!CanAdvance)" @onclick="Next">Next →</button>
+    }
+    else
+    {
+        <button class="btn btn--primary" @onclick="Start">Start the career ★</button>
+    }
 </div>
 
 @code {
+    private static readonly (int Index, string Label)[] StepLabels =
+    [
+        (0, "Promotion"), (1, "Shows"), (2, "Review")
+    ];
+
+    private int step;
+
     private string name = "";
     private PromotionTier tier = PromotionTier.Independent;
-    private DateTime startDate = new(DateTime.Today.Year, 1, 6);
+    private DateTime startDate = new(DateTime.Today.Year, 1, 5);
+
+    private List<ShowDefinition> shows = new();
+
+    /// <summary>
+    /// Whether the player has edited the slate. Until they do, it tracks the promotion
+    /// name and tier — otherwise picking National after typing a name leaves behind the
+    /// house-show slate suggested for the tier that was selected when the screen loaded.
+    /// </summary>
+    private bool slateTouched;
 
     private static readonly PromotionTier[] Tiers =
     [
-        PromotionTier.Local,
-        PromotionTier.Independent,
-        PromotionTier.SuperIndie,
-        PromotionTier.Established,
-        PromotionTier.National,
-        PromotionTier.Global
+        PromotionTier.Local, PromotionTier.Independent, PromotionTier.SuperIndie,
+        PromotionTier.Established, PromotionTier.National, PromotionTier.Global
     ];
 
-    private Promotion Selected => new() { Name = name, Tier = tier };
+    /// <summary>The promotion as configured so far — what the show step validates against.</summary>
+    private Promotion Draft => new() { Name = DisplayName, Tier = tier };
 
-    private bool CanStart => !string.IsNullOrWhiteSpace(name);
+    private string DisplayName => string.IsNullOrWhiteSpace(name) ? "New Promotion" : name.Trim();
+
+    private bool CanAdvance => step switch
+    {
+        0 => !string.IsNullOrWhiteSpace(name),
+        _ => true
+    };
+
+    /// <summary>
+    /// Advisory only — the tier hard-blocks television by not offering it, and everything
+    /// else is the player's call to make and find out about.
+    /// </summary>
+    private string? Warning
+    {
+        get
+        {
+            int weekly = shows.Count(s => s.Active && s.Recurrence == RecurrenceKind.Weekly);
+            if (weekly > 2 && tier < PromotionTier.National)
+                return $"{weekly} weekly shows is a lot for {Draft.TierLabel} — that is more "
+                     + "television than a promotion this size can usually fill. You can still try it.";
+
+            int monthly = shows.Count(s => s.Active && s.Type == ShowType.PremiumEvent);
+            if (monthly > 1)
+                return "More than one monthly premium event means neither feels like an event. "
+                     + "Scarcity is what makes a big show big.";
+
+            return null;
+        }
+    }
+
+    private List<(DateOnly Date, ShowDefinition Definition)> Preview
+    {
+        get
+        {
+            var from = DateOnly.FromDateTime(startDate);
+            var to = from.AddDays(31);
+
+            return shows
+                .Where(d => d.Active)
+                .SelectMany(d => d.OccurrencesBetween(from, to).Select(date => (Date: date, Definition: d)))
+                .OrderBy(x => x.Date)
+                .ToList();
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        ResetToDefaults();
+    }
+
+    private void PickTier(PromotionTier option)
+    {
+        tier = option;
+
+        if (!slateTouched)
+        {
+            ResetToDefaults();
+            return;
+        }
+
+        // Dropping below the television line would leave orphaned TV definitions behind.
+        if (!Draft.HasTelevision)
+            shows.RemoveAll(s => s.Type == ShowType.Television);
+    }
+
+    /// <summary>Keeps the suggested slate in step with the name and tier, until it is edited.</summary>
+    private void RefreshSuggested()
+    {
+        if (!slateTouched) ResetToDefaults();
+    }
+
+    private void ResetToDefaults()
+    {
+        shows = GameState.DefaultSlate(Draft);
+        slateTouched = false;
+    }
+
+    private void Touch() => slateTouched = true;
+
+    private void Add(ShowType type)
+    {
+        slateTouched = true;
+
+        shows.Add(new ShowDefinition
+        {
+            Name       = "",
+            Type       = type,
+            Recurrence = type == ShowType.PremiumEvent ? RecurrenceKind.Monthly : RecurrenceKind.Weekly,
+            Day        = type == ShowType.PremiumEvent ? DayOfWeek.Saturday : DayOfWeek.Monday,
+            Ordinal    = WeekOrdinal.Last
+        });
+    }
+
+    private void Remove(ShowDefinition definition)
+    {
+        slateTouched = true;
+        shows.Remove(definition);
+    }
+
+    private string FirstDates(ShowDefinition definition)
+    {
+        var from = DateOnly.FromDateTime(startDate);
+        var dates = definition.OccurrencesBetween(from, from.AddDays(45)).Take(2).ToList();
+
+        return dates.Count == 0 ? "—" : string.Join(", ", dates.Select(d => d.ToString("d MMM")));
+    }
+
+    private void Next()
+    {
+        // Definitions left unnamed take the show type as their name rather than shipping blank.
+        if (step == 1)
+            foreach (var definition in shows.Where(d => string.IsNullOrWhiteSpace(d.Name)))
+                definition.Name = Label(definition.Type);
+
+        step++;
+    }
+
+    private void Back()
+    {
+        if (step == 0) State.Go(Screen.Landing);
+        else step--;
+    }
 
     private Task Start() =>
-        State.StartCareerAsync(name, tier, DateOnly.FromDateTime(startDate));
+        State.StartCareerAsync(DisplayName, tier, DateOnly.FromDateTime(startDate), shows);
+
+    private static string Label(ShowType type) => type switch
+    {
+        ShowType.Television   => "Television",
+        ShowType.PremiumEvent => "Premium Event",
+        ShowType.HouseShow    => "House Show",
+        _                     => type.ToString()
+    };
 }

@@ -80,6 +80,19 @@ namespace WrestlingSim.Persistence
                 .Select(w => new WrestlerStateDto { Id = w.Id, Popularity = w.Popularity })
                 .ToList(),
 
+            ShowDefinitions = career.ShowDefinitions.Select(d => new ShowDefinitionDto
+            {
+                Id             = d.Id,
+                Name           = d.Name,
+                Type           = d.Type,
+                Recurrence     = d.Recurrence,
+                Day            = d.Day,
+                Ordinal        = d.Ordinal,
+                Venue          = d.Venue,
+                RuntimeMinutes = d.RuntimeMinutes,
+                Active         = d.Active
+            }).ToList(),
+
             Feuds = career.FeudBook.AllIncludingDormant
                 .Select(f => new FeudDto
                 {
@@ -97,6 +110,7 @@ namespace WrestlingSim.Persistence
         private static ShowDto ToDto(ScheduledShow show) => new()
         {
             Id             = show.Id,
+            DefinitionId   = show.DefinitionId,
             Name           = show.Name,
             Date           = Iso(show.Date),
             Type           = show.Type,
@@ -190,6 +204,19 @@ namespace WrestlingSim.Persistence
                 LastPlayedUtc = dto.LastPlayedUtc
             };
 
+            career.ShowDefinitions.AddRange(dto.ShowDefinitions.Select(d => new ShowDefinition
+            {
+                Id             = string.IsNullOrWhiteSpace(d.Id) ? Guid.NewGuid().ToString("N") : d.Id,
+                Name           = d.Name,
+                Type           = d.Type,
+                Recurrence     = d.Recurrence,
+                Day            = d.Day,
+                Ordinal        = d.Ordinal,
+                Venue          = d.Venue,
+                RuntimeMinutes = d.RuntimeMinutes,
+                Active         = d.Active
+            }));
+
             foreach (var f in dto.Feuds)
             {
                 if (!byId.TryGetValue(f.WrestlerA, out var a)) continue;
@@ -213,6 +240,7 @@ namespace WrestlingSim.Persistence
             var show = new ScheduledShow
             {
                 Id             = string.IsNullOrWhiteSpace(dto.Id) ? Guid.NewGuid().ToString("N") : dto.Id,
+                DefinitionId   = dto.DefinitionId,
                 Name           = dto.Name,
                 Date           = ParseDate(dto.Date),
                 Type           = dto.Type,
