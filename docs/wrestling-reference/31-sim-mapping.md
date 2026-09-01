@@ -102,9 +102,9 @@ which is exactly the shape of a good game mechanic.
 
 ### Tier B — high value, larger work
 
-#### B1. Championships
+#### B1. Championships — **implemented**
 **Reference:** [21](21-championships.md)
-Not currently modelled and probably the largest missing entity. Needs:
+Built as `Title` / `TitleReign` / `TitleRegistry` plus `TitleEconomy`. What it covers:
 - `Title` with lineage, prestige, and a current holder
 - Prestige rising with reign length and credible defences; falling with frequent changes,
   non-title losses, absence, and dilution

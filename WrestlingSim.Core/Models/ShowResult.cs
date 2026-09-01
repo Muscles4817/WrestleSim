@@ -20,6 +20,12 @@ namespace WrestlingSim.Models
         /// </summary>
         public List<StatusChange> StatusChanges { get; set; } = new();
 
+        /// <summary>
+        /// Every championship that moved tonight — changes, defences, and the quiet
+        /// erosion of a champion losing somewhere the belt was not on the line.
+        /// </summary>
+        public List<TitleUpdate> TitleUpdates { get; set; } = new();
+
         public int BookedMinutes { get; set; }
         public int BudgetMinutes { get; set; }
 

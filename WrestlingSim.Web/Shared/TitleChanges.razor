@@ -1,0 +1,87 @@
+@using WrestlingSim.Engine
+
+@* What a show did to the promotion's championships. A title change that is only a line in
+   the play-by-play is not a title change the player can feel. *@
+
+@if (Updates.Count > 0)
+{
+    <div class="panel">
+        <div class="panel__title">
+            Championships
+            <span class="spacer"></span>
+            <span class="small muted">prestige</span>
+        </div>
+
+        @foreach (var update in Updates)
+        {
+            <div class="editor-row @(update.Event == TitleEvent.Changed ? "is-finish" : "")">
+                <div class="editor-row__n">@Glyph(update.Event)</div>
+                <div>
+                    <div class="editor-row__name">
+                        @update.Title.Name
+                        @if (update.Event == TitleEvent.Changed)
+                        {
+                            <span class="badge badge--gold">New champion</span>
+                        }
+                    </div>
+                    <div class="editor-row__sub">@update.Reason</div>
+                    <div class="editor-row__sub">@Consequence(update)</div>
+                </div>
+                <div class="editor-row__tools">
+                    <strong class="tabnum @(update.PrestigeDelta >= 0 ? "gold" : "")">
+                        @update.PrestigeDelta.ToString("+0.00;-0.00;0")
+                    </strong>
+                    <span class="tabnum muted">@update.PrestigeAfter.ToString("F1")</span>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public List<TitleUpdate> Updates { get; set; } = new();
+
+    private static string Glyph(TitleEvent e) => e switch
+    {
+        TitleEvent.Changed                 => "★",
+        TitleEvent.Filled                  => "★",
+        TitleEvent.Vacated                 => "○",
+        TitleEvent.NonTitleLoss            => "▼",
+        TitleEvent.RetainedOnATechnicality => "≈",
+        _                                  => "▲"
+    };
+
+    /// <summary>
+    /// The booking lesson behind the number, taken from
+    /// docs/wrestling-reference/21-championships.md. The player should not have to read
+    /// the source to work out why a change cost them nine points of prestige.
+    /// </summary>
+    private static string Consequence(TitleUpdate update) => update.Event switch
+    {
+        TitleEvent.Changed when update.OutgoingReignDays < 60 && update.PrestigeDelta < 0 =>
+            $"A {update.OutgoingReignDays}-day reign. A belt that changes this often stops meaning anything.",
+
+        TitleEvent.Changed when update.PrestigeDelta >= 0 =>
+            "The chase paid off. The title is worth more than it was this morning.",
+
+        TitleEvent.Changed =>
+            "The outgoing champion took some of the title's aura with them.",
+
+        TitleEvent.Filled =>
+            "The vacancy is filled. Lineage resumes.",
+
+        TitleEvent.RetainedOnATechnicality =>
+            "The challenger got their near-miss and the champion kept the belt — worth less than a clean defence.",
+
+        TitleEvent.Retained =>
+            "A credible defence. This is what makes a belt look worth having.",
+
+        TitleEvent.NonTitleLoss =>
+            "A champion beaten with the title not on the line. Small, and it accumulates.",
+
+        TitleEvent.Vacated =>
+            "Every vacancy weakens the lineage.",
+
+        _ => ""
+    };
+}

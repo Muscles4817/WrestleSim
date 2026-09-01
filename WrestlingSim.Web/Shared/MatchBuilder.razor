@@ -108,8 +108,75 @@
     </div>
 }
 
-@* ── 3. Feud ──────────────────────────────────────────────────────────── *@
+
+@* ── 3. Championship ──────────────────────────────────────────────────── *@
 @if (step == 2)
+{
+    <div class="panel">
+        <div class="panel__title">Championship</div>
+
+        @if (SelectableTitles().Count == 0)
+        {
+            <div class="notice notice--info">
+                No belt can be put on the line in this match. A title is only defended in a
+                match its champion is in.
+            </div>
+        }
+
+        <div class="picks">
+            <button class="pick @(title is null ? "is-selected" : "")" @onclick="() => title = null">
+                <span class="pick__body">
+                    <span class="pick__name">No title</span>
+                    <span class="pick__desc">
+                        A straight match. If either of these two is a champion, losing it still
+                        costs their belt a little — a champion beaten anywhere is a champion
+                        the audience has seen beaten.
+                    </span>
+                </span>
+            </button>
+
+            @foreach (var t in SelectableTitles())
+            {
+                <button class="pick @(title == t ? "is-selected" : "")" @onclick="() => title = t">
+                    <span class="pick__body">
+                        <span class="pick__name">
+                            @t.Name
+                            <span class="badge badge--gold">@t.TierLabel</span>
+                        </span>
+                        <span class="pick__desc">
+                            @if (t.Champion is { } champ)
+                            {
+                                <text>
+                                    @champ.RingName — @t.CurrentReignDays(Today) day@(t.CurrentReignDays(Today) == 1 ? "" : "s"),
+                                    @t.CurrentDefences defence@(t.CurrentDefences == 1 ? "" : "s")
+                                </text>
+                            }
+                            else
+                            {
+                                <text>Vacant — this match decides it.</text>
+                            }
+                        </span>
+                    </span>
+                    <span class="pick__meta">Prestige @t.Prestige.ToString("F0")<br />+@t.StakesBonus.ToString("F0") crowd</span>
+                </button>
+            }
+        </div>
+
+        @if (title is not null)
+        {
+            <div class="notice notice--tip mt">
+                <strong>@title.Name — prestige @title.Prestige.ToString("F1").</strong>
+                @title.PrestigeLabel. Worth +@title.StakesBonus.ToString("F0") crowd energy at the bell.
+                <br />
+                Titles do not change hands on a disqualification or a count-out. Book one of
+                those and the champion walks out still champion, whoever won the match.
+            </div>
+        }
+    </div>
+}
+
+@* ── 4. Feud ──────────────────────────────────────────────────────────── *@
+@if (step == 3)
 {
     <div class="panel">
         <div class="panel__title">Feud</div>
@@ -203,8 +270,8 @@
     </div>
 }
 
-@* ── 4. Structure ─────────────────────────────────────────────────────── *@
-@if (step == 3)
+@* ── 5. Structure ─────────────────────────────────────────────────────── *@
+@if (step == 4)
 {
     <div class="panel">
         <div class="panel__title">Match structure</div>
@@ -237,8 +304,8 @@
     </div>
 }
 
-@* ── 5. Beat editor ───────────────────────────────────────────────────── *@
-@if (step == 4)
+@* ── 6. Beat editor ───────────────────────────────────────────────────── *@
+@if (step == 5)
 {
     <div class="panel">
         <div class="versus">
@@ -379,7 +446,7 @@
 <div class="wizard-bar wizard-bar--sticky">
     <button class="btn btn--ghost" @onclick="Back">@(step == 0 ? "← Cancel" : "← Back")</button>
     <span class="wizard-bar__spacer"></span>
-    @if (step < 4)
+    @if (step < LastStep)
     {
         <button class="btn btn--primary" disabled="@(!CanAdvance)" @onclick="Next">Next →</button>
     }
@@ -400,12 +467,28 @@
 
     private static readonly (int Index, string Label)[] StepLabels =
     [
-        (0, "Wrestlers"), (1, "Type"), (2, "Feud"), (3, "Structure"), (4, "Beats")
+        (0, "Wrestlers"), (1, "Type"), (2, "Title"), (3, "Feud"), (4, "Structure"), (5, "Beats")
     ];
+
+    private static readonly int LastStep = StepLabels[^1].Index;
 
     private int step;
     private Wrestler? a, b;
     private MatchType matchType = MatchType.Standard;
+    private Title? title;
+
+    private DateOnly Today => State.Career?.CurrentDate ?? DateOnly.FromDateTime(DateTime.Today);
+
+    /// <summary>
+    /// Belts that could actually be on the line here. A championship is only defended in
+    /// a match its champion is in — anything else is a non-title match with a misleading
+    /// name on it, which MatchPlan.Validate rejects. A vacant belt is open to anyone.
+    /// </summary>
+    private List<Title> SelectableTitles() =>
+        State.Titles.Active
+            .Where(t => t.IsVacant || t.Champion == a || t.Champion == b)
+            .OrderByDescending(t => t.Prestige)
+            .ToList();
 
     private string rosterQuery = "";
     private Division? rosterDivision;
@@ -495,9 +578,7 @@
     private bool CanAdvance => step switch
     {
         0 => a is not null && b is not null,
-        1 => true,
-        2 => true,
-        3 => beats.Count > 0,
+        4 => beats.Count > 0,
         _ => true
     };
 
@@ -511,9 +592,12 @@
             feudChoice = existingFeud is not null && existingFeud.Intensity > FeudIntensity.None
                 ? FeudChoice.UseExisting
                 : FeudChoice.None;
+
+            // The pair changed, so a belt picked for a previous pair may no longer be legal.
+            if (title is not null && !SelectableTitles().Contains(title)) title = null;
         }
 
-        if (step == 2) ResolveFeud();
+        if (step == 3) ResolveFeud();
 
         step++;
     }
@@ -652,9 +736,10 @@
         {
             WrestlerA = a!,
             WrestlerB = b!,
-            MatchType = matchType,
-            Feud      = feud,
-            Beats     = beats
+            MatchType    = matchType,
+            Feud         = feud,
+            TitleAtStake = title,
+            Beats        = beats
         };
 
         errors = plan.Validate();

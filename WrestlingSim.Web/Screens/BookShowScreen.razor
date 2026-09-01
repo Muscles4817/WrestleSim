@@ -75,6 +75,11 @@ else if (show.HasRun)
 
     @* Status movement, feud movement and play-by-play exist only for a show run this
        session — a reloaded save keeps the result summary, not the beat-by-beat detail. *@
+    @if (result.TitleUpdates.Count > 0)
+    {
+        <TitleChanges Updates="@result.TitleUpdates" />
+    }
+
     @if (result.StatusChanges.Count > 0)
     {
         <StatusChanges Changes="@result.StatusChanges" />
@@ -181,6 +186,10 @@ else
                     <div class="editor-row__name">@item.Name</div>
                     <div class="editor-row__sub">
                         @item.Kind · @item.DurationMinutes min
+                        @if (item is BookedMatch { Plan.TitleAtStake: { } belt })
+                        {
+                            <text> · @belt.Name</text>
+                        }
                         @if (i == 0) { <text> · opener ×1.2</text> }
                         @if (i == show.Card.Count - 1 && show.Card.Count > 1) { <text> · main event ×1.5</text> }
                         @if (fatigued) { <text> · fatigue ×0.85</text> }

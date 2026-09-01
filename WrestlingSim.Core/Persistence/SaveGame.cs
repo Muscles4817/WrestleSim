@@ -21,8 +21,14 @@ namespace WrestlingSim.Persistence
     /// </summary>
     public class SaveGame
     {
-        /// <summary>Bumped when the shape below changes incompatibly.</summary>
-        public const int CurrentVersion = 1;
+        /// <summary>
+        /// Bumped when the shape below changes incompatibly.
+        ///
+        /// v2 added championships. A v1 save has never had any, so loading one seeds the
+        /// standard slate rather than leaving the promotion with no belts at all —
+        /// see <see cref="SaveSerializer.FromDto"/>.
+        /// </summary>
+        public const int CurrentVersion = 2;
 
         public int Version { get; set; } = CurrentVersion;
 
@@ -40,6 +46,41 @@ namespace WrestlingSim.Persistence
         public List<ShowDefinitionDto> ShowDefinitions { get; set; } = new();
         public List<FeudDto> Feuds { get; set; } = new();
         public List<ShowDto> Shows { get; set; } = new();
+        public List<TitleDto> Titles { get; set; } = new();
+    }
+
+    /// <summary>
+    /// A championship and its whole lineage. Champions are stored by
+    /// <see cref="Wrestler.Id"/> for the same reason everyone else is: the live graph
+    /// shares wrestler instances, and writing one by value here would hand the loaded
+    /// career a second copy of that person.
+    /// </summary>
+    public class TitleDto
+    {
+        public string Id { get; set; } = "";
+        public string Name { get; set; } = "";
+        public TitleTier Tier { get; set; }
+        public Division Division { get; set; }
+        public string Established { get; set; } = "";
+        public double Standing { get; set; }
+        public bool Retired { get; set; }
+        public string? RetiredOn { get; set; }
+        public List<TitleReignDto> Lineage { get; set; } = new();
+    }
+
+    public class TitleReignDto
+    {
+        /// <summary>The champion's <see cref="Wrestler.Id"/>, never the wrestler itself.</summary>
+        public string Champion { get; set; } = "";
+
+        public int ReignNumber { get; set; }
+        public string Won { get; set; } = "";
+        public string? Lost { get; set; }
+        public string? LastDefended { get; set; }
+        public string WonAt { get; set; } = "";
+        public string LostAt { get; set; } = "";
+        public int Defences { get; set; }
+        public bool Vacated { get; set; }
     }
 
     /// <summary>Per-wrestler mutable state. Structure comes from the embedded roster.</summary>
@@ -128,6 +169,9 @@ namespace WrestlingSim.Persistence
         public MatchType MatchType { get; set; }
         public string StructureName { get; set; } = "Custom";
         public List<BeatDto> Beats { get; set; } = new();
+
+        /// <summary>The championship on the line, by <see cref="TitleDto.Id"/>. Null if none.</summary>
+        public string? TitleId { get; set; }
 
         // ── Segment ──────────────────────────────────────────────────────────
         public string? SegmentName { get; set; }
