@@ -363,3 +363,7 @@ MigrationBackup/
 FodyWeavers.xsd
 # Published web UI output
 artifacts/
+
+# Claude Code agent worktrees. Ephemeral scratch checkouts created while
+# background agents run, cleaned up when they finish — never source.
+.claude/worktrees/
