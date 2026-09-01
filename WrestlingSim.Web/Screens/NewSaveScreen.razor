@@ -1,0 +1,107 @@
+@using WrestlingSim.Enums
+@using WrestlingSim.Models.World
+@inject GameState State
+
+<div class="screen__head">
+    <div class="screen__eyebrow">New career</div>
+    <h1 class="screen__title">Start a promotion</h1>
+    <p class="screen__lede">
+        Tier is not a difficulty setting — it is a set of constraints. It decides how often you
+        can run, how long your shows are, how big a card the audience expects, and whether you
+        have television at all.
+    </p>
+</div>
+
+<div class="panel">
+    <div class="panel__title">Details</div>
+    <div class="fields">
+        <div class="field">
+            <span class="field__label">Promotion name</span>
+            <input class="input" @bind="name" @bind:event="oninput" maxlength="48"
+                   placeholder="e.g. Ironclad Championship Wrestling" />
+        </div>
+        <div class="field">
+            <span class="field__label">Start date</span>
+            <input class="input" type="date" @bind="startDate" />
+        </div>
+    </div>
+</div>
+
+<div class="panel">
+    <div class="panel__title">Where does it sit?</div>
+
+    <div class="picks">
+        @foreach (var option in Tiers)
+        {
+            var promo = new Promotion { Tier = option };
+            <button class="pick @(tier == option ? "is-selected" : "")" @onclick="() => tier = option">
+                <div class="pick__body">
+                    <div class="pick__name">@promo.TierLabel</div>
+                    <div class="pick__desc">@promo.TierDescription</div>
+                    <div class="pick__meta">
+                        @(promo.HasTelevision ? "Weekly television" : "No television")
+                        · runs about every @promo.TypicalShowIntervalDays day@(promo.TypicalShowIntervalDays == 1 ? "" : "s")
+                        · @promo.TypicalAttendanceFor(ShowType.PremiumEvent).ToString("N0") for a big night
+                    </div>
+                </div>
+            </button>
+        }
+    </div>
+</div>
+
+<div class="panel">
+    <div class="panel__title">What you are signing up for</div>
+    <div class="row small">
+        <span class="badge badge--gold">@Selected.TierLabel</span>
+        <span class="muted">
+            @if (Selected.HasTelevision)
+            {
+                <text>
+                    Four weeks of television are put on your calendar to start.
+                    Episodes run @Selected.DefaultRuntimeFor(ShowType.Television) minutes
+                    with about @Selected.TypicalCardSizeFor(ShowType.Television) items on the card.
+                </text>
+            }
+            else
+            {
+                <text>
+                    Three live dates are put on your calendar to start, roughly
+                    @Selected.TypicalShowIntervalDays days apart. Shows run
+                    @Selected.DefaultRuntimeFor(ShowType.HouseShow) minutes.
+                    No television means no guaranteed income — every show stands on its own.
+                </text>
+            }
+        </span>
+    </div>
+</div>
+
+<div class="wizard-bar">
+    <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Landing)">← Back</button>
+    <span class="wizard-bar__spacer"></span>
+    <button class="btn btn--primary" disabled="@(!CanStart)" @onclick="Start">
+        Start the career ★
+    </button>
+</div>
+
+@code {
+    private string name = "";
+    private PromotionTier tier = PromotionTier.Independent;
+    private DateTime startDate = new(DateTime.Today.Year, 1, 6);
+
+    private static readonly PromotionTier[] Tiers =
+    [
+        PromotionTier.Local,
+        PromotionTier.Independent,
+        PromotionTier.SuperIndie,
+        PromotionTier.Established,
+        PromotionTier.National,
+        PromotionTier.Global
+    ];
+
+    private Promotion Selected => new() { Name = name, Tier = tier };
+
+    private bool CanStart => !string.IsNullOrWhiteSpace(name);
+
+    private Task Start() =>
+        State.StartCareerAsync(name, tier, DateOnly.FromDateTime(startDate));
+}

@@ -1,10 +1,27 @@
-@inject GameState State
+@using WrestlingSim.Models.World
+@using SegmentModel = WrestlingSim.Models.Segment.Segment
+@inherits StateComponent
 
-@if (result is not null)
+@if (State.ActiveShow is not { } show || State.Career is not { } career)
 {
-    @* ── Results ──────────────────────────────────────────────────────── *@
+    <div class="empty">
+        <div class="empty__mark">▦</div>
+        No show open. Pick a date on the calendar.
+    </div>
+    <div class="wizard-bar">
+        <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Calendar)">← Calendar</button>
+    </div>
+}
+else if (show.HasRun)
+{
+    @* ── Result ──────────────────────────────────────────────────────────── *@
+    var result = show.Result!;
+
     <div class="screen__head">
-        <div class="screen__eyebrow">@show.Location</div>
+        <div class="screen__eyebrow">
+            @show.TypeLabel · @show.Date.ToString("dddd d MMMM yyyy")
+            @if (!string.IsNullOrWhiteSpace(show.Venue)) { <text> · @show.Venue</text> }
+        </div>
         <h1 class="screen__title">@show.Name</h1>
     </div>
 
@@ -35,17 +52,11 @@
         <div class="panel__title">Card</div>
         @foreach (var item in result.Items)
         {
-            <div class="editor-row @(item.FatiguePenaltyApplied ? "is-flagged" : "")">
+            <div class="editor-row">
                 <div class="editor-row__n">@(result.Items.IndexOf(item) + 1)</div>
                 <div>
                     <div class="editor-row__name">@item.Label</div>
-                    <div class="editor-row__sub">
-                        @item.Kind · @item.DurationMinutes min · position ×@item.PositionWeight.ToString("0.0")
-                        @if (item.FatiguePenaltyApplied)
-                        {
-                            <text> · fatigue ×0.85</text>
-                        }
-                    </div>
+                    <div class="editor-row__sub">@item.Kind · @item.DurationMinutes min</div>
                     @foreach (var note in item.Notes)
                     {
                         <div class="editor-row__sub">@note</div>
@@ -62,21 +73,25 @@
         }
     </div>
 
-    <FeudUpdates Updates="@result.FeudUpdates" />
+    @* Feud movement and play-by-play exist only for a show run this session — a
+       reloaded save keeps the result summary, not the beat-by-beat detail. *@
+    @if (result.FeudUpdates.Count > 0)
+    {
+        <FeudUpdates Updates="@result.FeudUpdates" />
+    }
 
     @foreach (var item in result.Items.Where(i => i.MatchResult is not null))
     {
-        var matchResult = item.MatchResult!;
         <div class="panel">
             <div class="panel__title">@item.Label — play by play</div>
-            <PlayByPlay Result="matchResult" />
+            <PlayByPlay Result="item.MatchResult!" />
         </div>
     }
 
     <div class="wizard-bar">
-        <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Exhibition)">← Main menu</button>
+        <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Dashboard)">← Dashboard</button>
         <span class="wizard-bar__spacer"></span>
-        <button class="btn btn--primary" @onclick="Reset">Book another show</button>
+        <button class="btn btn--primary" @onclick="() => State.Go(Screen.Calendar)">Calendar →</button>
     </div>
 }
 else if (mode == Mode.AddMatch)
@@ -97,10 +112,16 @@ else if (mode == Mode.AddSegment)
 }
 else
 {
-    @* ── Card sheet ───────────────────────────────────────────────────── *@
+    @* ── Card sheet ──────────────────────────────────────────────────────── *@
     <div class="screen__head">
-        <div class="screen__eyebrow">Card sheet</div>
-        <h1 class="screen__title">Book a Show</h1>
+        <div class="screen__eyebrow">
+            @show.TypeLabel · @show.Date.ToString("dddd d MMMM yyyy")
+            @if (career.DaysUntil(show) > 0)
+            {
+                <text> · in @career.DaysUntil(show) day@(career.DaysUntil(show) == 1 ? "" : "s")</text>
+            }
+        </div>
+        <h1 class="screen__title">@show.Name</h1>
         <p class="screen__lede">
             Position and pacing both count: the opener is weighted ×1.2, the main event ×1.5,
             and two of the same kind back to back take a fatigue penalty.
@@ -112,15 +133,17 @@ else
         <div class="fields">
             <div class="field">
                 <span class="field__label">Show name</span>
-                <input class="input" @bind="show.Name" placeholder="Unnamed Show" />
+                <input class="input" @bind="show.Name" @bind:after="Persist" maxlength="60" />
             </div>
             <div class="field">
-                <span class="field__label">Location</span>
-                <input class="input" @bind="show.Location" placeholder="Unknown Arena" />
+                <span class="field__label">Venue</span>
+                <input class="input" @bind="show.Venue" @bind:after="Persist" maxlength="60"
+                       placeholder="Unknown Arena" />
             </div>
             <div class="field">
                 <span class="field__label">Runtime budget (minutes)</span>
-                <input class="input" type="number" min="20" max="480" @bind="show.TotalDurationMinutes" />
+                <input class="input" type="number" min="20" max="480"
+                       @bind="show.RuntimeMinutes" @bind:after="Persist" />
             </div>
         </div>
     </div>
@@ -129,7 +152,9 @@ else
         <div class="panel__title">
             Running order
             <span class="spacer"></span>
-            <span class="small muted">@show.Card.Count item@(show.Card.Count == 1 ? "" : "s")</span>
+            <span class="small muted">
+                @show.Card.Count of about @career.Promotion.TypicalCardSizeFor(show.Type) expected
+            </span>
         </div>
 
         @if (show.Card.Count == 0)
@@ -162,21 +187,21 @@ else
                     <button class="btn btn--icon btn--ghost" disabled="@(i == show.Card.Count - 1)"
                             title="Move down" @onclick="() => Move(i, 1)">↓</button>
                     <button class="btn btn--icon btn--danger" title="Remove"
-                            @onclick="() => show.Card.Remove(item)">✕</button>
+                            @onclick="() => Remove(item)">✕</button>
                 </div>
             </div>
         }
 
         <div class="mt">
-            <Meter Label="Runtime" Value="@show.BookedMinutes" Max="@show.TotalDurationMinutes"
-                   ValueText="@RuntimeText"
+            <Meter Label="Runtime" Value="@show.BookedMinutes" Max="@show.RuntimeMinutes"
+                   ValueText="@RuntimeText(show)"
                    Variant="@(show.IsOverrunning ? "heel" : "gold")" />
         </div>
 
         @if (show.IsOverrunning)
         {
             <div class="notice notice--warn mt">
-                The card runs @(show.BookedMinutes - show.TotalDurationMinutes) minutes long.
+                The card runs @(show.BookedMinutes - show.RuntimeMinutes) minutes long.
                 Running it costs up to 35% of the overall score.
             </div>
         }
@@ -185,30 +210,24 @@ else
             <button class="btn" @onclick="() => mode = Mode.AddMatch">+ Add a match</button>
             <button class="btn" @onclick="() => mode = Mode.AddSegment">+ Add a segment</button>
             <span class="spacer"></span>
-            <button class="btn btn--primary" disabled="@(show.Card.Count == 0)" @onclick="RunShow">
+            <button class="btn btn--primary" disabled="@(show.Card.Count == 0)" @onclick="() => Run(show)">
                 Run the show ★
             </button>
         </div>
+
+        @if (show.Card.Count > 0 && career.DaysUntil(show) > 0)
+        {
+            <div class="notice notice--info mt">
+                This show is @career.DaysUntil(show) day@(career.DaysUntil(show) == 1 ? "" : "s") away.
+                Running it now advances the clock to @show.Date.ToString("d MMM").
+            </div>
+        }
     </div>
 
-    @if (State.ActiveFeudCount > 0)
-    {
-        <div class="panel">
-            <div class="panel__title">Live feuds</div>
-            @foreach (var feud in State.FeudBook.All.Take(4))
-            {
-                <div class="row small" style="padding:4px 0">
-                    <strong>@feud.WrestlerA.RingName vs @feud.WrestlerB.RingName</strong>
-                    <span class="badge @FeudUpdates.IntensityBadge(feud.Intensity)">@feud.Intensity</span>
-                    <span class="spacer"></span>
-                    <span class="muted tabnum">@feud.Heat.ToString("F0") heat</span>
-                </div>
-            }
-        </div>
-    }
-
     <div class="wizard-bar">
-        <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Exhibition)">← Main menu</button>
+        <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Calendar)">← Calendar</button>
+        <span class="wizard-bar__spacer"></span>
+        <button class="btn btn--sm btn--ghost" @onclick="() => State.Go(Screen.Dashboard)">Dashboard</button>
     </div>
 }
 
@@ -216,50 +235,45 @@ else
     private enum Mode { Card, AddMatch, AddSegment }
 
     private Mode mode = Mode.Card;
-    private Show show = NewShow();
-    private ShowResult? result;
 
-    private static Show NewShow() => new()
+    private static string RuntimeText(ScheduledShow show) => show.IsOverrunning
+        ? $"{show.BookedMinutes} / {show.RuntimeMinutes} min — over by {show.BookedMinutes - show.RuntimeMinutes}"
+        : $"{show.BookedMinutes} / {show.RuntimeMinutes} min — {show.RemainingMinutes} left";
+
+    private async Task AddMatch(BookedMatch match)
     {
-        Name                 = "Monday Night Show",
-        Location             = "Unknown Arena",
-        Date                 = DateTime.Now,
-        TotalDurationMinutes = 180
-    };
-
-    private string RuntimeText => show.IsOverrunning
-        ? $"{show.BookedMinutes} / {show.TotalDurationMinutes} min — over by {show.BookedMinutes - show.TotalDurationMinutes}"
-        : $"{show.BookedMinutes} / {show.TotalDurationMinutes} min — {show.RemainingMinutes} left";
-
-    private void AddMatch(BookedMatch match)
-    {
-        show.Card.Add(match);
+        State.ActiveShow?.Card.Add(match);
         mode = Mode.Card;
+        await Persist();
     }
 
-    private void AddSegment(SegmentModel segment)
+    private async Task AddSegment(SegmentModel segment)
     {
-        show.Card.Add(segment);
+        State.ActiveShow?.Card.Add(segment);
         mode = Mode.Card;
+        await Persist();
     }
 
-    private void Move(int index, int direction)
+    private async Task Remove(ICardItem item)
     {
+        State.ActiveShow?.Card.Remove(item);
+        await Persist();
+    }
+
+    private async Task Move(int index, int direction)
+    {
+        var card = State.ActiveShow?.Card;
+        if (card == null) return;
+
         int to = index + direction;
-        if (to < 0 || to >= show.Card.Count) return;
-        (show.Card[index], show.Card[to]) = (show.Card[to], show.Card[index]);
+        if (to < 0 || to >= card.Count) return;
+
+        (card[index], card[to]) = (card[to], card[index]);
+        await Persist();
     }
 
-    private void RunShow()
-    {
-        result = new ShowSimulator(State.FeudBook).Simulate(show);
-        State.Notify();
-    }
+    private Task Run(ScheduledShow show) => State.RunShowAsync(show);
 
-    private void Reset()
-    {
-        show = NewShow();
-        result = null;
-        mode = Mode.Card;
-    }
+    /// <summary>Every edit to a card is written straight to the save — there is no "unsaved card".</summary>
+    private Task Persist() => State.SaveAsync();
 }

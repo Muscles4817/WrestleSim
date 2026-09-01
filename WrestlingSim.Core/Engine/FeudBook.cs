@@ -20,6 +20,14 @@ namespace WrestlingSim.Engine
                   .OrderByDescending(f => f.Heat)
                   .ToList();
 
+        /// <summary>
+        /// Every feud on the books, dormant ones included. `All` hides feuds that have not
+        /// reached Cold, but a dormant pair can still carry a match count and history tags,
+        /// and a save has to keep those.
+        /// </summary>
+        public IReadOnlyList<Feud> AllIncludingDormant =>
+            _feuds.Values.OrderByDescending(f => f.Heat).ToList();
+
         /// <summary>Feuds involving a specific wrestler, hottest first.</summary>
         public IReadOnlyList<Feud> For(Wrestler w) =>
             All.Where(f => f.Involves(w)).ToList();

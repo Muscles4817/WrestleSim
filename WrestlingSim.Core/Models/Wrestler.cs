@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,6 +10,21 @@ namespace WrestlingSim.Models
 {
     public class Wrestler
     {
+        /// <summary>
+        /// Stable identity for saves. Derived from RealName unless the roster data sets
+        /// one explicitly, because RealName is already what FeudBook keys on and is the
+        /// only field guaranteed not to change with a gimmick swap.
+        ///
+        /// A save stores wrestler state against this, so it must stay stable across
+        /// roster edits — rename someone in Wrestlers.json and existing saves lose them.
+        /// </summary>
+        public string Id
+        {
+            get => _id ??= SlugOf(RealName);
+            set => _id = string.IsNullOrWhiteSpace(value) ? null : value;
+        }
+        private string? _id;
+
         public string RingName => Gimmick?.Name;
         public string RealName { get; set; }
         public List<Gimmick> PreviousGimmicks { get; set; }
@@ -79,6 +94,20 @@ namespace WrestlingSim.Models
         public void RemoveSignature(Signature signature)
         {
             Signature.Remove(signature);
+        }
+
+        /// <summary>Lower-case, punctuation-free form of a name, for use as a stable key.</summary>
+        private static string SlugOf(string? name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return "unknown";
+
+            var chars = name.Trim().ToLowerInvariant()
+                .Select(c => char.IsLetterOrDigit(c) ? c : '-');
+
+            // Collapse runs of separators so "J. J.  Smith" and "J-J-Smith" agree.
+            var slug = new string(chars.ToArray());
+            while (slug.Contains("--")) slug = slug.Replace("--", "-");
+            return slug.Trim('-');
         }
 
         public void ChangeName(string name)

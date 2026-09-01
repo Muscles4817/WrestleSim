@@ -1,0 +1,138 @@
+@using Microsoft.AspNetCore.Components.Forms
+@inherits StateComponent
+
+<div class="screen__head">
+    <div class="screen__eyebrow">Wrestling Sim</div>
+    <h1 class="screen__title">Booking System</h1>
+    <p class="screen__lede">
+        You run a promotion. Put shows on the calendar, book the cards, run them, and live
+        with what they did to your roster — heat carries, reputations move, and time only
+        goes one way.
+    </p>
+</div>
+
+@if (State.StorageBlocked)
+{
+    <div class="notice notice--warn">
+        <strong>Autosave is off.</strong> This browser is blocking site data, so careers cannot be
+        stored here. You can still play — use <strong>Export</strong> to keep a save as a file.
+    </div>
+}
+
+@if (State.SaveMessage is { } message)
+{
+    <div class="notice notice--error">
+        @message
+        <button class="btn btn--sm btn--ghost" @onclick="State.ClearMessage">Dismiss</button>
+    </div>
+}
+
+<div class="tiles">
+    <button class="tile" @onclick="() => State.Go(Screen.NewSave)">
+        <div class="tile__key">01</div>
+        <div class="tile__name">New Career</div>
+        <div class="tile__desc">
+            Name a promotion, pick where it sits in the industry, and start booking against a calendar.
+        </div>
+    </button>
+
+    <button class="tile" @onclick="State.EnterExhibition">
+        <div class="tile__key">02</div>
+        <div class="tile__name">Exhibition</div>
+        <div class="tile__desc">
+            Book a one-off match, segment or card with no save and no clock. Nothing persists —
+            it is here to try the engine.
+        </div>
+    </button>
+</div>
+
+<div class="panel mt-2">
+    <div class="panel__title">
+        Your careers
+        <span class="spacer"></span>
+        <span class="small muted">@State.Slots.Count save@(State.Slots.Count == 1 ? "" : "s") in this browser</span>
+    </div>
+
+    @if (State.Slots.Count == 0)
+    {
+        <div class="empty">
+            <div class="empty__mark">◷</div>
+            No careers yet. Start one above, or import a save file.
+        </div>
+    }
+    else
+    {
+        @foreach (var slot in State.Slots)
+        {
+            <div class="editor-row">
+                <div class="editor-row__n">★</div>
+                <div>
+                    <div class="editor-row__name">@slot.PromotionName</div>
+                    <div class="editor-row__sub">
+                        @slot.TierLabel · @slot.CurrentDate.ToString("d MMM yyyy")
+                        · @slot.ShowsRun show@(slot.ShowsRun == 1 ? "" : "s") run
+                    </div>
+                </div>
+                <div class="editor-row__tools">
+                    <button class="btn btn--primary btn--sm" @onclick="() => State.LoadCareerAsync(slot.Key)">
+                        Continue
+                    </button>
+                    <button class="btn btn--icon btn--danger" title="Delete this career"
+                            @onclick="() => Delete(slot)">✕</button>
+                </div>
+            </div>
+
+            @if (confirmingDelete == slot.Key)
+            {
+                <div class="notice notice--warn">
+                    Delete <strong>@slot.PromotionName</strong> permanently? This cannot be undone.
+                    <span class="spacer"></span>
+                    <button class="btn btn--sm btn--danger" @onclick="() => ConfirmDelete(slot)">Delete</button>
+                    <button class="btn btn--sm btn--ghost" @onclick="() => confirmingDelete = null">Cancel</button>
+                </div>
+            }
+        }
+    }
+
+    <div class="row mt">
+        <label class="btn">
+            Import a save…
+            <InputFile OnChange="OnImport" accept=".json" style="display:none" />
+        </label>
+        <span class="spacer"></span>
+    </div>
+</div>
+
+@code {
+    private string? confirmingDelete;
+
+    private void Delete(SaveSlot slot) => confirmingDelete = slot.Key;
+
+    private async Task ConfirmDelete(SaveSlot slot)
+    {
+        confirmingDelete = null;
+        await State.DeleteSaveAsync(slot.Key);
+    }
+
+    private async Task OnImport(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file is null) return;
+
+        // 8 MB is far beyond any real save and keeps a mis-picked file from
+        // being read into memory wholesale.
+        const long maxBytes = 8 * 1024 * 1024;
+
+        try
+        {
+            using var stream = file.OpenReadStream(maxBytes);
+            using var reader = new StreamReader(stream);
+            string json = await reader.ReadToEndAsync();
+            await State.ImportCareerAsync(json);
+        }
+        catch (IOException)
+        {
+            await State.ImportCareerAsync("");   // surfaces the standard read failure message
+        }
+    }
+}

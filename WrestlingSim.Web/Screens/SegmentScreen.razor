@@ -11,7 +11,7 @@
         </p>
     </div>
 
-    <SegmentBuilder OnDone="Run" OnCancel="@(() => State.Go(Screen.Menu))" ConfirmLabel="Run the segment ★" />
+    <SegmentBuilder OnDone="Run" OnCancel="@(() => State.Go(Screen.Exhibition))" ConfirmLabel="Run the segment ★" />
 }
 else
 {
@@ -83,7 +83,7 @@ else
     </div>
 
     <div class="wizard-bar">
-        <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Menu)">← Main menu</button>
+        <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Exhibition)">← Main menu</button>
         <span class="wizard-bar__spacer"></span>
         <button class="btn" @onclick="() => State.Go(Screen.Feuds)">See the feud book</button>
         <button class="btn btn--primary" @onclick="Reset">Book another segment</button>

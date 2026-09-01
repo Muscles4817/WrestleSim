@@ -1,0 +1,247 @@
+@using WrestlingSim.Enums
+@using WrestlingSim.Models.World
+@inherits StateComponent
+
+@if (State.Career is not { } career)
+{
+    <div class="empty"><div class="empty__mark">★</div>No career loaded.</div>
+}
+else
+{
+    <div class="screen__head">
+        <div class="screen__eyebrow">Calendar</div>
+        <h1 class="screen__title">@MonthStart.ToString("MMMM yyyy")</h1>
+        <p class="screen__lede">
+            Today is @career.CurrentDate.ToString("d MMMM yyyy"). A show on the calendar is a
+            commitment — the clock will not move past one until it has been run.
+        </p>
+    </div>
+
+    <div class="row row--between">
+        <button class="btn btn--sm" @onclick="() => Shift(-1)">← @MonthStart.AddMonths(-1).ToString("MMM")</button>
+        <button class="btn btn--sm btn--ghost" @onclick="ToToday">Today</button>
+        <button class="btn btn--sm" @onclick="() => Shift(1)">@MonthStart.AddMonths(1).ToString("MMM") →</button>
+    </div>
+
+    <div class="panel mt">
+        <div class="cal">
+            @foreach (var label in DayLabels)
+            {
+                <div class="cal__dow">@label</div>
+            }
+
+            @foreach (var day in GridDays)
+            {
+                var shows = career.On(day).ToList();
+                var isToday = day == career.CurrentDate;
+                var otherMonth = day.Month != MonthStart.Month;
+                var past = day < career.CurrentDate;
+
+                <button class="cal__day @(isToday ? "is-today" : "") @(otherMonth ? "is-outside" : "") @(past ? "is-past" : "")"
+                        @onclick="() => Select(day)">
+                    <span class="cal__num">@day.Day</span>
+                    @foreach (var show in shows)
+                    {
+                        <span class="cal__show @(show.HasRun ? "is-run" : show.IsBooked ? "is-booked" : "")"
+                              title="@show.Name">
+                            @show.Name
+                        </span>
+                    }
+                </button>
+            }
+        </div>
+    </div>
+
+    @* ── The selected day ────────────────────────────────────────────────── *@
+    @if (selected is { } day2)
+    {
+        var shows = career.On(day2).ToList();
+
+        <div class="panel">
+            <div class="panel__title">
+                @day2.ToString("dddd d MMMM yyyy")
+                <span class="spacer"></span>
+                @if (day2 < career.CurrentDate)
+                {
+                    <span class="badge badge--muted">In the past</span>
+                }
+            </div>
+
+            @if (shows.Count == 0)
+            {
+                <div class="empty">
+                    <div class="empty__mark">◷</div>
+                    Nothing on this date.
+                </div>
+            }
+            else
+            {
+                @foreach (var show in shows)
+                {
+                    <div class="editor-row">
+                        <div class="editor-row__n">@(show.HasRun ? "★" : show.IsBooked ? "▦" : "·")</div>
+                        <div>
+                            <div class="editor-row__name">@show.Name</div>
+                            <div class="editor-row__sub">
+                                @show.TypeLabel · @show.RuntimeMinutes min budget
+                                @if (show.HasRun)
+                                {
+                                    <text> · rated @show.Result!.OverallRating.ToString("F1")</text>
+                                }
+                                else if (show.IsBooked)
+                                {
+                                    <text> · @show.Card.Count item@(show.Card.Count == 1 ? "" : "s") booked</text>
+                                }
+                                else
+                                {
+                                    <text> · nothing booked</text>
+                                }
+                            </div>
+                        </div>
+                        <div class="editor-row__tools">
+                            <button class="btn btn--sm btn--primary" @onclick="() => State.OpenShow(show)">
+                                @(show.HasRun ? "Review" : show.IsBooked ? "Open" : "Book")
+                            </button>
+                            @if (!show.HasRun)
+                            {
+                                <button class="btn btn--icon btn--danger" title="Take off the calendar"
+                                        @onclick="() => State.CancelShowAsync(show)">✕</button>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+
+            @* Scheduling is only forward-looking — you cannot add a show to a date that has passed. *@
+            @if (day2 >= career.CurrentDate)
+            {
+                <div class="mt">
+                    <div class="fields">
+                        <div class="field">
+                            <span class="field__label">Show name</span>
+                            <input class="input" @bind="newName" @bind:event="oninput" maxlength="60"
+                                   placeholder="@DefaultName(career)" />
+                        </div>
+                        <div class="field">
+                            <span class="field__label">Type</span>
+                            <select class="input" @bind="newType">
+                                @foreach (var type in career.Promotion.AvailableShowTypes)
+                                {
+                                    <option value="@type">@Label(type)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="field">
+                            <span class="field__label">Venue</span>
+                            <input class="input" @bind="newVenue" maxlength="60" placeholder="Unknown Arena" />
+                        </div>
+                    </div>
+
+                    <div class="row mt">
+                        <span class="small muted">
+                            @career.Promotion.DefaultRuntimeFor(newType) min budget ·
+                            about @career.Promotion.TypicalCardSizeFor(newType) items ·
+                            @career.Promotion.TypicalAttendanceFor(newType).ToString("N0") expected
+                        </span>
+                        <span class="spacer"></span>
+                        <button class="btn btn--primary" @onclick="() => Schedule(career, day2)">
+                            + Put a show on this date
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <div class="wizard-bar">
+        <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Dashboard)">← Dashboard</button>
+    </div>
+}
+
+@code {
+    private static readonly string[] DayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+    private DateOnly? month;
+    private DateOnly? selected;
+
+    private string newName = "";
+    private string newVenue = "";
+    private ShowType newType = ShowType.Television;
+
+    protected override void OnInitialized()
+    {
+        var career = State.Career;
+        if (career == null) return;
+
+        month = new DateOnly(career.CurrentDate.Year, career.CurrentDate.Month, 1);
+        selected = career.NextShow?.Date ?? career.CurrentDate;
+
+        // Default to a type this promotion can actually run.
+        newType = career.Promotion.AvailableShowTypes.First();
+    }
+
+    private DateOnly MonthStart => month ?? DateOnly.FromDateTime(DateTime.Today);
+
+    /// <summary>
+    /// Six weeks from the Monday on or before the 1st — a fixed grid, so the layout does
+    /// not jump between months.
+    /// </summary>
+    private IEnumerable<DateOnly> GridDays
+    {
+        get
+        {
+            var first = MonthStart;
+            int back = ((int)first.DayOfWeek + 6) % 7;   // Monday-first
+            var start = first.AddDays(-back);
+
+            for (int i = 0; i < 42; i++) yield return start.AddDays(i);
+        }
+    }
+
+    private void Shift(int months)
+    {
+        month = MonthStart.AddMonths(months);
+        selected = null;
+    }
+
+    private void ToToday()
+    {
+        var career = State.Career;
+        if (career == null) return;
+
+        month = new DateOnly(career.CurrentDate.Year, career.CurrentDate.Month, 1);
+        selected = career.CurrentDate;
+    }
+
+    private void Select(DateOnly day)
+    {
+        selected = day;
+
+        // Clicking into a neighbouring month's day should bring that month into view.
+        if (day.Month != MonthStart.Month) month = new DateOnly(day.Year, day.Month, 1);
+    }
+
+    private async Task Schedule(Career career, DateOnly date)
+    {
+        string name = string.IsNullOrWhiteSpace(newName) ? DefaultName(career) : newName.Trim();
+        await State.ScheduleShowAsync(name, date, newType, newVenue.Trim());
+
+        newName = "";
+        newVenue = "";
+    }
+
+    private string DefaultName(Career career) => newType switch
+    {
+        ShowType.Television   => $"{career.Promotion.Name} Weekly",
+        ShowType.PremiumEvent => $"{career.Promotion.Name} Special",
+        _                     => $"{career.Promotion.Name} Live"
+    };
+
+    private static string Label(ShowType type) => type switch
+    {
+        ShowType.Television   => "Television",
+        ShowType.PremiumEvent => "Premium Event",
+        ShowType.HouseShow    => "House Show",
+        _                     => type.ToString()
+    };
+}
