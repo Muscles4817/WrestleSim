@@ -161,7 +161,7 @@ namespace WrestlingSim.Engine
             }
 
             // ── Championships ────────────────────────────────────────────────
-            ResolveTitles(match, engineResult, weight, itemResult, showResult, date, showName);
+            ResolveTitles(match, engineResult, weight, itemResult, showResult, showDate, showName);
 
             // ── Feud ─────────────────────────────────────────────────────────
             // A match between rivals is itself a chapter in the feud.
