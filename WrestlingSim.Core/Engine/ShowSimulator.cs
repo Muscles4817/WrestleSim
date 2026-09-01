@@ -1,6 +1,7 @@
 using WrestlingSim.Enums;
 using WrestlingSim.Models;
 using WrestlingSim.Models.Segment;
+using WrestlingSim.Models.World;
 
 namespace WrestlingSim.Engine
 {
@@ -14,13 +15,22 @@ namespace WrestlingSim.Engine
         private readonly FeudBook _feudBook;
         private readonly int? _seed;
 
+        /// <summary>
+        /// The promotion's belts, when it has any. Optional because exhibition mode books
+        /// matches in a world with no championships in it — a plan can still put a title
+        /// on the line without one, but only the registry can spot a champion losing a
+        /// *non-title* match, which is doc 21 §4.1's whole subject.
+        /// </summary>
+        private readonly TitleRegistry? _titles;
+
         /// <summary>Most a card can lose for running past its allotted runtime.</summary>
         private const double MaxOverrunPenalty = 0.35;
 
-        public ShowSimulator(FeudBook feudBook, int? seed = null)
+        public ShowSimulator(FeudBook feudBook, int? seed = null, TitleRegistry? titles = null)
         {
             _feudBook = feudBook;
             _seed     = seed;
+            _titles   = titles;
         }
 
         public ShowResult Simulate(Show show)
@@ -54,7 +64,7 @@ namespace WrestlingSim.Engine
                 // ── Run it ───────────────────────────────────────────────────
                 double raw = item switch
                 {
-                    BookedMatch match => RunMatch(match, itemResult, result, i, showDate),
+                    BookedMatch match => RunMatch(match, itemResult, result, i, showDate, show.Name),
                     Segment segment   => RunSegment(segment, itemResult, result),
                     _                 => 0
                 };
@@ -115,7 +125,8 @@ namespace WrestlingSim.Engine
         // ── Item execution ───────────────────────────────────────────────────
 
         private double RunMatch(
-            BookedMatch match, CardItemResult itemResult, ShowResult showResult, int index, DateOnly showDate)
+            BookedMatch match, CardItemResult itemResult, ShowResult showResult,
+            int index, DateOnly showDate, string showName)
         {
             // How sick of this pairing the crowd is, read before the match is recorded
             // against it — docs/wrestling-reference/20-storylines-and-feuds.md §9.1.
@@ -149,6 +160,9 @@ namespace WrestlingSim.Engine
                 if (change.IsMeaningful) showResult.StatusChanges.Add(change);
             }
 
+            // ── Championships ────────────────────────────────────────────────
+            ResolveTitles(match, engineResult, weight, itemResult, showResult, showDate, showName);
+
             // ── Feud ─────────────────────────────────────────────────────────
             // A match between rivals is itself a chapter in the feud.
             var update = _feudBook.Record(
@@ -161,6 +175,46 @@ namespace WrestlingSim.Engine
             showResult.FeudUpdates.Add(update);
 
             return engineResult.StarRating * 20.0; // 0–5★ → 0–100
+        }
+
+        /// <summary>
+        /// Applies the result to whatever championship it touched: the belt on the line,
+        /// or — when nothing was on the line — the belts held by whoever just lost.
+        ///
+        /// The second half is doc 21 §4.1. Putting a champion in a non-title match and
+        /// beating them is the standard booking shortcut, and it should cost something
+        /// every single time it is used.
+        /// </summary>
+        private void ResolveTitles(
+            BookedMatch match, Models.MatchPlan.MatchEngineResult engineResult, FinishWeight weight,
+            CardItemResult itemResult, ShowResult showResult, DateOnly date, string showName)
+        {
+            var updates = new List<TitleUpdate>();
+
+            if (match.Plan.TitleAtStake is { } title && !title.Retired)
+            {
+                updates.Add(TitleEconomy.ResolveTitleMatch(
+                    title, engineResult.Winner, engineResult.Loser, weight,
+                    engineResult.StarRating, date, showName));
+            }
+            else if (_titles != null)
+            {
+                foreach (var held in _titles.HeldBy(engineResult.Loser))
+                    updates.Add(TitleEconomy.ApplyNonTitleLoss(held, engineResult.Winner, weight));
+            }
+
+            foreach (var update in updates)
+            {
+                itemResult.Notes.Add(update.Reason);
+
+                if (update.StatusBonus is { } bonus)
+                {
+                    HeatEconomy.Apply(bonus);
+                    showResult.StatusChanges.Add(bonus);
+                }
+
+                if (update.IsMeaningful) showResult.TitleUpdates.Add(update);
+            }
         }
 
         private double RunSegment(Segment segment, CardItemResult itemResult, ShowResult showResult)

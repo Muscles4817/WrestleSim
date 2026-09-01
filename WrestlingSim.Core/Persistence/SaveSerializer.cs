@@ -112,7 +112,32 @@ namespace WrestlingSim.Persistence
                 })
                 .ToList(),
 
-            Shows = career.Shows.Select(ToDto).ToList()
+            Shows = career.Shows.Select(ToDto).ToList(),
+
+            Titles = career.Titles.All.Select(t => new TitleDto
+            {
+                Id          = t.Id,
+                Name        = t.Name,
+                Tier        = t.Tier,
+                Division    = t.Division,
+                Established = Iso(t.Established),
+                Standing    = Math.Round(t.Standing, 3),
+                Retired     = t.Retired,
+                RetiredOn   = t.RetiredOn is { } retired ? Iso(retired) : null,
+                Lineage = t.Lineage.Select(r => new TitleReignDto
+                {
+                    // By id, never by value — the champion is a live roster instance.
+                    Champion     = r.Champion.Id,
+                    ReignNumber  = r.ReignNumber,
+                    Won          = Iso(r.Won),
+                    Lost         = r.Lost is { } lost ? Iso(lost) : null,
+                    LastDefended = r.LastDefended is { } defended ? Iso(defended) : null,
+                    WonAt        = r.WonAt,
+                    LostAt       = r.LostAt,
+                    Defences     = r.Defences,
+                    Vacated      = r.Vacated
+                }).ToList()
+            }).ToList()
         };
 
         private static ShowDto ToDto(ScheduledShow show) => new()
@@ -138,6 +163,7 @@ namespace WrestlingSim.Persistence
                 WrestlerB     = m.Plan.WrestlerB.Id,
                 MatchType     = m.Plan.MatchType,
                 StructureName = m.StructureName,
+                TitleId       = m.Plan.TitleAtStake?.Id,
                 Beats = m.Plan.Beats.Select(b => new BeatDto
                 {
                     Type      = b.Type,
@@ -256,14 +282,77 @@ namespace WrestlingSim.Persistence
                 foreach (var tag in f.History) feud.AddTag(tag);
             }
 
+            RestoreTitles(dto, career, byId);
+
             foreach (var s in dto.Shows)
-                career.Shows.Add(FromDto(s, byId, career.FeudBook));
+                career.Shows.Add(FromDto(s, byId, career.FeudBook, career.Titles));
 
             return career;
         }
 
+        /// <summary>
+        /// Rebuilds the promotion's belts and rebinds every reign to the live roster
+        /// instance rather than a copy.
+        ///
+        /// A save from before championships existed gets the standard slate seeded at the
+        /// career's start date — the alternative is a promotion with no titles at all,
+        /// which is not a state the game otherwise lets you reach.
+        /// </summary>
+        private static void RestoreTitles(SaveGame dto, Career career, Dictionary<string, Wrestler> byId)
+        {
+            if (dto.Titles.Count == 0)
+            {
+                if (dto.Version < 2)
+                    career.Titles.SeedDefaults(career.Promotion.Name, career.StartDate);
+                return;
+            }
+
+            foreach (var t in dto.Titles)
+            {
+                var title = new Title
+                {
+                    Id          = string.IsNullOrWhiteSpace(t.Id) ? Guid.NewGuid().ToString("N") : t.Id,
+                    Name        = t.Name,
+                    Tier        = t.Tier,
+                    Division    = t.Division,
+                    Established = ParseDate(t.Established),
+                    Standing    = Math.Clamp(t.Standing, 0, 100),
+                    Retired     = t.Retired,
+                    RetiredOn   = DateOnly.TryParse(
+                        t.RetiredOn, System.Globalization.CultureInfo.InvariantCulture,
+                        System.Globalization.DateTimeStyles.None, out var retired) ? retired : null
+                };
+
+                foreach (var r in t.Lineage)
+                {
+                    // A reign whose champion is not on this roster is dropped, the same
+                    // rule the rest of the save follows: never resurrect a half-built
+                    // person. ReignNumber is stored, so the numbering left behind still
+                    // reads correctly.
+                    if (!byId.TryGetValue(r.Champion, out var champion)) continue;
+
+                    title.Lineage.Add(new TitleReign
+                    {
+                        Champion     = champion,
+                        ReignNumber  = r.ReignNumber,
+                        Won          = ParseDate(r.Won),
+                        Lost         = ParseOptionalDate(r.Lost),
+                        LastDefended = ParseOptionalDate(r.LastDefended),
+                        WonAt        = r.WonAt,
+                        LostAt       = r.LostAt,
+                        Defences     = r.Defences,
+                        Vacated      = r.Vacated
+                    });
+                }
+
+                career.Titles.Add(title);
+            }
+
+            career.Titles.Rebalance();
+        }
+
         private static ScheduledShow FromDto(
-            ShowDto dto, Dictionary<string, Wrestler> byId, FeudBook feudBook)
+            ShowDto dto, Dictionary<string, Wrestler> byId, FeudBook feudBook, TitleRegistry titles)
         {
             var show = new ScheduledShow
             {
@@ -279,7 +368,7 @@ namespace WrestlingSim.Persistence
 
             foreach (var item in dto.Card)
             {
-                var built = FromDto(item, byId, feudBook);
+                var built = FromDto(item, byId, feudBook, titles);
                 if (built != null) show.Card.Add(built);
             }
 
@@ -289,7 +378,7 @@ namespace WrestlingSim.Persistence
         }
 
         private static ICardItem? FromDto(
-            CardItemDto dto, Dictionary<string, Wrestler> byId, FeudBook feudBook)
+            CardItemDto dto, Dictionary<string, Wrestler> byId, FeudBook feudBook, TitleRegistry titles)
         {
             if (dto.Kind == CardItemKind.Match)
             {
@@ -304,6 +393,9 @@ namespace WrestlingSim.Persistence
                     MatchType = dto.MatchType,
                     // Re-bind to the live feud so a reloaded card reads current heat.
                     Feud      = feudBook.Find(a, b),
+                    // Likewise the belt: the same Title instance the registry holds, so a
+                    // reloaded card can still put it on the line.
+                    TitleAtStake = dto.TitleId is null ? null : titles.Find(dto.TitleId),
                     Beats = dto.Beats.Select(x => new MatchBeat
                     {
                         Type      = x.Type,

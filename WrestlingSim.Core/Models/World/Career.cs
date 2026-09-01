@@ -31,6 +31,13 @@ namespace WrestlingSim.Models.World
         /// <summary>Every feud the booker has going.</summary>
         public FeudBook FeudBook { get; set; } = new();
 
+        /// <summary>
+        /// The promotion's championships. The registry rather than a bare list because
+        /// the fixed-attention rule (doc 21 §2.1) can only be enforced across the whole
+        /// slate at once.
+        /// </summary>
+        public TitleRegistry Titles { get; set; } = new();
+
         /// <summary>Shows scheduled and run, oldest first.</summary>
         public List<ScheduledShow> Shows { get; set; } = new();
 
@@ -90,6 +97,11 @@ namespace WrestlingSim.Models.World
         public IEnumerable<Wrestler> RosterByOverness =>
             Roster.OrderByDescending(w => w.EffectiveOverness);
 
+        // ── Title queries ────────────────────────────────────────────────────
+
+        /// <summary>Belts this person currently holds.</summary>
+        public IReadOnlyList<Title> TitlesHeldBy(Wrestler w) => Titles.HeldBy(w);
+
         // ── Mutation ─────────────────────────────────────────────────────────
 
         /// <summary>
@@ -106,6 +118,12 @@ namespace WrestlingSim.Models.World
             // screen long enough starts to be forgotten — doc 17 §3 and §4.
             foreach (var wrestler in Roster)
                 HeatEconomy.ApplyDailyDecay(wrestler, CurrentDate);
+
+            // A belt nobody is defending is quietly losing value the whole time — doc 21
+            // §4. Being ignored is the fastest killer, so it has to happen on the clock
+            // rather than only when someone books a match.
+            foreach (var title in Titles.Active)
+                TitleEconomy.ApplyDailyDrift(title, CurrentDate);
 
             // Keep the rolling window full, so the calendar never runs dry ahead of you.
             MaterialiseSchedule();

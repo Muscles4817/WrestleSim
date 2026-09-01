@@ -118,6 +118,11 @@ namespace WrestlingSim.Engine
             double baseEnergy = (avgPop / 100.0) * 60.0 + bothOverBonus + connectionLift;
             double feudBonus  = plan.Feud?.StartingEnergyBonus ?? 0;
 
+            // A championship creates stakes the crowd brings with it — doc 21 §1.1 — and
+            // how much of that arrives is exactly the belt's prestige. A devalued title
+            // adds almost nothing, which is the whole point of tracking prestige at all.
+            double titleBonus = plan.TitleAtStake?.StakesBonus ?? 0;
+
             // How loud this pairing can ever get. A card full of people the audience has
             // no investment in tops out well short of a main-event reaction, which is what
             // stops crowd score from being a constant across every match on the show.
@@ -133,25 +138,34 @@ namespace WrestlingSim.Engine
             double lengthStress   = Math.Max(0, plan.Beats.Count - 6) / 6.0;
             double staminaPenalty = lengthStress * (1.0 - ctx.Pair(p => p.Conditioning)) * 34.0;
 
-            // Match-count decay lands here and only here, on the room rather than on the
-            // work — docs/wrestling-reference/20-storylines-and-feuds.md §9.1.
+            // Two rules meet here, and they compose rather than compete.
             //
-            // Two good hands having their fifth match still wrestle it well: the holds are
-            // as clean, the timing is as sharp, the story is as coherent. What has gone is
-            // the appetite. So familiarity scales what the building will give — how loud it
-            // is at the bell and how loud it can ever get — and leaves the technical and
-            // storytelling accumulators completely alone. A stale rematch is a good match
-            // in a flat room, which is exactly what it looks like in life.
+            // Stakes lift the roof: a room that believes the belt matters will go further
+            // for it than the same room would for the same two people in a meaningless
+            // match (docs/wrestling-reference/21-championships.md §1).
             //
-            // The floor drops below the usual 35 because a pairing the crowd is sick of can
-            // be deader than any pairing they simply do not know.
+            // Familiarity then scales the whole room down — on the appetite, not the work
+            // (docs/wrestling-reference/20-storylines-and-feuds.md §9.1). Two good hands
+            // having their fifth match still wrestle it well: the holds are as clean, the
+            // timing as sharp. What has gone is the appetite. So this leaves the technical
+            // and storytelling accumulators completely alone. A stale rematch is a good
+            // match in a flat room, which is what it looks like in life.
+            //
+            // Familiarity is applied last, and to the total, so a title cannot buy a room
+            // out of being sick of a pairing — it can only make the flat version of it
+            // slightly less flat.
+            //
+            // The floor drops below the usual 35 because a pairing the crowd is sick of
+            // can be deader than one they simply do not know.
             double roomForThisPairing =
-                40.0 + pairConnection * 46.0 + (pairCraft - 1.0) * 20.0 - staminaPenalty;
+                40.0 + pairConnection * 46.0 + (pairCraft - 1.0) * 20.0
+                     - staminaPenalty + titleBonus * 0.45;
 
             state.CrowdCeiling = Math.Clamp(roomForThisPairing * ctx.Familiarity, 22, 100);
 
             state.CrowdEnergy = Math.Clamp(
-                (baseEnergy + feudBonus) * ctx.Familiarity, 8, Math.Min(90, state.CrowdCeiling));
+                (baseEnergy + feudBonus + titleBonus) * ctx.Familiarity,
+                8, Math.Min(90, state.CrowdCeiling));
             state.Advantage    = 0;
             state.CrowdPeakEnergy = state.CrowdEnergy;
 

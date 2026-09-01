@@ -16,6 +16,7 @@ public enum Screen
     Calendar,
     Roster,
     Feuds,
+    Titles,
     Shows,
     BookShow,
 
@@ -42,6 +43,9 @@ public class GameState
 
     /// <summary>Feuds for exhibition mode, so sandbox booking never touches a career.</summary>
     private readonly FeudBook _exhibitionFeuds = new();
+
+    /// <summary>Belts for exhibition mode. Always empty — sandbox matches carry no stakes.</summary>
+    private readonly TitleRegistry _exhibitionTitles = new();
 
     public GameState(SaveStore saves) => _saves = saves;
 
@@ -151,6 +155,11 @@ public class GameState
 
         career.ShowDefinitions.AddRange(shows ?? DefaultSlate(promotion));
         career.MaterialiseSchedule();
+
+        // A world title, a secondary title and a women's world title — doc 21 §2's ideal
+        // count, and exactly the attention the audience has. The fourth belt is the
+        // player's decision, and it costs.
+        career.Titles.SeedDefaults(promotion.Name, startDate);
 
         Career = career;
         ActiveShow = null;
@@ -403,12 +412,56 @@ public class GameState
     {
         if (Career == null || show.HasRun || show.Card.Count == 0) return;
 
-        var result = new ShowSimulator(Career.FeudBook).Simulate(show.ToShow());
+        var result = new ShowSimulator(Career.FeudBook, titles: Career.Titles).Simulate(show.ToShow());
         show.Result = result;
 
         if (Career.CurrentDate < show.Date) Career.CurrentDate = show.Date;
 
         ActiveShow = show;
+        await SaveAsync();
+        Notify();
+    }
+
+    // ── Titles ───────────────────────────────────────────────────────────────
+
+    public TitleRegistry Titles => Career?.Titles ?? _exhibitionTitles;
+
+    /// <summary>
+    /// Introduces a belt. Deliberately routed through the registry so the dilution is
+    /// recalculated and every other title on the books immediately reads lower.
+    /// </summary>
+    public async Task CreateTitleAsync(string name, TitleTier tier, Division division)
+    {
+        if (Career == null) return;
+
+        Career.Titles.Create(name, tier, division, Career.CurrentDate);
+        await SaveAsync();
+        Notify();
+    }
+
+    public async Task RetireTitleAsync(Title title)
+    {
+        if (Career == null) return;
+
+        Career.Titles.Retire(title, Career.CurrentDate);
+        await SaveAsync();
+        Notify();
+    }
+
+    public async Task ReviveTitleAsync(Title title)
+    {
+        if (Career == null) return;
+
+        Career.Titles.Revive(title);
+        await SaveAsync();
+        Notify();
+    }
+
+    public async Task VacateTitleAsync(Title title, string reason = "Vacated")
+    {
+        if (Career == null || title.IsVacant) return;
+
+        TitleEconomy.Vacate(title, Career.CurrentDate, reason);
         await SaveAsync();
         Notify();
     }

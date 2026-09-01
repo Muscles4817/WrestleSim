@@ -1,4 +1,5 @@
 using WrestlingSim.Enums;
+using WrestlingSim.Models.World;
 using MatchType = WrestlingSim.Enums.MatchType;
 
 namespace WrestlingSim.Models.MatchPlan
@@ -14,6 +15,22 @@ namespace WrestlingSim.Models.MatchPlan
         public Feud? Feud { get; set; }
 
         public MatchType MatchType { get; set; } = MatchType.Standard;
+
+        /// <summary>
+        /// The championship on the line, or null for a non-title match.
+        ///
+        /// A title creates automatic stakes for any match involving it
+        /// (docs/wrestling-reference/21-championships.md §1.1), so this changes what the
+        /// crowd brings to the opening bell, what the winner takes away, and — via
+        /// <see cref="Engine.TitleEconomy"/> — what the belt itself is worth afterwards.
+        /// </summary>
+        public Title? TitleAtStake { get; set; }
+
+        /// <summary>
+        /// True when the belt is on the line and the champion is one of the two people in
+        /// it. A vacant title is contested by both, which is also a title match.
+        /// </summary>
+        public bool IsTitleMatch => TitleAtStake != null;
 
         // ── Derived / validation ─────────────────────────────────────────────
 
@@ -63,6 +80,21 @@ namespace WrestlingSim.Models.MatchPlan
                 // to WrestlerB while the engine's commentary credited WrestlerA. A finish has
                 // to say who won.
                 errors.Add("Finish beat must be controlled by WrestlerA or WrestlerB — a finish decides who wins.");
+
+            // ── Title ────────────────────────────────────────────────────────
+            if (TitleAtStake is { } title)
+            {
+                if (title.Retired)
+                    errors.Add($"{title.Name} has been retired and cannot be defended.");
+
+                // A champion who is not in the match cannot lose the belt in it, so this
+                // is a non-title match with a misleading label rather than a title match.
+                else if (title.Champion is { } champion
+                         && champion != WrestlerA && champion != WrestlerB)
+                    errors.Add(
+                        $"{title.Name} cannot be on the line here — {champion.RingName} holds it " +
+                        "and is not in this match.");
+            }
 
             // Feud-gated beats require an active feud
             foreach (var beat in Beats)

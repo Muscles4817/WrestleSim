@@ -267,6 +267,8 @@ namespace WrestlingSim.Tests
         [Fact]
         public void ASaveFromANewerVersionIsRejectedWithAReadableMessage()
         {
+            // Pinned to the current version rather than a literal, so bumping the save
+            // format does not turn this into a test that quietly stops testing anything.
             string json = SaveSerializer.ToJson(NewCareer(Roster()))
                 .Replace($"\"Version\":{SaveGame.CurrentVersion}", "\"Version\":99");
 

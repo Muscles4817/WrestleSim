@@ -213,9 +213,10 @@ beats the same three people repeatedly.
 
 ## Sim implications
 
-- **Titles are not currently modelled in WrestleSim.** They are probably the highest-value
-  missing entity — they create automatic stakes, an obvious progression system, and a
-  natural card hierarchy.
+- **Titles are modelled in WrestleSim** as of the championships work: `Title`, `TitleReign`
+  and `TitleRegistry` in `WrestlingSim.Core/Models/World`, with the prestige rules in
+  `WrestlingSim.Core/Engine/TitleEconomy.cs`. Everything below describes what that
+  implements.
 - **Title prestige as a first-class value** that rises and falls per §3 and §4 is the core
   mechanic. It should modify: the crowd's baseline investment in any match for it, the
   status transfer from winning it, and the promotion's overall drawing power.

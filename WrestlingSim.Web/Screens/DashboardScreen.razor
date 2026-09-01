@@ -130,6 +130,49 @@ else
         </div>
     </div>
 
+    @* ── Championships ───────────────────────────────────────────────────── *@
+    <div class="panel mt-2">
+        <div class="panel__title">
+            Championships
+            <span class="spacer"></span>
+            <button class="btn btn--sm btn--ghost" @onclick="() => State.Go(Screen.Titles)">View all</button>
+        </div>
+
+        @foreach (var title in career.Titles.ByPrestige)
+        {
+            <div class="editor-row">
+                <div class="editor-row__n">@(title.IsVacant ? "○" : "★")</div>
+                <div>
+                    <div class="editor-row__name">
+                        @(title.Champion?.RingName ?? "Vacant")
+                    </div>
+                    <div class="editor-row__sub">
+                        @title.Name
+                        @if (title.CurrentReign is { } reign)
+                        {
+                            <text>
+                                · @reign.LengthLabel(career.CurrentDate) ·
+                                @reign.Defences defence@(reign.Defences == 1 ? "" : "s")
+                            </text>
+                        }
+                    </div>
+                </div>
+                <div class="editor-row__tools">
+                    <strong class="tabnum gold">@title.Prestige.ToString("F0")</strong>
+                </div>
+            </div>
+        }
+
+        @if (career.Titles.Dilution < 1)
+        {
+            <p class="small muted mt">
+                @career.Titles.Active.Count belts are competing for an audience that has room
+                for fewer. Each is worth @((100 - career.Titles.Dilution * 100).ToString("F0"))%
+                less than it has earned.
+            </p>
+        }
+    </div>
+
     @* ── Feuds ───────────────────────────────────────────────────────────── *@
     <div class="panel mt-2">
         <div class="panel__title">
