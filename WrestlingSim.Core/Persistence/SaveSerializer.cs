@@ -362,6 +362,7 @@ namespace WrestlingSim.Persistence
                 Kind            = i.Kind,
                 DurationMinutes = i.DurationMinutes,
                 Score           = i.Score,
+                StarRating      = i.StarRating,
                 Notes           = new List<string>(i.Notes)
             }).ToList()
         };
