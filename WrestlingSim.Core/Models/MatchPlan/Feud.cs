@@ -206,6 +206,18 @@ namespace WrestlingSim.Models.MatchPlan
             LastMatchDate      = lastMatchDate;
         }
 
+        /// <summary>
+        /// Ends the feud, keeping its history. The two have not stopped having been
+        /// rivals — they have stopped having anywhere to be rivals, which is what a draft
+        /// does to a pairing it separates
+        /// (docs/wrestling-reference/22-brand-splits.md §5.1).
+        /// </summary>
+        public void Conclude()
+        {
+            Heat = 0;
+            Intensity = FeudIntensity.None;
+        }
+
         /// <summary>Stamps a history tag onto the feud. Duplicates are ignored.</summary>
         public bool AddTag(FeudHistoryTag tag)
         {

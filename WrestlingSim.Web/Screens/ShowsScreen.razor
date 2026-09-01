@@ -56,6 +56,12 @@ else
                     <span class="badge @(definition.Type == ShowType.PremiumEvent ? "badge--gold" : "badge--cyan")">
                         @Label(definition.Type)
                     </span>
+                    @if (career.Brands.Active)
+                    {
+                        <span class="badge @(career.BrandOfShow(definition) is null ? "badge--muted" : "badge--face")">
+                            @(career.BrandOfShow(definition)?.Name ?? "Company-wide")
+                        </span>
+                    }
                     <span class="muted">
                         @definition.RecurrenceLabel
                         · @(definition.RuntimeMinutes ?? career.Promotion.DefaultRuntimeFor(definition.Type)) min
@@ -81,6 +87,27 @@ else
                     <button class="btn btn--icon btn--danger" title="Delete this show"
                             @onclick="() => confirmingDelete = definition.Id">✕</button>
                 </div>
+
+                @if (career.Brands.Active)
+                {
+                    @* A brand needs its own television to be a brand at all — doc 22 §1.
+                       Leaving a date company-wide is the inter-brand event of §3.4, the one
+                       show where nobody is crossing over because there is no line to cross. *@
+                    <div class="row small mt">
+                        <span class="muted">Runs on:</span>
+                        @foreach (var brand in career.Brands.Brands)
+                        {
+                            <button class="btn btn--sm @(definition.BrandId == brand.Id ? "btn--primary" : "btn--ghost")"
+                                    @onclick="() => State.SetShowBrandAsync(definition, brand.Id)">
+                                @brand.Name
+                            </button>
+                        }
+                        <button class="btn btn--sm @(definition.BrandId is null ? "btn--primary" : "btn--ghost")"
+                                @onclick="() => State.SetShowBrandAsync(definition, null)">
+                            Both brands
+                        </button>
+                    </div>
+                }
 
                 @if (confirmingDelete == definition.Id)
                 {

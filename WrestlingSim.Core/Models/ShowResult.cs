@@ -35,9 +35,54 @@ namespace WrestlingSim.Models
         /// <summary>Crowd mood at the final bell, 0–10.</summary>
         public double FinalCrowdMood { get; set; }
 
+        /// <summary>
+        /// What this show did to the brand split, when it belonged to a brand. Null on a
+        /// company-wide show and on any show run by a promotion that has not split.
+        /// </summary>
+        public BrandShowReport? Brand { get; set; }
+
         /// <summary>Kept for compatibility with the old label-to-score view.</summary>
         public Dictionary<string, double> Breakdown =>
             Items.ToDictionary(i => i.Label, i => i.Score);
+    }
+
+    /// <summary>One person who worked a show that was not their brand's.</summary>
+    public sealed class CrossoverNote
+    {
+        public required string Wrestler { get; init; }
+        public required string HomeBrand { get; init; }
+
+        /// <summary>Split integrity this appearance cost.</summary>
+        public double Cost { get; init; }
+
+        /// <summary>Fraction added to the items they worked, as a short-term draw.</summary>
+        public double Attraction { get; init; }
+    }
+
+    /// <summary>
+    /// A brand show's effect on the split. Reported so the cost of a crossover is visible
+    /// on the night it is paid rather than only in the aggregate months later
+    /// (docs/wrestling-reference/22-brand-splits.md §4.1).
+    /// </summary>
+    public sealed class BrandShowReport
+    {
+        public required string BrandName { get; init; }
+
+        public double IntegrityBefore { get; init; }
+        public double IntegrityAfter { get; init; }
+
+        /// <summary>The most integrity can ever be restored to, after this show.</summary>
+        public double Ceiling { get; init; }
+
+        public List<CrossoverNote> Crossovers { get; init; } = new();
+
+        /// <summary>Multiplier applied to overness won on this show.</summary>
+        public double StarMakingFactor { get; init; } = 1.0;
+
+        /// <summary>Bonus this show took for keeping to its own roster. Zero if it did not.</summary>
+        public double ExclusivityBonus { get; init; }
+
+        public bool WasExclusive => Crossovers.Count == 0;
     }
 
     public class CardItemResult

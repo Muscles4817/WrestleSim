@@ -1,0 +1,109 @@
+@inject GameState State
+
+@*
+    The draft board. Brands alternate in snake order and the player picks for whoever is
+    on the clock — or lets the board pick, which is the honest option when a draft is
+    meant to be partly out of your hands.
+
+    docs/wrestling-reference/22-brand-splits.md §5.1.
+*@
+
+<div class="screen__head">
+    <div class="screen__eyebrow">
+        Round @Board.Round · @Board.Picks.Count of @(Board.Picks.Count + Board.Available.Count) picked
+    </div>
+    <h1 class="screen__title">The draft</h1>
+    <p class="screen__lede">
+        Every roster is refreshed at once. Pairings go back to fresh, feuds the draft
+        separates end, and brand membership means something again for a while.
+    </p>
+</div>
+
+<div class="panel">
+    <div class="panel__title">
+        @if (Board.OnTheClock is { } onTheClock)
+        {
+            <span style="color:@onTheClock.Colour">@onTheClock.Name is on the clock</span>
+        }
+        else
+        {
+            <span>Board complete</span>
+        }
+        <span class="spacer"></span>
+        @if (!Board.Complete)
+        {
+            <button class="btn btn--sm btn--ghost" @onclick="State.DraftAutoPick">Let them pick</button>
+            <button class="btn btn--sm btn--ghost" @onclick="State.DraftAutoComplete">Run the rest</button>
+        }
+    </div>
+
+    @if (!Board.Complete)
+    {
+        <div class="picks picks--2">
+            @foreach (var w in Board.Available.Take(24))
+            {
+                <button class="pick" @onclick="() => State.DraftPick(w)">
+                    <span class="pick__body">
+                        <span class="pick__name">@w.RingName</span>
+                        <span class="pick__desc">
+                            @w.CardPosition.Label()
+                            @if (State.Split.BrandOf(w) is { } was) { <text> · was @was.Name</text> }
+                        </span>
+                    </span>
+                    <span class="pick__meta">Over @w.OvernessDisplay</span>
+                </button>
+            }
+        </div>
+
+        @if (Board.Available.Count > 24)
+        {
+            <p class="small muted mt">
+                @(Board.Available.Count - 24) more below the top of the board. Run the rest to
+                fill them in.
+            </p>
+        }
+    }
+</div>
+
+@* ── What each brand has taken ─────────────────────────────────────────── *@
+@foreach (var brand in Board.Brands)
+{
+    var taken = Board.Picks.Where(p => p.To.Id == brand.Id).ToList();
+    <div class="panel">
+        <div class="panel__title">
+            <span style="color:@brand.Colour">@brand.Name</span>
+            <span class="spacer"></span>
+            <span class="small muted">@taken.Count picked</span>
+        </div>
+        @if (taken.Count == 0)
+        {
+            <div class="empty">Nothing yet.</div>
+        }
+        else
+        {
+            <div class="row small" style="flex-wrap:wrap;gap:6px">
+                @foreach (var pick in taken)
+                {
+                    <span class="badge @(pick.IsMove ? "badge--gold" : "badge--muted")">
+                        @pick.Wrestler.RingName
+                    </span>
+                }
+            </div>
+            <p class="small muted mt">
+                @taken.Count(p => p.IsMove) of @taken.Count changed brand.
+            </p>
+        }
+    </div>
+}
+
+<div class="wizard-bar wizard-bar--sticky">
+    <button class="btn btn--ghost" @onclick="State.CancelDraft">← Abandon the draft</button>
+    <span class="wizard-bar__spacer"></span>
+    <button class="btn btn--primary" disabled="@(!Board.Complete)" @onclick="State.CompleteDraftAsync">
+        Confirm the draft ◫
+    </button>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public DraftBoard Board { get; set; } = default!;
+}

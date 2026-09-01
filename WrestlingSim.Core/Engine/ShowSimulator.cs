@@ -14,6 +14,7 @@ namespace WrestlingSim.Engine
     {
         private readonly FeudBook _feudBook;
         private readonly int? _seed;
+        private readonly BrandContext? _brands;
 
         /// <summary>
         /// The promotion's belts, when it has any. Optional because exhibition mode books
@@ -26,11 +27,16 @@ namespace WrestlingSim.Engine
         /// <summary>Most a card can lose for running past its allotted runtime.</summary>
         private const double MaxOverrunPenalty = 0.35;
 
-        public ShowSimulator(FeudBook feudBook, int? seed = null, TitleRegistry? titles = null)
+        public ShowSimulator(
+            FeudBook feudBook,
+            int? seed = null,
+            TitleRegistry? titles = null,
+            BrandContext? brands = null)
         {
             _feudBook = feudBook;
             _seed     = seed;
             _titles   = titles;
+            _brands   = brands;
         }
 
         public ShowResult Simulate(Show show)
@@ -49,6 +55,28 @@ namespace WrestlingSim.Engine
             // was written — see MatchEngine.Execute.
             var showDate = DateOnly.FromDateTime(show.Date);
 
+            // ── Brands ───────────────────────────────────────────────────────
+            // Read once, before anything on the card has run: the crossover bonus and the
+            // star-making penalty are both priced at the integrity the show started with,
+            // so the cost of tonight's crossovers is paid by later shows, not this one.
+            bool branded    = _brands is { Enforced: true };
+            var  split      = _brands?.Split;
+            var  homeBrand  = _brands?.HomeBrand;
+            double integrity = branded ? split!.Integrity : 100;
+
+            var crossovers = branded
+                ? BrandIntegrity.Detect(show.Card, split!, homeBrand)
+                : Array.Empty<Crossover>();
+
+            var crossoverById = crossovers.ToDictionary(
+                c => c.Wrestler.Id, StringComparer.OrdinalIgnoreCase);
+
+            // A brand that cannot make its own stars is not a brand. Both halves of this
+            // are doc 22: §4.1 for integrity, §4.2 for the B-show spiral.
+            double starMaking = branded
+                ? BrandIntegrity.StarMakingFactor(integrity) * BrandIntegrity.StandingFactor(homeBrand!, split!)
+                : 1.0;
+
             for (int i = 0; i < show.Card.Count; i++)
             {
                 var item = show.Card[i];
@@ -64,10 +92,29 @@ namespace WrestlingSim.Engine
                 // ── Run it ───────────────────────────────────────────────────
                 double raw = item switch
                 {
-                    BookedMatch match => RunMatch(match, itemResult, result, i, showDate, show.Name),
+                    BookedMatch match => RunMatch(
+                        match, itemResult, result, i, showDate, show.Name, starMaking),
                     Segment segment   => RunSegment(segment, itemResult, result),
                     _                 => 0
                 };
+
+                // ── The crossover, paid out ──────────────────────────────────
+                // Someone who is not supposed to be here is an event, and the audience
+                // responds to it. This is the locally correct decision every time — and it
+                // is worth less every time, because the bonus scales with an integrity that
+                // this same booking is spending. Doc 22 §4.1.
+                double attraction = item.Wrestlers
+                    .Where(w => crossoverById.ContainsKey(w.Id))
+                    .Select(w => BrandIntegrity.AttractionBonus(w, integrity))
+                    .DefaultIfEmpty(0)
+                    .Max();
+
+                if (attraction > 0)
+                {
+                    raw *= 1 + attraction;
+                    itemResult.Notes.Add(
+                        $"Crossover appearance — a name from another brand (+{attraction * 100:F0}%).");
+                }
 
                 itemResult.RawScore = raw;
                 double score = raw;
@@ -103,6 +150,18 @@ namespace WrestlingSim.Engine
 
             double overall = weightSum > 0 ? totalScore / weightSum : 0;
 
+            // ── Brand-based stakes ───────────────────────────────────────────
+            // A show that kept to its own roster is worth a little more, because the
+            // audience believes the brand is a real place with a real top of the card. That
+            // belief is exactly what integrity measures, so the bonus disappears with it —
+            // doc 22 §3.4 on stakes, §4.1 on where they go.
+            double exclusivity = 0;
+            if (branded && crossovers.Count == 0)
+            {
+                exclusivity = BrandIntegrity.ExclusivityBonus(integrity);
+                overall *= 1 + exclusivity;
+            }
+
             // Everyone who worked the show was seen tonight. Absence is measured from here,
             // so this has to happen for every appearance, not just the ones that won.
             foreach (var wrestler in show.Card.SelectMany(i => i.Wrestlers).Distinct())
@@ -119,14 +178,75 @@ namespace WrestlingSim.Engine
             result.OverallRating  = Math.Round(Math.Clamp(overall, 0, 100), 2);
             result.FinalCrowdMood = crowdMood;
 
+            if (branded) result.Brand = SettleBrand(
+                show, split!, homeBrand!, crossovers, integrity, starMaking, exclusivity, result.OverallRating);
+
             return result;
+        }
+
+        // ── Brands ───────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Charges the show's crossovers to the split and records the brand's form.
+        ///
+        /// This is where the erosion is actually committed, and it is deliberately after
+        /// the card has been scored: the player sees the rating the crossover bought before
+        /// they see what it cost, which is the order in which the decision looks correct.
+        /// </summary>
+        private static BrandShowReport SettleBrand(
+            Show show,
+            BrandSplit split,
+            Brand homeBrand,
+            IReadOnlyList<Crossover> crossovers,
+            double integrityBefore,
+            double starMaking,
+            double exclusivity,
+            double overallRating)
+        {
+            var date = DateOnly.FromDateTime(show.Date);
+            var notes = new List<CrossoverNote>();
+
+            foreach (var crossover in crossovers)
+            {
+                split.ApplyCrossover(new CrossoverRecord
+                {
+                    WrestlerId    = crossover.Wrestler.Id,
+                    WrestlerName  = crossover.Wrestler.RingName ?? crossover.Wrestler.RealName,
+                    HomeBrandName = crossover.Home.Name,
+                    ShowBrandName = crossover.ShowBrand.Name,
+                    ShowName      = show.Name,
+                    Date          = date,
+                    Cost          = crossover.Cost
+                }, BrandIntegrity.PermanentShare);
+
+                notes.Add(new CrossoverNote
+                {
+                    Wrestler   = crossover.Wrestler.RingName ?? crossover.Wrestler.RealName,
+                    HomeBrand  = crossover.Home.Name,
+                    Cost       = crossover.Cost,
+                    Attraction = BrandIntegrity.AttractionBonus(crossover.Wrestler, integrityBefore)
+                });
+            }
+
+            homeBrand.RecordShow(overallRating);
+
+            return new BrandShowReport
+            {
+                BrandName        = homeBrand.Name,
+                IntegrityBefore  = integrityBefore,
+                IntegrityAfter   = split.Integrity,
+                Ceiling          = split.Ceiling,
+                Crossovers       = notes,
+                StarMakingFactor = starMaking,
+                ExclusivityBonus = exclusivity
+            };
         }
 
         // ── Item execution ───────────────────────────────────────────────────
 
         private double RunMatch(
             BookedMatch match, CardItemResult itemResult, ShowResult showResult,
-            int index, DateOnly showDate, string showName)
+            int index, DateOnly showDate, string showName, double starMaking)
         {
             // How sick of this pairing the crowd is, read before the match is recorded
             // against it — docs/wrestling-reference/20-storylines-and-feuds.md §9.1.
@@ -154,8 +274,15 @@ namespace WrestlingSim.Engine
             var outcome = HeatEconomy.ForMatch(
                 engineResult.Winner, engineResult.Loser, engineResult.StarRating, weight, familiarity);
 
-            foreach (var change in outcome.All)
+            foreach (var raw in outcome.All)
             {
+                // Overness *won* on a brand show is scaled by what the brand is worth.
+                // Losses are not: a bad night costs the same wherever it happens, and
+                // making the B-show a safe place to lose would invert the whole point.
+                var change = starMaking < 1.0 && raw.OvernessDelta > 0
+                    ? raw with { OvernessDelta = raw.OvernessDelta * starMaking }
+                    : raw;
+
                 HeatEconomy.Apply(change);
                 if (change.IsMeaningful) showResult.StatusChanges.Add(change);
             }

@@ -23,6 +23,14 @@ namespace WrestlingSim.Models.World
         public ShowType Type { get; set; } = ShowType.Television;
         public string Venue { get; set; } = "";
 
+        /// <summary>
+        /// The brand running this date, by <see cref="Brand.Id"/>, or null for a
+        /// company-wide show. Copied from the definition when the date is materialised and
+        /// then owned by the instance, so moving one date to the other brand does not move
+        /// the whole series.
+        /// </summary>
+        public string? BrandId { get; set; }
+
         /// <summary>Runtime budget in minutes. Seeded from the promotion's tier.</summary>
         public int RuntimeMinutes { get; set; } = 120;
 

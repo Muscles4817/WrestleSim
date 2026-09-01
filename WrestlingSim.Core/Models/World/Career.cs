@@ -48,6 +48,13 @@ namespace WrestlingSim.Models.World
         public List<ShowDefinition> ShowDefinitions { get; set; } = new();
 
         /// <summary>
+        /// The promotion's brand structure, and how much of it is still real. Inactive
+        /// until the player splits the roster.
+        /// See docs/wrestling-reference/22-brand-splits.md.
+        /// </summary>
+        public BrandSplit Brands { get; set; } = new();
+
+        /// <summary>
         /// How far ahead the calendar is filled in from the definitions. Kept as a
         /// rolling window rather than generating years at once, and topped up whenever
         /// the clock moves.
@@ -101,6 +108,34 @@ namespace WrestlingSim.Models.World
 
         /// <summary>Belts this person currently holds.</summary>
         public IReadOnlyList<Title> TitlesHeldBy(Wrestler w) => Titles.HeldBy(w);
+
+        // ── Brand queries ────────────────────────────────────────────────────
+
+        /// <summary>The brand running a given date, or null when it is a company-wide show.</summary>
+        public Brand? BrandOfShow(ScheduledShow show) =>
+            Brands.Active ? Brands.Find(show.BrandId) : null;
+
+        public Brand? BrandOfShow(ShowDefinition definition) =>
+            Brands.Active ? Brands.Find(definition.BrandId) : null;
+
+        /// <summary>
+        /// The live wrestler instances on a brand, most over first. Brand membership is
+        /// stored by id, so this is the only place ids become people.
+        /// </summary>
+        public IEnumerable<Wrestler> RosterOf(Brand brand) =>
+            Roster.Where(w => brand.Contains(w.Id)).OrderByDescending(w => w.EffectiveOverness);
+
+        /// <summary>
+        /// Who can work a given show without it counting as a crossover: the brand's own
+        /// roster plus anyone unassigned, or everybody when the show has no brand.
+        /// </summary>
+        public IEnumerable<Wrestler> EligibleFor(ScheduledShow show)
+        {
+            var brand = BrandOfShow(show);
+            if (brand is null) return Roster;
+
+            return Roster.Where(w => brand.Contains(w.Id) || Brands.BrandOf(w.Id) is null);
+        }
 
         // ── Mutation ─────────────────────────────────────────────────────────
 
@@ -180,6 +215,7 @@ namespace WrestlingSim.Models.World
                         Type           = definition.Type,
                         Venue          = definition.Venue,
                         DefinitionId   = definition.Id,
+                        BrandId        = definition.BrandId,
                         RuntimeMinutes = definition.RuntimeMinutes ?? Promotion.DefaultRuntimeFor(definition.Type),
                         Attendance     = Promotion.TypicalAttendanceFor(definition.Type)
                     };
@@ -252,6 +288,41 @@ namespace WrestlingSim.Models.World
         public void Cancel(ScheduledShow show)
         {
             if (!show.HasRun) Shows.Remove(show);
+        }
+
+        // ── Brands ───────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Divides the promotion. The brands arrive with their rosters already assigned;
+        /// this is the moment the structure starts being enforced.
+        ///
+        /// Integrity resets to the ceiling rather than to 100. A promotion that split,
+        /// abandoned it and split again does not get a clean sheet — the audience was
+        /// already shown once that the line moves when it is convenient
+        /// (docs/wrestling-reference/22-brand-splits.md §4.1).
+        /// </summary>
+        public void BeginSplit(IEnumerable<Brand> brands)
+        {
+            Brands.Brands.Clear();
+            Brands.Brands.AddRange(brands);
+
+            Brands.Active      = true;
+            Brands.StartedOn   = CurrentDate;
+            Brands.LastDraftOn = null;
+            Brands.Integrity   = Brands.Ceiling;
+        }
+
+        /// <summary>
+        /// Ends the split and returns every show to the whole roster. Erosion already
+        /// booked is kept on the split so a later attempt starts from where this one
+        /// finished.
+        /// </summary>
+        public void EndSplit()
+        {
+            Brands.End();
+
+            foreach (var definition in ShowDefinitions) definition.BrandId = null;
+            foreach (var show in Shows.Where(s => !s.HasRun)) show.BrandId = null;
         }
     }
 }

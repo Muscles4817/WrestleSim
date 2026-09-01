@@ -98,13 +98,21 @@
         <div class="panel">
             <div class="panel__title">Cast <span class="spacer"></span><span class="small muted">@cast.Count selected</span></div>
             <CastFilter Query="@castQuery" QueryChanged="@(v => castQuery = v)"
-                        Division="@castDivision" DivisionChanged="@(v => castDivision = v)" />
+                        Division="@castDivision" DivisionChanged="@(v => castDivision = v)"
+                        HomeBrand="@State.BookingBrand"
+                        IncludeCrossover="@includeCrossover" IncludeCrossoverChanged="@(v => includeCrossover = v)" />
             <div class="picks picks--2">
                 @foreach (var w in FilteredRoster())
                 {
                     <button class="pick @(cast.Contains(w) ? "is-selected" : "")" @onclick="() => ToggleCast(w)">
                         <span class="pick__body">
-                            <span class="pick__name">@w.RingName</span>
+                            <span class="pick__name">
+                                @w.RingName
+                                @if (State.IsCrossover(w))
+                                {
+                                    <span class="badge badge--heel">crossover −@BrandIntegrity.CostOf(w).ToString("F1")</span>
+                                }
+                            </span>
                             <span class="pick__desc">Cha @w.Charisma.ToString("F1") · Psych @(w.Mental?.Psychology ?? 0)</span>
                         </span>
                     </button>
@@ -116,6 +124,11 @@
     {
         <div class="panel">
             <div class="panel__title">Cast — @template.Name</div>
+
+            <CastFilter Query="@castQuery" QueryChanged="@(v => castQuery = v)"
+                        Division="@castDivision" DivisionChanged="@(v => castDivision = v)"
+                        HomeBrand="@State.BookingBrand"
+                        IncludeCrossover="@includeCrossover" IncludeCrossoverChanged="@(v => includeCrossover = v)" />
 
             @for (int r = 0; r < template.ParticipantRoles.Count; r++)
             {
@@ -129,7 +142,13 @@
                             <button class="pick @(RoleAt(roleIndex) == w ? "is-selected" : "")"
                                     @onclick="() => AssignRole(roleIndex, w)">
                                 <span class="pick__body">
-                                    <span class="pick__name">@w.RingName</span>
+                                    <span class="pick__name">
+                                        @w.RingName
+                                        @if (State.IsCrossover(w))
+                                        {
+                                            <span class="badge badge--heel">crossover</span>
+                                        }
+                                    </span>
                                     <span class="pick__desc">Cha @w.Charisma.ToString("F1") · Tough @(w.Mental?.Toughness ?? 0)</span>
                                 </span>
                             </button>
@@ -357,9 +376,13 @@
     private string castQuery = "";
     private Division? castDivision;
 
-    /// <summary>Roster narrowed by the search box and division chips, most over first.</summary>
+    /// <summary>Whether the other brands' rosters are on offer. Off by default on a brand show.</summary>
+    private bool includeCrossover;
+
+    /// <summary>Roster narrowed by the search box, division chips and brand, most over first.</summary>
     private IEnumerable<Wrestler> FilteredRoster() =>
         State.Roster
+            .Where(w => includeCrossover || !State.IsCrossover(w))
             .Where(w => castDivision is null || w.Division == castDivision)
             .Where(w => string.IsNullOrWhiteSpace(castQuery)
                      || (w.RingName?.Contains(castQuery, StringComparison.OrdinalIgnoreCase) ?? false)

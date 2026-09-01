@@ -45,6 +45,10 @@
                         <div class="rcard__real">@w.RealName · @w.Style</div>
                     </div>
                     <div class="rcard__badges">
+                        @if (State.BrandOf(w) is { } brand)
+                        {
+                            <span class="badge badge--cyan">@brand.Name</span>
+                        }
                         <Trend Momentum="w.Momentum" ShowLabel="false" />
                         <span class="badge @AlignBadge(w)">@(w.Gimmick?.NaturalAlignment.ToString() ?? "—")</span>
                     </div>
@@ -103,6 +107,7 @@
                     <th>Name</th>
                     <th>Division</th>
                     <th>Gimmick</th>
+                    @if (State.IsSplit) { <th>Brand</th> }
                     <th>Align</th>
                     <th>Style</th>
                     <th class="num">Pop</th>
@@ -122,6 +127,10 @@
                         </td>
                         <td class="small muted nowrap">@(w.Division == Division.Womens ? "Women's" : "Men's")</td>
                         <td class="small muted">@(w.Gimmick?.Type.ToString() ?? "—")</td>
+                        @if (State.IsSplit)
+                        {
+                            <td class="small muted nowrap">@(State.BrandOf(w)?.Name ?? "—")</td>
+                        }
                         <td><span class="badge @AlignBadge(w)">@(w.Gimmick?.NaturalAlignment.ToString() ?? "—")</span></td>
                         <td class="small muted nowrap">@w.Style</td>
                         <td class="num">@w.OvernessDisplay</td>

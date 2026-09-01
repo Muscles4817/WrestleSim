@@ -14,7 +14,18 @@
 @if (step == 0)
 {
     <CastFilter Query="@rosterQuery" QueryChanged="@(v => rosterQuery = v)"
-                Division="@rosterDivision" DivisionChanged="@(v => rosterDivision = v)" />
+                Division="@rosterDivision" DivisionChanged="@(v => rosterDivision = v)"
+                HomeBrand="@State.BookingBrand"
+                IncludeCrossover="@includeCrossover" IncludeCrossoverChanged="@(v => includeCrossover = v)" />
+
+    @if (State.BookingBrand is { } home && includeCrossover)
+    {
+        <div class="notice notice--warn">
+            <strong>Anyone outside @home.Name is a crossover.</strong>
+            It is worth something on the night and it takes a permanent bite out of what the
+            split means. Names from another brand are marked below with what they cost.
+        </div>
+    }
 
     <div class="panel">
         <div class="panel__title">
@@ -36,7 +47,13 @@
                 {
                     <button class="pick @(a == w ? "is-selected" : "")" @onclick="() => PickA(w)">
                         <span class="pick__body">
-                            <span class="pick__name">@w.RingName</span>
+                            <span class="pick__name">
+                                @w.RingName
+                                @if (State.IsCrossover(w))
+                                {
+                                    <span class="badge badge--heel">crossover −@BrandIntegrity.CostOf(w).ToString("F1")</span>
+                                }
+                            </span>
                             <span class="pick__desc">@w.Style · @(w.Gimmick?.NaturalAlignment.ToString() ?? "—")</span>
                         </span>
                         <span class="pick__meta">Pop @w.Overness.ToString("F0")<br />Cha @w.Charisma.ToString("F1")</span>
@@ -70,7 +87,13 @@
                     {
                         <button class="pick @(b == w ? "is-selected" : "")" @onclick="() => PickB(w)">
                             <span class="pick__body">
-                                <span class="pick__name">@w.RingName</span>
+                                <span class="pick__name">
+                                    @w.RingName
+                                    @if (State.IsCrossover(w))
+                                    {
+                                        <span class="badge badge--heel">crossover −@BrandIntegrity.CostOf(w).ToString("F1")</span>
+                                    }
+                                </span>
                                 <span class="pick__desc">@w.Style · @(w.Gimmick?.NaturalAlignment.ToString() ?? "—")</span>
                             </span>
                             <span class="pick__meta">Pop @w.Overness.ToString("F0")<br />Cha @w.Charisma.ToString("F1")</span>
@@ -494,12 +517,19 @@
     private Division? rosterDivision;
 
     /// <summary>
-    /// The roster narrowed by the search box and division chips. With thirty wrestlers a
-    /// flat alphabetical wall is unusable on a phone, so the picker filters and then groups
-    /// by card position.
+    /// Whether the other brands' rosters are on offer. Off by default, because the default
+    /// on a brand show is the brand's own roster — that is what exclusivity means.
+    /// </summary>
+    private bool includeCrossover;
+
+    /// <summary>
+    /// The roster narrowed by the search box, division chips and brand. With thirty
+    /// wrestlers a flat alphabetical wall is unusable on a phone, so the picker filters and
+    /// then groups by card position.
     /// </summary>
     private IEnumerable<Wrestler> FilteredRoster() =>
         State.Roster
+            .Where(w => includeCrossover || !State.IsCrossover(w))
             .Where(w => rosterDivision is null || w.Division == rosterDivision)
             .Where(w => string.IsNullOrWhiteSpace(rosterQuery)
                      || (w.RingName?.Contains(rosterQuery, StringComparison.OrdinalIgnoreCase) ?? false)

@@ -1,3 +1,4 @@
+using WrestlingSim.Engine;
 using WrestlingSim.Enums;
 using WrestlingSim.Models;
 using WrestlingSim.Models.MatchPlan;
@@ -262,6 +263,153 @@ namespace WrestlingSim.Tests
             Assert.Null(loaded.FindWrestler("gamma-three"));
             Assert.Empty(loaded.FeudBook.AllIncludingDormant);
             Assert.Empty(loaded.Shows.Single().Card);
+        }
+
+        // -- Brands -----------------------------------------------------------
+
+        [Fact]
+        public void RoundTripKeepsTheSplitAndItsRosters()
+        {
+            var roster = Roster();
+            var career = NewCareer(roster);
+
+            var red  = new Brand { Name = "Red",  Identity = "Sports-focused", Colour = "#ff0000" };
+            var blue = new Brand { Name = "Blue", Identity = "Glossier" };
+            career.BeginSplit([red, blue]);
+
+            career.Brands.Assign(roster[0], red);
+            career.Brands.Assign(roster[1], blue);
+            red.RecordShow(72.5);
+
+            var loaded = RoundTrip(career);
+            var loadedRed = loaded.Brands.Brands.Single(b => b.Name == "Red");
+
+            Assert.True(loaded.Brands.Active);
+            Assert.Equal(2, loaded.Brands.Brands.Count);
+            Assert.Equal("Sports-focused", loadedRed.Identity);
+            Assert.Equal("#ff0000", loadedRed.Colour);
+            Assert.Equal(new DateOnly(2025, 1, 6), loaded.Brands.StartedOn);
+            Assert.Equal(72.5, loadedRed.Form);
+
+            Assert.Equal("Red", loaded.Brands.BrandOf("alpha-one")!.Name);
+            Assert.Equal("Blue", loaded.Brands.BrandOf("beta-two")!.Name);
+            Assert.Null(loaded.Brands.BrandOf("gamma-three"));
+        }
+
+        [Fact]
+        public void LoadedBrandRostersAreTheSameInstancesTheRosterHolds()
+        {
+            var roster = Roster();
+            var career = NewCareer(roster);
+
+            var red = new Brand { Name = "Red" };
+            career.BeginSplit([red, new Brand { Name = "Blue" }]);
+            career.Brands.Assign(roster[0], red);
+
+            var loaded = RoundTrip(career);
+            var loadedRed = loaded.Brands.Brands.Single(b => b.Name == "Red");
+
+            // Brand membership is stored by id precisely so this holds: resolving it must
+            // produce the roster's own objects, not copies.
+            var member = loaded.RosterOf(loadedRed).Single();
+            Assert.Same(loaded.FindWrestler("alpha-one"), member);
+        }
+
+        [Fact]
+        public void RoundTripKeepsIntegrityTheCeilingAndTheLedger()
+        {
+            var roster = Roster();
+            var career = NewCareer(roster);
+
+            var red  = new Brand { Name = "Red" };
+            var blue = new Brand { Name = "Blue" };
+            career.BeginSplit([red, blue]);
+            career.Brands.Assign(roster[0], red);
+
+            career.Brands.ApplyCrossover(new CrossoverRecord
+            {
+                WrestlerId    = roster[0].Id,
+                WrestlerName  = "Alpha One",
+                HomeBrandName = "Red",
+                ShowBrandName = "Blue",
+                ShowName      = "Blue Night",
+                Date          = new DateOnly(2025, 2, 3),
+                Cost          = 3.2
+            }, BrandIntegrity.PermanentShare);
+
+            var loaded = RoundTrip(career);
+
+            Assert.Equal(career.Brands.Integrity, loaded.Brands.Integrity, 3);
+            Assert.Equal(career.Brands.Ceiling, loaded.Brands.Ceiling, 3);
+            Assert.Equal(1, loaded.Brands.CrossoverCount);
+            Assert.Equal("Alpha One", loaded.Brands.Crossovers.Single().WrestlerName);
+            Assert.Equal(new DateOnly(2025, 2, 3), loaded.Brands.Crossovers.Single().Date);
+        }
+
+        [Fact]
+        public void RoundTripKeepsWhichBrandRunsWhichShow()
+        {
+            var roster = Roster();
+            var career = NewCareer(roster);
+
+            var blue = new Brand { Name = "Blue" };
+            career.BeginSplit([new Brand { Name = "Red" }, blue]);
+
+            career.ShowDefinitions.Add(new ShowDefinition
+            {
+                Name       = "Blue Night",
+                Recurrence = RecurrenceKind.Weekly,
+                Day        = DayOfWeek.Tuesday,
+                BrandId    = blue.Id
+            });
+            career.MaterialiseSchedule();
+
+            var loaded = RoundTrip(career);
+            var loadedBlue = loaded.Brands.Brands.Single(b => b.Name == "Blue");
+
+            Assert.Equal(loadedBlue.Id, loaded.ShowDefinitions.Single().BrandId);
+            Assert.NotEmpty(loaded.Shows);
+            Assert.All(loaded.Shows, s => Assert.Equal(loadedBlue, loaded.BrandOfShow(s)));
+        }
+
+        [Fact]
+        public void ABrandDropsAnyoneWhoIsNoLongerOnTheRoster()
+        {
+            var roster = Roster();
+            var career = NewCareer(roster);
+
+            var red = new Brand { Name = "Red" };
+            career.BeginSplit([red, new Brand { Name = "Blue" }]);
+            foreach (var w in roster) career.Brands.Assign(w, red);
+
+            string json = SaveSerializer.ToJson(career);
+            var trimmed = Roster().Where(w => w.Id != "gamma-three").ToList();
+            var loaded = SaveSerializer.FromJson(json, trimmed);
+
+            var loadedRed = loaded.Brands.Brands.Single(b => b.Name == "Red");
+            Assert.Equal(2, loadedRed.RosterIds.Count);
+            Assert.DoesNotContain("gamma-three", loadedRed.RosterIds);
+        }
+
+        [Fact]
+        public void APromotionThatNeverSplitWritesNoBrandSection()
+        {
+            string json = SaveSerializer.ToJson(NewCareer(Roster()));
+            Assert.DoesNotContain("\"Brands\"", json);
+        }
+
+        [Fact]
+        public void ASaveFromBeforeTheSplitExistedStillOpens()
+        {
+            // v1 saves carry no brand section at all; they must load as one roster.
+            string json = SaveSerializer.ToJson(NewCareer(Roster()))
+                .Replace($"\"Version\":{SaveGame.CurrentVersion}", "\"Version\":1");
+
+            var loaded = SaveSerializer.FromJson(json, Roster());
+
+            Assert.False(loaded.Brands.Active);
+            Assert.Empty(loaded.Brands.Brands);
+            Assert.Equal(100, loaded.Brands.Integrity);
         }
 
         [Fact]
