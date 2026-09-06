@@ -887,7 +887,7 @@ dotnet test
 ```
 
 Singles behaviour is held byte-identical across the tag-match work by an equivalence harness
-described in [docs/tag-matches-build-log.md](docs/tag-matches-build-log.md) — 48,720 matches
+described in [docs/tag-matches-design-record.md](docs/tag-matches-design-record.md) — 48,720 matches
 covering every structure, match type, roster pairing and familiarity level, comparing per-beat
 deltas *and the commentary text*, which is the canary for a changed RNG draw order.
 
