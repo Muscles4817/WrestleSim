@@ -54,11 +54,15 @@
                     </div>
                 </div>
 
+                @* Disposition was in gold with a four-letter label — the highest-emphasis
+                   element on the card and the least actionable number in the app. It moves
+                   into the expandable detail below, where the paragraph explaining it lives.
+                   The card keeps the three a booker reads, each against its own ceiling. *@
                 <div class="rcard__stats">
-                    <div class="rcard__stat"><b>@w.OvernessDisplay</b><span>Over</span></div>
-                    <div class="rcard__stat"><b>@w.Charisma.ToString("F1")</b><span>Cha</span></div>
-                    <div class="rcard__stat"><b>@w.RingSkills.GetOverallSkill().ToString("F2")</b><span>Skill</span></div>
-                    <div class="rcard__stat"><b class="gold">@Disposition(w).ToString("F2")</b><span>Disp</span></div>
+                    <div class="rcard__stat"><b>@w.OvernessDisplay</b><span>Over / 100</span></div>
+                    <div class="rcard__stat"><b>@w.Charisma.ToString("F1")</b><span>Cha / 5</span></div>
+                    <div class="rcard__stat"><b>@w.RingSkills.GetOverallSkill().ToString("F2")</b><span>Skill / 5</span></div>
+                    <div class="rcard__stat"><b class="gold">@w.CardPosition.Label()</b><span>Card</span></div>
                 </div>
 
                 <button class="rcard__toggle" @onclick="() => Toggle(w.RingName)">
@@ -76,6 +80,11 @@
                                 <b>@value.ToString("F1")</b>
                             </div>
                         }
+                        <div class="rcard__skill">
+                            <span>Disposition</span>
+                            <div class="rcard__bar"><i style="width:@((Disposition(w) * 100).ToString("F0"))%"></i></div>
+                            <b>@Disposition(w).ToString("F2")</b>
+                        </div>
                         <div class="rcard__skill">
                             <span>Psych</span>
                             <div class="rcard__bar"><i style="width:@(w.Mental.Psychology)%"></i></div>

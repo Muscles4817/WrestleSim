@@ -1248,3 +1248,153 @@ refund conditional on the ending being respected, which is a rule about the next
 rather than this one — recorded rather than done, so the next reader knows it is a choice.
 
 **444 tests passing.**
+
+---
+
+## The UX pass
+
+Commissioned as a read-only review of the whole front end, and it came back with a diagnosis
+sharper than "it's cluttered". Three things were true at once, and the first is the one that
+mattered:
+
+> **Selection is not a list problem, it's an architecture problem.** The match builder renders
+> the roster four separate times, inline, simultaneously, with no way to collapse a list once
+> you've used it. In a tag match step 1 alone is roughly **116 pick cards ≈ 12,000px ≈ 17
+> phone screens**. No amount of chip-filtering fixes a page that long.
+
+At three a side on the seventy-name roster now in flight it is nearer thirty thousand pixels.
+And the reason none of the obvious improvements — keyboard, recency, relevance — had ever been
+made is that every one of them would have had to be made in five places: four inline lists in
+the match builder with four subtly different exclusion predicates, plus the segment builder's
+own copy of the same `FilteredRoster()`.
+
+### One picker
+
+`RosterPicker.razor` — a sheet, opened from a slot, closed on choose. One list at a time.
+`MatchBuilder`'s step 0 is now a **lineup of slots**: six buttons for a trios match where
+there were six roster walls.
+
+Two rules in it are the point rather than decoration.
+
+**Rows carry the consequence, not the stats.** A row says `Upper card · meeting 4 with The
+Usos — 61% of what the first one drew`, not `Pop 78 · Cha 3.4`. Every one of those numbers was
+already computed; the freshness reading in particular was shown *three wizard steps later*,
+on the feud step, and the code comment on `PairingHistory` says in as many words that it
+exists so "a booker needs to know a pairing is worn out **while they can still book something
+else**". By the time you saw it, backing out meant re-scrolling 116 cards, so nobody backed
+out. It now appears under the lineup the moment both sides are complete.
+
+**The sort is relevance, not popularity.** Every old list was `OrderByDescending(Overness)` —
+so after picking side A, with the app knowing exactly who A has a live feud with and who the
+crowd has watched A fight four times this month, side B was offered in order of how popular
+people are. Now: a live feud against the filled side first, then standing partners, then
+recently booked, then card position — and a pairing the crowd is sick of sinks to a "The crowd
+has seen this" band with the percentage attached.
+
+### A browser test found what the compiler could not
+
+The picker compiled, the suite was green, and it was broken. Driving it with Playwright at
+390×844:
+
+```
+filled slots: 1        (after filling six)
+blocker now: Pick who starts for side A
+```
+
+Already-booked names were ranked *first*, on the reasoning that a mis-pick should be easy to
+see. What that actually does is make the top row of every picker somebody already in the
+match — so tapping the obvious thing swaps two slots instead of filling an empty one. Six
+picks left one slot filled. They now sort to the bottom, still visible and still swappable.
+
+This is worth recording as a method point: three hundred passing unit tests said nothing about
+it, because none of them can open a page. The same run also confirmed the parts that do work —
+six slots for trios, the blocking reason appearing and clearing, the championship step
+correctly skipping itself (`1 of 5`, not `1 of 6`), thirteen beat rows, the beat sheet opening
+with thirteen chips, and no console errors.
+
+### The beat editor
+
+Below 640px each beat row became a stacked card carrying three full-width native `<select>`s
+and three icon buttons — about 200px a beat, so a seven-beat Technical Showcase was ~1,400px
+before you added anything, and each of the three commonest edits opened a full-screen wheel
+picker on iOS. The row is now a 64px summary (`1 · Face in Peril · Side B · High · Long · 4
+min`) and the edits live in a sheet with chip rows. Thirteen beats now occupy about the space
+three used to.
+
+Four related things went with it: the library no longer slams shut on every add (building a
+nine-beat match was seven rounds of add → close → scroll → reopen → scroll); there is an
+insert point between rows, so moving a beat from position 8 to 2 is not six taps of `↑`;
+gated beats are hidden behind a count rather than rendered greyed (in a singles match the
+whole Tag category — eleven of forty-four — was permanently disabled scroll-tax); and the
+validation errors moved **above** the sheet, where on a phone they had been rendering past
+both the sheet and the library and so were off-screen while you were doing the thing that
+triggered them.
+
+### `BEAT ★` on five screens, on every phone
+
+```css
+@media (max-width: 640px) { .editor-row__n::before { content: "Beat "; } }
+```
+
+Unscoped. `.editor-row` is the app's universal list row, so on every phone the dashboard's
+championship list read **"BEAT ★"**, the calendar read **"BEAT ▦"**, the landing screen's save
+slots read **"BEAT ★"**, and a title's lineage read **"BEAT 1"**, **"BEAT 2"**. Shipping.
+Scoped to `.editor-row--beat`.
+
+The review's deeper point — that one class carries two incompatible meanings, "an item you can
+reorder and delete" and "a historical fact", pixel-identically — is real and is **not** fixed
+here. Splitting `.editor-row` into `.list-row` and `.edit-row` touches eleven files and does
+not belong in the same pass that rewrites selection. Recorded, not done.
+
+### Numbers with their meaning
+
+The review's second finding: *"the app has an excellent interpretation layer and applies it
+about 40% of the time."* `PrestigeLabel`, `ChemistryLabel`, `FreshnessAdvice`,
+`CardPosition.Label()`, `DefenceStatus`, the beat `BookerTip` — and then the booking surface
+shows `Pop 78 / Cha 3.4` and expects you to know one is out of 100 and the other out of 5.
+
+- Title options now read `Genuinely prestigious` and `+9 crowd at the bell` instead of
+  `Prestige 68`. `PrestigeLabel` already existed and was being used in the tip *below* the
+  list rather than on the option you are choosing between.
+- New `Wrestler.CharismaLabel` in the same register, used in the segment picker where charisma
+  is the whole point.
+- `Disposition 0.62` in gold with a four-letter label was the highest-emphasis element on a
+  roster card and the least actionable number in the app. It moves into the expandable detail,
+  where the paragraph explaining it already lives; the card shows card position instead, and
+  the three remaining stats carry their ceilings (`Over / 100`, `Cha / 5`, `Skill / 5`).
+
+### Amber stopped meaning anything
+
+Twenty-six `notice--warn` against ten `--info`, eight `--error` and five `--tip`. Warn was
+doing four different jobs: *this will cost you*, *this is unusual but fine*, *this pairing is
+worn out*, *this belt is vacant*. Split into `--cost` (a price, with the number in the strong)
+and `--advice` (a booking opinion — where `FreshnessAdvice` and `BookerTip` live, and they
+should read as counsel), leaving `--warn` for things that are about to go wrong.
+
+### The rest
+
+| | |
+|---|---|
+| Four fake buttons on the dashboard — `.tile` with `cursor:default` inline, keeping the hover lift and the gold edge reveal | `.tile--static` |
+| `FeudsScreen`'s "Book the blowoff →" navigated to the **exhibition sandbox** from inside a career and dropped the pairing on the way | Opens the next unrun show |
+| `NewSaveScreen`'s step chips showed every label while the builders showed one — the same component behaving two ways | Label wrapped so the mobile rule applies |
+| Six bare numerals as the mobile progress bar | A `4 of 5 · Structure` line, and skipped steps are not numbered |
+| A disabled Next with no explanation | `Blocker()` says what is missing |
+| `.versus__name` could overflow between 641 and 820px with two tag-team names | `overflow-wrap: anywhere` |
+| README documented five booking steps and omitted the championship step entirely | Rewritten |
+
+A typography scale (`--t-xs` … `--t-2xl`, one `.label` class) is added and used by the new
+work. The ten existing implementations of "small uppercase tracked label" are **not** migrated
+— one large change at a time — but there is now one decision to make instead of ten.
+
+### What the review said not to do, and I did not
+
+> The instinct on seeing "12,000px of scroll" is to cut information. Don't. The problem is
+> never that there's too much; it's that it's presented in the wrong place, at the wrong
+> weight, or without its scale.
+
+No mechanic was removed. The crossover cost, the chemistry label, the hot-tag warning, the
+attention pool and the freshness reading are all still there — each of them nearer the
+decision it is about.
+
+**461 tests passing**, and the flow driven end to end in a real browser at phone width.
