@@ -74,10 +74,13 @@ namespace WrestlingSim.Models.MatchPlan
         /// <summary>
         /// How the 0–100 <see cref="FinalScore"/> was actually assembled.
         ///
-        /// Reported rather than kept private for two reasons. The player one: a rating with
-        /// no breakdown is a verdict, not feedback — a booker who cannot see that a match
-        /// lost four points on variety cannot learn to book a better one. The engineering
-        /// one: it makes the composite *testable*. Every claim about what a term does to a
+        /// Reported rather than kept private for two reasons. The player one, which is an
+        /// intention and not yet a description: a rating with no breakdown is a verdict, not
+        /// feedback — a booker who cannot see that a match lost four points on variety cannot
+        /// learn to book a better one. **Nothing in the UI reads this yet**, so the sentence
+        /// was written in the present tense about something that has not been built; review
+        /// caught it. The engineering reason is live today: it makes the composite
+        /// *testable*. Every claim about what a term does to a
         /// rating had to be made through the star rating before this, which is the sum of
         /// six things and so proves nothing about any one of them — and review found
         /// exactly that hiding a term that had been deleted without a single test noticing.

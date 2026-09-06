@@ -127,7 +127,8 @@ What it covers:
   It is also the *wrong* route to it. What the model can express is an unpopular babyface,
   which is close to the defect this replaced; what §2 means is a babyface the crowd has
   **turned on despite a push**, and there is no signal for that yet. Overness-versus-appeal
-  is the obvious candidate and does diverge — up to **0.18**, on **15 of 76** — so the
+  is the obvious candidate and does diverge — up to **0.18**, with **15 of 76** past the
+  0.08 I wrongly gave as its ceiling — so the
   ingredient exists even though nothing reads it. Not measurable today; not unmeasurable in
   principle.
 

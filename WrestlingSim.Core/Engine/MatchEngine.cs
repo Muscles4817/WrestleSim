@@ -99,6 +99,30 @@ namespace WrestlingSim.Engine
         /// technical and storytelling scores. What it loses is the third of the grade that
         /// was supposed to be about the audience.
         /// </summary>
+        /// <summary>
+        /// Of the part of a beat the room was *not* present for, how much is boredom rather
+        /// than indifference — 0 is a room that never cared, 1 is a room worn out by
+        /// repetition. Doc 16 §2: silence and go-away heat are different failures.
+        ///
+        /// A share of two causes, so it is their ratio. `bored` is how much the booking has
+        /// eroded (every repeat of a beat type costs the room's presence in proportion);
+        /// `apathy` is how little attention there was to erode.
+        ///
+        /// **Public and static because it is a pure function and was otherwise untestable in
+        /// practice.** Inline, the only way at it was a whole match, and a match aggregates
+        /// this over beats with different repetition factors — which smooths a step function
+        /// into something that looks graded. Review's `bored > apathy ? 1 : 0` mutation, the
+        /// binary threshold the comment above condemns, survived a test that swept eight
+        /// rooms across the whole connection range for exactly that reason. Testing the
+        /// function is the only way to test the function.
+        /// </summary>
+        public static double BoredShare(double repetitionFactor, double attention)
+        {
+            double bored  = 1.0 - repetitionFactor;
+            double apathy = 1.0 - attention;
+            return bored + apathy > 1e-9 ? bored / (bored + apathy) : 0.0;
+        }
+
         public static double InvestmentFactor(double investment) =>
             investment >= TypicalInvestment
                 ? 1.0 + (investment - TypicalInvestment) * InvestmentUpside
@@ -648,9 +672,7 @@ namespace WrestlingSim.Engine
             // simply quiet. The first version assigned these by the *sign of the beat*,
             // which made the positive and negative branches state opposite things about
             // the same disengaged crowd.
-            double bored  = 1.0 - r.RepetitionFactor;
-            double apathy = 1.0 - attention;
-            double boredShare = bored + apathy > 1e-9 ? bored / (bored + apathy) : 0.0;
+            double boredShare = BoredShare(r.RepetitionFactor, attention);
 
             double absent    = weight * (1.0 - invested);
             double goingAway = absent * boredShare;
@@ -675,8 +697,8 @@ namespace WrestlingSim.Engine
                 state.RecordReaction(ReactionKind.GoAwayHeat, goingAway);
 
                 return Dominant(
-                    (ReactionKind.Pop, popped), (ReactionKind.Heat, heated),
-                    (ReactionKind.Silence, silent), (ReactionKind.GoAwayHeat, goingAway));
+                    (ReactionKind.Silence, silent), (ReactionKind.GoAwayHeat, goingAway),
+                    (ReactionKind.Heat, heated), (ReactionKind.Pop, popped));
             }
 
             if (r.CrowdEnergyDelta < -0.5)
@@ -688,8 +710,8 @@ namespace WrestlingSim.Engine
                 state.RecordReaction(ReactionKind.Silence,    silent);
                 state.RecordReaction(ReactionKind.GoAwayHeat, goingAway);
 
-                return Dominant((ReactionKind.Tension, held),
-                                (ReactionKind.Silence, silent), (ReactionKind.GoAwayHeat, goingAway));
+                return Dominant((ReactionKind.Silence, silent),
+                                (ReactionKind.GoAwayHeat, goingAway), (ReactionKind.Tension, held));
             }
 
             // Nothing happened either way — a rest hold, a feeling-out. Whether that is
@@ -700,8 +722,8 @@ namespace WrestlingSim.Engine
                 state.RecordReaction(ReactionKind.Silence,    silent);
                 state.RecordReaction(ReactionKind.GoAwayHeat, goingAway);
 
-                return Dominant((ReactionKind.Tension, held),
-                                (ReactionKind.Silence, silent), (ReactionKind.GoAwayHeat, goingAway));
+                return Dominant((ReactionKind.Silence, silent),
+                                (ReactionKind.GoAwayHeat, goingAway), (ReactionKind.Tension, held));
             }
         }
 
@@ -719,12 +741,26 @@ namespace WrestlingSim.Engine
         /// per-beat consumer read the opposite of the truth in exactly the case A5 exists
         /// to detect.
         /// </summary>
+        /// <summary>
+        /// Which component took the largest share of one beat.
+        ///
+        /// This delegates to <see cref="CrowdReaction.Dominant"/> rather than reimplementing
+        /// it, which it used to do. Two copies of one rule is two rules: round 3 fixed the
+        /// tie-break in `CrowdReaction` — silence is the honest default, so a tie goes to the
+        /// quieter reading — and this copy kept its own argument order, so the claim was
+        /// false exactly where it is most exercised. Review counted **22 beats in shipped
+        /// content** where Pop and Heat tie, every one reported as Pop because Pop was listed
+        /// first, in the commit whose message said every tie now goes the other way.
+        ///
+        /// Keeping the two in step was never the fix. There is one implementation now, so the
+        /// per-beat label and the accumulated one cannot disagree, and the test on
+        /// `CrowdReaction.Dominant` covers both.
+        /// </summary>
         private static ReactionKind Dominant(params (ReactionKind Kind, double Share)[] shares)
         {
-            var best = shares[0];
-            foreach (var s in shares)
-                if (s.Share > best.Share) best = s;
-            return best.Kind;
+            var reaction = new CrowdReaction();
+            foreach (var s in shares) reaction.Add(s.Kind, s.Share);
+            return reaction.Dominant;
         }
 
         // ── Repetition / fatigue rules ───────────────────────────────────────

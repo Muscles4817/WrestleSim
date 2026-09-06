@@ -101,6 +101,77 @@ namespace WrestlingSim.Tests
             gone.Add(ReactionKind.GoAwayHeat, 50);
 
             Assert.Equal(0.0, gone.Investment, 6);
+
+            // **Held breath is investment.** The two readings above cannot show that: with
+            // `Disengagement == 0` the first is 1.0 whatever `Engagement` contains, so
+            // review deleted Tension from `Engagement` and this test — the one named for the
+            // claim — stayed green. That is A5's headline claim, at the exact point where it
+            // becomes the rating, guarded by nothing.
+            //
+            // Tension is 1.1% of recorded reaction across singles and **7.8% across tag
+            // matches**, where the denied tag lives. Without it a near-tag-heavy tag match
+            // is graded as though the room had left, which is the specific failure this
+            // whole feature was built to stop.
+            var holdingItsBreath = new CrowdReaction();
+            holdingItsBreath.Add(ReactionKind.Tension, 40);
+            holdingItsBreath.Add(ReactionKind.Silence, 60);
+
+            output.WriteLine($"  {holdingItsBreath}");
+            Assert.Equal(0.4, holdingItsBreath.Investment, 6);
+        }
+
+        /// <summary>
+        /// The same held breath through the engine rather than through the model, on the
+        /// branch that actually books it.
+        ///
+        /// `ADeniedTag_ReadsAsTension_NotAsTheCrowdLeaving` looks like it covers this and
+        /// does not: `NearTag` sets `r.Reaction = ReactionKind.Tension`, which takes the
+        /// declared-override early return and never reaches the ordinary negative branch.
+        /// That test's own comment says it was rewritten so only the override can produce
+        /// Tension — which is exactly why it cannot guard the path underneath. So the
+        /// negative branch was the identical twin of the neutral branch fixed in round 3,
+        /// six lines away, and both of its mutations survived the whole suite.
+        /// </summary>
+        [Fact]
+        public void ABeatThatGoesBadlyForARoomThatCares_IsAHeldBreathToo()
+        {
+            var a = W("Star A", overness: 94, charisma: 4.9, skill: 4.5);
+            var b = W("Star B", overness: 92, charisma: 4.7, skill: 4.5);
+
+            // `Cutoff` — the heel cutting off a comeback — is the beat to use: its crowd
+            // delta is unconditionally negative and it declares no `r.Reaction`, so it takes
+            // the ordinary negative branch. A `HeatSegment` will not do it; on a room this
+            // connected its delta comes out *positive*, which is the first thing I tried.
+            var r = new MatchEngine(Seed).Execute(new MatchPlanModel
+            {
+                WrestlerA = a, WrestlerB = b,
+                Beats =
+                [
+                    new MatchBeat { Type = BeatType.HotOpening,  Control = BeatControl.Even },
+                    new MatchBeat { Type = BeatType.Cutoff,      Control = BeatControl.WrestlerB },
+                    new MatchBeat { Type = BeatType.FinishClean, Control = BeatControl.WrestlerA }
+                ]
+            });
+
+            var negative = r.BeatResults
+                            .Where(x => x.CrowdEnergyDelta < -0.5 && x.Reaction is null)
+                            .ToList();
+
+            output.WriteLine($"  {negative.Count} undeclared negative beats");
+            foreach (var x in negative)
+                output.WriteLine($"    delta {x.CrowdEnergyDelta:F2} → {x.ResolvedReaction}");
+            output.WriteLine($"  {r.Reaction}");
+
+            Assert.True(negative.Count > 0,
+                "This test is not reaching the branch it is about.");
+
+            // Leg 1: labelled a held breath.
+            Assert.All(negative, x => Assert.Equal(ReactionKind.Tension, x.ResolvedReaction));
+
+            // Leg 2: and recorded as one. Nothing else in this plan records Tension.
+            Assert.True(r.Reaction.Tension > 0,
+                "A room that cares, watching things go badly, is holding its breath — " +
+                "that has to reach the vector, not just the label.");
         }
 
         // ── The distinction the scalar could never make ──────────────────────
@@ -778,12 +849,25 @@ namespace WrestlingSim.Tests
                 Beats = Repeated(BeatType.HeatSegment, 6)
             });
 
-            // Never cared: nobody has any idea who these two are, and the booking is fine.
+            // Never cared: nobody has any idea who these two are — but shown the *same*
+            // repeated beat, so `bored` is non-zero here too.
+            //
+            // The first version of this test used a varied plan for the cold room, which
+            // makes `RepetitionFactor ≡ 1` and therefore `bored ≡ 0`. Every formula of the
+            // shape f(bored, apathy) with f(0, ·) = 0 then returns 0, so `cold < 0.25` was
+            // asserting `0 < 0.25` and the whole test rested on one live assertion at one
+            // operating point — the "guarded at the end points, free in between" shape it
+            // was written to fix, reproduced inside the fix. Review demonstrated it with
+            // four surviving formulas, including `bored > apathy ? 1 : 0`, the binary
+            // threshold the code comment beside it condemns.
+            //
+            // Both rooms are now bored to the same degree and differ only in attention, so
+            // the ratio is what decides, which is the claim.
             var neverCared = new MatchEngine(Seed).Execute(new MatchPlanModel
             {
                 WrestlerA = W("Nobody A", overness: 12, charisma: 0.6, skill: 2.0),
                 WrestlerB = W("Nobody B", overness: 12, charisma: 0.6, skill: 2.0),
-                Beats = Varied()
+                Beats = Repeated(BeatType.HeatSegment, 6)
             });
 
             double WornShare(MatchEngineResult r) =>
@@ -810,6 +894,82 @@ namespace WrestlingSim.Tests
             Assert.True(worn - cold > 0.4,
                 $"The two kinds of absent should be told apart clearly, not by a hair: " +
                 $"{worn:P0} vs {cold:P0}.");
+
+            // **And the split is graded, not switched.** Two rooms at opposite extremes do
+            // not test a ratio: review showed `bored > apathy ? 1 : 0` — the binary threshold
+            // the comment beside this code condemns — passing both assertions above, because
+            // a binary rule also returns 1 for one room and 0 for the other. What separates a
+            // ratio from a threshold is what happens in between, so sweep it.
+            var sweep = new[] { (12, 0.6), (30, 1.5), (45, 2.2), (58, 2.8),
+                                (70, 3.5), (78, 4.0), (85, 4.4), (92, 4.8) }
+                .Select(x => WornShare(new MatchEngine(Seed).Execute(new MatchPlanModel
+                {
+                    WrestlerA = W("A", overness: x.Item1,     charisma: x.Item2, skill: 3.5),
+                    WrestlerB = W("B", overness: x.Item1 - 2, charisma: x.Item2, skill: 3.5),
+                    Beats = Repeated(BeatType.HeatSegment, 6)
+                })))
+                .ToList();
+
+            output.WriteLine("  across the connection range: " +
+                             string.Join(" · ", sweep.Select(x => $"{x:P0}")));
+
+            int graded = sweep.Count(x => x > 0.05 && x < 0.95);
+            Assert.True(graded >= 5,
+                $"Only {graded} of {sweep.Count} rooms split their absence between the two " +
+                "causes at all — a rule that rounds every room to silence or to go-away heat " +
+                "is a threshold, not the ratio this is documented as.");
+
+            // And it climbs with connection: the more the room was ever going to care, the
+            // more of its absence is boredom rather than indifference.
+            Assert.True(sweep[^1] - sweep[0] > 0.4,
+                $"The split barely moves across the whole connection range " +
+                $"({sweep[0]:P0} → {sweep[^1]:P0}), so attention is not really feeding it.");
+        }
+
+        /// <summary>
+        /// The split itself, as a function, at the point where it is computed.
+        ///
+        /// `TwoAbsentRooms_AreAbsentInDifferentWays` books whole matches, and a match
+        /// aggregates this over beats whose repetition factors differ — which smooths a step
+        /// function into something that looks graded. Review's binary-threshold mutation
+        /// (`bored > apathy ? 1 : 0`, the exact rule the code comment condemns) survived that
+        /// test even after it was widened to sweep eight rooms across the whole connection
+        /// range, because per-match aggregation hid it. So the mechanism is tested where it
+        /// happens.
+        /// </summary>
+        [Fact]
+        public void TheSplitBetweenBoredomAndIndifference_IsARatioAndNotAThreshold()
+        {
+            // The ends, which are definitional.
+            Assert.Equal(0.0, MatchEngine.BoredShare(repetitionFactor: 1.0, attention: 0.2), 6);
+            Assert.Equal(1.0, MatchEngine.BoredShare(repetitionFactor: 0.4, attention: 1.0), 6);
+
+            // The middle, which is the claim. A room 70% fresh and half paying attention has
+            // 0.30 of boredom against 0.50 of apathy, so 3/8 of what it did not give was
+            // boredom. Deliberately exact: this is the formula, not a bound on it.
+            Assert.Equal(0.375, MatchEngine.BoredShare(0.7, 0.5), 6);
+
+            // It moves with attention at fixed repetition — a threshold does not, and neither
+            // does a rule that reads `bored` alone.
+            var byAttention = new[] { 0.0, 0.25, 0.5, 0.75, 0.95 }
+                .Select(a => MatchEngine.BoredShare(0.7, a)).ToList();
+            output.WriteLine("  at 70% fresh, by attention: " +
+                             string.Join(" · ", byAttention.Select(x => $"{x:P1}")));
+            for (int i = 1; i < byAttention.Count; i++)
+                Assert.True(byAttention[i] > byAttention[i - 1] + 0.02,
+                    $"The split should climb with attention; it went {byAttention[i-1]:F3} → {byAttention[i]:F3}.");
+
+            // And with repetition at fixed attention.
+            var byRepetition = new[] { 0.95, 0.8, 0.65, 0.5 }
+                .Select(r => MatchEngine.BoredShare(r, 0.6)).ToList();
+            output.WriteLine("  at 60% attention, by repetition: " +
+                             string.Join(" · ", byRepetition.Select(x => $"{x:P1}")));
+            for (int i = 1; i < byRepetition.Count; i++)
+                Assert.True(byRepetition[i] > byRepetition[i - 1] + 0.02);
+
+            // Nothing to explain: no repetition and full attention means no absence at all,
+            // and the share of nothing must not be a NaN loose in the crowd vector.
+            Assert.Equal(0.0, MatchEngine.BoredShare(1.0, 1.0), 6);
         }
 
         /// <summary>
@@ -959,7 +1119,12 @@ namespace WrestlingSim.Tests
             output.WriteLine($"  high-appeal heel {adored.Reaction}");
             output.WriteLine($"  heat share {HeatShare(hated):P1} vs {HeatShare(adored):P1}");
 
-            Assert.True(HeatShare(hated) > HeatShare(adored) + 0.02,
+            // 0.15, not 0.02. The measured gap is ~30 percentage points, and review showed
+            // that a margin of 0.02 admits `0.9 * popNorm + 0.1 * appealNorm` — four fifths
+            // of the mechanism deleted, still green. A margin an order of magnitude below
+            // the effect tests that the effect is non-zero, not that it is what the code
+            // says it is. This still leaves ~15pp of headroom for roster changes.
+            Assert.True(HeatShare(hated) > HeatShare(adored) + 0.15,
                 "The same overness with a gimmick people enjoy should draw proportionally more " +
                 $"cheering and less booing — got {HeatShare(hated):P1} vs {HeatShare(adored):P1}. " +
                 "If these are equal, appeal ratings are not reaching the crowd model.");

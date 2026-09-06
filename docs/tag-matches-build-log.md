@@ -1528,6 +1528,11 @@ most investment are already near the ceiling and had nowhere to go. The clamp is
 **429 tests passing**, with every pre-existing threshold intact — including the real-match
 recreations, which is the actual guard on engine behaviour.
 
+> The running count dips here, from 471 above to 429. That is not a regression: 429 is this
+> branch's own suite before #13, #15, #16 and #18 merged, and the A5 section was written
+> before them. Noted in place because the merge commit claims the sections were ordered so
+> the counts ascend, which they do not — see "review round 3".
+
 Singles ratings **do** change here, deliberately and for the first time in this body of work.
 The byte-identical contract existed so that tag matches would not disturb singles; A5 is a
 change to how crowd reaction is modelled, and it is supposed to move singles. The guard is
@@ -1833,7 +1838,10 @@ reachable."* Measured: heel→cheered, 8 of 37. Babyface→booed, **0 of 35**.
 > I also wrote that overness and appeal "never diverge by more than 0.08" on the shipped
 > roster, and that sentence was the entire justification for calling a rejected-push signal
 > unmeasurable. They diverge by up to **0.18** — Zelina Vega, overness 0.580 against appeal
-> 0.760 — and **15 of 76** exceed 0.08. The ingredient I said did not exist is there.
+> 0.760 — and **15 of 76** exceed the 0.08 I gave as the maximum. (Only one reaches 0.18
+> and two reach 0.15; the two numbers are answering different questions and the sentence
+> should not make it sound like fifteen of them diverge by 0.18.) The ingredient I said did
+> not exist is there.
 
 So: the only route the model currently offers is an *unpopular* babyface, which is
 uncomfortably close to the defect this replaced. A babyface the crowd has **turned on despite
@@ -2089,3 +2097,103 @@ counter monotonic would be worse, and recorded here instead.
 
 **498 tests passing.** Seven mutations killed that previously survived, including both halves
 of the neutral branch independently.
+
+---
+
+## A5 — review round 4
+
+One code blocker, three test-adequacy blockers, eleven more surviving mutations. The record
+fixes from round 3 all checked out — round 4 re-derived every figure rather than the
+conclusions, including the ones that make me look worst, and found them exact.
+
+### "Every tie goes to the quieter reading" was true of one of the two implementations
+
+Round 3's tie-break fix went into `CrowdReaction.Dominant`. `MatchEngine.Dominant` — the
+per-beat classifier behind `ResolvedReaction` — is a second copy of the same rule, and it kept
+its own argument order. Review counted **22 beats in shipped content** where Pop and Heat tie
+exactly, every one reported as `Pop`, in the commit whose message said the opposite.
+
+My first fix was to reorder the three call sites, which is the wrong fix and my own mutation
+run said so: the `>` → `>=` mutation still survived, because reordering arguments is a
+convention and nothing tested it. Two copies of a rule is two rules. `MatchEngine.Dominant`
+now builds a `CrowdReaction` and asks it, so there is one implementation, the per-beat label
+and the accumulated one cannot disagree, and the existing test covers both.
+
+Same shape as the picker's two orders on the other branch tonight: the fix is to delete the
+second thing, not to keep the two in step.
+
+### Tension was A5's headline claim and nothing tested it
+
+`Engagement => Pop + Heat + Tension` → `Pop + Heat` passed all 498. The test *named* for the
+claim built `Pop 30 + Heat 30 + Tension 40` and asserted `Investment == 1.0` — with
+`Disengagement == 0` that reads 1.0 whatever `Engagement` contains, so Tension's membership
+was never tested. Vacuous, for the thing in its name. `Tension 40 + Silence 60 → 0.4` is the
+assertion it wanted.
+
+Tension is 1.1% of recorded reaction in singles and **7.8% in tag matches**, where the denied
+tag lives. Without it a near-tag-heavy tag match grades as though the room had left, which is
+the exact failure this feature was built to stop.
+
+### And the branch next door to the one round 3 fixed
+
+Round 3 guarded the neutral branch. The negative branch is the same six lines up, and both its
+mutations survived. `ADeniedTag_ReadsAsTension_NotAsTheCrowdLeaving` looks like it covers it
+and cannot: `NearTag` declares `r.Reaction`, so it takes the override early-return and never
+reaches the ordinary path — and that test's own comment says it was rewritten so *only* the
+override produces Tension, which is precisely why it cannot guard what is underneath.
+
+`ABeatThatGoesBadlyForARoomThatCares_IsAHeldBreathToo` uses `Cutoff`, whose crowd delta is
+unconditionally negative and which declares nothing. A `HeatSegment` will not do it — on a
+room that connected its delta comes out positive, which is what I tried first.
+
+### The binary threshold survived two attempts to catch it
+
+`bored > apathy ? 1 : 0` — the rule the comment beside the code condemns by name — passed the
+suite. It also passed my first fix, and then my second.
+
+The first fix gave the cold room a repeated beat so `bored` was non-zero. Still survived: a
+binary rule returns 1 for a worn-out room and 0 for a cold one, which is what the two
+assertions asked for. The second swept eight rooms across the whole connection range and
+asserted the split was graded. **Still survived** — because a match aggregates the split over
+beats with different repetition factors, and averaging a step function produces something that
+looks like a ramp:
+
+```
+across the connection range: 19% · 18% · 19% · 22% · 29% · 38% · 52% · 87%
+```
+
+That gradient is real and it is also what the mutant produces. Aggregation hid the mechanism
+from every test that went through a match.
+
+So the mechanism is now a pure function — `MatchEngine.BoredShare(repetitionFactor, attention)`,
+public and static like `InvestmentFactor` — and tested where it is computed: both end points,
+one exact interior value (0.7 fresh, 0.5 attention → **0.375**), monotone in each argument
+separately, and no NaN when there is no absence to explain. Five formulas die on it, including
+both curvature variants and the constant.
+
+The lesson is not about this formula. **Testing a mechanism through the thing it feeds is how
+three rounds of this went wrong** — a match, a rating, a browser screenshot. Where the
+mechanism is a function, test the function.
+
+### Corrections and the rest
+
+* `InvestmentUpside`'s admitted band confirmed at **[0.106, 0.159]**, exactly as claimed —
+  but review showed the two slopes can still **drift together** by ×0.84–1.51 undetected,
+  since a two-sided bound on their ratio pins the shape and not the magnitude. Recorded here
+  rather than fixed: the remaining freedom is real and the comment should not read as though
+  the pair is nailed down.
+* The appeal-versus-overness sentence said "up to 0.18, on 15 of 76", which reads as fifteen
+  wrestlers diverging by 0.18. One does; fifteen exceed the 0.08 I had wrongly given as the
+  ceiling. Two questions, one pair of numbers, and the natural reading was the flattering one.
+* The gimmick-appeal test's margin was 0.02 against a measured 30-point gap — slack enough to
+  admit deleting four fifths of the mechanism. Now 0.15.
+* `ApplyEnergy`'s XML doc had been orphaned onto `RecordReaction`, which carried two
+  `<summary>` tags while `ApplyEnergy` carried none. Three rounds.
+* `Breakdown`'s comment justified itself with "a booker who cannot see that a match lost four
+  points on variety cannot learn to book a better one". Nothing in the UI reads `Breakdown`.
+  The engineering reason is live; the player one is an intention written in the present tense.
+* The README described the crowd as a scalar — same gap as doc 31's, one document over, and
+  the README is the user-facing one. It now describes the vector.
+* A note at the **429** dip in this file, in place, rather than 550 lines later.
+
+**500 tests passing.**

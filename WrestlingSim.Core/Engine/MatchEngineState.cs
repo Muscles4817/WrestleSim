@@ -197,14 +197,6 @@ namespace WrestlingSim.Engine
         public void RecordEnergy() => CrowdEnergyReadings.Add(CrowdEnergy);
 
         /// <summary>
-        /// Applies a crowd-energy delta.
-        ///
-        /// Positive deltas are compressed as the crowd approaches its ceiling — the last
-        /// 20 points of a reaction are far harder to buy than the first 20. Without this,
-        /// every match of every quality pinned the peak at exactly 100 and the crowd
-        /// component stopped distinguishing anything.
-        /// </summary>
-        /// <summary>
         /// Records what kind of reaction a beat drew, weighted by how much of it there was.
         /// A beat that moves the room a long way in either direction counts for more than
         /// one that barely registers.
@@ -212,6 +204,14 @@ namespace WrestlingSim.Engine
         public void RecordReaction(Enums.ReactionKind kind, double magnitude) =>
             Reaction.Add(kind, Math.Abs(magnitude));
 
+        /// <summary>
+        /// Applies a crowd-energy delta.
+        ///
+        /// Positive deltas are compressed as the crowd approaches its ceiling — the last
+        /// 20 points of a reaction are far harder to buy than the first 20. Without this,
+        /// every match of every quality pinned the peak at exactly 100 and the crowd
+        /// component stopped distinguishing anything.
+        /// </summary>
         public void ApplyEnergy(double delta)
         {
             if (delta > 0)
