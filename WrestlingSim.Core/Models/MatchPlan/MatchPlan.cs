@@ -426,6 +426,24 @@ namespace WrestlingSim.Models.MatchPlan
                         errors.Add("The winner cannot also be the one pinned.");
                 }
 
+                // Every other beat may name a target too, and now that the builder can set
+                // one, the two ways of naming an impossible one have to be caught here
+                // rather than resolved into a name. A beat aimed at a side that is not in
+                // the match falls through to the engine's rotation and quietly narrates
+                // somebody else; a beat aimed at the side working it is a wrestler doing
+                // something to themselves, which is the exact sentence this work has spent
+                // two review rounds removing.
+                foreach (var (beat, i) in Beats.Select((b, i) => (b, i)))
+                {
+                    if (beat.IsFinish || beat.Against is not { } against) continue;
+
+                    if (SideIndex(against) is not { } ai || ai >= Sides.Count)
+                        errors.Add($"Beat {i + 1} is aimed at somebody who is not in this match.");
+                    else if (SideIndex(beat.Control) == ai)
+                        errors.Add($"Beat {i + 1} is aimed at the side working it — nobody " +
+                                   "runs a spot on themselves.");
+                }
+
                 if (IsTagMatch)
                     errors.Add("Multi-man matches are one wrestler a side for now. Trios are " +
                                "booked as two sides of three, which is a different match.");

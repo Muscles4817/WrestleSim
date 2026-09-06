@@ -240,31 +240,51 @@
                     {
                         var control = v;
                         <button class="chip @(edit.Control == control ? "is-active" : "")"
-                                @onclick="() => { edit.Control = control; }">@ControlLabel(control)</button>
+                                @onclick="() => SetControl(edit, control)">@ControlLabel(control)</button>
                     }
                 </div>
             </div>
 
-            @* ── Who takes the fall ─────────────────────────────────────────
-               Only on a multi-man finish, because that is the only place it means anything:
-               with two sides whoever did not win, lost. With three it is the whole point of
-               the format — doc 18 §2.5, a champion beaten without being beaten — and
-               MatchPlan.Validate refuses a plan that does not say. *@
-            @if (IsMultiMan && edit.IsFinish)
+            @* ── Who it is against ──────────────────────────────────────────
+               Multi-man only, because with two sides there is nothing to choose: "against"
+               is the other side and always was, which is why the engine's `Opponent` needed
+               no help for singles and tag.
+
+               On the finish it is *who takes the fall* and it is required — doc 18 §2.5, a
+               champion beaten without being beaten, and MatchPlan.Validate refuses a plan
+               that does not say. On every other beat it is optional, because "the two who
+               are still standing go at it" is a real booking and not an omission.
+
+               This used to be finish-only, which made every other beat undirected and left
+               `MatchBeat.Against` — the field the whole three-way commentary reads — unable
+               to be set from the UI for all but the last beat. The engine could aim a beat
+               and the booker could not. *@
+            @if (IsMultiMan)
             {
                 <div class="field mt">
-                    <span class="field__label">Who takes the fall</span>
+                    <span class="field__label">@(edit.IsFinish ? "Who takes the fall" : "Who it is against")</span>
                     <div class="chips">
-                        @foreach (var v in BookableControls.Where(x => x != edit.Control))
+                        @if (!edit.IsFinish)
                         {
-                            var pinned = v;
-                            <button class="chip @(edit.Against == pinned ? "is-active" : "")"
-                                    @onclick="() => { edit.Against = pinned; }">@ControlLabel(pinned)</button>
+                            <button class="chip @(edit.Against is null ? "is-active" : "")"
+                                    @onclick="() => { edit.Against = null; }">Whoever is standing</button>
+                        }
+                        @foreach (var v in BookableSides.Where(x => x != edit.Control))
+                        {
+                            var target = v;
+                            <button class="chip @(edit.Against == target ? "is-active" : "")"
+                                    @onclick="() => { edit.Against = target; }">@ControlLabel(target)</button>
                         }
                     </div>
                     <span class="field__hint">
-                        The one who loses the fall, which need not be the one who loses the belt.
-                        That is the reason to book this match.
+                        @if (edit.IsFinish)
+                        {
+                            @("The one who loses the fall, which need not be the one who loses the belt. That is the reason to book this match.")
+                        }
+                        else
+                        {
+                            @("Who this beat is worked on. Leave it open and the engine picks whoever is not currently on the floor.")
+                        }
                     </span>
                 </div>
             }
@@ -674,7 +694,7 @@
                 <button class="beat-row__body" @onclick="() => OpenBeatSheet(beat)">
                     <span class="beat-row__name">@BeatTypeName(beat.Type)</span>
                     <span class="beat-row__sub">
-                        @ControlLabel(beat.Control) · @beat.Intensity · @beat.Duration · @beat.DurationMinutes min
+                        @ControlLabel(beat.Control)@(beat.Against is { } t ? $" → {ControlLabel(t)}" : "") · @beat.Intensity · @beat.Duration · @beat.DurationMinutes min
                     </span>
                 </button>
                 <div class="beat-row__move">
@@ -1148,6 +1168,29 @@
                   .Select(Models.MatchPlan.MatchPlan.ControlFor)
                   .Append(BeatControl.Even)
                   .Append(BeatControl.Contested);
+
+    /// <summary>
+    /// Just the sides, without Even and Contested — for "who it is against", which names a
+    /// side or nothing. The finish row used `BookableControls` and so offered "Even takes
+    /// the fall", which `Validate` then rejected with "the side booked to take the fall is
+    /// not in this match". A chip that can only produce an error should not be a chip.
+    /// </summary>
+    private IEnumerable<BeatControl> BookableSides =>
+        Enumerable.Range(0, sideCount).Select(Models.MatchPlan.MatchPlan.ControlFor);
+
+    /// <summary>
+    /// Set who works a beat, dropping a target that has just become the worker.
+    ///
+    /// The chip row hides the controlling side from the "against" options, so without this
+    /// the impossible pairing is unreachable going forwards and reachable going backwards:
+    /// aim a beat at Bravo, then hand Bravo the control, and the plan says Bravo works it
+    /// on Bravo with no chip showing it.
+    /// </summary>
+    private void SetControl(MatchBeat beat, BeatControl control)
+    {
+        beat.Control = control;
+        if (beat.Against == control) beat.Against = null;
+    }
 
     private string ControlLabel(BeatControl control) => control switch
     {
