@@ -42,6 +42,12 @@ Note that **tag matches do not appear below**. They are a genuine gap — the fo
 third of a real card — but a Tier-B-sized one that this analysis never listed. A plan for
 them lives in [../tag-matches-plan.md](../tag-matches-plan.md).
 
+Nor does **fatigue and injury**, and that omission is larger. Doc [15](15-injuries-and-attrition.md)
+§1's fundamental fact — that managing the damage this job does to the people doing it *is*
+the job — has no representation in the engine at all: `SegmentResult.Injured` costs a
+wrestler nothing but a line of commentary, `Stamina` resets at the bell, and `Wrestler` has
+no age. A plan lives in [../fatigue-and-injury-plan.md](../fatigue-and-injury-plan.md).
+
 ### Tier A — high value, contained work
 
 #### A1. Split `Popularity` into `Overness` (stock) and `Momentum` (flow) — **implemented**
