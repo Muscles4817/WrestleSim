@@ -313,12 +313,13 @@
                         <span class="pick__name">
                             @t.Name
                             <span class="badge badge--gold">@t.TierLabel</span>
+                            @if (t.IsTagTitle) { <span class="badge">tag</span> }
                         </span>
                         <span class="pick__desc">
-                            @if (t.Champion is { } champ)
+                            @if (t.CurrentReign is { } reign)
                             {
                                 <text>
-                                    @champ.RingName — @t.CurrentReignDays(Today) day@(t.CurrentReignDays(Today) == 1 ? "" : "s"),
+                                    @reign.ChampionName — @t.CurrentReignDays(Today) day@(t.CurrentReignDays(Today) == 1 ? "" : "s"),
                                     @t.CurrentDefences defence@(t.CurrentDefences == 1 ? "" : "s")
                                 </text>
                             }

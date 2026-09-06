@@ -173,7 +173,7 @@ else
                 <div class="editor-row__n">@(title.IsVacant ? "○" : "★")</div>
                 <div>
                     <div class="editor-row__name">
-                        @(title.Champion?.RingName ?? "Vacant")
+                        @(title.CurrentReign?.ChampionName ?? "Vacant")
                     </div>
                     <div class="editor-row__sub">
                         @title.Name

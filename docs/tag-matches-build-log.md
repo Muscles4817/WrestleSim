@@ -601,3 +601,67 @@ create UI; the seeding was reverted.
 ### Result
 
 **403 tests passing.** Singles equivalence still byte-identical.
+
+---
+
+## Follow-up — tag titles finished
+
+Phase 5 introduced joint reigns and taught `TitleEconomy.ResolveTitleMatch` about sides. What
+it did not do was revisit every *other* place the title economy reads "the champion". On a
+singles belt `Champions[0]` and "the champion" are the same thing, so nothing failed; on a tag
+belt they are the same thing half the time, which is worse than failing.
+
+An audit of every `.Champion` read outside the shim itself found five:
+
+| Site | Was | Now |
+|---|---|---|
+| `TitleEconomy.ApplyDailyDrift` | Pulled the belt's standing toward `reign.Champion.EffectiveOverness` — the first-listed holder. Swapping the billing order of the same two champions changed what the belt was worth over time. | Reads the reign through `HeatEconomy.SideStanding`, top-weighted exactly as the crowd and the status economy read a side. |
+| `TitleEconomy.ApplyNonTitleLoss` | Named and priced `Champions[0]` whoever had really been beaten, producing results reading "Ricky lost to X" when Robert took the fall. | Takes the man who lost. Measured: the 80-overness half losing to a nobody costs the belt 2.50, the 40-overness half 1.50. |
+| `TitleEconomy.Vacate` | Reported one name when stripping a belt from two people. | Names both — and only when a reign was actually closed by that call. |
+| `Title.ReignsOf` | Matched on `r.Champion == w`, so a second-listed champion's reigns were not found by it. | Matches on `r.HeldBy(w)`. |
+| `DashboardScreen`, `MatchBuilder` | Rendered one holder of a tag belt. | Render `ChampionName`. The belt list also marks which shape a title is, since both now appear together. |
+
+Also: the Championships screen's "Champions" stat showed the *reign count*, which reads as a
+number of people the moment a belt can be held by two. Renamed to "Reigns".
+
+**Still not seeded by default**, and the reasoning has not changed: a tag belt claims the same
+finite attention as any other ([21](wrestling-reference/21-championships.md) §2.1), so shipping
+one would spend the player's first real title decision for them. A test now pins that —
+introducing a tag belt measurably dilutes every belt already on the books, which is the cost
+that makes the decision a decision.
+
+**414 tests passing.** Singles equivalence still byte-identical.
+
+### Review — round 6
+
+Reviewed independently. It built a differential harness of its own — 625 rows across drift,
+non-title loss, title-match resolution, `Vacate` and `ReignsOf`, run against this commit and
+its parent — and ran five mutations of the production code. Six of the eleven new tests
+discriminate; none passes with the code it protects inverted, so the failure mode of rounds 1
+and 2 has not recurred.
+
+It found that the sweep was **not** complete, and that three claims above were overstated.
+
+**Defects fixed:**
+
+| # | Finding | Fix |
+|---|---|---|
+| 1 | **`Vacate` named people who no longer held the belt.** The suffix searched the whole lineage for the last vacated reign rather than reading the reign it had just closed, so vacating an already-vacant belt reported the *previous* holders as the people being stripped. Latent — the UI guards on `IsVacant` — but a bug introduced by this commit. | Reads the reign in hand. |
+| 2 | **Singles `Vacate` output was not byte-identical**, which this commit asserted it was. The `Champions.Count > 1` guard chose *which name* to use; the suffix itself was appended unconditionally, so a singles vacancy read "Stripped by the promotion — stripped from Ricky Morton." The reviewer's harness caught it; mine would not have, because it does not cover the title economy. | Only a tag reign earns the suffix. Test pins the exact singles string. |
+| 3 | **Two `.Champion` reads survived**, in `ResolveTitleMatch` and `Vacate`, feeding `TitleUpdate.OutgoingChampion`/`Champion` — the very pattern the commit is named after. The audit table above undercounted by two. | `TitleUpdate` gains `OutgoingChampions`/`Champions`. The singular forms stay for singles readers. |
+| 4 | **The `ReignCount`-as-champions mislabel was only half fixed** — the retired-belts panel still read "3 champions" for a belt six people had held. | Fixed, along with the doc comment on `Title.ReignCount`. |
+| 5 | **`SideStanding` was called with chemistry defaulted to 0**, so the title economy read every team as two strangers while the crowd read a drilled one as nearly a single act — 76.50 against 87.35 for the same 92/30 pair. `SideStanding`'s own documentation is a post-mortem of that exact divergence happening once already. | `ApplyDailyDrift` takes chemistry; `Career.AdvanceOneDay` passes the team's. |
+| 7 | **The top-weighting claim was unpinned.** Replacing `SideStanding` with a plain mean left all 414 tests green — the two drift tests only required order-independence and monotonicity, which a mean satisfies. | A test that fails on a mean. Verified by mutation. |
+
+**Claims corrected:**
+
+- *"`ShowSimulator` passes the one who was pinned."* `Pinner` and `Pinned` are expression-bodied aliases for `Winner` and `Loser`, so that edit is a readability rename and nothing more — reverting it leaves the suite green. The whole fix lives inside `ApplyNonTitleLoss`. The commit message read as though the wrong person had been passed, which was never true.
+- *"a second-listed champion had no title history as far as the game was concerned."* `Title.ReignsOf` has no production callers. The fix is right; nothing reads it.
+- *"Vacate reported one name when stripping a belt from two people."* True of the string, but `GameState.VacateTitleAsync` discards the returned update entirely, so no player has seen either version.
+
+**Noted, not actioned:** `ShowSimulator` charges a non-title loss only against belts held by
+the *pinned* man, so a singles champion on a losing tag team whose partner ate the fall pays
+nothing. That is consistent with doc 21 §4.1 and defensible — the champion did not lose — but
+it is now a deliberate decision rather than an accident of there being no tag matches.
+
+**418 tests passing.**

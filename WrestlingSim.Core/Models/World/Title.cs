@@ -128,7 +128,7 @@ namespace WrestlingSim.Models.World
 
         public bool IsVacant => CurrentReign == null;
 
-        /// <summary>How many people have held it. "The 42nd champion" (§7).</summary>
+        /// <summary>How many reigns the belt has had. "The 42nd champion" (§7).</summary>
         public int ReignCount => Lineage.Count;
 
         /// <summary>Defences under the current champion. Zero for a vacant title.</summary>
@@ -164,7 +164,7 @@ namespace WrestlingSim.Models.World
         // ── Lineage helpers ──────────────────────────────────────────────────
 
         public IEnumerable<TitleReign> ReignsOf(Wrestler w) =>
-            Lineage.Where(r => r.Champion == w);
+            Lineage.Where(r => r.HeldBy(w));
 
         /// <summary>The longest reign in the belt's history, for the lineage display.</summary>
         public TitleReign? LongestReign(DateOnly today) =>

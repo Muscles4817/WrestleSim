@@ -391,8 +391,11 @@ namespace WrestlingSim.Engine
             }
             else if (_titles != null)
             {
-                foreach (var held in _titles.HeldBy(engineResult.Loser))
-                    updates.Add(TitleEconomy.ApplyNonTitleLoss(held, engineResult.Winner, weight));
+                // Charged against the man who was actually beaten, not against whichever
+                // holder happens to be listed first on the belt.
+                foreach (var held in _titles.HeldBy(engineResult.Pinned))
+                    updates.Add(TitleEconomy.ApplyNonTitleLoss(
+                        held, engineResult.Pinned, engineResult.Pinner, weight));
             }
 
             foreach (var update in updates)
