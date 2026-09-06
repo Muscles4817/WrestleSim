@@ -124,14 +124,32 @@ Formats, and what each is for:
   The rule that matters is that **anyone can be pinned**, which is why these exist: they let a
   champion lose the match without losing cleanly, and they let a challenger win without
   beating the champion. That is a booking convenience with a real cost — see §5.2.
-- **Trios.** Three a side, tag rules. The default format in lucha
-  ([25](25-international-models.md) §3.3), a novelty elsewhere. Not really a multi-man match
-  at all — it is a tag match with more people, and the face-in-peril structure works
-  unchanged.
+- **Trios.** Three a side, tag rules — and two genuinely different matches wearing one
+  name, which is worth separating because the engine treats them differently.
+
+  The **American six-man** is a tag match with more people: the face-in-peril structure
+  applies unchanged, and what the third man buys is a deeper heat (three fresh opponents
+  rotating on one man, which two a side cannot book) and a fresh man for the finish. It is
+  not a novelty format either — NJPW and WWE run six-mans routinely on house and television
+  cards, precisely because they get six people onto a card in one slot.
+
+  The **lucha trios** is a different match. Doc [25](25-international-models.md) §3.3 is
+  explicit that three-a-side is the *default* in lucha rather than a variant, and that this
+  "changes everything": rapid tag rules that allow constant motion, story told through the
+  group dynamic, three falls traditionally, and singles matches made special by contrast.
+  There is no long isolation in it and no hot tag to charge — the shape is the opposite of
+  the Southern Tag.
+
+  So the honest summary is that trios are not really a *multi-man* match — nobody has to be
+  disposed of, because everyone not legal is on the apron by rule — but they are not simply
+  "a tag match with more people" either. What the two formats share is that they need
+  nothing the two-side engine does not already have.
 - **Elimination.** Falls remove people; last one standing wins. Solves the third-man problem
   by construction, which is why it scales where a four-way does not. The drama moves from the
   fall to the *order* of eliminations.
-- **The battle royal / Rumble.** Over-the-top elimination, continuous entry. Barely a match:
+- **The battle royal / Rumble.** Over-the-top elimination. Everyone starts together in a
+  battle royal; timed continuous entry is the Rumble variant, and it is the entries that
+  make the Rumble a story rather than a scramble. Barely a match:
   a vehicle for a spectacle, a surprise return, and one story told in eliminations. Judged on
   moments, not on work.
 - **Handicap.** Two or more against one. Almost never a contest; it is a *statement*, and the
@@ -366,19 +384,27 @@ The engine already implements a great deal of this. Notes on gaps:
   and they should be able to diverge sharply. That divergence is what wrestling is.
 - **Multi-man matches** (§2.5) need three things the two-side engine does not have, and the
   order matters:
-  1. **Attention as a scarce resource, not advantage as a scalar.** The engine's
-     `Advantage` runs −100 to +100, which is inherently two-poled. Three sides need a
-     per-side reading, and the interesting quantity is not who is winning but **who the room
-     is watching** — sequences not involving the person they came to see are dead air however
-     well worked. That makes the reaction vector ([16](16-crowd-psychology.md) §2, A5 in
-     [31](31-sim-mapping.md)) a prerequisite rather than a parallel piece of work.
-  2. **Presence, so that being out of the ring is modelled.** A disposal spot should remove
+  1. **A per-side advantage reading.** The engine's `Advantage` runs −100 to +100, which is
+     inherently two-poled: it can say who is on top of a two-sided match and cannot say
+     anything at all about a three-sided one. Three sides need an array. This is a
+     data-shape change and nothing more — it is a hard prerequisite, and it is cheap.
+  2. **Attention as a scarce resource.** The separate and larger point: in a multi-man match
+     the interesting quantity is not who is winning but **who the room is watching**. The
+     reaction vector ([16](16-crowd-psychology.md) §2, A5 in [31](31-sim-mapping.md)) is what
+     would let the engine read that. It is not a prerequisite — a triple threat could ship
+     with a three-pole advantage and no reaction vector — it is the difference between a
+     format that works and one that is worth booking.
+  3. **Presence, so that being out of the ring is modelled.** A disposal spot should remove
      someone for a bounded stretch and their return should be worth something. Without this
      there is no way to distinguish a well-worked three-way from a badly-worked one, because
      the difference is entirely in how people leave and come back.
-  3. **A protection cost at the promotion level.** Winning a belt without beating the
+  4. **A protection cost at the promotion level.** Winning a belt without beating the
      champion is a real tool with an aggregate price, and it has the same shape as
      interference and non-finishes — cheap once, corrosive repeated.
 
-  Trios are the exception and need none of it: three a side is still two sides, and the
-  face-in-peril structure the engine already runs applies unchanged.
+  Trios are the exception and need none of it: three a side is still two sides, and both
+  formats above run on the tag machinery the engine already has. Shipped — see
+  `Six-Man War` and `Lucha Trios` in `MatchStructureLibrary`. The one thing the engine
+  deliberately does *not* have is a term for headcount: a side is read from its members, so
+  a third man is worth exactly what the booking gives him to do, and a structure that never
+  tags him in has added a name to the card and nothing else.

@@ -53,19 +53,19 @@ namespace WrestlingSim.UI
 
             var chosen = new List<Wrestler>();
 
-            var membersA = PickSide("SIDE A", sideSize, wrestlers, chosen);
+            // "SIDE A" is right for a team and wrong for a singles match, where there is
+            // no side to speak of.
+            var membersA = PickSide(sideSize > 1 ? "SIDE A" : "WRESTLER A", sideSize, wrestlers, chosen);
             if (membersA == null) return null;
 
-            var membersB = PickSide("SIDE B", sideSize, wrestlers, chosen);
+            var membersB = PickSide(sideSize > 1 ? "SIDE B" : "WRESTLER B", sideSize, wrestlers, chosen);
             if (membersB == null) return null;
 
             var sideA = MatchSide.Of(membersA.ToArray());
             var sideB = MatchSide.Of(membersB.ToArray());
-            var a = sideA.Starter;
-            var b = sideB.Starter;
 
             var matchType = SelectMatchType();
-            var feud      = ResolveFeud(a, b, feudBook);
+            var feud      = ResolveFeud(sideA, sideB, feudBook);
             var (beats, structureName) = SelectStructure(feud, sideSize);
 
             while (true)
@@ -131,11 +131,18 @@ namespace WrestlingSim.UI
         /// Reads the feud these two have actually built through booked segments and
         /// matches. Falls back to declaring one by hand when there is no history yet.
         /// </summary>
-        private static Feud? ResolveFeud(Wrestler a, Wrestler b, FeudBook feudBook)
+        private static Feud? ResolveFeud(MatchSide sideA, MatchSide sideB, FeudBook feudBook)
         {
             Rule("FEUD", 34);
 
-            var existing = feudBook.Find(a, b);
+            // Keyed on the whole side, not on the starters. Feuds have been stored
+            // side-to-side since phase 5, and looking one up by the two people who happen
+            // to begin the match found nothing for a team that had been feuding for months.
+            // The starters are pulled out only to name the sides in the prompts below.
+            var a = sideA.Starter;
+            var b = sideB.Starter;
+
+            var existing = feudBook.Find(sideA.Members, sideB.Members);
             if (existing != null && existing.Intensity > FeudIntensity.None)
             {
                 WriteLine($"\n  {a.RingName} and {b.RingName} have history:", ConsoleColor.Cyan);
@@ -191,7 +198,7 @@ namespace WrestlingSim.UI
                 .ToList();
 
             // Declared feuds go into the book too, so later segments build on them.
-            var feud = feudBook.GetOrCreate(a, b);
+            var feud = feudBook.GetOrCreate(sideA.Members, sideB.Members);
             feud.SetMinimumIntensity(intensity);
             foreach (var tag in history) feud.AddTag(tag);
 

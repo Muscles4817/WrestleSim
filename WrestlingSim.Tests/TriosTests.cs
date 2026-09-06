@@ -12,15 +12,23 @@ namespace WrestlingSim.Tests
     /// <summary>
     /// Trios — three a side.
     ///
-    /// The point of these is what they *do not* test. Three a side is still two sides, so
-    /// the face-in-peril structure, the hot-tag charge, the heat split and the feud keying
-    /// all apply unchanged (docs/wrestling-reference/18-match-craft.md §2.5). The sides
-    /// abstraction from phase 1 bought trios without anyone asking for them — a 3v3 plan
-    /// validated and executed correctly before a line of trios code was written.
+    /// The machinery needed nothing. Three a side is still two sides, so the face-in-peril
+    /// structure, the hot-tag charge, the heat split and the feud keying all apply
+    /// unchanged (docs/wrestling-reference/18-match-craft.md §2.5) — the sides abstraction
+    /// from phase 1 bought trios without anyone asking for them, and a 3v3 plan validated
+    /// and executed correctly before a line of trios code was written.
     ///
     /// What did need doing was everything that had quietly assumed a side has at most two
     /// people: commentary that names "his partner", a beat called All Four In, a UI with a
     /// boolean toggle, and no structures to book.
+    ///
+    /// And then, per review, the thing that "the machinery needed nothing" concealed: the
+    /// machinery having nothing to do with whether the *content* uses three people. The
+    /// first two structures shipped with one tag change each and left three of the six on
+    /// the apron for the whole match. The engine has no headcount term and should not —
+    /// a side is read from its members, so a third man is worth exactly what the booking
+    /// gives him to do. <see cref="EveryTriosStructure_PutsEveryMemberOfBothSidesInTheRing"/>
+    /// is the guard that came out of that.
     /// </summary>
     public class TriosTests(ITestOutputHelper output)
     {
@@ -262,6 +270,110 @@ namespace WrestlingSim.Tests
                     Beats = st.Beats.Select(b => b.Clone()).ToList()
                 };
                 Assert.NotEmpty(singles.Validate());
+
+                // Nor in a tag match — which is the half of this test's own name that it
+                // did not check first time round, and which was false when it was written:
+                // both structures validated cleanly at two a side because neither named an
+                // incoming member, so every tag fell through to "next man round". Naming
+                // member 2 is what makes a trios preset genuinely a trios preset.
+                var tag = new MatchPlanModel
+                {
+                    SideA = MatchSide.Of(W("Tag A1"), W("Tag A2")),
+                    SideB = MatchSide.Of(W("Tag B1"), W("Tag B2")),
+                    Beats = st.Beats.Select(b => b.Clone()).ToList()
+                };
+                var tagErrors = tag.Validate();
+                output.WriteLine($"    at 2v2: {string.Join("; ", tagErrors)}");
+                Assert.NotEmpty(tagErrors);
+            }
+        }
+
+        /// <summary>
+        /// The review finding this file exists to stop happening again.
+        ///
+        /// A structure can be perfectly legal, execute without error, rate well, and still
+        /// leave half the people in it standing on the apron for the entire match — which
+        /// is exactly what both shipped presets did. Doc 18 §9 lists "the unexplained third
+        /// man" as a named failure and §2.5 calls it the format's characteristic one, so a
+        /// preset that commits it is not a rough edge, it is the wrong content.
+        ///
+        /// Walks the tag changes statically rather than reading commentary, so it cannot be
+        /// fooled by a seed that happened to name somebody.
+        /// </summary>
+        [Fact]
+        public void EveryTriosStructure_PutsEveryMemberOfBothSidesInTheRing()
+        {
+            foreach (var st in MatchStructureLibrary.ForSideSize(3))
+            {
+                var sideA = Trio("A1", "A2", "A3");
+                var sideB = Trio("B1", "B2", "B3");
+
+                var legalA = new HashSet<int> { sideA.StartingIndex };
+                var legalB = new HashSet<int> { sideB.StartingIndex };
+                int curA = sideA.StartingIndex, curB = sideB.StartingIndex;
+
+                foreach (var beat in st.Beats.Where(b => b.IsTagChange))
+                {
+                    bool isA = beat.Control == BeatControl.WrestlerA;
+                    int cur  = isA ? curA : curB;
+                    int next = beat.IncomingIndex is { } i && i >= 0 && i < 3 ? i : (cur + 1) % 3;
+                    if (isA) { curA = next; legalA.Add(next); }
+                    else     { curB = next; legalB.Add(next); }
+                }
+
+                output.WriteLine($"  {st.Name,-14} side A in the ring: {legalA.Count}/3, " +
+                                 $"side B: {legalB.Count}/3");
+
+                Assert.True(legalA.Count == 3,
+                    $"{st.Name} never makes {3 - legalA.Count} of side A's three legal — " +
+                    "they are on the apron for the whole match.");
+                Assert.True(legalB.Count == 3,
+                    $"{st.Name} never makes {3 - legalB.Count} of side B's three legal — " +
+                    "they are on the apron for the whole match.");
+            }
+        }
+
+        /// <summary>
+        /// And the same thing measured rather than walked: over many seeds, every one of
+        /// the six is named in the commentary at least once. The static walk above proves
+        /// they are legal; this proves the match actually talks about them.
+        /// </summary>
+        [Fact]
+        public void EveryTriosStructure_NamesAllSixInTheCommentary()
+        {
+            foreach (var st in MatchStructureLibrary.ForSideSize(3))
+            {
+                var sideA = Trio("Ann", "Bob", "Cal");
+                var sideB = Trio("Dan", "Eve", "Fay");
+                var everyone = sideA.Members.Concat(sideB.Members).Select(w => w.RingName).ToList();
+                var named = new HashSet<string>();
+
+                for (int seed = 0; seed < 60; seed++)
+                {
+                    var plan = new MatchPlanModel
+                    {
+                        SideA = sideA, SideB = sideB,
+                        Beats = st.Beats.Select(b => b.Clone()).ToList()
+                    };
+                    foreach (var line in new MatchEngine(seed).Execute(plan)
+                                             .BeatResults.SelectMany(b => b.Commentary))
+                    {
+                        // Side renderings ("Ann & Bob & Cal") name everybody at once and
+                        // are not evidence that anyone did anything, so strip them first.
+                        string stripped = line
+                            .Replace(string.Join(" & ", sideA.Members.Select(w => w.RingName)), "~")
+                            .Replace(string.Join(" & ", sideB.Members.Select(w => w.RingName)), "~");
+                        foreach (var n in everyone)
+                            if (stripped.Contains(n)) named.Add(n);
+                    }
+                }
+
+                var missing = everyone.Where(n => !named.Contains(n)).ToList();
+                output.WriteLine($"  {st.Name,-14} named individually: {named.Count}/6" +
+                                 (missing.Count > 0 ? $"  MISSING: {string.Join(", ", missing)}" : ""));
+
+                Assert.True(missing.Count == 0,
+                    $"{st.Name} never mentions {string.Join(", ", missing)} by name in 60 matches.");
             }
         }
 

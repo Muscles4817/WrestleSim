@@ -163,7 +163,7 @@
         }
     }
 
-    @if (a is not null && partnersA.Take(sideSize - 1).All(w => w is not null))
+    @if (MembersA.Count() == sideSize)
     {
         <div class="panel">
             <div class="panel__title">
@@ -239,7 +239,7 @@
         {
             <div class="panel">
                 <div class="panel__title">
-                    Side A
+                    Side B
                     @if (ExistingTeamB is { } known) { <span class="badge badge--gold">@known.Name</span> }
                 </div>
                 @if (ExistingTeamB is { } teamB)
@@ -691,10 +691,21 @@
     private int SideSize => sideSize;
     private bool IsTeamMatch => sideSize > 1;
 
+    /// <summary>
+    /// Both sides fully picked.
+    ///
+    /// This used to read `partnersA.Take(sideSize - 1).All(w => w is not null)`, which is
+    /// vacuously true on an empty list — `partnersA` starts empty and only grows when a
+    /// slot is clicked. So the gate passed with no partners chosen at all, and `Finish()`
+    /// went on to build `MatchSide.Of(a)` vs `MatchSide.Of(b)`: a perfectly valid *singles*
+    /// match, booked silently for a player who asked for a tag or trios one.
+    ///
+    /// `MembersA` already filters nulls and caps at `sideSize`, so counting it is the whole
+    /// check — it can only reach `sideSize` when the corner and every partner slot is
+    /// filled.
+    /// </summary>
     private bool SidesComplete =>
-        a is not null && b is not null
-        && partnersA.Take(sideSize - 1).All(w => w is not null)
-        && partnersB.Take(sideSize - 1).All(w => w is not null);
+        MembersA.Count() == sideSize && MembersB.Count() == sideSize;
 
     private IEnumerable<Wrestler> MembersA =>
         new[] { a }.Concat(partnersA.Take(sideSize - 1)).Where(w => w is not null)!;

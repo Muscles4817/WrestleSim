@@ -14,6 +14,19 @@ namespace WrestlingSim.Engine
             BeatIntensity? intensity = null, BeatDuration? duration = null) =>
             BeatLibrary.Find(templateName)!.ToMatchBeat(control, intensity, duration);
 
+        /// <summary>
+        /// A tag change that names who comes in. On a two-man side the default — next man
+        /// round — is the only possible answer, so nothing needed this. On a trio it is the
+        /// difference between the third man working the match and standing on the apron for
+        /// all of it.
+        /// </summary>
+        private static MatchBeat Tag(string templateName, BeatControl control, int incoming)
+        {
+            var beat = Beat(templateName, control);
+            beat.IncomingIndex = incoming;
+            return beat;
+        }
+
         public static IReadOnlyList<MatchStructure> All { get; } = new List<MatchStructure>
         {
             // ── TV Formula ───────────────────────────────────────────────────
@@ -227,38 +240,62 @@ namespace WrestlingSim.Engine
 
             // ── Trios ────────────────────────────────────────────────────────
             //
-            // Three a side is still two sides, so the face-in-peril structure applies
-            // unchanged — docs/wrestling-reference/18-match-craft.md §2.5. What a third man
-            // buys is a longer heat that stays legal: with two partners to cut off, the
-            // isolation can run longer before it reads as padding, and there are two
-            // corners to deny before the tag finally comes.
+            // Three a side is still two sides, so the tag machinery applies without
+            // change — docs/wrestling-reference/18-match-craft.md §2.5. What it does not
+            // do by itself is give the third man anything to do. The engine has no term
+            // for headcount and deliberately should not: a side is read from its members,
+            // so a third man matters exactly as much as he is *in the match*. Crowd fields
+            // read the whole side, so he lifts the room from the apron; craft fields read
+            // only the legal performers, so he contributes nothing to the work until he is
+            // tagged in.
+            //
+            // Which makes the tag changes load-bearing content rather than decoration. Both
+            // structures below name every incoming member explicitly, so all six people are
+            // legal at some point. The first pass of these two shipped with a single tag
+            // change each and left three of the six on the apron for the entire match —
+            // §9's "unexplained third man", which §2.5 calls the format's characteristic
+            // failure, shipped as a preset.
+            //
+            // The two are deliberately different matches, not one match at two lengths:
+            // Six-Man War is the American six-man (the Southern Tag with a deeper heat and
+            // a fresh man for the finish); Lucha Trios is the CMLL default described in
+            // doc 25 §3.3 — rapid tags, constant motion, no long isolation at all.
 
             new MatchStructure
             {
                 Name        = "Lucha Trios",
-                Description = "The Arena México default. Constant motion, quick tags and tandem " +
-                              "offence from both sides, then a dive sequence and a fall out of nowhere.",
+                Description = "The Arena México default. Rapid tags and constant motion — all six " +
+                              "work, nobody is isolated — into a dive sequence and a fall from nowhere.",
                 Tags        = ["Trios", "Fast", "Lucha"],
                 SideSize    = 3,
                 Beats       =
                 [
+                    // Five tag changes in thirteen beats, three of them on the rudo side.
+                    // Doc 25 §3.3 lists "rapid tag rules that allow constant motion" as the
+                    // first thing three-a-side changes, and constant motion is the opposite
+                    // of the Southern Tag: there is no isolation and no hot tag here at all,
+                    // so there is nothing to charge and nothing to spend.
                     Beat("Hot Start",                 BeatControl.Even),
                     Beat("Shine",                     BeatControl.WrestlerA),
+                    Tag ("Quick Tag",                 BeatControl.WrestlerA, incoming: 1),
+                    Beat("Double Team",               BeatControl.WrestlerA),
+                    Tag ("Blind Tag",                 BeatControl.WrestlerB, incoming: 1),
+                    Beat("Cut-Off",                   BeatControl.WrestlerB),
                     Beat("Double Team",               BeatControl.WrestlerB),
-                    Beat("Quick Tag",                 BeatControl.WrestlerA),
+                    Tag ("Quick Tag",                 BeatControl.WrestlerB, incoming: 2),
                     Beat("Aerial Assault",            BeatControl.WrestlerA),
+                    Tag ("Quick Tag",                 BeatControl.WrestlerA, incoming: 2),
                     Beat("Everybody In",              BeatControl.Even),
                     Beat("Jaw-Dropper",               BeatControl.WrestlerA),
-                    Beat("Shock Kickout",             BeatControl.WrestlerB),
-                    Beat("Clean Victory",             BeatControl.WrestlerA),
+                    Beat("Roll-Up Steal",             BeatControl.WrestlerA),
                 ]
             },
 
             new MatchStructure
             {
                 Name        = "Six-Man War",
-                Description = "The full formula with a third man on each side. A longer heat than a " +
-                              "tag can carry — two corners to keep him from, two tags to deny.",
+                Description = "The American six-man. A deeper heat than a tag can carry — three heels " +
+                              "rotating on one man — then the hot tag and a fresh third man to finish.",
                 Tags        = ["Trios", "Classic", "Crowd"],
                 SideSize    = 3,
                 Beats       =
@@ -268,11 +305,30 @@ namespace WrestlingSim.Engine
                     Beat("Cut-Off",                   BeatControl.WrestlerB),
                     Beat("Face in Peril",             BeatControl.WrestlerB),
                     Beat("Near Tag",                  BeatControl.WrestlerB),
+                    // The heels rotating is what a third man buys the *heat*. The charge is
+                    // tracked per side and credited to whoever is being worked over, so a
+                    // heel tag costs the face nothing — his corner keeps everything the
+                    // isolation paid in. Three fresh men working one is a longer heat that
+                    // still reads as a beating rather than as padding.
+                    Tag ("Quick Tag",                 BeatControl.WrestlerB, incoming: 1),
                     Beat("Face in Peril",             BeatControl.WrestlerB),
                     Beat("Near Tag",                  BeatControl.WrestlerB),
+                    // The third heel tags in fresh for the last stretch of the beating.
+                    Tag ("Quick Tag",                 BeatControl.WrestlerB, incoming: 2),
+                    // Three isolations, one per heel — the deeper heat the Description
+                    // claims, and the thing two a side genuinely cannot book. A near tag
+                    // between each keeps the run at one, so this costs no patience: doc 18
+                    // §2.3 says a long heat is good and the hope spots are what make it so.
+                    Beat("Face in Peril",             BeatControl.WrestlerB),
                     Beat("Hot Tag",                   BeatControl.WrestlerA),
                     Beat("Double Team",               BeatControl.WrestlerA),
+                    // And what a third man buys the *finish*: somebody who has not been in
+                    // the match yet takes the fall. On two a side this beat cannot exist.
+                    Tag ("Quick Tag",                 BeatControl.WrestlerA, incoming: 2),
                     Beat("Everybody In",              BeatControl.Even),
+                    // Restored. Dropping the Shock Kickout left the Save breaking up a pin
+                    // the match had never shown anybody attempt.
+                    Beat("Shock Kickout",             BeatControl.WrestlerA),
                     Beat("Save",                      BeatControl.WrestlerB),
                     Beat("Clean Victory",             BeatControl.WrestlerA),
                 ]

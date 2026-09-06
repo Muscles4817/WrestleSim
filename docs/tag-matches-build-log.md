@@ -703,3 +703,136 @@ isolations and two denied tags where `Southern Tag` books two and two, and rates
 lucha sprint for the same reason the Southern Tag rates above the tag sprint.
 
 **432 tests passing** (14 new). Singles equivalence still byte-identical.
+
+---
+
+## Trios — review round 1, and a paragraph I have to withdraw
+
+The reviewer's verdict was **not safe to merge**, and the substantive half of it was right in
+a way the paragraph immediately above this one is a good example of. That paragraph says a
+third man "is a reason the formula can run longer" and then, in the very next sentence,
+concedes that `Six-Man War` "books two isolations and two denied tags where `Southern Tag`
+books two and two" — the same numbers. It asserts a mechanic and then prints the measurement
+denying it. That is the fourth time in this build log I have done that, and the second time
+the contradiction was inside a single paragraph.
+
+Worse than the prose: **both structures left three of their six people on the apron for the
+entire match.** Each contained exactly one tag change with no `IncomingIndex`, so the tag fell
+through to "next man round" — side A went 0→1 and side B never tagged at all. Members `A3`,
+`B2` and `B3` were never legal, never worked, and were never named. Doc 18 §9 lists *"the
+unexplained third man — somebody is on the floor for minutes with no reason given"* as a named
+failure mode and §2.5 calls it the format's characteristic one. I shipped it as a preset.
+
+### The blocking two
+
+| # | Finding | Fix |
+|---|---|---|
+| 1 | `SidesComplete` was `partnersA.Take(sideSize - 1).All(w => w is not null)`. `partnersA` starts **empty**, and `All` on an empty sequence is `true` — so the gate passed with no partners picked. `Finish()` then built `MatchSide.Of(a)` vs `MatchSide.Of(b)`: a perfectly valid *singles* match, booked silently for a player who asked for a trios one. A **regression on shipped tag booking**, not a trios gap. | The gate now reads `MembersA.Count() == sideSize && MembersB.Count() == sideSize` — the same `MembersA` expression `Finish()` builds the side from. The point is not that the new expression is correct; it is that the gate and the builder can no longer disagree, because there is only one of them. Same fix at `:166`, where the Side B panel appeared before Side A was filled. |
+| 6 | Side B's team-formation panel was titled "Side A". | One word. |
+
+### The substantive two
+
+Findings 2 and 3 were the real problem, and the reviewer offered a fair choice: make the
+third man work, or stop claiming he does. I did the first, because the second would have
+shipped two presets that commit the failure their own documentation names.
+
+**`Six-Man War` — the American six-man.** Three tag changes added, all naming their incoming
+member explicitly:
+
+```
+Cut-Off (B) → Face in Peril → Near Tag
+            → Quick Tag B→1 → Face in Peril → Near Tag     three fresh heels,
+            → Quick Tag B→2 → Face in Peril                one isolation each
+            → Hot Tag A→1 → Double Team
+            → Quick Tag A→2                                the third face, fresh
+            → Everybody In → Shock Kickout (A) → Save (B) → Clean Victory (A)
+```
+
+Three isolations against three fresh opponents is the "deeper heat than a tag can carry" the
+Description claims, and it is the one thing two a side genuinely cannot book. A near tag
+between each keeps `IsolationRun` at 1 throughout, so it costs no patience — doc 18 §2.3 is
+explicit that a long heat is good and the hope spots are what make it bearable. The hot-tag
+charge is credited to the side being worked over, so the heels tagging costs the faces
+nothing. And the third face taking the fall off a tag he has not worked yet is a beat that
+cannot exist at two a side.
+
+Finding 9 was also right: dropping the `Shock Kickout` left `Save` breaking up a pin the match
+had never shown anybody attempt. Restored as `Shock Kickout (A) → Save (B) → Clean Victory
+(A)`, which reads as the faces nearly winning, the heels breaking it up, and the faces winning
+anyway.
+
+**`Lucha Trios` — actually lucha now.** The old version was a nine-beat sprint with one tag,
+named for Arena México. Doc 25 §3.3 says three-a-side in lucha means *"rapid tag rules that
+allow constant motion"*, so it now has five tag changes in thirteen beats, three of them on
+the rudo side, no isolation and no hot tag at all — and `Roll-Up Steal` for the "fall out of
+nowhere" its Description had always promised while ending on `Clean Victory` (finding 12).
+
+### Measured, on the same six people, 300 seeds each
+
+```
+                     UNNAMED (of 6)   stars    tech   story   peak   avgCrowd
+Six-Man War   before     3           3.5884
+Six-Man War   after      0           4.4403    56.7   109.0   97.7     73.0
+Lucha Trios   before     3           3.2249
+Lucha Trios   after      0           3.6926    41.9    42.6   89.7     79.5
+Southern Tag  at 3v3     2           4.4893    50.7   105.9   96.9     76.8
+```
+
+Two things to state plainly rather than let the star column carry.
+
+**Side size still has no term in the engine, and should not.** The reviewer's headline
+measurement — identical clones at 2v2 and 3v3 rating 3.6793 to four decimal places — is
+correct, and it is not the bug it looks like: every aggregate over three identical people is
+the same number as over two, so three identical men *are* the same act. A side is read from
+its members, so a third man is worth exactly what the booking gives him to do. What was
+broken was the booking, not the reading.
+
+**`Six-Man War` still rates below `Southern Tag` at 3v3, by 0.05.** It is ahead on technical
+(+6.0), storytelling (+3.1) and crowd peak (+0.8) — it is measurably the bigger match — and
+behind on *average* crowd energy (73.0 vs 76.8), because seventeen beats with three isolations
+spend more of the match in the heat than thirteen with two. The composite weights the average,
+so the bigger match scores fractionally lower. That is a real property of the rating formula
+and arguably wrong; changing how the composite treats a long heat is a rating-formula change
+with nothing to do with trios, so it is not in this PR. Recorded rather than papered over: the
+Description claims a deeper heat and a fresh finisher, both of which are now true and
+measured, and it does not claim a higher rating.
+
+### The rest
+
+| # | Finding | Fix |
+|---|---|---|
+| 4 | §2.5 cited doc 25 §3.3 as authority for "a novelty elsewhere / the face-in-peril structure works unchanged". §3.3 says three-a-side is the *default* and *"this changes everything"*. | Rewritten to separate the two formats that share the name: the American six-man (face-in-peril applies; not a novelty — NJPW and WWE run them routinely) and the lucha trios (rapid tags, constant motion, group dynamic, three falls; the opposite shape). The presets now match the distinction. |
+| 5 | `NameCorner` returned `"his corner"`, so one near-tag template read *"…drags him back! his corner is beside himself on the apron!"* — a lowercase sentence start, and gendered for a phrase that has to work in a women's trios. | Returns `"the corner"`; the template puts it mid-sentence (*"You can see the corner pleading on the apron!"*), which also drops the "beside himself". |
+| 7 | `TitlesScreen` offered SideSize 1 and 2 only, so a trios belt could never be created and `MatchBuilder`'s exact `SideSize` filter meant no belt was ever selectable at three a side. `TriosTests` constructed `new Title { SideSize = 3 }` directly and asserted it worked. | Third option added. This is exactly the screen the paragraph above claimed to have found, and did not. |
+| 8 | `EveryTriosStructure_IsBookableForThreeASideAndNotForTwo` never tested two. Both structures **validated cleanly at 2v2** — the name asserted a false property. | Naming `IncomingIndex: 2` makes the property true (`incoming >= side.Size` is rejected), so the test now checks it instead of being renamed. |
+| 10 | `ApplyMiscommunication` and `ApplySaveBreakup` took `PartnersOf(x).First()`, so the same partner made every save and every mistake all match. Unlike `NameCorner` these beats need a *person*, so "the corner" is not available. | New `SpotPartner` rotates on `State.BeatIndex`. Deliberately not an RNG draw: an extra draw would shift every subsequent number and break the byte-identity the singles and 2v2 suites check for. At two members it selects the same person `.First()` did. |
+| 13 | Stray double blank line; a comment saying "the beat's premise is that all four are in" in the commit that made that untrue; console prompt reading bare `"SIDE A"` at side size 1; `MatchBookingFlow.ResolveFeud` keying feuds on the **starters**, so the console booked a trios match against a singles feud while the web builder correctly used the side-to-side key. | All four. The feud one was pre-existing and carried forward — now `Find(sideA.Members, sideB.Members)` and `GetOrCreate` likewise. |
+
+Finding 11 was fair and is fixed in the doc: the per-side advantage array is a genuine
+prerequisite for a triple threat and is a cheap data-shape change; the reaction vector is what
+makes such a match *worth booking* and is not a prerequisite. The two were run together as one
+numbered point, and the attention argument was doing the presence argument's work. Now four
+numbered points, correctly separated.
+
+### Two new guards, from the finding that mattered
+
+`EveryTriosStructure_PutsEveryMemberOfBothSidesInTheRing` walks the tag changes statically —
+it cannot be fooled by a seed that happened to name somebody — and fails if any member of
+either side is never legal. `EveryTriosStructure_NamesAllSixInTheCommentary` measures the same
+thing from the other end over 60 seeds, stripping the whole-side renderings first so that
+"Ann & Bob & Cal" is not counted as evidence that Cal did anything. Both fail on the structures
+as originally shipped.
+
+### One defect found and deliberately not fixed here
+
+The commentary calls every wrestler "him". The shipped roster is half women, the builder
+explicitly supports intergender matches, and a near-tag in a women's tag currently reads
+*"Bianca Belair pulled **him** away"*. Eight templates in `MatchEngine`, two of them reachable
+from singles matches. Fixing them would change commentary **text** for singles, which is the
+canary three reviewers have used to prove the engine's numbers were untouched — so it goes in
+the UX pass, where user-visible text is the subject, rather than being smuggled through here.
+
+**434 tests passing** (2 new). Singles remain byte-identical, numerically and textually. Two-a-side
+commentary **text** changes at one template — the near-tag line rewritten for finding 5 — while
+its numbers are unchanged; `SpotPartner` and `NameCorner` both reduce to the previous
+expressions at two members.
