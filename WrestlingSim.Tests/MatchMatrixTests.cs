@@ -26,10 +26,20 @@ namespace WrestlingSim.Tests
             double Tech, double Story, double Peak, double Avg, double FinishQuality);
 
         /// <summary>
-        /// Executes the full matrix once. Kept in one place so several tests can assert on
-        /// different properties of the same sweep without re-running it per assertion.
+        /// The matrix, executed once for the whole class.
+        ///
+        /// Every test in here asserts on a different property of the same sweep and the
+        /// seeds are fixed, so running it per test produced eight identical matrices. That
+        /// was affordable on a thirty-person roster and is not on a seventy-six-person one:
+        /// the sweep is quadratic in roster size, so it grew from 500k matches to 1.8m, and
+        /// doing that eight times took two and a half minutes to learn nothing new.
         /// </summary>
-        private static List<Cell> Sweep(int runsPerCell = RunsPerCell)
+        private static readonly Lazy<List<Cell>> Matrix = new(() => RunSweep());
+
+        private static List<Cell> Sweep() => Matrix.Value;
+
+        /// <summary>Executes the full matrix. Only ever called through <see cref="Matrix"/>.</summary>
+        private static List<Cell> RunSweep(int runsPerCell = RunsPerCell)
         {
             var cells = new List<Cell>();
 

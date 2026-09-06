@@ -1019,5 +1019,1592 @@
     "Signature": [
       { "Name": "Death Valley Driver", "Move": { "Name": "Death Valley Driver", "Types": [ "Slam" ], "Risk": "Medium", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Medium", "Overness": 24, "TagExclusive": false }
     ]
+  },
+  {
+    "RealName": "Nathan Coyle",
+    "Division": "Mens",
+    "Overness": 89,
+    "Charisma": 4.6,
+    "Style": "Striker",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Ezekiel Crowe",
+      "Type": "CultLeader",
+      "PersonaDescriptor": "Shepherd of the Lost",
+      "Tone": "SelfRighteous",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 9,
+      "Durability": "LongTerm",
+      "Freshness": 0.88,
+      "GimmickTraits": [ "Magnetic", "Manipulative", "Feared" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.92 },
+        { "Group": "Casual", "AppealScore": 0.74 },
+        { "Group": "Online", "AppealScore": 0.9 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 2.4, "Grappler": 3.4, "Powerhouse": 3.6, "Technical": 3.6, "Brawler": 4.0, "Striker": 4.6 },
+    "Physical": { "Strength": 78, "Speed": 76, "Agility": 74, "Stamina": 84, "Size": 4 },
+    "Mental": { "Psychology": 90, "Selling": 82, "RingIQ": 88, "Toughness": 84 },
+    "Moveset": [
+      { "Name": "Roundhouse Kick", "Types": [ "Strike" ], "Risk": "Easy", "Impact": "Hard", "RequiresWeapons": false },
+      { "Name": "Rope-Hung Knee", "Types": [ "Strike" ], "Risk": "Medium", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "The Reckoning", "Move": { "Name": "Spinning Heel Kick", "Types": [ "Strike" ], "Risk": "Medium", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "VeryHard", "Overness": 89, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Declan Malone",
+    "Division": "Mens",
+    "Overness": 82,
+    "Charisma": 3.6,
+    "Style": "Technical",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Bishop Malone",
+      "Type": "Traditionalist",
+      "PersonaDescriptor": "The Last Honest Man",
+      "Tone": "Serious",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 5,
+      "Durability": "LongTerm",
+      "Freshness": 0.7,
+      "GimmickTraits": [ "Respected", "Old School", "Ring General" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.94 },
+        { "Group": "Casual", "AppealScore": 0.62 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 2.6, "Grappler": 4.7, "Powerhouse": 3.6, "Technical": 4.9, "Brawler": 4.2, "Striker": 4.4 },
+    "Physical": { "Strength": 74, "Speed": 60, "Agility": 62, "Stamina": 76, "Size": 3 },
+    "Mental": { "Psychology": 95, "Selling": 90, "RingIQ": 94, "Toughness": 86 },
+    "Moveset": [
+      { "Name": "Short-Arm Lariat", "Types": [ "Strike" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Bridging Northern Lights Suplex", "Types": [ "Throw" ], "Risk": "Medium", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "The Long Count", "Move": { "Name": "Cross Armbreaker", "Types": [ "Submission" ], "Risk": "Hard", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 82, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Ren Takahara",
+    "Division": "Mens",
+    "Overness": 78,
+    "Charisma": 3.2,
+    "Style": "Striker",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Ren Takahara",
+      "Type": "Realist",
+      "PersonaDescriptor": "The Purist",
+      "Tone": "Serious",
+      "NaturalAlignment": "Tweener",
+      "PopularityModifier": 4,
+      "Durability": "MediumTerm",
+      "Freshness": 0.8,
+      "GimmickTraits": [ "Stiff", "Uncompromising", "No Wasted Motion" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.9 },
+        { "Group": "Casual", "AppealScore": 0.5 },
+        { "Group": "International", "AppealScore": 0.72 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 2.8, "Grappler": 4.0, "Powerhouse": 3.0, "Technical": 4.2, "Brawler": 3.4, "Striker": 4.6 },
+    "Physical": { "Strength": 72, "Speed": 82, "Agility": 80, "Stamina": 86, "Size": 3 },
+    "Mental": { "Psychology": 86, "Selling": 78, "RingIQ": 88, "Toughness": 92 },
+    "Moveset": [
+      { "Name": "Rolling Elbow", "Types": [ "Strike" ], "Risk": "Easy", "Impact": "Hard", "RequiresWeapons": false },
+      { "Name": "Snap German Suplex", "Types": [ "Throw" ], "Risk": "Medium", "Impact": "Hard", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Last Bell", "Move": { "Name": "Bridging Dragon Suplex", "Types": [ "Throw" ], "Risk": "Hard", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "VeryHard", "Overness": 78, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Anthony Ferrucci",
+    "Division": "Mens",
+    "Overness": 76,
+    "Charisma": 4.4,
+    "Style": "Brawler",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Duke Ferro",
+      "Type": "Sellout",
+      "PersonaDescriptor": "The Corporate Signing",
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 6,
+      "Durability": "MediumTerm",
+      "Freshness": 0.76,
+      "GimmickTraits": [ "Smug", "Well-Connected", "Takes Shortcuts" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.6 },
+        { "Group": "Casual", "AppealScore": 0.78 },
+        { "Group": "Online", "AppealScore": 0.7 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 2.0, "Grappler": 3.2, "Powerhouse": 3.6, "Technical": 3.0, "Brawler": 4.4, "Striker": 3.6 },
+    "Physical": { "Strength": 80, "Speed": 70, "Agility": 66, "Stamina": 76, "Size": 4 },
+    "Mental": { "Psychology": 80, "Selling": 74, "RingIQ": 78, "Toughness": 76 },
+    "Moveset": [
+      { "Name": "Running Knee Lift", "Types": [ "Strike" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Spinebuster", "Types": [ "Slam" ], "Risk": "Easy", "Impact": "Hard", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "The Severance", "Move": { "Name": "Uranage Slam", "Types": [ "Slam" ], "Risk": "Medium", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 76, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Grady Kilbride",
+    "Division": "Mens",
+    "Overness": 69,
+    "Charisma": 3.1,
+    "Style": "Brawler",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Grady Kilbride",
+      "Type": "Loner",
+      "PersonaDescriptor": "The Coal-Country Bruiser",
+      "Tone": "Serious",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 3,
+      "Durability": "LongTerm",
+      "Freshness": 0.66,
+      "GimmickTraits": [ "Hard-Nosed", "Unglamorous", "Dependable" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.72 },
+        { "Group": "Casual", "AppealScore": 0.5 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 1.8, "Grappler": 3.4, "Powerhouse": 3.8, "Technical": 2.8, "Brawler": 4.5, "Striker": 3.6 },
+    "Physical": { "Strength": 84, "Speed": 62, "Agility": 58, "Stamina": 80, "Size": 4 },
+    "Mental": { "Psychology": 78, "Selling": 80, "RingIQ": 74, "Toughness": 90 },
+    "Moveset": [
+      { "Name": "Overhand Chop", "Types": [ "Strike" ], "Risk": "VeryEasy", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Fireman's Carry Takedown", "Types": [ "Takedown" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Pit Closer", "Move": { "Name": "Short-Range Lariat", "Types": [ "Strike" ], "Risk": "Medium", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 69, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Simon Ellwood",
+    "Division": "Mens",
+    "Overness": 67,
+    "Charisma": 3.4,
+    "Style": "Grappler",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Silas Mourne",
+      "Type": "DarkPersona",
+      "PersonaDescriptor": "Keeper of Quiet Rooms",
+      "Tone": "Cryptic",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 4,
+      "Durability": "MediumTerm",
+      "Freshness": 0.74,
+      "GimmickTraits": [ "Unsettling", "Patient", "Never Speaks" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.8 },
+        { "Group": "Casual", "AppealScore": 0.42 },
+        { "Group": "Online", "AppealScore": 0.66 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 2.2, "Grappler": 4.4, "Powerhouse": 3.0, "Technical": 4.0, "Brawler": 3.0, "Striker": 2.8 },
+    "Physical": { "Strength": 72, "Speed": 64, "Agility": 68, "Stamina": 78, "Size": 4 },
+    "Mental": { "Psychology": 84, "Selling": 76, "RingIQ": 82, "Toughness": 80 },
+    "Moveset": [
+      { "Name": "Cravate Wrench", "Types": [ "Technical" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Half Nelson Suplex", "Types": [ "Throw" ], "Risk": "Medium", "Impact": "Hard", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "The Quiet Hour", "Move": { "Name": "Rear Naked Choke", "Types": [ "Submission" ], "Risk": "Medium", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 67, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Roscoe Bright",
+    "Division": "Mens",
+    "Overness": 66,
+    "Charisma": 4.6,
+    "Style": "Striker",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Roscoe Bright",
+      "Type": "Showman",
+      "PersonaDescriptor": "The Main Event Mind",
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 7,
+      "Durability": "MediumTerm",
+      "Freshness": 0.82,
+      "GimmickTraits": [ "Loud", "Self-Mythologising", "All Talk" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.42 },
+        { "Group": "Casual", "AppealScore": 0.8 },
+        { "Group": "Online", "AppealScore": 0.68 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 2.2, "Grappler": 2.4, "Powerhouse": 2.6, "Technical": 2.2, "Brawler": 3.0, "Striker": 3.2 },
+    "Physical": { "Strength": 66, "Speed": 70, "Agility": 66, "Stamina": 64, "Size": 3 },
+    "Mental": { "Psychology": 62, "Selling": 58, "RingIQ": 60, "Toughness": 62 },
+    "Moveset": [
+      { "Name": "Jumping Knee", "Types": [ "Strike" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Cheap Shot", "Types": [ "Strike" ], "Risk": "VeryEasy", "Impact": "Easy", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "The Highlight", "Move": { "Name": "Superkick", "Types": [ "Strike" ], "Risk": "Medium", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 66, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Tobias Quill",
+    "Division": "Mens",
+    "Overness": 62,
+    "Charisma": 4.3,
+    "Style": "HighFlyer",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Toby Quill",
+      "Type": "Comedy",
+      "PersonaDescriptor": "The Merch Table Hero",
+      "Tone": "Humorous",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 5,
+      "Durability": "ShortTerm",
+      "Freshness": 0.78,
+      "GimmickTraits": [ "Goofy", "Beloved", "Harmless" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.3 },
+        { "Group": "Casual", "AppealScore": 0.68 },
+        { "Group": "Families", "AppealScore": 0.78 },
+        { "Group": "Kids", "AppealScore": 0.84 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 3.8, "Grappler": 2.4, "Powerhouse": 1.8, "Technical": 2.6, "Brawler": 2.6, "Striker": 2.8 },
+    "Physical": { "Strength": 58, "Speed": 78, "Agility": 82, "Stamina": 72, "Size": 2 },
+    "Mental": { "Psychology": 66, "Selling": 72, "RingIQ": 64, "Toughness": 62 },
+    "Moveset": [
+      { "Name": "Crossbody", "Types": [ "Aerial" ], "Risk": "Medium", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Arm Drag", "Types": [ "Takedown" ], "Risk": "VeryEasy", "Impact": "Easy", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Last Call", "Move": { "Name": "Diving Elbow Drop", "Types": [ "Aerial" ], "Risk": "Medium", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Medium", "Overness": 62, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Odell Kane",
+    "Division": "Mens",
+    "Overness": 64,
+    "Charisma": 2.2,
+    "Style": "Powerhouse",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Odell Kane",
+      "Type": "Monster",
+      "PersonaDescriptor": "The Quarry Giant",
+      "Tone": "Violent",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 3,
+      "Durability": "MediumTerm",
+      "Freshness": 0.7,
+      "GimmickTraits": [ "Enormous", "Destructive", "Unmoved" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.68 },
+        { "Group": "Casual", "AppealScore": 0.48 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 1.2, "Grappler": 2.8, "Powerhouse": 4.4, "Technical": 2.2, "Brawler": 3.8, "Striker": 3.0 },
+    "Physical": { "Strength": 94, "Speed": 48, "Agility": 44, "Stamina": 72, "Size": 5 },
+    "Mental": { "Psychology": 60, "Selling": 56, "RingIQ": 58, "Toughness": 88 },
+    "Moveset": [
+      { "Name": "Chokeslam", "Types": [ "Slam" ], "Risk": "Easy", "Impact": "VeryHard", "RequiresWeapons": false },
+      { "Name": "Body Avalanche", "Types": [ "Strike" ], "Risk": "VeryEasy", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Rockfall", "Move": { "Name": "Sit-Out Powerbomb", "Types": [ "Slam" ], "Risk": "Medium", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "VeryHard", "Overness": 64, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Emil Radu",
+    "Division": "Mens",
+    "Overness": 60,
+    "Charisma": 2.6,
+    "Style": "Grappler",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Emil Radu",
+      "Type": "Realist",
+      "PersonaDescriptor": "The Shoot-Style Import",
+      "Tone": "Serious",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 2,
+      "Durability": "MediumTerm",
+      "Freshness": 0.72,
+      "GimmickTraits": [ "Legitimate", "Cold", "Wrist Control" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.82 },
+        { "Group": "Casual", "AppealScore": 0.36 },
+        { "Group": "International", "AppealScore": 0.6 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 2.0, "Grappler": 4.7, "Powerhouse": 3.0, "Technical": 4.4, "Brawler": 2.6, "Striker": 3.8 },
+    "Physical": { "Strength": 76, "Speed": 72, "Agility": 70, "Stamina": 84, "Size": 3 },
+    "Mental": { "Psychology": 82, "Selling": 70, "RingIQ": 86, "Toughness": 88 },
+    "Moveset": [
+      { "Name": "Capture Suplex", "Types": [ "Throw" ], "Risk": "Medium", "Impact": "Hard", "RequiresWeapons": false },
+      { "Name": "Kimura Grip", "Types": [ "Submission" ], "Risk": "Medium", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "The Referee Stoppage", "Move": { "Name": "Cross-Face Chickenwing", "Types": [ "Submission" ], "Risk": "Medium", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 60, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Julian Devereaux",
+    "Division": "Mens",
+    "Overness": 63,
+    "Charisma": 4.0,
+    "Style": "Technical",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Jules Devereaux",
+      "Type": "Egotist",
+      "PersonaDescriptor": "Old Money",
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 5,
+      "Durability": "MediumTerm",
+      "Freshness": 0.75,
+      "GimmickTraits": [ "Condescending", "Immaculate", "Dirty Finishes" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.56 },
+        { "Group": "Casual", "AppealScore": 0.7 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 2.6, "Grappler": 3.6, "Powerhouse": 2.4, "Technical": 4.2, "Brawler": 2.8, "Striker": 3.2 },
+    "Physical": { "Strength": 66, "Speed": 74, "Agility": 76, "Stamina": 74, "Size": 3 },
+    "Mental": { "Psychology": 80, "Selling": 72, "RingIQ": 82, "Toughness": 64 },
+    "Moveset": [
+      { "Name": "Backbreaker", "Types": [ "Slam" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Drop Toe Hold", "Types": [ "Takedown" ], "Risk": "VeryEasy", "Impact": "Easy", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "The Inheritance", "Move": { "Name": "Figure-Four Leglock", "Types": [ "Submission" ], "Risk": "Medium", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 63, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Bram Halloway",
+    "Division": "Mens",
+    "Overness": 58,
+    "Charisma": 3.5,
+    "Style": "Brawler",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Bram Halloway",
+      "Type": "Underdog",
+      "PersonaDescriptor": "Never Quite The Guy",
+      "Tone": "Melancholic",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 3,
+      "Durability": "LongTerm",
+      "Freshness": 0.6,
+      "GimmickTraits": [ "Overlooked", "Stubborn", "Ten Years In" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.68 },
+        { "Group": "Casual", "AppealScore": 0.5 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 2.6, "Grappler": 3.2, "Powerhouse": 2.8, "Technical": 3.4, "Brawler": 3.8, "Striker": 3.0 },
+    "Physical": { "Strength": 70, "Speed": 68, "Agility": 66, "Stamina": 86, "Size": 3 },
+    "Mental": { "Psychology": 84, "Selling": 88, "RingIQ": 80, "Toughness": 86 },
+    "Moveset": [
+      { "Name": "Jawbreaker", "Types": [ "Strike" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Flying Forearm", "Types": [ "Strike" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "One More Round", "Move": { "Name": "Bridging Fisherman Suplex", "Types": [ "Throw" ], "Risk": "Medium", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 58, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Cassius Vaughn",
+    "Division": "Mens",
+    "Overness": 59,
+    "Charisma": 3.9,
+    "Style": "HighFlyer",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Cass Vaughn",
+      "Type": "Rebel",
+      "PersonaDescriptor": "The Sound And The Fury",
+      "Tone": "Chaotic",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 4,
+      "Durability": "ShortTerm",
+      "Freshness": 0.84,
+      "GimmickTraits": [ "Reckless", "Anti-Authority", "Buzzy" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.74 },
+        { "Group": "Casual", "AppealScore": 0.52 },
+        { "Group": "Online", "AppealScore": 0.78 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 4.4, "Grappler": 2.6, "Powerhouse": 2.0, "Technical": 3.0, "Brawler": 3.2, "Striker": 3.4 },
+    "Physical": { "Strength": 62, "Speed": 88, "Agility": 90, "Stamina": 74, "Size": 2 },
+    "Mental": { "Psychology": 64, "Selling": 70, "RingIQ": 66, "Toughness": 70 },
+    "Moveset": [
+      { "Name": "Springboard Dropkick", "Types": [ "Aerial" ], "Risk": "Medium", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Tornado DDT", "Types": [ "Slam" ], "Risk": "Medium", "Impact": "Hard", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Feedback", "Move": { "Name": "Shooting Star Press", "Types": [ "Aerial" ], "Risk": "VeryHard", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 59, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Harlan Pike",
+    "Division": "Mens",
+    "Overness": 52,
+    "Charisma": 2.8,
+    "Style": "Brawler",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Harlan Pike",
+      "Type": "Loner",
+      "PersonaDescriptor": "The Drifter",
+      "Tone": "Melancholic",
+      "NaturalAlignment": "Tweener",
+      "PopularityModifier": 2,
+      "Durability": "MediumTerm",
+      "Freshness": 0.62,
+      "GimmickTraits": [ "Rootless", "Weathered", "Says Little" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.62 },
+        { "Group": "Casual", "AppealScore": 0.4 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 1.8, "Grappler": 3.0, "Powerhouse": 3.2, "Technical": 2.8, "Brawler": 4.0, "Striker": 3.2 },
+    "Physical": { "Strength": 76, "Speed": 60, "Agility": 58, "Stamina": 76, "Size": 4 },
+    "Mental": { "Psychology": 76, "Selling": 78, "RingIQ": 72, "Toughness": 86 },
+    "Moveset": [
+      { "Name": "Running Boot", "Types": [ "Strike" ], "Risk": "VeryEasy", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Belly-to-Back Suplex", "Types": [ "Throw" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Last Stop", "Move": { "Name": "Spinning Backfist", "Types": [ "Strike" ], "Risk": "Medium", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 52, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Cordell Boone",
+    "Division": "Mens",
+    "Overness": 48,
+    "Charisma": 3.3,
+    "Style": "Technical",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Cordell Boone",
+      "Type": "Traditionalist",
+      "PersonaDescriptor": "The Territory Kid",
+      "Tone": "Inspirational",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 2,
+      "Durability": "MediumTerm",
+      "Freshness": 0.68,
+      "GimmickTraits": [ "Earnest", "Fundamentals First", "Still Learning" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.6 },
+        { "Group": "Casual", "AppealScore": 0.46 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 2.6, "Grappler": 3.6, "Powerhouse": 2.6, "Technical": 3.8, "Brawler": 2.8, "Striker": 2.8 },
+    "Physical": { "Strength": 68, "Speed": 72, "Agility": 74, "Stamina": 80, "Size": 3 },
+    "Mental": { "Psychology": 72, "Selling": 76, "RingIQ": 74, "Toughness": 70 },
+    "Moveset": [
+      { "Name": "Snap Suplex", "Types": [ "Throw" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Dropkick", "Types": [ "Strike" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Homecoming", "Move": { "Name": "Rolling Cradle", "Types": [ "Technical" ], "Risk": "Medium", "Impact": "Medium" }, "IsFinisher": true, "ImpactModifier": "Medium", "Overness": 48, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Marlon Fisk",
+    "Division": "Mens",
+    "Overness": 45,
+    "Charisma": 3.7,
+    "Style": "Grappler",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Marlon Fisk",
+      "Type": "Sellout",
+      "PersonaDescriptor": "The Insurance Salesman",
+      "Tone": "SelfRighteous",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 2,
+      "Durability": "ShortTerm",
+      "Freshness": 0.66,
+      "GimmickTraits": [ "Weaselly", "Litigious", "Talks Too Much" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.34 },
+        { "Group": "Casual", "AppealScore": 0.56 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 2.0, "Grappler": 3.4, "Powerhouse": 2.2, "Technical": 3.0, "Brawler": 2.6, "Striker": 2.4 },
+    "Physical": { "Strength": 60, "Speed": 64, "Agility": 62, "Stamina": 68, "Size": 2 },
+    "Mental": { "Psychology": 68, "Selling": 60, "RingIQ": 70, "Toughness": 56 },
+    "Moveset": [
+      { "Name": "Thumb To The Eye", "Types": [ "Strike" ], "Risk": "VeryEasy", "Impact": "Easy", "RequiresWeapons": false },
+      { "Name": "Abdominal Stretch", "Types": [ "Submission" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Fine Print", "Move": { "Name": "Handful Of Tights", "Types": [ "Technical" ], "Risk": "Easy", "Impact": "Medium" }, "IsFinisher": true, "ImpactModifier": "Medium", "Overness": 45, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Sonny Deltoro",
+    "Division": "Mens",
+    "Overness": 43,
+    "Charisma": 3.0,
+    "Style": "HighFlyer",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Sonny Deltoro",
+      "Type": "Underdog",
+      "PersonaDescriptor": "The Kid From The Parking Lot",
+      "Tone": "Inspirational",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 2,
+      "Durability": "ShortTerm",
+      "Freshness": 0.7,
+      "GimmickTraits": [ "Young", "Hungry", "Undersized" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.52 },
+        { "Group": "Casual", "AppealScore": 0.42 },
+        { "Group": "Kids", "AppealScore": 0.6 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 4.0, "Grappler": 2.4, "Powerhouse": 1.6, "Technical": 2.6, "Brawler": 2.4, "Striker": 2.6 },
+    "Physical": { "Strength": 48, "Speed": 84, "Agility": 88, "Stamina": 70, "Size": 1 },
+    "Mental": { "Psychology": 56, "Selling": 64, "RingIQ": 58, "Toughness": 62 },
+    "Moveset": [
+      { "Name": "Hurricanrana", "Types": [ "Takedown" ], "Risk": "Medium", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Standing Moonsault", "Types": [ "Aerial" ], "Risk": "Hard", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Parking Lot Special", "Move": { "Name": "450 Splash", "Types": [ "Aerial" ], "Risk": "VeryHard", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 43, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Mordecai Vex",
+    "Division": "Mens",
+    "Overness": 41,
+    "Charisma": 2.7,
+    "Style": "Striker",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Mordecai Vex",
+      "Type": "Cryptic",
+      "PersonaDescriptor": "The Signal From The Dark",
+      "Tone": "Cryptic",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 1,
+      "Durability": "ShortTerm",
+      "Freshness": 0.8,
+      "GimmickTraits": [ "Obscure", "Twitching", "Unreadable" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.56 },
+        { "Group": "Casual", "AppealScore": 0.28 },
+        { "Group": "Online", "AppealScore": 0.5 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 2.6, "Grappler": 2.6, "Powerhouse": 2.4, "Technical": 2.8, "Brawler": 3.0, "Striker": 3.6 },
+    "Physical": { "Strength": 62, "Speed": 72, "Agility": 74, "Stamina": 70, "Size": 3 },
+    "Mental": { "Psychology": 62, "Selling": 66, "RingIQ": 60, "Toughness": 68 },
+    "Moveset": [
+      { "Name": "Palm Strike", "Types": [ "Strike" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Enzuigiri", "Types": [ "Strike" ], "Risk": "Medium", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Dead Air", "Move": { "Name": "Bicycle Knee Strike", "Types": [ "Strike" ], "Risk": "Medium", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 41, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Rudolf Zbornak",
+    "Division": "Mens",
+    "Overness": 38,
+    "Charisma": 3.6,
+    "Style": "Powerhouse",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Rudy Zbornak",
+      "Type": "Comedy",
+      "PersonaDescriptor": "The Lunchpail",
+      "Tone": "Humorous",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 2,
+      "Durability": "ShortTerm",
+      "Freshness": 0.72,
+      "GimmickTraits": [ "Lovable", "Clumsy", "Enormous Appetite" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.2 },
+        { "Group": "Casual", "AppealScore": 0.52 },
+        { "Group": "Families", "AppealScore": 0.64 },
+        { "Group": "Kids", "AppealScore": 0.68 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 1.4, "Grappler": 2.6, "Powerhouse": 3.6, "Technical": 2.0, "Brawler": 3.0, "Striker": 2.4 },
+    "Physical": { "Strength": 86, "Speed": 50, "Agility": 46, "Stamina": 64, "Size": 5 },
+    "Mental": { "Psychology": 54, "Selling": 62, "RingIQ": 52, "Toughness": 76 },
+    "Moveset": [
+      { "Name": "Belly-to-Belly Suplex", "Types": [ "Throw" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Running Splash", "Types": [ "Strike" ], "Risk": "VeryEasy", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "The Lunch Break", "Move": { "Name": "Running Senton", "Types": [ "Slam" ], "Risk": "Easy", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Medium", "Overness": 38, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Ezra Kell",
+    "Division": "Mens",
+    "Overness": 47,
+    "Charisma": 2.9,
+    "Style": "Technical",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Ezra Kell",
+      "Type": "Realist",
+      "PersonaDescriptor": "The Trainer's Son",
+      "Tone": "Serious",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 1,
+      "Durability": "MediumTerm",
+      "Freshness": 0.64,
+      "GimmickTraits": [ "Studious", "Unmarketable", "Excellent Hands" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.74 },
+        { "Group": "Casual", "AppealScore": 0.3 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 2.8, "Grappler": 4.2, "Powerhouse": 2.4, "Technical": 4.4, "Brawler": 2.4, "Striker": 3.0 },
+    "Physical": { "Strength": 64, "Speed": 74, "Agility": 76, "Stamina": 82, "Size": 2 },
+    "Mental": { "Psychology": 86, "Selling": 80, "RingIQ": 88, "Toughness": 70 },
+    "Moveset": [
+      { "Name": "Butterfly Suplex", "Types": [ "Throw" ], "Risk": "Medium", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Single-Leg Crab", "Types": [ "Submission" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "The Chalkboard", "Move": { "Name": "Double Underhook Suplex", "Types": [ "Throw" ], "Risk": "Hard", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 47, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Chip Dandridge",
+    "Division": "Mens",
+    "Overness": 30,
+    "Charisma": 2.2,
+    "Style": "Brawler",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Chip Dandridge",
+      "Type": "Gimmickless",
+      "PersonaDescriptor": "Just A Guy In Trunks",
+      "Tone": "Serious",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 0,
+      "Durability": "ShortTerm",
+      "Freshness": 0.5,
+      "GimmickTraits": [ "Anonymous", "Reliable", "Steady Hand" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.34 },
+        { "Group": "Casual", "AppealScore": 0.28 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 2.0, "Grappler": 2.6, "Powerhouse": 2.6, "Technical": 2.6, "Brawler": 3.2, "Striker": 2.6 },
+    "Physical": { "Strength": 68, "Speed": 64, "Agility": 62, "Stamina": 72, "Size": 3 },
+    "Mental": { "Psychology": 66, "Selling": 70, "RingIQ": 64, "Toughness": 70 },
+    "Moveset": [
+      { "Name": "Forearm Smash", "Types": [ "Strike" ], "Risk": "VeryEasy", "Impact": "Easy", "RequiresWeapons": false },
+      { "Name": "Scoop Slam", "Types": [ "Slam" ], "Risk": "VeryEasy", "Impact": "Easy", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "The Payoff", "Move": { "Name": "Swinging Neckbreaker", "Types": [ "Slam" ], "Risk": "Easy", "Impact": "Medium" }, "IsFinisher": true, "ImpactModifier": "Medium", "Overness": 30, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Vic Stanza",
+    "Division": "Mens",
+    "Overness": 27,
+    "Charisma": 2.9,
+    "Style": "Striker",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Vic Stanza",
+      "Type": "Egotist",
+      "PersonaDescriptor": "The Local Hero, Allegedly",
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 0,
+      "Durability": "ShortTerm",
+      "Freshness": 0.58,
+      "GimmickTraits": [ "Deluded", "Preening", "Thin-Skinned" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.24 },
+        { "Group": "Casual", "AppealScore": 0.34 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 2.2, "Grappler": 2.2, "Powerhouse": 2.0, "Technical": 2.4, "Brawler": 2.6, "Striker": 3.2 },
+    "Physical": { "Strength": 62, "Speed": 70, "Agility": 68, "Stamina": 62, "Size": 3 },
+    "Mental": { "Psychology": 52, "Selling": 54, "RingIQ": 50, "Toughness": 56 },
+    "Moveset": [
+      { "Name": "Back Elbow", "Types": [ "Strike" ], "Risk": "VeryEasy", "Impact": "Easy", "RequiresWeapons": false },
+      { "Name": "Low Dropkick", "Types": [ "Strike" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Standing Ovation", "Move": { "Name": "Spinning Back Kick", "Types": [ "Strike" ], "Risk": "Medium", "Impact": "Medium" }, "IsFinisher": true, "ImpactModifier": "Medium", "Overness": 27, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Buster Krall",
+    "Division": "Mens",
+    "Overness": 35,
+    "Charisma": 2.0,
+    "Style": "Powerhouse",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Buster Krall",
+      "Type": "Monster",
+      "PersonaDescriptor": "The Warehouse",
+      "Tone": "Violent",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 1,
+      "Durability": "ShortTerm",
+      "Freshness": 0.6,
+      "GimmickTraits": [ "Immovable", "Green", "Blunt Instrument" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.4 },
+        { "Group": "Casual", "AppealScore": 0.26 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 1.4, "Grappler": 2.6, "Powerhouse": 3.8, "Technical": 2.0, "Brawler": 3.2, "Striker": 2.4 },
+    "Physical": { "Strength": 90, "Speed": 46, "Agility": 42, "Stamina": 66, "Size": 5 },
+    "Mental": { "Psychology": 48, "Selling": 50, "RingIQ": 46, "Toughness": 80 },
+    "Moveset": [
+      { "Name": "Shoulder Block", "Types": [ "Strike" ], "Risk": "VeryEasy", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Bearhug", "Types": [ "Submission" ], "Risk": "VeryEasy", "Impact": "Easy", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Loading Dock", "Move": { "Name": "Military Press Slam", "Types": [ "Slam" ], "Risk": "Medium", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 35, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Nova Jean Kilgore",
+    "Division": "Womens",
+    "Overness": 89,
+    "Charisma": 4.8,
+    "Style": "Brawler",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Nova Kilgore",
+      "Type": "Rebel",
+      "PersonaDescriptor": "Loudest Woman In The Building",
+      "Tone": "Chaotic",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 10,
+      "Durability": "MediumTerm",
+      "Freshness": 0.9,
+      "GimmickTraits": [ "Fearless", "Mouthy", "Beloved" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.88 },
+        { "Group": "Casual", "AppealScore": 0.9 },
+        { "Group": "Online", "AppealScore": 0.86 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 3.0, "Grappler": 3.4, "Powerhouse": 3.4, "Technical": 3.4, "Brawler": 4.6, "Striker": 4.0 },
+    "Physical": { "Strength": 74, "Speed": 82, "Agility": 80, "Stamina": 86, "Size": 3 },
+    "Mental": { "Psychology": 86, "Selling": 86, "RingIQ": 84, "Toughness": 88 },
+    "Moveset": [
+      { "Name": "Running Forearm", "Types": [ "Strike" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Snap Powerslam", "Types": [ "Slam" ], "Risk": "Easy", "Impact": "Hard", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Riot Act", "Move": { "Name": "Discus Lariat", "Types": [ "Strike" ], "Risk": "Medium", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "VeryHard", "Overness": 89, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Solveig Braun",
+    "Division": "Womens",
+    "Overness": 84,
+    "Charisma": 3.0,
+    "Style": "Powerhouse",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Solveig Braun",
+      "Type": "Monster",
+      "PersonaDescriptor": "The Iron Mountain",
+      "Tone": "Serious",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 7,
+      "Durability": "LongTerm",
+      "Freshness": 0.82,
+      "GimmickTraits": [ "Towering", "Merciless", "Never Pinned Clean" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.86 },
+        { "Group": "Casual", "AppealScore": 0.7 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 1.8, "Grappler": 3.6, "Powerhouse": 4.8, "Technical": 3.2, "Brawler": 4.0, "Striker": 3.4 },
+    "Physical": { "Strength": 92, "Speed": 58, "Agility": 56, "Stamina": 80, "Size": 5 },
+    "Mental": { "Psychology": 76, "Selling": 70, "RingIQ": 74, "Toughness": 92 },
+    "Moveset": [
+      { "Name": "Vertical Suplex Toss", "Types": [ "Throw" ], "Risk": "Easy", "Impact": "Hard", "RequiresWeapons": false },
+      { "Name": "Corner Avalanche", "Types": [ "Strike" ], "Risk": "VeryEasy", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Glacier Drop", "Move": { "Name": "Sit-Out Chokebomb", "Types": [ "Slam" ], "Risk": "Medium", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "VeryHard", "Overness": 84, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Marisol Cuevas",
+    "Division": "Womens",
+    "Overness": 80,
+    "Charisma": 4.6,
+    "Style": "HighFlyer",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Marisol Cuevas",
+      "Type": "Showman",
+      "PersonaDescriptor": "The Golden Hour",
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 8,
+      "Durability": "MediumTerm",
+      "Freshness": 0.85,
+      "GimmickTraits": [ "Glamorous", "Photogenic", "Ruthless" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.66 },
+        { "Group": "Casual", "AppealScore": 0.88 },
+        { "Group": "Online", "AppealScore": 0.8 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 4.4, "Grappler": 3.0, "Powerhouse": 2.4, "Technical": 3.6, "Brawler": 2.8, "Striker": 3.4 },
+    "Physical": { "Strength": 60, "Speed": 88, "Agility": 90, "Stamina": 78, "Size": 2 },
+    "Mental": { "Psychology": 78, "Selling": 76, "RingIQ": 80, "Toughness": 68 },
+    "Moveset": [
+      { "Name": "Springboard Arm Drag", "Types": [ "Takedown" ], "Risk": "Medium", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Handspring Elbow", "Types": [ "Strike" ], "Risk": "Hard", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Golden Hour", "Move": { "Name": "Corkscrew Moonsault", "Types": [ "Aerial" ], "Risk": "VeryHard", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 80, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Imogen Wilder",
+    "Division": "Womens",
+    "Overness": 77,
+    "Charisma": 3.3,
+    "Style": "Technical",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Imogen Wilder",
+      "Type": "Traditionalist",
+      "PersonaDescriptor": "The Textbook",
+      "Tone": "Serious",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 5,
+      "Durability": "LongTerm",
+      "Freshness": 0.7,
+      "GimmickTraits": [ "Precise", "Understated", "Trusted With Anyone" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.92 },
+        { "Group": "Casual", "AppealScore": 0.56 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 3.0, "Grappler": 4.6, "Powerhouse": 2.8, "Technical": 4.9, "Brawler": 3.4, "Striker": 4.0 },
+    "Physical": { "Strength": 66, "Speed": 76, "Agility": 78, "Stamina": 86, "Size": 3 },
+    "Mental": { "Psychology": 92, "Selling": 88, "RingIQ": 94, "Toughness": 82 },
+    "Moveset": [
+      { "Name": "Northern Lights Suplex", "Types": [ "Throw" ], "Risk": "Medium", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Fujiwara Armbar", "Types": [ "Submission" ], "Risk": "Medium", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Chapter And Verse", "Move": { "Name": "Bridging Tiger Suplex", "Types": [ "Throw" ], "Risk": "Hard", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 77, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Delphine Roux",
+    "Division": "Womens",
+    "Overness": 75,
+    "Charisma": 3.4,
+    "Style": "Grappler",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Delphine Roux",
+      "Type": "Loner",
+      "PersonaDescriptor": "The Cold Read",
+      "Tone": "Melancholic",
+      "NaturalAlignment": "Tweener",
+      "PopularityModifier": 4,
+      "Durability": "MediumTerm",
+      "Freshness": 0.76,
+      "GimmickTraits": [ "Detached", "Analytical", "Friendless" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.8 },
+        { "Group": "Casual", "AppealScore": 0.56 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 2.4, "Grappler": 4.4, "Powerhouse": 3.0, "Technical": 4.0, "Brawler": 3.2, "Striker": 3.0 },
+    "Physical": { "Strength": 70, "Speed": 72, "Agility": 72, "Stamina": 82, "Size": 3 },
+    "Mental": { "Psychology": 88, "Selling": 80, "RingIQ": 86, "Toughness": 80 },
+    "Moveset": [
+      { "Name": "Gutwrench Suplex", "Types": [ "Throw" ], "Risk": "Medium", "Impact": "Hard", "RequiresWeapons": false },
+      { "Name": "Guillotine Choke", "Types": [ "Submission" ], "Risk": "Medium", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Full Stop", "Move": { "Name": "Inverted Cloverleaf", "Types": [ "Submission" ], "Risk": "Medium", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 75, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Birdie McCabe",
+    "Division": "Womens",
+    "Overness": 71,
+    "Charisma": 4.0,
+    "Style": "HighFlyer",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Birdie McCabe",
+      "Type": "Underdog",
+      "PersonaDescriptor": "Smallest Person In The Building",
+      "Tone": "Inspirational",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 6,
+      "Durability": "MediumTerm",
+      "Freshness": 0.8,
+      "GimmickTraits": [ "Tiny", "Relentless", "Crowd Favourite" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.7 },
+        { "Group": "Casual", "AppealScore": 0.72 },
+        { "Group": "Kids", "AppealScore": 0.74 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 4.5, "Grappler": 2.8, "Powerhouse": 1.6, "Technical": 3.2, "Brawler": 2.8, "Striker": 3.0 },
+    "Physical": { "Strength": 44, "Speed": 90, "Agility": 92, "Stamina": 84, "Size": 1 },
+    "Mental": { "Psychology": 74, "Selling": 86, "RingIQ": 76, "Toughness": 78 },
+    "Moveset": [
+      { "Name": "Headscissors Takedown", "Types": [ "Takedown" ], "Risk": "Medium", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Tope Con Hilo", "Types": [ "Aerial" ], "Risk": "Hard", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Little Bird", "Move": { "Name": "Diving Double Stomp", "Types": [ "Aerial" ], "Risk": "Hard", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 71, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Reina Salazar",
+    "Division": "Womens",
+    "Overness": 68,
+    "Charisma": 3.7,
+    "Style": "HighFlyer",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Reina Salazar",
+      "Type": "Daredevil",
+      "PersonaDescriptor": "La Tormenta",
+      "Tone": "Chaotic",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 5,
+      "Durability": "ShortTerm",
+      "Freshness": 0.86,
+      "GimmickTraits": [ "Fearless", "Injury-Prone", "Spectacular" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.82 },
+        { "Group": "Casual", "AppealScore": 0.56 },
+        { "Group": "International", "AppealScore": 0.7 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 4.6, "Grappler": 2.6, "Powerhouse": 2.0, "Technical": 3.0, "Brawler": 3.0, "Striker": 3.2 },
+    "Physical": { "Strength": 58, "Speed": 90, "Agility": 92, "Stamina": 70, "Size": 2 },
+    "Mental": { "Psychology": 66, "Selling": 72, "RingIQ": 68, "Toughness": 64 },
+    "Moveset": [
+      { "Name": "Asai Moonsault", "Types": [ "Aerial" ], "Risk": "Hard", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Missile Dropkick", "Types": [ "Aerial" ], "Risk": "Medium", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Tormenta", "Move": { "Name": "Spanish Fly", "Types": [ "Throw" ], "Risk": "VeryHard", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 68, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Odessa Frame",
+    "Division": "Womens",
+    "Overness": 66,
+    "Charisma": 3.5,
+    "Style": "Striker",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Odessa Frame",
+      "Type": "DarkPersona",
+      "PersonaDescriptor": "The Girl In The Polaroid",
+      "Tone": "Cryptic",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 4,
+      "Durability": "MediumTerm",
+      "Freshness": 0.78,
+      "GimmickTraits": [ "Eerie", "Nostalgic", "Vacant Stare" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.76 },
+        { "Group": "Casual", "AppealScore": 0.46 },
+        { "Group": "Online", "AppealScore": 0.7 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 3.0, "Grappler": 2.8, "Powerhouse": 2.6, "Technical": 3.0, "Brawler": 3.4, "Striker": 4.2 },
+    "Physical": { "Strength": 64, "Speed": 78, "Agility": 78, "Stamina": 76, "Size": 2 },
+    "Mental": { "Psychology": 76, "Selling": 74, "RingIQ": 74, "Toughness": 72 },
+    "Moveset": [
+      { "Name": "Shotei Palm Thrust", "Types": [ "Strike" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Rolling Koppo Kick", "Types": [ "Strike" ], "Risk": "Medium", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Flashbulb", "Move": { "Name": "Busaiku Knee", "Types": [ "Strike" ], "Risk": "Hard", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 66, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Tamsin Okoye",
+    "Division": "Womens",
+    "Overness": 64,
+    "Charisma": 3.2,
+    "Style": "Striker",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Tam Okoye",
+      "Type": "AntiHero",
+      "PersonaDescriptor": "The Bouncer",
+      "Tone": "Serious",
+      "NaturalAlignment": "Tweener",
+      "PopularityModifier": 3,
+      "Durability": "MediumTerm",
+      "Freshness": 0.72,
+      "GimmickTraits": [ "No-Nonsense", "Physical", "Short Fuse" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.72 },
+        { "Group": "Casual", "AppealScore": 0.5 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 2.2, "Grappler": 3.4, "Powerhouse": 3.6, "Technical": 2.8, "Brawler": 4.0, "Striker": 4.0 },
+    "Physical": { "Strength": 82, "Speed": 72, "Agility": 68, "Stamina": 80, "Size": 4 },
+    "Mental": { "Psychology": 74, "Selling": 72, "RingIQ": 72, "Toughness": 88 },
+    "Moveset": [
+      { "Name": "Muay Thai Knee", "Types": [ "Strike" ], "Risk": "Easy", "Impact": "Hard", "RequiresWeapons": false },
+      { "Name": "Judo Hip Toss", "Types": [ "Throw" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Closing Time", "Move": { "Name": "Head Kick", "Types": [ "Strike" ], "Risk": "Medium", "Impact": "VeryHard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 64, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Priya Anand",
+    "Division": "Womens",
+    "Overness": 63,
+    "Charisma": 2.8,
+    "Style": "Grappler",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Priya Anand",
+      "Type": "Realist",
+      "PersonaDescriptor": "The Shooter",
+      "Tone": "Serious",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 2,
+      "Durability": "MediumTerm",
+      "Freshness": 0.7,
+      "GimmickTraits": [ "Legitimate", "Humourless", "Dangerous" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.84 },
+        { "Group": "Casual", "AppealScore": 0.36 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 2.0, "Grappler": 4.6, "Powerhouse": 2.8, "Technical": 4.2, "Brawler": 2.6, "Striker": 3.4 },
+    "Physical": { "Strength": 70, "Speed": 74, "Agility": 72, "Stamina": 84, "Size": 2 },
+    "Mental": { "Psychology": 84, "Selling": 70, "RingIQ": 86, "Toughness": 86 },
+    "Moveset": [
+      { "Name": "Double Wrist Lock", "Types": [ "Submission" ], "Risk": "Medium", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Ankle Pick", "Types": [ "Takedown" ], "Risk": "Easy", "Impact": "Easy", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "The Clinic", "Move": { "Name": "Arm-Trap Crossface", "Types": [ "Submission" ], "Risk": "Medium", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 63, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Wanda Prine",
+    "Division": "Womens",
+    "Overness": 61,
+    "Charisma": 4.2,
+    "Style": "Brawler",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Wanda Prine",
+      "Type": "Comedy",
+      "PersonaDescriptor": "The Bingo Hall Legend",
+      "Tone": "Humorous",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 5,
+      "Durability": "LongTerm",
+      "Freshness": 0.68,
+      "GimmickTraits": [ "Veteran", "Deadpan", "Hits Harder Than She Looks" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.44 },
+        { "Group": "Casual", "AppealScore": 0.76 },
+        { "Group": "Families", "AppealScore": 0.72 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 1.6, "Grappler": 3.0, "Powerhouse": 2.8, "Technical": 2.8, "Brawler": 3.6, "Striker": 2.8 },
+    "Physical": { "Strength": 64, "Speed": 52, "Agility": 50, "Stamina": 64, "Size": 3 },
+    "Mental": { "Psychology": 82, "Selling": 78, "RingIQ": 84, "Toughness": 74 },
+    "Moveset": [
+      { "Name": "Roundhouse Slap", "Types": [ "Strike" ], "Risk": "VeryEasy", "Impact": "Easy", "RequiresWeapons": false },
+      { "Name": "Hair-Pull Snapmare", "Types": [ "Takedown" ], "Risk": "VeryEasy", "Impact": "Easy", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Last Orders", "Move": { "Name": "Bionic Elbow", "Types": [ "Strike" ], "Risk": "Easy", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Medium", "Overness": 61, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Coco Lascelles",
+    "Division": "Womens",
+    "Overness": 59,
+    "Charisma": 4.1,
+    "Style": "Technical",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Coco Lascelles",
+      "Type": "Egotist",
+      "PersonaDescriptor": "Trust-Fund Terror",
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 4,
+      "Durability": "MediumTerm",
+      "Freshness": 0.76,
+      "GimmickTraits": [ "Spoiled", "Vicious", "Buys Her Way Out" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.48 },
+        { "Group": "Casual", "AppealScore": 0.7 },
+        { "Group": "Online", "AppealScore": 0.62 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 2.8, "Grappler": 3.2, "Powerhouse": 2.2, "Technical": 4.0, "Brawler": 2.6, "Striker": 3.0 },
+    "Physical": { "Strength": 58, "Speed": 76, "Agility": 78, "Stamina": 70, "Size": 2 },
+    "Mental": { "Psychology": 74, "Selling": 68, "RingIQ": 76, "Toughness": 60 },
+    "Moveset": [
+      { "Name": "Slingshot Suplex", "Types": [ "Throw" ], "Risk": "Medium", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Hair Whip", "Types": [ "Takedown" ], "Risk": "VeryEasy", "Impact": "Easy", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "The Allowance", "Move": { "Name": "Reverse Figure-Four", "Types": [ "Submission" ], "Risk": "Medium", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 59, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "June Halloran",
+    "Division": "Womens",
+    "Overness": 57,
+    "Charisma": 3.8,
+    "Style": "Brawler",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "June Halloran",
+      "Type": "Sellout",
+      "PersonaDescriptor": "The Ratings Darling",
+      "Tone": "SelfRighteous",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 3,
+      "Durability": "ShortTerm",
+      "Freshness": 0.72,
+      "GimmickTraits": [ "Media-Trained", "Insincere", "Protected" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.36 },
+        { "Group": "Casual", "AppealScore": 0.68 },
+        { "Group": "Online", "AppealScore": 0.56 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 2.2, "Grappler": 2.8, "Powerhouse": 2.8, "Technical": 2.6, "Brawler": 3.6, "Striker": 3.0 },
+    "Physical": { "Strength": 68, "Speed": 70, "Agility": 66, "Stamina": 70, "Size": 3 },
+    "Mental": { "Psychology": 66, "Selling": 62, "RingIQ": 68, "Toughness": 64 },
+    "Moveset": [
+      { "Name": "Running Knee Strike", "Types": [ "Strike" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Corner Boot Choke", "Types": [ "Strike" ], "Risk": "VeryEasy", "Impact": "Easy", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Prime Time", "Move": { "Name": "Fisherman Neckbreaker", "Types": [ "Slam" ], "Risk": "Medium", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 57, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Pip Calloway",
+    "Division": "Womens",
+    "Overness": 53,
+    "Charisma": 3.1,
+    "Style": "HighFlyer",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Pip Calloway",
+      "Type": "Daredevil",
+      "PersonaDescriptor": "All Risk, No Reward",
+      "Tone": "Chaotic",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 2,
+      "Durability": "ShortTerm",
+      "Freshness": 0.82,
+      "GimmickTraits": [ "Reckless", "Battered", "Spot Machine" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.74 },
+        { "Group": "Casual", "AppealScore": 0.4 },
+        { "Group": "Online", "AppealScore": 0.6 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 4.2, "Grappler": 2.2, "Powerhouse": 1.8, "Technical": 2.4, "Brawler": 3.0, "Striker": 2.6 },
+    "Physical": { "Strength": 52, "Speed": 84, "Agility": 88, "Stamina": 66, "Size": 2 },
+    "Mental": { "Psychology": 56, "Selling": 64, "RingIQ": 58, "Toughness": 74 },
+    "Moveset": [
+      { "Name": "Somersault Plancha", "Types": [ "Aerial" ], "Risk": "Hard", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Springboard Stunner", "Types": [ "Slam" ], "Risk": "Hard", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "No Brakes", "Move": { "Name": "Swanton Bomb", "Types": [ "Aerial" ], "Risk": "VeryHard", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 53, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Ingrid Vossen",
+    "Division": "Womens",
+    "Overness": 50,
+    "Charisma": 1.9,
+    "Style": "Powerhouse",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Ingrid Vossen",
+      "Type": "Monster",
+      "PersonaDescriptor": "The Standing Stone",
+      "Tone": "Serious",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 1,
+      "Durability": "MediumTerm",
+      "Freshness": 0.64,
+      "GimmickTraits": [ "Immovable", "Wordless", "Sheer Mass" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.58 },
+        { "Group": "Casual", "AppealScore": 0.34 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 1.2, "Grappler": 3.0, "Powerhouse": 4.2, "Technical": 2.4, "Brawler": 3.4, "Striker": 2.6 },
+    "Physical": { "Strength": 90, "Speed": 46, "Agility": 44, "Stamina": 74, "Size": 5 },
+    "Mental": { "Psychology": 58, "Selling": 56, "RingIQ": 56, "Toughness": 86 },
+    "Moveset": [
+      { "Name": "Body Block", "Types": [ "Strike" ], "Risk": "VeryEasy", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Fallaway Slam", "Types": [ "Throw" ], "Risk": "Easy", "Impact": "Hard", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Standing Stone", "Move": { "Name": "Spinning Side Slam", "Types": [ "Slam" ], "Risk": "Medium", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 50, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Nadia Sarr",
+    "Division": "Womens",
+    "Overness": 46,
+    "Charisma": 3.4,
+    "Style": "Technical",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Nadia Sarr",
+      "Type": "Underdog",
+      "PersonaDescriptor": "Never Beaten, Never Booked",
+      "Tone": "Inspirational",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 2,
+      "Durability": "MediumTerm",
+      "Freshness": 0.7,
+      "GimmickTraits": [ "Overlooked", "Technically Sound", "Patient" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.66 },
+        { "Group": "Casual", "AppealScore": 0.42 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 3.0, "Grappler": 3.8, "Powerhouse": 2.4, "Technical": 4.0, "Brawler": 2.6, "Striker": 3.0 },
+    "Physical": { "Strength": 62, "Speed": 78, "Agility": 80, "Stamina": 82, "Size": 2 },
+    "Mental": { "Psychology": 78, "Selling": 80, "RingIQ": 80, "Toughness": 72 },
+    "Moveset": [
+      { "Name": "Octopus Stretch", "Types": [ "Submission" ], "Risk": "Medium", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Deadlift German Suplex", "Types": [ "Throw" ], "Risk": "Hard", "Impact": "Hard", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Second Wind", "Move": { "Name": "Bridging Half Nelson Suplex", "Types": [ "Throw" ], "Risk": "Hard", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 46, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Roxy Dunn",
+    "Division": "Womens",
+    "Overness": 44,
+    "Charisma": 3.6,
+    "Style": "Brawler",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Roxy Dunn",
+      "Type": "Rebel",
+      "PersonaDescriptor": "The Bar-Fight Champion",
+      "Tone": "Chaotic",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 2,
+      "Durability": "ShortTerm",
+      "Freshness": 0.78,
+      "GimmickTraits": [ "Volatile", "Unrepentant", "Bloody-Minded" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.7 },
+        { "Group": "Casual", "AppealScore": 0.38 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 2.0, "Grappler": 2.6, "Powerhouse": 3.0, "Technical": 2.2, "Brawler": 4.0, "Striker": 3.0 },
+    "Physical": { "Strength": 72, "Speed": 66, "Agility": 62, "Stamina": 70, "Size": 3 },
+    "Mental": { "Psychology": 60, "Selling": 64, "RingIQ": 58, "Toughness": 84 },
+    "Moveset": [
+      { "Name": "Elbow Smash", "Types": [ "Strike" ], "Risk": "VeryEasy", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Snake Eyes", "Types": [ "Slam" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Glass House", "Move": { "Name": "Discus Forearm", "Types": [ "Strike" ], "Risk": "Medium", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 44, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Lark Ainsley",
+    "Division": "Womens",
+    "Overness": 40,
+    "Charisma": 2.5,
+    "Style": "Grappler",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Lark Ainsley",
+      "Type": "Loner",
+      "PersonaDescriptor": "Speaks To No One",
+      "Tone": "Melancholic",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 1,
+      "Durability": "MediumTerm",
+      "Freshness": 0.66,
+      "GimmickTraits": [ "Silent", "Withdrawn", "Sudden" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.6 },
+        { "Group": "Casual", "AppealScore": 0.3 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 2.2, "Grappler": 3.8, "Powerhouse": 2.4, "Technical": 3.4, "Brawler": 2.6, "Striker": 2.6 },
+    "Physical": { "Strength": 62, "Speed": 68, "Agility": 70, "Stamina": 78, "Size": 2 },
+    "Mental": { "Psychology": 72, "Selling": 70, "RingIQ": 74, "Toughness": 72 },
+    "Moveset": [
+      { "Name": "Sleeper Hold", "Types": [ "Submission" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Waistlock Takedown", "Types": [ "Takedown" ], "Risk": "Easy", "Impact": "Easy", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Nothing To Say", "Move": { "Name": "Dragon Sleeper", "Types": [ "Submission" ], "Risk": "Medium", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 40, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Bonnie Fitch",
+    "Division": "Womens",
+    "Overness": 37,
+    "Charisma": 3.5,
+    "Style": "HighFlyer",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Bonnie Fitch",
+      "Type": "Comedy",
+      "PersonaDescriptor": "The Enthusiast",
+      "Tone": "Humorous",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 1,
+      "Durability": "ShortTerm",
+      "Freshness": 0.74,
+      "GimmickTraits": [ "Over-Eager", "Sunny", "Slightly Dangerous" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.28 },
+        { "Group": "Casual", "AppealScore": 0.5 },
+        { "Group": "Kids", "AppealScore": 0.66 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 3.4, "Grappler": 2.2, "Powerhouse": 1.8, "Technical": 2.4, "Brawler": 2.4, "Striker": 2.6 },
+    "Physical": { "Strength": 50, "Speed": 80, "Agility": 82, "Stamina": 68, "Size": 2 },
+    "Mental": { "Psychology": 54, "Selling": 62, "RingIQ": 56, "Toughness": 60 },
+    "Moveset": [
+      { "Name": "Cartwheel Elbow", "Types": [ "Strike" ], "Risk": "Medium", "Impact": "Easy", "RequiresWeapons": false },
+      { "Name": "Monkey Flip", "Types": [ "Takedown" ], "Risk": "Easy", "Impact": "Easy", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Big Finish", "Move": { "Name": "Diving Crossbody", "Types": [ "Aerial" ], "Risk": "Medium", "Impact": "Medium" }, "IsFinisher": true, "ImpactModifier": "Medium", "Overness": 37, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Hedda Krogh",
+    "Division": "Womens",
+    "Overness": 34,
+    "Charisma": 2.0,
+    "Style": "Powerhouse",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Hedda Krogh",
+      "Type": "Monster",
+      "PersonaDescriptor": "Hired Muscle",
+      "Tone": "Violent",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 0,
+      "Durability": "ShortTerm",
+      "Freshness": 0.6,
+      "GimmickTraits": [ "Blunt", "Heavy-Handed", "Silent" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.42 },
+        { "Group": "Casual", "AppealScore": 0.26 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 1.4, "Grappler": 2.6, "Powerhouse": 3.6, "Technical": 2.0, "Brawler": 3.2, "Striker": 2.4 },
+    "Physical": { "Strength": 86, "Speed": 50, "Agility": 48, "Stamina": 68, "Size": 4 },
+    "Mental": { "Psychology": 50, "Selling": 52, "RingIQ": 50, "Toughness": 78 },
+    "Moveset": [
+      { "Name": "Clubbing Blow", "Types": [ "Strike" ], "Risk": "VeryEasy", "Impact": "Medium", "RequiresWeapons": false },
+      { "Name": "Delayed Vertical Suplex", "Types": [ "Throw" ], "Risk": "Easy", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Payday", "Move": { "Name": "Torture Rack", "Types": [ "Submission" ], "Risk": "Medium", "Impact": "Hard" }, "IsFinisher": true, "ImpactModifier": "Hard", "Overness": 34, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Verity Sloane",
+    "Division": "Womens",
+    "Overness": 32,
+    "Charisma": 3.2,
+    "Style": "Striker",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Verity Sloane",
+      "Type": "Egotist",
+      "PersonaDescriptor": "The Model",
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 0,
+      "Durability": "ShortTerm",
+      "Freshness": 0.62,
+      "GimmickTraits": [ "Vain", "Sneering", "Untested" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.22 },
+        { "Group": "Casual", "AppealScore": 0.4 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 2.2, "Grappler": 2.0, "Powerhouse": 2.0, "Technical": 2.2, "Brawler": 2.6, "Striker": 3.0 },
+    "Physical": { "Strength": 56, "Speed": 72, "Agility": 72, "Stamina": 62, "Size": 2 },
+    "Mental": { "Psychology": 50, "Selling": 54, "RingIQ": 52, "Toughness": 54 },
+    "Moveset": [
+      { "Name": "Knife-Edge Chop", "Types": [ "Strike" ], "Risk": "VeryEasy", "Impact": "Easy", "RequiresWeapons": false },
+      { "Name": "Rolling Heel Kick", "Types": [ "Strike" ], "Risk": "Medium", "Impact": "Medium", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Close-Up", "Move": { "Name": "Rising Knee", "Types": [ "Strike" ], "Risk": "Medium", "Impact": "Medium" }, "IsFinisher": true, "ImpactModifier": "Medium", "Overness": 32, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Tilda Crane",
+    "Division": "Womens",
+    "Overness": 29,
+    "Charisma": 2.4,
+    "Style": "Technical",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Tilda Crane",
+      "Type": "Gimmickless",
+      "PersonaDescriptor": "Local Talent",
+      "Tone": "Serious",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 0,
+      "Durability": "ShortTerm",
+      "Freshness": 0.5,
+      "GimmickTraits": [ "Unbranded", "Competent", "Forgettable" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.36 },
+        { "Group": "Casual", "AppealScore": 0.24 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 2.4, "Grappler": 2.8, "Powerhouse": 2.2, "Technical": 3.0, "Brawler": 2.4, "Striker": 2.4 },
+    "Physical": { "Strength": 58, "Speed": 70, "Agility": 72, "Stamina": 74, "Size": 2 },
+    "Mental": { "Psychology": 64, "Selling": 66, "RingIQ": 66, "Toughness": 62 },
+    "Moveset": [
+      { "Name": "Arm Wringer", "Types": [ "Technical" ], "Risk": "VeryEasy", "Impact": "Easy", "RequiresWeapons": false },
+      { "Name": "Snapmare", "Types": [ "Takedown" ], "Risk": "VeryEasy", "Impact": "Easy", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "Clean Finish", "Move": { "Name": "Victory Roll", "Types": [ "Technical" ], "Risk": "Easy", "Impact": "Medium" }, "IsFinisher": true, "ImpactModifier": "Medium", "Overness": 29, "TagExclusive": false }
+    ]
+  },
+  {
+    "RealName": "Maeve Torrance",
+    "Division": "Womens",
+    "Overness": 26,
+    "Charisma": 2.6,
+    "Style": "Grappler",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Maeve Torrance",
+      "Type": "Underdog",
+      "PersonaDescriptor": "Still Learning",
+      "Tone": "Inspirational",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 0,
+      "Durability": "ShortTerm",
+      "Freshness": 0.56,
+      "GimmickTraits": [ "Green", "Willing", "Improving" ],
+      "AppealRatings": [
+        { "Group": "Hardcore", "AppealScore": 0.34 },
+        { "Group": "Casual", "AppealScore": 0.28 }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": { "HighFlyer": 2.2, "Grappler": 3.0, "Powerhouse": 2.4, "Technical": 2.8, "Brawler": 2.4, "Striker": 2.4 },
+    "Physical": { "Strength": 62, "Speed": 70, "Agility": 70, "Stamina": 78, "Size": 2 },
+    "Mental": { "Psychology": 58, "Selling": 64, "RingIQ": 56, "Toughness": 70 },
+    "Moveset": [
+      { "Name": "Double-Leg Takedown", "Types": [ "Takedown" ], "Risk": "Easy", "Impact": "Easy", "RequiresWeapons": false },
+      { "Name": "Front Chancery", "Types": [ "Submission" ], "Risk": "Easy", "Impact": "Easy", "RequiresWeapons": false }
+    ],
+    "Signature": [
+      { "Name": "First Step", "Move": { "Name": "Fisherman Suplex", "Types": [ "Throw" ], "Risk": "Medium", "Impact": "Medium" }, "IsFinisher": true, "ImpactModifier": "Medium", "Overness": 26, "TagExclusive": false }
+    ]
   }
 ]
