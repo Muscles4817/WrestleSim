@@ -79,12 +79,26 @@ full curve: 1st 100%, 2nd 85–95%, 3rd (with stipulation) 90–110%, 4th+ 50–
 This forces roster rotation and makes fresh pairings valuable — one of the strongest
 pressures in real booking.
 
-#### A5. Reaction *type*, not just magnitude
+#### A5. Reaction *type*, not just magnitude — **implemented**
 **Reference:** [16](16-crowd-psychology.md) §2
-Crowd energy is a scalar. The real model is a small vector: **pop / heat / go-away-heat /
-silence / hostility**. A match that is "hostile and engaged" should be a completely
-different outcome from "quiet and uninvested", and silence — not booing — should be the
-failure state.
+Built as `CrowdReaction` (pop / heat / tension / silence / go-away heat) plus `ReactionKind`.
+What it covers:
+- **Heat counts as engagement.** A booed heel is the fuel the face-in-peril structure runs
+  on, and the engine now says so rather than reading boos as things going badly.
+- **Tension and silence are separated.** The two quiet rooms that mean opposite things — an
+  audience holding its breath and one that has stopped caring — were a single negative
+  number. The denied tag reads as tension; an overworked heat reads as go-away heat.
+- **Silence is the failure state**, per §2.1. The crowd component is scaled by
+  `Investment`, and the scaling is deliberately asymmetric: down to 0.65, up only to 1.06.
+  An invested crowd is the baseline a match is supposed to earn; being ignored is what costs.
+- **Booking, not just casting.** A beat repeated past the point anybody is still watching
+  records go-away heat however over the wrestlers are.
+
+Measured: the same plan worked by the same skill level rates **2.17★ in front of a room that
+never turned up and 3.99★ in front of one that did**.
+
+Still open from the original entry: `nuclear heat` as distinct from ordinary heat, and
+reaction as an input to the *business* result rather than only the quality rating (C5).
 
 #### A6. Persistent limb damage across beats
 **Reference:** [18](18-match-craft.md) §2.2

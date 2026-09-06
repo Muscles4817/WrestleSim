@@ -29,6 +29,26 @@ namespace WrestlingSim.Engine
 
         // Band the weighted crowd reading is normalised against. Below the floor the
         // building is dead; at the reference ceiling it is as hot as a crowd ever gets.
+        /// <summary>
+        /// The investment reading a normal match produces. Matches here score exactly as
+        /// they did before the reaction vector existed, so this feature moves the tails
+        /// rather than shifting the whole scale.
+        /// </summary>
+        private const double TypicalInvestment = 0.50;
+
+        /// <summary>
+        /// How hard investment swings the crowd component either side of typical.
+        ///
+        /// The clamp is deliberately **asymmetric** — down to 0.65, up only to 1.06 — and
+        /// that asymmetry is the point rather than a tuning convenience. Doc 16 §2.1 is
+        /// about the cost of silence, not a bonus for engagement: an invested crowd is the
+        /// baseline a match is supposed to earn, and being ignored is the failure. A
+        /// symmetric version was tried and pushed 2.15% of all matches to a flat 5.00,
+        /// because the pairings that draw the most investment are already near the ceiling
+        /// and had nowhere to go.
+        /// </summary>
+        private const double InvestmentSwing = 0.70;
+
         private const double CrowdFloor      = 28.0;
         private const double CrowdCeilingRef = 95.0;
 
@@ -482,6 +502,13 @@ namespace WrestlingSim.Engine
             }
 
             // Commit deltas to state
+            // ── What kind of reaction was that? ──────────────────────────────
+            // Classified here rather than in twenty handlers, because for most beats the
+            // answer follows from things the engine already knows: which way the delta
+            // went, and how the crowd feels about whoever drew it. The handlers that
+            // override it are the ones where the sign lies.
+            result.ResolvedReaction = RecordReaction(result, ctx, control);
+
             result.CrowdEnergyBefore = state.CrowdEnergy;
             state.ApplyEnergy(result.CrowdEnergyDelta);
             state.ApplyAdvantage(result.AdvantageDelta);
@@ -495,6 +522,98 @@ namespace WrestlingSim.Engine
             result.StorytellingScoreAfter = state.StorytellingScore;
 
             return result;
+        }
+
+        /// <summary>
+        /// Works out what kind of noise — or silence — a beat drew, and records it.
+        ///
+        /// The rule, from docs/wrestling-reference/16-crowd-psychology.md §2:
+        ///
+        ///   • Noise for somebody the crowd likes is a **pop**; noise around somebody they
+        ///     want beaten is **heat**, which is engagement and good. A booed heel is the
+        ///     fuel the whole face-in-peril structure runs on.
+        ///   • Quiet where the crowd is invested is **tension** — the held breath. Quiet
+        ///     where they are not is **silence**, and silence is the failure state (§2.1).
+        ///   • Quiet in a room that has stopped caring, from people it was never given a
+        ///     reason to care about, is **go-away heat**.
+        ///
+        /// A room is never doing exactly one of these, so the weight is *split* rather than
+        /// assigned. That matters: a binary threshold made the whole feature almost inert,
+        /// because it put the median performer exactly on the line and every match either
+        /// side of it read as fully invested or fully absent. A share makes two nobodies
+        /// accumulate real silence over a long match, which is the outcome A5 exists to
+        /// produce.
+        /// </summary>
+        private ReactionKind RecordReaction(BeatResult r, Ctx ctx, Wrestler? control)
+        {
+            var state = ctx.State;
+            double weight = Math.Max(1.5, Math.Abs(r.CrowdEnergyDelta));
+
+            // A handler that knows better than the sign — the denied tag, the overworked
+            // isolation — takes the whole weight and says so.
+            if (r.Reaction is { } declared)
+            {
+                state.RecordReaction(declared, weight);
+                return declared;
+            }
+
+            // Booking, not just casting. A crowd asked to watch the same thing over and
+            // over starts entertaining itself — the sarcastic chants and the counting-along
+            // of doc 16 §2, which it flags as a red alert. RepetitionFactor is already
+            // computed per beat; below about half its original value the beat is being
+            // repeated past the point anybody is still watching it.
+            if (r.RepetitionFactor < 0.5)
+            {
+                state.RecordReaction(ReactionKind.GoAwayHeat, weight);
+                return ReactionKind.GoAwayHeat;
+            }
+
+            // How much this room cares about the people in front of it.
+            //
+            // The window is set against the values Connection actually takes on the shipped
+            // roster, not its theoretical range: a nobody lands near 0.30, a midcard hand
+            // near 0.70, a genuine draw near 1.17. A first attempt used the theoretical
+            // 0.72–1.30 and read a *midcarder* as completely uninvested, which is plainly
+            // wrong — a midcard match still has a crowd.
+            double connection = control is not null
+                ? ctx.For(control).Connection
+                : ctx.Pair(p => p.Connection);
+            double invested = Math.Clamp((connection - 0.32) / 0.80, 0, 1);
+
+            if (r.CrowdEnergyDelta > 0.5)
+            {
+                // Whose noise is it? A crowd that dislikes the man on top is booing him,
+                // and booing him is engagement.
+                double disposition = control is not null
+                    ? ctx.For(control).Disposition
+                    : ctx.Pair(p => p.Disposition);
+                double liked = Math.Clamp((disposition - 0.30) / 0.40, 0, 1);
+
+                // The share the room does not care about at all still goes nowhere.
+                double engaged = weight * invested;
+                state.RecordReaction(ReactionKind.Pop,  engaged * liked);
+                state.RecordReaction(ReactionKind.Heat, engaged * (1 - liked));
+                state.RecordReaction(ReactionKind.Silence, weight * (1 - invested));
+
+                return liked >= 0.5 ? ReactionKind.Pop : ReactionKind.Heat;
+            }
+
+            if (r.CrowdEnergyDelta < -0.5)
+            {
+                // The distinction the scalar could never make. A room that cares is holding
+                // its breath; a room that does not has started entertaining itself.
+                state.RecordReaction(ReactionKind.Tension,    weight * invested);
+                state.RecordReaction(ReactionKind.GoAwayHeat, weight * (1 - invested));
+
+                return invested >= 0.5 ? ReactionKind.Tension : ReactionKind.GoAwayHeat;
+            }
+
+            // Nothing happened either way — a rest hold, a feeling-out. Whether that is
+            // attentive or absent is again entirely a question of who is in the ring.
+            state.RecordReaction(ReactionKind.Tension, weight * invested);
+            state.RecordReaction(ReactionKind.Silence, weight * (1 - invested));
+
+            return invested >= 0.5 ? ReactionKind.Tension : ReactionKind.Silence;
         }
 
         // ── Repetition / fatigue rules ───────────────────────────────────────
@@ -901,6 +1020,12 @@ namespace WrestlingSim.Engine
             ));
         }
 
+        /// <summary>
+        /// A rest hold is where a match either breathes or dies, and which one depends
+        /// entirely on whether the room is invested. Handled by the default classification:
+        /// its delta is small, so it reads as tension in an invested room and silence in an
+        /// empty one — which is exactly the distinction doc 16 §2.1 says matters most.
+        /// </summary>
         private void ApplyRestHold(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, double iMod, double dMod)
         {
@@ -1269,6 +1394,12 @@ namespace WrestlingSim.Engine
                     * PerformerProfile.Blend(pControl.RingPsych, 0.40)
                 : 0.0;
 
+            // Past the room's patience this is not tension, it is the crowd entertaining
+            // itself — duelling chants, a beach ball, doc 16 §2's red alert. Before the
+            // patience point an isolation is heat if the man on top is disliked, which the
+            // default classification already gets right.
+            if (overPatience > 0) r.Reaction = ReactionKind.GoAwayHeat;
+
             ctx.State.RecordIsolation(isolatedIsSideA);
 
             r.Commentary.Add(overPatience <= 0
@@ -1311,6 +1442,13 @@ namespace WrestlingSim.Engine
             r.StorytellingContribution = 9.0 * iMod * feudMult
                                          * PerformerProfile.Blend(pDenied.Selling, 0.55)
                                          * investment;
+
+            // The beat the scalar could never read correctly. A denied tag takes energy
+            // out of the building, and that quiet is the whole point of it — the room is
+            // holding its breath, not leaving. Phase 2's adjudication had to describe this
+            // in a comment as "stored energy" precisely because the engine had no way to
+            // say it. Now it does.
+            r.Reaction = ReactionKind.Tension;
 
             ctx.State.RecordNearTag(ctx.IsSideA(other));
 
@@ -1758,7 +1896,34 @@ namespace WrestlingSim.Engine
             // least discriminating, and lets the match-type weights actually mean something.
             double crowdRaw  = (state.CrowdPeakEnergy * 0.4) + (state.CrowdAverage * 0.6);
             double crowdNorm = Math.Clamp((crowdRaw - CrowdFloor) / (CrowdCeilingRef - CrowdFloor), 0, 1);
-            double crowdComponent = crowdNorm * 100 * crowdWeight;
+
+            // Volume is not the whole of it. A room can be loud and gone — a hijacked crowd
+            // is very loud indeed — and it can be quiet and completely present, which is
+            // what the near-tag and the count before a kick-out are for.
+            //
+            // Investment scales the crowd component between InvestmentFloor and 1. It never
+            // reaches zero, because a match worked in front of a dead room is still worth
+            // its technical and storytelling scores; what it loses is the third of the
+            // grade that was supposed to be about the audience.
+            //
+            // docs/wrestling-reference/16-crowd-psychology.md §2.1: promotions consistently
+            // over-fear boos and under-fear silence. This is where the engine stops doing
+            // the same thing — heat counts as engagement, and silence is what costs.
+            // Centred, not a penalty. CrowdCeiling already scales the whole crowd axis by
+            // how much the audience cares about this pairing, so applying investment as a
+            // straight multiplier charged low connection twice and — worse — compressed
+            // every difference that lives in the crowd component, which is most of the
+            // engine's discrimination. Six tests measuring quite different things all
+            // failed at once, which is what double-counting looks like.
+            //
+            // A typical match sits near TypicalInvestment and comes out at 1.0. What moves
+            // is the tails: a room that never turned up loses about a third of its crowd
+            // component, and one that was present all night gains about a quarter.
+            double investment = state.Reaction.Investment;
+            double crowdComponent = crowdNorm * 100 * crowdWeight
+                                    * Math.Clamp(
+                                        1.0 + (investment - TypicalInvestment) * InvestmentSwing,
+                                        0.65, 1.06);
 
             // Finish quality nudges the final score (±10 points), so an unearned finish
             // costs around half a star.
@@ -1805,6 +1970,7 @@ namespace WrestlingSim.Engine
                 CrowdAverageEnergy = state.CrowdAverage,
                 FinishQuality      = state.FinishQuality,
                 MatchTypeCoherence = coherence,
+                Reaction           = state.Reaction,
                 Familiarity        = ctx.Familiarity,
                 FinalScore         = finalScore,
                 StarRating         = starRating

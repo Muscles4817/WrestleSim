@@ -665,3 +665,67 @@ nothing. That is consistent with doc 21 §4.1 and defensible — the champion di
 it is now a deliberate decision rather than an accident of there being no tag matches.
 
 **418 tests passing.**
+
+---
+
+## A5 — the crowd reaction vector
+
+The first item from the original gap analysis rather than the tag-match plan, and the one
+[31](wrestling-reference/31-sim-mapping.md) ranked highest of what was left. Doc 18 §2.5 also
+makes it a **prerequisite** for real multi-man matches: `Advantage` is a scalar running −100
+to +100 and therefore two-poled, and the quantity that matters in a three-way is not who is
+winning but who the room is watching.
+
+### The problem with one number
+
+`CrowdEnergy` could not answer *is anybody invested?*, and it conflated the two quiet rooms
+that mean opposite things. Phase 2 hit this directly: the denied tag takes energy **out** of
+the building, and the adjudication had to describe that in a comment as "stored energy"
+because the engine had no way of saying it. An overworked isolation also takes energy out of
+the building, and means the opposite. One number cannot hold both.
+
+### What was built
+
+`CrowdReaction` accumulates five components — pop, heat, tension, silence, go-away heat —
+following the taxonomy in [16](wrestling-reference/16-crowd-psychology.md) §2. The readings
+that matter are `Engagement` (everything except the two kinds of not-caring), `Investment`
+(the share of the night the audience was present for) and `Dominant`.
+
+Two design points worth stating:
+
+**Heat is engagement.** A crowd booing somebody it wants beaten is present, and the
+face-in-peril structure runs on exactly that. Treating boos as a bad outcome would have been
+the engine making the mistake §2.1 says the business makes.
+
+**Reaction is a distribution, not a label.** The first implementation classified each beat as
+exactly one kind, and the feature was almost inert — 84% of matches unchanged, biggest move
+0.086★ — because a binary threshold put the median performer exactly on the line. Splitting
+the weight by connection is what made it bite.
+
+### Two mistakes worth recording
+
+**Double-counting.** Investment was first applied as a straight multiplier on the crowd
+component. But `CrowdCeiling` *already* scales the whole crowd axis by how much the audience
+cares about the pairing, so this charged low connection twice — and, worse, compressed every
+difference that lives in the crowd component, which is most of the engine's discrimination.
+Six unrelated tests failed at once: the WM20 and WM34 recreations, feud payoff, staleness
+decay, conditioning, and the tag carry test. That is what double-counting looks like from the
+outside. The multiplier is centred now, so a typical match scores where it always did.
+
+**A symmetric swing pushed 2.15% of all matches to a flat 5.00.** The pairings that draw the
+most investment are already near the ceiling and had nowhere to go. The clamp is asymmetric —
+0.65 down, 1.06 up — and that asymmetry is the design rather than a tuning convenience: doc 16
+§2.1 is about the *cost of silence*, not a bonus for engagement.
+
+### Result
+
+**429 tests passing**, with every pre-existing threshold intact — including the real-match
+recreations, which is the actual guard on engine behaviour.
+
+Singles ratings **do** change here, deliberately and for the first time in this body of work.
+The byte-identical contract existed so that tag matches would not disturb singles; A5 is a
+change to how crowd reaction is modelled, and it is supposed to move singles. The guard is
+the recreations and the distribution tests, not equality.
+
+Measured: the same plan worked to the same standard rates **2.17★ in front of a room that
+never turned up and 3.99★ in front of one that did.**

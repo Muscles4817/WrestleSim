@@ -1,0 +1,120 @@
+using WrestlingSim.Enums;
+
+namespace WrestlingSim.Models.MatchPlan
+{
+    /// <summary>
+    /// What a room is doing, as a profile rather than a number.
+    ///
+    /// The engine carried crowd reaction as a single 0–100 scalar. That number cannot
+    /// answer the question a booker actually needs answered — *is anyone invested?* — and
+    /// it conflates the two quiet rooms that mean opposite things: an audience holding its
+    /// breath and an audience that has stopped caring
+    /// (docs/wrestling-reference/16-crowd-psychology.md §2).
+    ///
+    /// Each component accumulates over a match. They are not shares of a whole and do not
+    /// sum to anything in particular; a match can be loud and disengaged at once, which is
+    /// exactly what a hijacked crowd is.
+    /// </summary>
+    public sealed class CrowdReaction
+    {
+        /// <summary>Cheers for something the audience wanted.</summary>
+        public double Pop { get; private set; }
+
+        /// <summary>Boos aimed at somebody they want beaten. Engagement, and useful.</summary>
+        public double Heat { get; private set; }
+
+        /// <summary>Invested quiet — the held breath before a near-fall or a denied tag.</summary>
+        public double Tension { get; private set; }
+
+        /// <summary>Nothing at all. The failure state.</summary>
+        public double Silence { get; private set; }
+
+        /// <summary>Boos with disengagement. Louder than silence and worse than it.</summary>
+        public double GoAwayHeat { get; private set; }
+
+        // ── Readings ─────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// How much the room cared, whichever way it cared. Everything except the two
+        /// kinds of not-caring.
+        /// </summary>
+        public double Engagement => Pop + Heat + Tension;
+
+        /// <summary>How much the room has actively checked out.</summary>
+        public double Disengagement => Silence + GoAwayHeat;
+
+        /// <summary>
+        /// 0–1. The share of the night the audience was actually present for. This is the
+        /// number the rating reads, and the reason a loud disengaged match now grades below
+        /// a quiet invested one.
+        /// </summary>
+        public double Investment
+        {
+            get
+            {
+                double total = Engagement + Disengagement;
+                return total <= 0 ? 0 : Engagement / total;
+            }
+        }
+
+        /// <summary>Whichever reaction the match produced most of.</summary>
+        public ReactionKind Dominant
+        {
+            get
+            {
+                var pairs = new (ReactionKind Kind, double Value)[]
+                {
+                    (ReactionKind.Pop, Pop),
+                    (ReactionKind.Heat, Heat),
+                    (ReactionKind.Tension, Tension),
+                    (ReactionKind.Silence, Silence),
+                    (ReactionKind.GoAwayHeat, GoAwayHeat)
+                };
+
+                var best = pairs[0];
+                foreach (var p in pairs) if (p.Value > best.Value) best = p;
+                return best.Kind;
+            }
+        }
+
+        /// <summary>A plain-English reading, in the register the rest of the game uses.</summary>
+        public string Label => Investment switch
+        {
+            < 0.35 => Silence > GoAwayHeat
+                ? "The room never turned up"
+                : "They stopped watching and started entertaining themselves",
+            < 0.55 => "Patchy — the crowd came and went",
+            < 0.75 => Dominant switch
+            {
+                ReactionKind.Heat    => "A hostile room, and hostile is engaged",
+                ReactionKind.Tension => "Quiet, but the good kind of quiet",
+                _                    => "A warm room"
+            },
+            _ => Dominant switch
+            {
+                ReactionKind.Heat => "They wanted somebody beaten, badly",
+                _                 => "The building was theirs all night"
+            }
+        };
+
+        // ── Accumulation ─────────────────────────────────────────────────────
+
+        public void Add(ReactionKind kind, double amount)
+        {
+            if (amount <= 0) return;
+
+            switch (kind)
+            {
+                case ReactionKind.Pop:        Pop        += amount; break;
+                case ReactionKind.Heat:       Heat       += amount; break;
+                case ReactionKind.Tension:    Tension    += amount; break;
+                case ReactionKind.Silence:    Silence    += amount; break;
+                case ReactionKind.GoAwayHeat: GoAwayHeat += amount; break;
+            }
+        }
+
+        public override string ToString() =>
+            $"pop {Pop:F1} · heat {Heat:F1} · tension {Tension:F1} · " +
+            $"silence {Silence:F1} · go-away {GoAwayHeat:F1} ({Investment:P0} invested)";
+    }
+}

@@ -43,6 +43,17 @@ namespace WrestlingSim.Models.MatchPlan
         public double MatchTypeCoherence { get; init; } = 1.0;
 
         /// <summary>
+        /// What the room actually did, as a profile rather than a level — see
+        /// <see cref="CrowdReaction"/>. The crowd component of the rating is scaled by
+        /// <see cref="CrowdReaction.Investment"/>, so a loud disengaged match now grades
+        /// below a quiet invested one.
+        /// </summary>
+        public CrowdReaction Reaction { get; init; } = new();
+
+        /// <summary>A plain-English reading of what the crowd was like.</summary>
+        public string CrowdNote => Reaction.Label;
+
+        /// <summary>
         /// 0–1. How much the crowd still wanted to see this specific pairing, 1.0 being
         /// the first time they had seen it. Below 1.0 the room was flatter than the work
         /// deserved — docs/wrestling-reference/20-storylines-and-feuds.md §9.1.

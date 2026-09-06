@@ -46,6 +46,13 @@ namespace WrestlingSim.Engine
         /// <summary>Running readings for average crowd calculation.</summary>
         public List<double> CrowdEnergyReadings { get; set; } = new();
 
+        /// <summary>
+        /// What the room has actually been doing, as a profile rather than a level.
+        /// <see cref="CrowdEnergy"/> is how loud; this is what kind, and whether anybody
+        /// is invested at all — see docs/wrestling-reference/16-crowd-psychology.md §2.
+        /// </summary>
+        public Models.MatchPlan.CrowdReaction Reaction { get; } = new();
+
         // ── Legal performers ─────────────────────────────────────────────────
 
         // Who is currently in the ring for each side, as an index into that side's
@@ -197,6 +204,14 @@ namespace WrestlingSim.Engine
         /// every match of every quality pinned the peak at exactly 100 and the crowd
         /// component stopped distinguishing anything.
         /// </summary>
+        /// <summary>
+        /// Records what kind of reaction a beat drew, weighted by how much of it there was.
+        /// A beat that moves the room a long way in either direction counts for more than
+        /// one that barely registers.
+        /// </summary>
+        public void RecordReaction(Enums.ReactionKind kind, double magnitude) =>
+            Reaction.Add(kind, Math.Abs(magnitude));
+
         public void ApplyEnergy(double delta)
         {
             if (delta > 0)
