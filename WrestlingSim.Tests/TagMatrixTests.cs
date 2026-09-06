@@ -67,8 +67,8 @@ namespace WrestlingSim.Tests
                     {
                         for (int rep = 0; rep < runsPerCell; rep++)
                         {
-                            int seed = HashCode.Combine(
-                                st.Name, feudMode, a1.RealName, b1.RealName, type, rep) & 0x7FFFFFFF;
+                            int seed = StableSeed.From(
+                                st.Name, feudMode, a1.RealName, b1.RealName, type, rep);
 
                             var plan = new MatchPlanModel
                             {

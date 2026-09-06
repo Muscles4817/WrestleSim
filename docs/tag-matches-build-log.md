@@ -1837,3 +1837,89 @@ the recreation margins are all ≥0.34★; `InvestmentDownside` is genuinely bou
 sides; and `ADeniedTag` is genuinely strengthened.
 
 **487 tests passing**, with both surviving mutations now failing the intended test.
+
+---
+
+## Every corpus number in this file was measured on a different corpus each time
+
+Found while merging main into A5, by noticing something too small to be worth noticing. I ran
+`ATypicalMatchIsUnmoved_AndThatIsMeasuredNotAsserted` twice on the same tree to quote its
+output in a PR description, and got `p05 0.7457` and then `p05 0.7456`. One digit in the
+fourth decimal place, on a test I had described in this file as *"pinned to the corpus"*.
+
+Three more runs of the identical commit:
+
+```
+n=34,200  p05 0.7459  median 1.0000  p95 1.0523
+n=34,200  p05 0.7457  median 1.0001  p95 1.0524
+n=34,200  p05 0.7455  median 1.0001  p95 1.0523
+```
+
+The cause is one line, repeated at five sites:
+
+```csharp
+int seed = HashCode.Combine(st.Name, a.Id, b.Id) & 0x7FFFFFFF;
+```
+
+`System.HashCode` seeds itself from a random value once per process. This is documented — the
+API is explicitly not stable across runs, because it exists to defend hash tables against
+collision attacks, which is the opposite of what a reproducible measurement needs. Every
+corpus test in this project derived its per-cell seed that way: the 34,200-pairing investment
+distribution, the singles matrix, the tag matrix.
+
+So all three have been sampling a **fresh random draw of the engine on every run** for their
+entire lives.
+
+### What that does and does not invalidate
+
+It does not invalidate the tests. Arguably the opposite: a threshold that has held across a
+new random sample on every run since it was written is better evidence than one that has held
+on a single pinned corpus. They were accidentally doing property testing.
+
+It does not touch the byte-identity work either. That harness uses literal seeds, as does
+every other seeded test in the suite — these five sites were the only randomised ones, and I
+checked the rest rather than assuming.
+
+What it invalidates is **me quoting them**. This file, several commit messages and the PR
+description for A5 all carry percentiles to four decimal places, presented as measurements a
+reader could go and reproduce. They could not. Nobody could, including me, including on the
+same machine on the same commit ten seconds apart. Where a review round agreed with one of my
+four-decimal figures, that agreement was luck or the reviewer was reading my number back to
+me — and at least one round *did* re-measure these distributions independently.
+
+The noise is small — the median moved by 0.0001 to 0.0003 between runs, well inside the ±0.03
+the assertion allows — so nothing built on it is wrong. That is not much of a defence. I did
+not know the size of the noise, because I did not know there was any.
+
+### Fixed
+
+`StableSeed.From(...)` — FNV-1a over the invariant string form of each part, stable across
+runs, processes and machines. All five sites now use it. Three consecutive runs:
+
+```
+n=34,200  p05 0.7452  median 0.9998  p95 1.0523     (×3, identical)
+```
+
+The corpus is genuinely pinned now, so the figures below are reproducible, and every corpus
+figure quoted anywhere else in this file predates the fix and should be read as one sample
+from a distribution rather than as a measurement.
+
+**489 tests passing** on the fixed corpus, including both matrix tests at their pre-existing
+thresholds — which is the reassuring part, since those thresholds were set against a sample
+that no longer exists.
+
+### The corrected A5 figures
+
+| | Was quoted | Reproducible |
+| --- | --- | --- |
+| Matches investment moves | 96.6% | **96.7%** |
+| Largest movement | 4.02 pts (0.201★) | **4.04 pts (0.202★)** |
+| p05 / median / p95 | 0.7458 / 1.0000 / 1.0523 | **0.7452 / 0.9998 / 1.0523** |
+| At the maximum factor | 0.33% | **0.33%** |
+| Matches with a sub-floor beat | 225 | **214** |
+| Multiplier: dead / typical / full | 0.7021 / 1.0000 / 1.0609 | **unchanged** — computed from constants, never sampled |
+
+The last row is the one that matters for reading the rest: the numbers that were stable are
+the ones derived from the constants, and the numbers that moved are the ones drawn from the
+corpus. That is exactly the split you would predict, which is mild evidence the diagnosis is
+right rather than a second bug wearing its clothes.

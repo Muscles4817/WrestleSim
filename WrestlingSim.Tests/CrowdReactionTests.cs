@@ -373,7 +373,7 @@ namespace WrestlingSim.Tests
             {
                 if (ReferenceEquals(a, b)) continue;
 
-                var r = new MatchEngine(HashCode.Combine(st.Name, a.Id, b.Id) & 0x7FFFFFFF)
+                var r = new MatchEngine(StableSeed.From(st.Name, a.Id, b.Id))
                     .Execute(new MatchPlanModel
                     {
                         WrestlerA = a, WrestlerB = b,
@@ -442,7 +442,7 @@ namespace WrestlingSim.Tests
             foreach (var b in roster)
             {
                 if (ReferenceEquals(a, b)) continue;
-                factors.Add(new MatchEngine(HashCode.Combine(st.Name, a.Id, b.Id) & 0x7FFFFFFF)
+                factors.Add(new MatchEngine(StableSeed.From(st.Name, a.Id, b.Id))
                     .Execute(new MatchPlanModel
                     {
                         WrestlerA = a, WrestlerB = b,
@@ -697,7 +697,7 @@ namespace WrestlingSim.Tests
             {
                 if (ReferenceEquals(a, b)) continue;
 
-                var r = new MatchEngine(HashCode.Combine(st.Name, a.Id, b.Id) & 0x7FFFFFFF)
+                var r = new MatchEngine(StableSeed.From(st.Name, a.Id, b.Id))
                     .Execute(new MatchPlanModel
                     {
                         WrestlerA = a, WrestlerB = b,
