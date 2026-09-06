@@ -1765,3 +1765,62 @@ the sole opening and the sole finish. The relevance sort producing real bands in
 Zero console errors at 390px and 320px, no horizontal overflow at either.
 
 **471 tests passing**, and all four blockers re-verified in the browser after fixing.
+
+### The finding I could not argue with: no tests
+
+The clearest thing in the round-1 review was not one of the four blockers. It was a row in a
+table, checking my own commit message against the branch:
+
+> | "435 green unit tests" | ✓ — **and the base is also 435.** This PR adds zero tests,
+> including for the new `RosterPicker` and `Wrestler.CharismaLabel`. |
+
+and its closing question:
+
+> Suite green? Author says 471, and says plainly that this PR adds none of them. Is that
+> still true, and is it acceptable — or should the slot/swap logic have unit tests now that
+> it is doing more?
+
+It was true and it was not acceptable. The defence available to me was that this is a Blazor
+component and the test project cannot reach it — which is a description of the problem, not
+an answer to it. A browser run proves a thing worked once on one machine; it does not stop it
+breaking. And this PR is the one where a browser run caught four bugs that 435 green tests
+could not, which cuts both ways: those tests were green because nothing they covered had
+changed.
+
+So rather than argue it, I moved the part that deserves a test to where a test can get at it.
+`BookingSuggestions` is now in `WrestlingSim.Core/Engine`, and the picker calls it.
+
+The move is not a filing exercise. *Which name should a booker be offered first* is a booking
+question — it reads the feud book, pairing freshness, standing teams and the last card, and it
+is the same question the AI booker will have to answer when it books its own shows. It was
+only ever in the component because that is where I happened to write it. What is left in
+`RosterPicker.razor` is layout: the search box, the division filter, the keyboard cursor, the
+sheet.
+
+Eight tests, and the one that matters is `EveryBandBeatsPopularity`. Six names, overness
+deliberately inverted so that every name with a reason to be suggested is *less* popular than
+every name without one, and one assertion on the whole order:
+
+```
+Story(20), Partner(21), Recent(22), Plain(99), Worn(98), Already(97)
+```
+
+If that passes under `OrderByDescending(Overness)` it is testing nothing — and
+`OrderByDescending(Overness)` is exactly what every roster list in this app was before this
+PR.
+
+Five mutations, all killed:
+
+| Mutation | Result |
+| --- | --- |
+| M1 — sort by popularity alone (the shipped behaviour before this PR) | **7 of 8 red** |
+| M2 — warn about a stale pairing only when a story is attached (draft bug) | red — the `Intensity.None` theory case |
+| M3 — gate the partner tier on the far side being filled (draft bug) | red |
+| M4 — rank already-booked names first (draft bug) | **2 red** |
+| M5 — stop surfacing the last card's names | **2 red** |
+
+M2, M3 and M4 are the three ranking bugs review found by reading and the browser run found by
+clicking. All three now fail a test instead. That is the actual value of the move: the bugs
+this PR shipped and fixed cannot come back silently.
+
+**479 tests**, up from 471. Eight of them are this PR's, which is eight more than it had.
