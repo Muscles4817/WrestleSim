@@ -1500,3 +1500,66 @@ feuds the match touched, and it is the next piece rather than a gap to paper ove
 Also still open: the engine narrates a three-way with two names, crowd attention divides evenly
 between all participants when §2.5 says it concentrates on whoever the room came for, and the
 match builder still cannot book one.
+
+---
+
+## The blame transfer
+
+The reason a booker runs two rivals into a three-way is that being cost the match by somebody
+you already hate escalates the story **without spending the singles match on it**. "You cost me
+the title" is one of wrestling's most reliable escalators, and it is why the finish where two
+big names wreck each other and the third steals it gets booked as often as it does.
+
+That only works if the consequence outlives the match. The beats express the grudge inside the
+ring; this carries it out.
+
+`MatchEngineResult.GrudgeMoments` records who did it, who it was done to, and which beat —
+written whenever a spite break, ignored opportunity or mutual destruction fires with a live
+story behind it. `ShowSimulator` turns each one into heat on that story.
+
+**`MatchEngine.BlameHeat` is the rule, and it is a function so it can be tested as one** —
+this codebase has now learned that lesson three times. The grievance is proportional to the
+damage:
+
+| What it cost them | Share |
+| --- | --- |
+| Denied, then pinned | **1.0** |
+| Denied, lost anyway | 0.6 |
+| Denied, won regardless | 0.3 |
+
+Scaled by the match's quality, for the same reason the headline feud is — a moment in a match
+nobody cared about is a moment nobody cared about. And at **0.8 heat per star against the 2.0 a
+match between the rivals themselves earns**, deliberately well under half: being cost a match
+should build a story, and it must not build it faster than actually wrestling each other, or
+the cheap booking outperforms the real one.
+
+### A bug found by a test looking for the absence of something
+
+The control test asserted that with no grudge moment booked, the A–B story does not move. It
+failed — and the reason was worth more than the test.
+
+The headline feud recording takes `Plan.SideA` and `Plan.SideB`. In a two-side match those are
+*the* two sides. In a three-way they are **the first two listed**, so a triple threat built the
+A–B rivalry in full and gave A–C and B–C nothing at all, decided entirely by typing order.
+
+Everybody in a three-way wrestled everybody. The other pairings now get the same fraction a tag
+match's cross-pairs get, and for the same reason — they were in there together, which is not
+the same as having had the match. Measured: **A–B 3.73, A–C 0.62, B–C 0.62.**
+
+The test was rewritten to assert what is actually true, which is not that the story stays still
+but that **being cost the match is worth more than merely being in it.**
+
+### One mutation survives, correctly
+
+Swapping the two wrestlers in the blame's `_feudBook.Record` call changes nothing, because a
+feud is keyed on its camps sorted and depositing heat is symmetric. That is a semantic no-op
+rather than a gap — but the `GrudgeMoment` comment claimed "the direction matters", which
+overstated it. The direction decides how much (whether the aggrieved party was pinned is read
+off `Against`) and what the show reports; it does not decide where the heat lands. Corrected,
+because a field that looks directional and is only half directional is exactly what a later
+reader will assume more of than it does.
+
+Five mutations, four killed and one a true no-op: blame ignoring what the moment cost, the show
+never applying it, a spite break recording nothing, and the extra pairings getting nothing.
+
+**559 tests passing.**

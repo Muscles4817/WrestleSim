@@ -9,6 +9,9 @@ namespace WrestlingSim.Engine
     {
         private readonly Random _rand;
 
+        /// <summary>Grudge moments this execution produced; see <see cref="GrudgeMoment"/>.</summary>
+        private readonly List<GrudgeMoment> _grudges = new();
+
         // Scale constants for the saturating normalisation of each raw accumulator.
         // A raw score equal to the scale reads as ~0.63 of the component; twice the
         // scale reads as ~0.86. Nothing ever reaches 1.0, so piling on beats has a
@@ -141,6 +144,32 @@ namespace WrestlingSim.Engine
         /// passed happily with this rule deleted. Same shape as `BoredShare` in A5: testing
         /// a mechanism through the thing it feeds does not test the mechanism.
         /// </summary>
+        /// <summary>
+        /// How much heat a grudge moment adds to the story behind it, given what it cost
+        /// the person it was done to.
+        ///
+        /// "You cost me the title" is one of wrestling's most reliable escalators, and it is
+        /// why a booker runs two rivals into a multi-man match: the story advances without
+        /// spending the singles match. But the grievance is proportional to the damage. Being
+        /// denied and then *pinned* is the full version; being denied and losing anyway is
+        /// most of it; being denied and winning regardless is a grudge with no wound under
+        /// it, and should read as the smallest of the three rather than as nothing — it still
+        /// happened, and both of them know it.
+        ///
+        /// Scaled by the match's own quality for the same reason the headline feud is: a
+        /// moment in a match nobody cared about is a moment nobody cared about.
+        /// </summary>
+        public static double BlameHeat(double starRating, bool aggrievedLost, bool aggrievedPinned) =>
+            starRating * BlameHeatPerStar * (aggrievedPinned ? 1.0 : aggrievedLost ? 0.6 : 0.3);
+
+        /// <summary>
+        /// Heat per star for a grudge moment, against the 2.0 a match between the rivals
+        /// themselves is worth. Deliberately well under half: being cost a match builds a
+        /// story, and it must not build it faster than actually wrestling each other, or the
+        /// cheap booking outperforms the real one.
+        /// </summary>
+        public const double BlameHeatPerStar = 0.8;
+
         public static double MultiManNearFallFactor(bool multiMan, bool somebodyDisposed) =>
             multiMan && !somebodyDisposed ? CrowdedOutNearFall : 1.0;
 
@@ -923,6 +952,8 @@ namespace WrestlingSim.Engine
             var feud = ctx.Plan.FeudBetween(control, rival);
             double grudge = feud?.IntensityMultiplier ?? 0.0;
             r.FeudalResonanceActivated = feud is not null;
+            if (feud is not null)
+                _grudges.Add(new GrudgeMoment(control, rival, BeatType.SpiteBreak));
 
             // No story, no beat. A spite break between strangers is a man throwing away a
             // win for no reason, and it reads as one.
@@ -961,6 +992,8 @@ namespace WrestlingSim.Engine
             var feud = ctx.Plan.FeudBetween(control, rival);
             double grudge = feud?.IntensityMultiplier ?? 0.0;
             r.FeudalResonanceActivated = feud is not null;
+            if (feud is not null)
+                _grudges.Add(new GrudgeMoment(control, rival, BeatType.IgnoredOpportunity));
             double weight = 0.25 + 0.75 * Math.Clamp(grudge, 0, 1.6) / 1.6;
 
             r.CrowdEnergyDelta = Rng(3, 9) * iMod * weight;
@@ -990,6 +1023,8 @@ namespace WrestlingSim.Engine
             var feud = ctx.Plan.FeudBetween(control, rival);
             double grudge = feud?.IntensityMultiplier ?? 0.0;
             r.FeudalResonanceActivated = feud is not null;
+            if (feud is not null)
+                _grudges.Add(new GrudgeMoment(control, rival, BeatType.MutualDestruction));
             double weight = 0.35 + 0.65 * Math.Clamp(grudge, 0, 1.6) / 1.6;
 
             r.CrowdEnergyDelta = Rng(8, 16) * iMod * weight
@@ -2372,6 +2407,7 @@ namespace WrestlingSim.Engine
                 WinningSide        = winningSide.Members.ToList(),
                 LosingSide         = losingSide.Members.ToList(),
                 BeatResults        = beatResults,
+                GrudgeMoments      = _grudges.ToList(),
                 TechnicalScore     = state.TechnicalScore,
                 StorytellingScore  = state.StorytellingScore,
                 CrowdPeakEnergy    = state.CrowdPeakEnergy,
