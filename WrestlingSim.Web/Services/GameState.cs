@@ -193,6 +193,10 @@ public class GameState
         // player's decision, and it costs.
         career.Titles.SeedDefaults(promotion.Name, startDate);
 
+        // The tag division does not start from nothing either. A handful of the roster
+        // already read to the audience as acts rather than as pairs — see TagTeamSeed.
+        career.Teams.AddRange(TagTeamSeed.SeedDefaults(career.Roster, startDate));
+
         Career = career;
         ActiveShow = null;
         Current = Screen.Dashboard;

@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using WrestlingSim.Models;
+using WrestlingSim.Models.World;
 
 public static class DataLoaders
 {
@@ -20,6 +21,9 @@ public static class DataLoaders
     public static List<Move> ParseMoves(string json) =>
         JsonSerializer.Deserialize<List<Move>>(json, Options) ?? new List<Move>();
 
+    public static List<TagTeamSeed> ParseTagTeams(string json) =>
+        JsonSerializer.Deserialize<List<TagTeamSeed>>(json, Options) ?? new List<TagTeamSeed>();
+
     // ── File loading ─────────────────────────────────────────────────────────
     // For hosts with a filesystem. Reads the copy next to the executable, so the
     // data can be edited without a rebuild.
@@ -29,6 +33,9 @@ public static class DataLoaders
 
     public static List<Move> LoadMoves(string filePath) =>
         ParseMoves(ReadDataFile(filePath));
+
+    public static List<TagTeamSeed> LoadTagTeams(string filePath) =>
+        ParseTagTeams(ReadDataFile(filePath));
 
     private static string ReadDataFile(string filePath) =>
         File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "JSON", filePath));
@@ -42,6 +49,13 @@ public static class DataLoaders
 
     public static List<Move> LoadEmbeddedMoves() =>
         ParseMoves(ReadEmbedded("MoveList.json"));
+
+    /// <summary>
+    /// The standing tag teams a new career starts with. Bound to roster instances by
+    /// <see cref="TagTeamSeed.SeedDefaults"/> — on their own these are just names.
+    /// </summary>
+    public static List<TagTeamSeed> LoadEmbeddedTagTeams() =>
+        ParseTagTeams(ReadEmbedded("TagTeams.json"));
 
     private static string ReadEmbedded(string fileName)
     {

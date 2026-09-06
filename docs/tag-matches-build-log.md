@@ -1248,3 +1248,56 @@ refund conditional on the ending being respected, which is a rule about the next
 rather than this one — recorded rather than done, so the next reader knows it is a choice.
 
 **444 tests passing.**
+
+---
+
+## The bigger roster — review round 1
+
+Verdict: **safe to merge.** Every headline claim survived measurement, including the one I
+flagged in the PR body as most worth scrutinising — the `MatchMatrixTests` caching change.
+Worth recording what the reviewer did to it, because it is the shape of scrutiny this change
+needed and I had only argued for it in prose:
+
+* Diffed the sweep body and found it byte-identical — no loop bound, seed, threshold or
+  assertion changed; the optional `runsPerCell` was never once overridden, so caching could
+  not narrow anything.
+* Built **uncached twins** of three engine mutants and confirmed cached and uncached produce
+  identical pass/fail verdicts.
+* Mutation-tested five ways. The base branch killed **0 of 5**; the branch kills **1 of 5** —
+  a mutant that makes `BeatControl` a no-op now fails `Ratings_SpanAWideRange`, where on the
+  thirty-person roster the same mutant slipped through. Detection got *better*, not worse.
+* Checked the memory hypothesis I had not thought of: the cache **saves** 186 MB of peak RSS
+  (471 vs 657), because holding one matrix beats churning eight.
+
+Four findings, all minor, all fixed:
+
+| | |
+|---|---|
+| `SeededTeams_AreSkippedRatherThanBrokenWhenAMemberIsMissing` dropped `Roster.Skip(1)` — Demi Bennett, who is in **no** tag team. Measured `full=9, missing=9`: both assertions passed vacuously and the arm never exercised the path it is named for. | Removes an actual team member now, and asserts the count *falls by exactly one*. |
+| "grew from 500k matches to 1.8m" in the test's own comment and the PR body. Measured: **271,440 → 1,778,400**. The second figure is right; the first was overstated ~1.8×. | Corrected, with the real numbers. |
+| "`RosterDifferentiationTests` names eight of the original thirty" — it names **eleven**. All eleven are still present, so the substance held. | Noted here rather than restated. |
+| `Assert.InRange(mean, 2.8, 4.3)`: the sweep mean fell 3.35 → 2.99 because the additions are weighted to the lower card, so the margin to the floor went 0.55 → **0.19**. | Left as it is — it is currently the assertion doing the mutation-killing — with a comment saying the next tranche of enhancement talent will trip it and that the failure will be a data change wearing an engine regression's clothes. |
+
+### And one real gap the roster made reachable
+
+`Draft.Apply` explicitly ends **feuds** split across brands — *"there is no show left on which
+to continue it"* — and had no equivalent for tag teams, while `DraftBoard` picks individuals
+with no team awareness. Review measured an AutoPick draft on the shipped roster splitting
+**five of the nine seeded teams across brands**, all left `IsActive` and quietly decaying
+chemistry for a pairing nobody could ever book again.
+
+This was unreachable before: `career.Teams` was empty at career start, so a day-one draft had
+nothing to split. Seeding nine teams ships it reachable. Fixed with the same rule the feuds
+get, `TeamsDisbanded` reported alongside `FeudsEnded`, and two tests — one that the draft
+breaks up a team it separates, one that it leaves alone a team it keeps together.
+
+### The caveat the review drew out, which the PR body already had right
+
+Distinct rating tiers went 16/30 (53%) → **23/76 (30%)** while the total spread barely moved
+(1.342 → 1.356): 53 of the 76 land within 0.02 stars of a neighbour. The additions fill in
+*between* existing positions rather than extending the range. That is crowding, not cloning —
+no two entries share an attribute vector, and the closest new pair is *less* similar than the
+closest pre-existing one — and it is what a bigger roster at a fixed quality ceiling has to
+look like. Recorded because the honest reading of "23 tiers" is denser, not wider.
+
+**467 tests passing.**
