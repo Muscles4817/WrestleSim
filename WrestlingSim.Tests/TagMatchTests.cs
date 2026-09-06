@@ -245,6 +245,87 @@ namespace WrestlingSim.Tests
             Assert.Contains(plan.Validate(), e => e.Contains("booked for one side"));
         }
 
+        [Fact]
+        public void ATagThatBringsInTheManAlreadyInTheRing_IsRejected()
+        {
+            // Was a silent substitution: the engine fell through to "next man round" and
+            // brought in somebody the booker had not asked for. Invisible on a two-man
+            // side, a different match on a trio.
+            var plan = new MatchPlanModel
+            {
+                SideA = MatchSide.Of(W("A1"), W("A2"), W("A3")),
+                SideB = MatchSide.Of(W("B1"), W("B2"), W("B3")),
+                Beats =
+                [
+                    B(BeatType.StandardOpening, BeatControl.Even),
+                    new MatchBeat { Type = BeatType.Tag, Control = BeatControl.WrestlerA, IncomingIndex = 0 },
+                    B(BeatType.FinishClean, BeatControl.WrestlerA),
+                ]
+            };
+
+            Assert.Contains(plan.Validate(), e => e.Contains("already") && e.Contains("legal man"));
+        }
+
+        [Fact]
+        public void ANearTagAgainstAManWithNoCorner_IsRejected()
+        {
+            // The rule checked the wrong side. Control on an isolation or a near tag is the
+            // side *doing* the isolating; the man who needs a partner is their opponent.
+            // With the uneven-sides block lifted this would have run, and the commentary
+            // leaked its fallback string: "…the corner is beside himself on the apron!"
+            var plan = new MatchPlanModel
+            {
+                SideA = MatchSide.Of(W("Alone"), W("Also Alone")),
+                SideB = MatchSide.Of(W("B1"), W("B2")),
+                Beats =
+                [
+                    B(BeatType.StandardOpening, BeatControl.Even),
+                    B(BeatType.NearTag, BeatControl.WrestlerB),
+                    B(BeatType.FinishClean, BeatControl.WrestlerA),
+                ]
+            };
+
+            // Both sides are teams here, so this one is legal — the guard is directional.
+            Assert.Empty(plan.Validate());
+
+            // And the directionality itself, proven on the beat legality rule rather than
+            // on the uneven-sides block that currently masks it.
+            var isolation = new MatchBeat { Type = BeatType.Isolation, Control = BeatControl.WrestlerB };
+            var lopsided = new MatchPlanModel
+            {
+                SideA = MatchSide.Of(W("Alone")),
+                SideB = MatchSide.Of(W("B1"), W("B2")),
+                Beats = [B(BeatType.StandardOpening, BeatControl.Even), isolation,
+                         B(BeatType.FinishClean, BeatControl.WrestlerB)]
+            };
+
+            // Side B controls the isolation, and side B is a team — but the man being
+            // isolated is on side A, who has no corner. That is what must be caught.
+            Assert.Contains(lopsided.Validate(),
+                e => e.Contains("needs a partner on Alone's side"));
+        }
+
+        [Fact]
+        public void ADeniedTagWithNoIsolation_StillBuysSomething()
+        {
+            // It used to buy exactly nothing: the unearned branch returned 0.55 before ever
+            // reading nearTags, so a denied tag with no peril behind it was a pure cost —
+            // the room lost energy and nothing gave it back. That contradicted the reason
+            // the beat exists.
+            var none    = Charged(0, 0);
+            var twoNear = Charged(0, 2);
+
+            output.WriteLine($"  no isolation, no near tags {none.pop:F2}");
+            output.WriteLine($"  no isolation, two near tags {twoNear.pop:F2}");
+
+            Assert.True(twoNear.pop > none.pop,
+                "Denied tags have to be worth something even with no isolation behind them.");
+
+            // But still well short of a properly built one.
+            Assert.True(twoNear.pop < Charged(3, 2).pop * 0.8,
+                "A near-tag-only heat is still a thin one.");
+        }
+
         // ── Legal-performer tracking ─────────────────────────────────────────
 
         [Fact]
@@ -488,44 +569,106 @@ namespace WrestlingSim.Tests
         [Fact]
         public void AStarCarriesAWeakPartner_RatherThanBeingAveragedDownToHim()
         {
-            // Ruled on in adjudication. A flat side mean made a star-and-jobber team grade
-            // as exactly the average of the star's match and the jobber's match — the star
-            // losing precisely what the jobber gained. That is a conservation law, and it
-            // contradicts doc 12 §3.2 and doc 17 §2.8, which say association transfers heat
-            // *to* the weaker man. Ctx.DragWeight makes the side read toward its best
-            // member, so the star carries.
+            // Ruled on in adjudication after phase 1. A flat side mean made a star-and-
+            // jobber team grade as exactly the average of the star's match and the
+            // jobber's match — the star losing precisely what the jobber gained. That is a
+            // conservation law, and it contradicts doc 12 §3.2 and doc 17 §2.8, which say
+            // association transfers heat *to* the weaker man.
+            //
+            // REWRITTEN TWICE after review. The first version compared a tag structure
+            // against a singles structure; the second used a singles baseline. Both let a
+            // structure difference dominate, so neither could see the aggregation at all —
+            // the first passed even with the side read as its *worst* member.
+            //
+            // This varies nothing but who is on side A. Same plan, same opponents, same
+            // seeds. Three compositions, and the mixed one has to land above the midpoint
+            // of the other two: that is what "top-weighted" means and what a flat mean
+            // would not produce.
+            (double stars, double crowd) Rating(Wrestler one, Wrestler two)
+            {
+                double st = 0, cr = 0;
+                for (int i = 0; i < 150; i++)
+                {
+                    var r = new MatchEngine(i * 7919).Execute(new MatchPlanModel
+                    {
+                        SideA = MatchSide.Of(one, two),
+                        SideB = Team("B1", "B2"),
+                        Beats = MatchStructureLibrary.Find("Formula Tag")!.Beats
+                                    .Select(b => b.Clone()).ToList()
+                    });
+                    st += r.StarRating; cr += r.CrowdAverageEnergy;
+                }
+                return (st / 150, cr / 150);
+            }
+
+            Wrestler Star()   => W("Star",   overness: 95, charisma: 5.0, skill: 4.6);
+            Wrestler Jobber() => W("Jobber", overness: 20, charisma: 1.0, skill: 2.0);
+
+            var twoStars   = Rating(Star(), Star());
+            var twoJobbers = Rating(Jobber(), Jobber());
+            var mixed      = Rating(Star(), Jobber());
+
+            output.WriteLine($"  two stars   {twoStars.stars:F3}★  crowd {twoStars.crowd:F2}");
+            output.WriteLine($"  mixed       {mixed.stars:F3}★  crowd {mixed.crowd:F2}");
+            output.WriteLine($"  two jobbers {twoJobbers.stars:F3}★  crowd {twoJobbers.crowd:F2}");
+            output.WriteLine($"  star midpoint {(twoStars.stars + twoJobbers.stars) / 2:F3}, " +
+                             $"crowd midpoint {(twoStars.crowd + twoJobbers.crowd) / 2:F2}");
+
+            // The crowd component is where the side read lives, and it carries clearly:
+            // the mixed side reads well above the midpoint of the two pure ones.
+            Assert.True(mixed.crowd > (twoStars.crowd + twoJobbers.crowd) / 2.0,
+                $"A star with a jobber drew {mixed.crowd:F2}, at or below the " +
+                $"{(twoStars.crowd + twoJobbers.crowd) / 2.0:F2} midpoint. The side is being " +
+                "averaged, not carried.");
+
+            Assert.True(mixed.crowd < twoStars.crowd,
+                "But a weak partner still has to cost something, or there is no reason to " +
+                "care who you put with your star.");
+
+            // The overall rating is deliberately NOT asserted to carry, and that is worth
+            // being explicit about rather than quietly asserting the weaker claim.
+            //
+            // Two adjudicated rulings meet here and pull against each other. Crowd fields
+            // read the whole side top-weighted, so the star carries the room. Craft fields
+            // read only whoever is legal, so while the jobber is in the ring his work is
+            // graded at full weight — and in the Formula Tag structure he takes the hot tag
+            // and works the finish. Net, the rating lands near the midpoint.
+            //
+            // That is the honest current behaviour: the star carries what the audience
+            // feels, not what the match is worth as a piece of work. Whether he should also
+            // carry the craft — a veteran calling a match in the ring genuinely does make a
+            // green partner look better — is a real open question, recorded in the build
+            // log rather than settled by an assertion here.
+            output.WriteLine(
+                $"  NOTE overall rating {mixed.stars:F3} vs midpoint " +
+                $"{(twoStars.stars + twoJobbers.stars) / 2:F3} — carrying shows in the crowd, " +
+                "not (yet) in the craft. See docs/tag-matches-build-log.md.");
+        }
+
+        [Fact]
+        public void ReadingASideAsItsWorstMember_WouldFailTheCarryTest()
+        {
+            // A guard on the guard. The previous version of the carry test above passed
+            // with the aggregation inverted, so this pins the direction directly on the
+            // quantity the ruling was about: a side of a star and a jobber must read
+            // closer to the star than to the midpoint between them.
             var star   = W("Star",   overness: 95, charisma: 5.0, skill: 4.6);
             var jobber = W("Jobber", overness: 20, charisma: 1.0, skill: 2.0);
 
-            double Tag() {
-                double t = 0;
-                for (int i = 0; i < 120; i++)
-                    t += new MatchEngine(i * 7919).Execute(new MatchPlanModel
-                    {
-                        SideA = MatchSide.Of(star, jobber),
-                        SideB = Team("B1", "B2"),
-                        Beats = MatchStructureLibrary.Find("Formula Tag")!.Beats.Select(b => b.Clone()).ToList()
-                    }).StarRating;
-                return t / 120;
-            }
+            // EffectiveOverness is the input the drag term is applied to in HeatEconomy,
+            // and SideStanding uses exactly the same shape as the engine's SideAvg.
+            double side     = HeatEconomy.SideStanding([star, jobber]);
+            double midpoint = (star.EffectiveOverness + jobber.EffectiveOverness) / 2.0;
 
-            double Singles(Wrestler w) {
-                double t = 0;
-                for (int i = 0; i < 120; i++)
-                    t += new MatchEngine(i * 7919).Execute(new MatchPlanModel
-                    {
-                        WrestlerA = w, WrestlerB = W("B1"),
-                        Beats = MatchStructureLibrary.Find("TV Formula")!.Beats.Select(b => b.Clone()).ToList()
-                    }).StarRating;
-                return t / 120;
-            }
+            output.WriteLine($"  star {star.EffectiveOverness:F1}, jobber {jobber.EffectiveOverness:F1}, " +
+                             $"side reads {side:F1}, midpoint {midpoint:F1}");
 
-            double team = Tag(), flatMean = (Singles(star) + Singles(jobber)) / 2;
-            output.WriteLine($"  team {team:F3}★ vs flat mean of their singles matches {flatMean:F3}★");
-
-            Assert.True(team > flatMean,
-                "Pairing a star with a weak partner must not grade as the average of their " +
-                "two singles matches — the star is supposed to carry.");
+            Assert.True(side > midpoint,
+                "A side must read above the midpoint of its members — toward the man the " +
+                "crowd came to see.");
+            Assert.True(side < star.EffectiveOverness,
+                "But a weak partner still has to cost something, or there is no reason to " +
+                "care who you put with your star.");
         }
     }
 }

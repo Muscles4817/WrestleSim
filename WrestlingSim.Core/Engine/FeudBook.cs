@@ -36,29 +36,57 @@ namespace WrestlingSim.Engine
         public Feud? Find(Wrestler a, Wrestler b) =>
             _feuds.TryGetValue(Key(a, b), out var feud) ? feud : null;
 
+        /// <summary>The rivalry between these two sides, if it has been booked before.</summary>
+        public Feud? Find(IReadOnlyList<Wrestler> sideA, IReadOnlyList<Wrestler> sideB) =>
+            _feuds.TryGetValue(Key(sideA, sideB), out var feud) ? feud : null;
+
         /// <summary>
         /// Returns the feud between two wrestlers, creating a dormant one if it doesn't exist.
         /// A newly created feud starts at None intensity with zero heat.
         /// </summary>
-        public Feud GetOrCreate(Wrestler a, Wrestler b)
+        public Feud GetOrCreate(Wrestler a, Wrestler b) => GetOrCreate([a], [b]);
+
+        /// <summary>The rivalry between these two sides, created if it is new.</summary>
+        public Feud GetOrCreate(IReadOnlyList<Wrestler> sideA, IReadOnlyList<Wrestler> sideB)
         {
-            string key = Key(a, b);
+            string key = Key(sideA, sideB);
             if (_feuds.TryGetValue(key, out var existing)) return existing;
 
-            // Preserve a stable A/B ordering so the same pair always maps to the same feud.
-            var (first, second) = Ordered(a, b);
-            var feud = new Feud { WrestlerA = first, WrestlerB = second, Intensity = FeudIntensity.None };
+            // Stable ordering so the same pairing always maps to the same feud whichever
+            // way round it is booked.
+            var (first, second) = Ordered(sideA, sideB);
+            var feud = new Feud
+            {
+                SideA     = first.ToList(),
+                SideB     = second.ToList(),
+                Intensity = FeudIntensity.None
+            };
             _feuds[key] = feud;
             return feud;
+        }
+
+        private static (IReadOnlyList<Wrestler>, IReadOnlyList<Wrestler>) Ordered(
+            IReadOnlyList<Wrestler> a, IReadOnlyList<Wrestler> b)
+        {
+            static string Name(IReadOnlyList<Wrestler> side) =>
+                string.Join("+", side.Select(w => w.RealName).OrderBy(n => n, StringComparer.Ordinal));
+
+            return string.CompareOrdinal(Name(a), Name(b)) <= 0 ? (a, b) : (b, a);
         }
 
         /// <summary>
         /// Deposits heat and history tags from a booked segment or match.
         /// Returns the affected feud so the caller can report what changed.
         /// </summary>
-        public FeudUpdate Record(Wrestler a, Wrestler b, double heat, IEnumerable<FeudHistoryTag>? tags = null)
+        public FeudUpdate Record(Wrestler a, Wrestler b, double heat, IEnumerable<FeudHistoryTag>? tags = null) =>
+            Record([a], [b], heat, tags);
+
+        /// <summary>Deposits heat into the rivalry between two sides.</summary>
+        public FeudUpdate Record(
+            IReadOnlyList<Wrestler> sideA, IReadOnlyList<Wrestler> sideB,
+            double heat, IEnumerable<FeudHistoryTag>? tags = null)
         {
-            var feud = GetOrCreate(a, b);
+            var feud = GetOrCreate(sideA, sideB);
             var before = feud.Intensity;
 
             feud.AddHeat(heat);
@@ -108,14 +136,27 @@ namespace WrestlingSim.Engine
 
         // Keyed on RealName because RingName changes with a gimmick swap and would
         // silently orphan the feud history.
-        private static string Key(Wrestler a, Wrestler b)
-        {
-            var (first, second) = Ordered(a, b);
-            return $"{first.RealName}␟{second.RealName}";
-        }
+        private static string Key(Wrestler a, Wrestler b) => Key([a], [b]);
 
-        private static (Wrestler, Wrestler) Ordered(Wrestler a, Wrestler b) =>
-            string.CompareOrdinal(a.RealName, b.RealName) <= 0 ? (a, b) : (b, a);
+        /// <summary>
+        /// A side-aware key. Each side's names are sorted so billing order does not matter,
+        /// then the two sides are sorted against each other so neither does home advantage.
+        ///
+        /// A team rivalry gets its own key rather than folding into one of the singles
+        /// feuds inside it. That is the point: the crowd's appetite for two teams is not
+        /// the same as its appetite for any pair of men in them, and it has to wear out
+        /// separately.
+        /// </summary>
+        private static string Key(IEnumerable<Wrestler> a, IEnumerable<Wrestler> b)
+        {
+            string sideA = Side(a), sideB = Side(b);
+            return string.CompareOrdinal(sideA, sideB) <= 0
+                ? $"{sideA}␟{sideB}"
+                : $"{sideB}␟{sideA}";
+
+            static string Side(IEnumerable<Wrestler> members) =>
+                string.Join("+", members.Select(w => w.RealName).OrderBy(n => n, StringComparer.Ordinal));
+        }
     }
 
     /// <summary>What a single deposit of heat did to a feud.</summary>

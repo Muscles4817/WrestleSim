@@ -13,10 +13,19 @@ namespace WrestlingSim.Engine
         public bool IsMeaningful => Math.Abs(OvernessDelta) >= 0.05 || Math.Abs(MomentumDelta) >= 0.5;
     }
 
-    /// <summary>Both sides of a match result.</summary>
-    public sealed record MatchStatusOutcome(StatusChange Winner, StatusChange Loser)
+    /// <summary>
+    /// Both sides of a match result.
+    ///
+    /// <see cref="Winner"/> and <see cref="Loser"/> are the two people the fall was
+    /// actually between — the pinner and the man who was pinned. In a tag match
+    /// <see cref="Partners"/> carries what the result did to everybody else on the two
+    /// sides, which is deliberately not the same thing.
+    /// </summary>
+    public sealed record MatchStatusOutcome(
+        StatusChange Winner, StatusChange Loser, IReadOnlyList<StatusChange>? Partners = null)
     {
-        public IEnumerable<StatusChange> All => new[] { Winner, Loser };
+        public IEnumerable<StatusChange> All =>
+            new[] { Winner, Loser }.Concat(Partners ?? []);
     }
 
     /// <summary>How decisively a match ended, from the audience's point of view.</summary>
@@ -81,12 +90,93 @@ namespace WrestlingSim.Engine
         /// statement; losing to him again is not a fall. Nobody gains, and nobody much
         /// loses either, which is precisely why a stale series is dead weight on a card.
         /// </summary>
+        /// <summary>
+        /// Share of the winner's gain that goes to a partner who did not score the fall.
+        /// Half, because being on the winning team is genuinely worth something and
+        /// standing on the apron while somebody else wins the match is genuinely worth
+        /// less than winning it.
+        /// </summary>
+        public const double PartnerWinShare = 0.50;
+
+        /// <summary>
+        /// Share of the loser's hit that a partner takes when somebody else ate the fall.
+        ///
+        /// This asymmetry is the point of the whole method. At 0.35 a booker can protect
+        /// someone by having their partner take the pin, which is the single most common
+        /// use a tag match is put to
+        /// (docs/wrestling-reference/12-pushes-and-positioning.md §6.1) — and it still
+        /// costs something, so it is a lever rather than a free pass.
+        /// </summary>
+        public const double PartnerLossShare = 0.35;
+
+        /// <summary>
+        /// What a side is worth to the audience.
+        ///
+        /// Top-weighted rather than averaged, for the same reason the match engine reads a
+        /// side that way: beating a team reads as beating the team, and a team is mostly
+        /// its best man. A flat mean would make adding a jobber to a main-eventer's side a
+        /// way of quietly halving what beating them is worth.
+        /// </summary>
+        public static double SideStanding(IReadOnlyList<Wrestler> side)
+        {
+            if (side.Count == 0) return 0;
+            if (side.Count == 1) return side[0].EffectiveOverness;
+
+            double best = side.Max(w => w.EffectiveOverness);
+            double mean = side.Average(w => w.EffectiveOverness);
+            return best + (mean - best) * SideDragWeight;
+        }
+
+        /// <summary>Mirrors <c>MatchEngine.Ctx.DragWeight</c>, and for the same reason.</summary>
+        public const double SideDragWeight = 0.5;
+
+        /// <summary>
+        /// What a result did to everybody in a tag match.
+        ///
+        /// The fall itself is priced exactly as a singles match between the two men in it,
+        /// against the two *sides'* standing rather than their own — so beating a team of
+        /// mid-carders is not the same statement as beating one main-eventer. Then the
+        /// pinner and the man who was pinned take it in full, and their partners take a
+        /// share.
+        /// </summary>
+        public static MatchStatusOutcome ForSides(
+            IReadOnlyList<Wrestler> winningSide, Wrestler pinner,
+            IReadOnlyList<Wrestler> losingSide, Wrestler pinned,
+            double starRating, FinishWeight finish, double familiarity = 1.0)
+        {
+            var core = ForMatch(
+                pinner, pinned, starRating, finish, familiarity,
+                winnerStanding: SideStanding(winningSide),
+                loserStanding:  SideStanding(losingSide));
+
+            var partners = new List<StatusChange>();
+
+            foreach (var w in winningSide.Where(m => m != pinner))
+                partners.Add(new StatusChange(
+                    w,
+                    DampenGain(w.Overness, core.Winner.OvernessDelta * PartnerWinShare),
+                    core.Winner.MomentumDelta * PartnerWinShare,
+                    $"On the winning team, but {pinner.RingName} scored the fall."));
+
+            foreach (var w in losingSide.Where(m => m != pinned))
+                partners.Add(new StatusChange(
+                    w,
+                    -DampenLoss(w.Overness, -core.Loser.OvernessDelta * PartnerLossShare),
+                    core.Loser.MomentumDelta * PartnerLossShare,
+                    $"On the losing team, but {pinned.RingName} took the fall."));
+
+            return core with { Partners = partners };
+        }
+
         public static MatchStatusOutcome ForMatch(
             Wrestler winner, Wrestler loser, double starRating, FinishWeight finish,
-            double familiarity = 1.0)
+            double familiarity = 1.0,
+            double? winnerStanding = null, double? loserStanding = null)
         {
-            double w = winner.EffectiveOverness;
-            double l = loser.EffectiveOverness;
+            // Normally each man's own standing. A tag match passes its sides' standing
+            // instead, because that is what the audience is weighing.
+            double w = winnerStanding ?? winner.EffectiveOverness;
+            double l = loserStanding  ?? loser.EffectiveOverness;
 
             // You can only take status from someone who has it. Beating a nobody is worth
             // nothing however cleanly you do it.

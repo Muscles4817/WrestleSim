@@ -4,8 +4,33 @@ namespace WrestlingSim.Models.MatchPlan
 {
     public class Feud
     {
-        public required Wrestler WrestlerA { get; init; }
-        public required Wrestler WrestlerB { get; init; }
+        /// <summary>
+        /// The two sides of the feud. A singles rivalry is a feud between two sides of
+        /// one, and a team rivalry is genuinely its own thing rather than the sum of the
+        /// four singles feuds inside it — the crowd's appetite for The Usos vs The New Day
+        /// is separate from its appetite for any one of those men against any other.
+        /// </summary>
+        public List<Wrestler> SideA { get; init; } = new();
+        public List<Wrestler> SideB { get; init; } = new();
+
+        /// <summary>Shim over <see cref="SideA"/>; see <see cref="Models.MatchPlan.MatchPlan"/>.</summary>
+        public Wrestler WrestlerA
+        {
+            get => SideA[0];
+            init => SideA.Add(value);
+        }
+
+        public Wrestler WrestlerB
+        {
+            get => SideB[0];
+            init => SideB.Add(value);
+        }
+
+        /// <summary>True when either side of the rivalry is a team.</summary>
+        public bool IsTeamFeud => SideA.Count > 1 || SideB.Count > 1;
+
+        public string SideAName => string.Join(" & ", SideA.Select(w => w.RingName));
+        public string SideBName => string.Join(" & ", SideB.Select(w => w.RingName));
         public FeudIntensity Intensity { get; set; }
         public List<FeudHistoryTag> History { get; set; } = new();
 
@@ -265,9 +290,9 @@ namespace WrestlingSim.Models.MatchPlan
             _                      => null
         };
 
-        public bool Involves(Wrestler w) => w == WrestlerA || w == WrestlerB;
+        public bool Involves(Wrestler w) => SideA.Contains(w) || SideB.Contains(w);
 
         public override string ToString() =>
-            $"{WrestlerA.RingName} vs {WrestlerB.RingName} — {Intensity} ({Heat:F0} heat)";
+            $"{SideAName} vs {SideBName} — {Intensity} ({Heat:F0} heat)";
     }
 }

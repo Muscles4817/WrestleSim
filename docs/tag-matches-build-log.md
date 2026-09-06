@@ -258,7 +258,82 @@ carrying per-beat deltas and full commentary text) is **byte-identical** to the 
 
 ### Review — round 2
 
-*(pending)*
+The hardest review of the build, and it was right about all of it. The reviewer built its own
+singles-equivalence harness independently of the author's — 215,089 rows, deliberately aimed
+at the space the author's structure filter could have hidden — and confirmed byte-identical
+output. It also confirmed re-execution determinism, side-mirror symmetry (3.3073★ vs 3.3073★
+with the sides swapped), correct charge crediting on every path it could construct, and that
+two hot tags in one match is not exploitable at equal beat count. Then it found six real
+defects.
+
+**The two worst were failures of the author's own claims, not of the code.**
+
+*The build log's charge table contained the disconfirming number and it was read as
+confirmation.* The table showed 3 isolations → 3.079★ and 5 isolations → 3.105★, and the
+prose beneath it said overworking the heat is punished. It is not: at **constant beat count**
+the rating climbs monotonically to 8 isolations (1.793★ → 2.471★), because the charge cap
+limits only the payoff while each extra `Isolation` keeps adding storytelling at a gentle 0.86
+decay. `AFourthAndFifthIsolation_BuyNothingMore` passed only because its longer plan was
+faded — it was measuring fade, not saturation. **Referred to adjudication** (how to fix,
+below); the claim is withdrawn until it is.
+
+*The adjudicated top-weighting ruling shipped with no test that could fail.* The reviewer
+inverted the aggregation to read a side as its **worst** member and all 351 tests stayed
+green. The test compared a tag structure against a singles structure, so the structure
+difference dominated and the aggregation never entered the comparison. This is the same
+defect the phase 1 review caught (`ControlSign`), recurring on the second ruling.
+
+**Accepted and fixed:**
+
+| # | Finding | Fix |
+|---|---|---|
+| 1 | The top-weighting test could not fail. | Rewritten twice. It now holds the plan, opponents and seeds constant and varies only side A's composition, comparing star+star / star+jobber / jobber+jobber. A second test pins the side read directly via `HeatEconomy.SideStanding`. It also surfaced a real tension — see below. |
+| 2 | `HotTagCharge` discarded every near tag when there was no isolation, making a denied tag a pure cost and contradicting the commit's own justification for the beat. | Near tags now count in the unearned branch, scaled against the penalised floor. Test added. |
+| 4 | The beat-legality rule checked the **wrong side** for `Isolation` and `NearTag` — control is the side doing the isolating, but the man who needs a corner is their opponent. Masked by the uneven-sides block; with it lifted, a 1v2 validated and leaked a fallback commentary string ("*the corner is beside himself on the apron*"). The adjudication had specified this rule as the *replacement* for the size rule and it did not subsume it. | Directional now. Test asserts the direction on the legality rule itself rather than on the block that masks it. |
+| 5 | Narrowing `MatchMatrixTests` to `ForSideSize(1)` dropped six distributional audits, and the comment claimed an equivalent tag sweep existed elsewhere. It did not. | `TagMatrixTests` added — the same sweep shape over tag structures. Southern Tag 4.03★ > Formula Tag 3.69★ > Tag Sprint 2.90★; crowd peak spans 33.5–99.4; matchup spread (1.97) exceeds structure spread (1.13). |
+| 6 | None of the eleven new beats appeared in `IsOnType`, so declaring a match type on a tag structure was a pure penalty — a Southern Tag was docked 0.13★ for being called Storytelling. | Tag beats added to the coherence sets. Southern Tag now rates best as Storytelling (4.29 vs 3.83 Technical) and Tag Sprint best as Spotfest, which is what those structures are. |
+| 7 | `ApplyAllFourBrawl` read `LegalPair` — but the beat's premise is that nobody is on the apron. | Reads both whole sides. |
+| 8 | The `Ctx` aggregation doc block claimed one carve-out; there were four. | Corrected, with the shared rationale named: the carve-outs are the beats whose *subject* is the pair itself. |
+| 10a | `MatchEngineState.Tag` silently substituted the next man when `IncomingIndex` named the already-legal performer. | `Validate` now walks the tag sequence statically and rejects it. Test added. |
+| 10d | `ApplyMiscommunication`'s crowd delta had no connection factor — a mix-up between two nobodies popped as hard as one between main-eventers. | Scaled by the side's connection. |
+
+**Also recorded, not code:** finding 9 — the charge's effect arrives overwhelmingly through
+`StorytellingContribution`, not through the crowd. `BeatResult.CrowdEnergyDelta` is a
+*pre-compression* value; `ApplyEnergy` then applies `0.20 + 0.80·√headroom` and clamps at the
+ceiling, so a 50% larger pop moves the peak by well under a point. The charge table above is
+therefore correct about the pop and misleading about what reaches the room, and the design
+line "the largest single crowd delta the engine can produce" is true of the raw number and
+largely inert in the score. Left as-is for now — the mechanism works, through storytelling —
+but stated plainly here rather than left to imply otherwise.
+
+**Deviation from the plan, previously unrecorded:** the plan's §2 charge formula is
+multiplicative (`base × isolationCharge × nearTagCharge × connection × selling`); the
+implementation is additive (`1.0 + iso + near`) and drops the isolated man's selling. The
+additive form is easier to reason about and to cap, which is why it was written that way, but
+the plan was not updated to match.
+
+### A tension between the two phase 1 rulings
+
+Rewriting the carry test surfaced something neither earlier agent anticipated. Measured on an
+identical plan against identical opponents, varying only side A:
+
+| side A | crowd average | rating |
+|---|---|---|
+| star + star | 67.94 | 3.924★ |
+| star + jobber | **55.52** | **3.030★** |
+| jobber + jobber | 33.71 | 2.249★ |
+| midpoint of the two pure rows | 50.83 | 3.086★ |
+
+Ruling B (top-weighted side reads) works where it applies: the crowd reads 55.52, well above
+the 50.83 midpoint — the star carries the room. But the **overall rating lands slightly below
+the midpoint**, because Ruling A (craft fields read only whoever is legal) means the jobber's
+work is graded at full weight for the half of the match he is in, and in Formula Tag he takes
+the hot tag and works the finish.
+
+So the "conservation law" Ruling B was made to eliminate is still present in the final rating,
+arriving through Ruling A instead. The test now asserts the crowd claim, which is what the
+design delivers, and writes the rating tension to test output rather than asserting something
+that is not true. **Referred to adjudication.**
 
 ---
 

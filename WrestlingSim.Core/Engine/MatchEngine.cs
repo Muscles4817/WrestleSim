@@ -98,9 +98,15 @@ namespace WrestlingSim.Engine
             //   FinishQuality
             //       → the legal performers only. The man on the apron is not working.
             //
-            // Where one intermediate feeds both, compute it twice. FadeFactor is the one
-            // documented exception: it scales craft output but reads the whole side,
-            // because tagging out is precisely how a team resists fatigue.
+            // Where one intermediate feeds both, compute it twice.
+            //
+            // Three documented carve-outs, all of the same kind — the *subject* of the
+            // beat is the pair itself rather than one person's work:
+            //   • FadeFactor reads the whole side, because tagging out is precisely how a
+            //     team resists fatigue.
+            //   • ApplyShine's teamwork and ApplyDoubleTeam's combined/weakestLink read the
+            //     whole side, because a shine and a double team are worked by both men.
+            //   • ApplyAllFourBrawl reads both whole sides, because nobody is on the apron.
 
             /// <summary>
             /// How much a side's weakest member drags its reading toward the average.
@@ -1353,17 +1359,27 @@ namespace WrestlingSim.Engine
         /// </summary>
         private static double HotTagCharge(int isolations, int nearTags)
         {
-            if (isolations == 0)
-                // The unearned-payoff penalty, deliberately the same 0.55 the engine
-                // charges for a finish that momentum did not support.
-                return 0.55;
-
             double isolationTerm = 0.55 * Math.Min(isolations, 3) / 3.0;
 
             // Worth more per beat than another isolation. A denied tag costs the room real
             // energy in the moment, so if it did not pay back more than the isolation it
             // replaced, booking one would be a straight loss and nobody would ever do it.
-            double nearTagTerm   = 0.45 * Math.Min(nearTags, 2) / 2.0;
+            double nearTagTerm = 0.45 * Math.Min(nearTags, 2) / 2.0;
+
+            if (isolations == 0)
+            {
+                // The unearned-payoff penalty, deliberately the same 0.55 the engine
+                // charges for a finish that momentum did not support.
+                //
+                // Near tags still count here. They used to be discarded outright in this
+                // branch, which made a denied tag with no isolation behind it a pure cost
+                // — the room lost energy and nothing bought it back — and directly
+                // contradicted the reason the beat exists. A near-tag-only heat is still
+                // a thin one, so it is scaled against the penalised floor rather than the
+                // full one, but it is no longer worthless.
+                return 0.55 + nearTagTerm * 0.55;
+            }
+
             return 1.0 + isolationTerm + nearTagTerm;
         }
 
@@ -1466,7 +1482,10 @@ namespace WrestlingSim.Engine
             // side less when they were never in sync to begin with.
             double surprise = 0.75 + 0.50 * Math.Clamp(side.Chemistry, 0, 1);
 
-            r.CrowdEnergyDelta = Rng(3, 8) * iMod;
+            // Every other crowd delta in the engine scales by somebody's connection, and
+            // this one did not — a mix-up between two nobodies popped exactly as hard as
+            // one between two main-eventers.
+            r.CrowdEnergyDelta = Rng(3, 8) * iMod * ctx.SideAvg(side, p => p.Connection);
 
             // Against the side that blundered, and harder the better drilled they were.
             r.AdvantageDelta = -ControlSign(ctx, control) * Rng(12, 24) * iMod * surprise;
@@ -1531,7 +1550,10 @@ namespace WrestlingSim.Engine
             r.CrowdEnergyDelta = Rng(6, 13) * iMod * dMod * ctx.Pair(p => p.Connection);
             r.AdvantageDelta   = 0;
 
-            r.TechnicalContribution    = 2.5 * iMod * dMod * ctx.LegalPair(p => p.Workrate);
+            // The one beat where the whole side is genuinely working: validation requires
+            // both sides to be teams and the beat's premise is that all four are in, so
+            // the "man on the apron is not performing" rule has nothing to exclude.
+            r.TechnicalContribution    = 2.5 * iMod * dMod * ctx.Pair(p => p.Workrate);
             r.StorytellingContribution = 4.0 * iMod * dMod;
 
             r.Commentary.Add(Pick(
@@ -1774,19 +1796,29 @@ namespace WrestlingSim.Engine
             // Mat wrestling, limb work and a submission payoff.
             MatchTypeEnum.Technical => t is BeatType.SlowOpening or BeatType.StandardOpening
                 or BeatType.HeatSegment or BeatType.RestHold or BeatType.NearFall
-                or BeatType.FinishSubmission or BeatType.FinishClean,
+                or BeatType.FinishSubmission or BeatType.FinishClean
+                // Quick tags and a methodical isolation are technical tag work.
+                or BeatType.Tag or BeatType.Isolation,
 
             // Spectacle: get them early, keep them loud, finish emphatically.
             MatchTypeEnum.Spotfest => t is BeatType.HotOpening or BeatType.StandardOpening
                 or BeatType.HighSpot or BeatType.CrowdBrawl or BeatType.NearFall or BeatType.Comeback
-                or BeatType.FinishClean or BeatType.FinishSuperFinisher or BeatType.FinishRollup,
+                or BeatType.FinishClean or BeatType.FinishSuperFinisher or BeatType.FinishRollup
+                // Tandem offence and the breakdown are spectacle; so is the tag itself.
+                or BeatType.DoubleTeam or BeatType.AllFourBrawl or BeatType.Shine
+                or BeatType.HotTag or BeatType.BlindTag,
 
             // Character and grudge work, including the finishes that leave a story running.
             MatchTypeEnum.Storytelling => t is BeatType.SlowOpening or BeatType.StandardOpening
                 or BeatType.PsychologicalWarfare or BeatType.RevengeSpot
                 or BeatType.FeudalEscalation or BeatType.ThirdPartyPullIn or BeatType.AlliesRejected
                 or BeatType.Comeback or BeatType.NearFall
-                or BeatType.FinishClean or BeatType.FinishInterference or BeatType.FinishDQ,
+                or BeatType.FinishClean or BeatType.FinishInterference or BeatType.FinishDQ
+                // The tag formula is the most story-driven structure the engine has: a man
+                // kept from his corner, the tag denied, and the release. Leaving these out
+                // meant declaring a Southern Tag "Storytelling" was a pure penalty.
+                or BeatType.Cutoff or BeatType.Isolation or BeatType.NearTag or BeatType.HotTag
+                or BeatType.Miscommunication or BeatType.SaveBreakup,
 
             _ => true // Standard has no preference — anything is on-type
         };

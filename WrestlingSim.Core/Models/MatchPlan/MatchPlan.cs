@@ -161,15 +161,56 @@ namespace WrestlingSim.Models.MatchPlan
 
                 var side = ControlSide(beat);
                 if (side is null)
+                {
                     errors.Add($"{beat.Type} has to be booked for one side or the other.");
-                else if (!side.IsTag)
+                    continue;
+                }
+
+                // Which side actually needs a partner depends on the beat, and getting this
+                // backwards is easy: for an isolation or a denied tag, control is the side
+                // doing the isolating, but the man who needs a corner to be kept away from
+                // is their *opponent*. Everything else needs the controlling side to be a
+                // team, because they are the ones tagging or double-teaming.
+                var needsPartner = beat.Type is BeatType.Isolation or BeatType.NearTag
+                    ? Opposing(side)
+                    : side;
+
+                if (!needsPartner.IsTag)
                     errors.Add(
-                        $"{beat.Type} is booked for a side of one — {side.Name} has nobody " +
-                        "on the apron.");
+                        $"{beat.Type} needs a partner on {needsPartner.Name}'s side, and " +
+                        "there is nobody on the apron.");
                 else if (beat.IncomingIndex is { } incoming
                          && (incoming < 0 || incoming >= side.Size))
                     errors.Add(
                         $"{beat.Type} tags in member {incoming}, but {side.Name} has {side.Size}.");
+            }
+
+            // Walking the tags. Who is legal at any point is fully determined by the
+            // starting indices and the tag beats before it, so a tag that brings in the man
+            // who is already in the ring can be caught here rather than silently
+            // substituting the next man round — invisible on a two-man side, a different
+            // match on a trio.
+            {
+                int legalA = SideA.StartingIndex, legalB = SideB.StartingIndex;
+
+                foreach (var beat in Beats.Where(b => b.IsTagChange))
+                {
+                    var side = ControlSide(beat);
+                    if (side is null || !side.IsTag) continue;
+
+                    bool isA = side == SideA;
+                    int current = isA ? legalA : legalB;
+                    int next = beat.IncomingIndex is { } i && i >= 0 && i < side.Size
+                        ? i
+                        : (current + 1) % side.Size;
+
+                    if (next == current)
+                        errors.Add(
+                            $"{beat.Type} tags in {side.Members[next].RingName}, who is already " +
+                            "the legal man.");
+
+                    if (isA) legalA = next; else legalB = next;
+                }
             }
 
             // A wrestler on both sides breaks every "which side is this person on" lookup

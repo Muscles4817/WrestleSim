@@ -81,7 +81,12 @@ namespace WrestlingSim.Engine
         public int Tag(bool sideA, int memberCount, int? incoming = null)
         {
             int current = sideA ? _legalA : _legalB;
-            int next = incoming is { } i && i >= 0 && i < memberCount && i != current
+
+            // An explicit index naming the man who is already legal used to fall through
+            // to "next man round", silently bringing in somebody the booker did not ask
+            // for. On a two-man side that is invisible; on a trio it is a different match.
+            // MatchPlan.Validate rejects it now, so this only has to be defensive.
+            int next = incoming is { } i && i >= 0 && i < memberCount
                 ? i
                 : (current + 1) % Math.Max(1, memberCount);
 
