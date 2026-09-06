@@ -59,6 +59,7 @@ else
             <div class="panel__title">
                 @title.Name
                 <span class="badge badge--gold">@title.TierLabel</span>
+                @if (title.IsTagTitle) { <span class="badge">tag team</span> }
                 <span class="spacer"></span>
                 <span class="small muted">@(title.Division == Division.Womens ? "Women's" : "Men's") division</span>
             </div>
@@ -73,7 +74,7 @@ else
                     <div class="score-hero__main">@title.Standing.ToString("F1")</div>
                 </div>
                 <div>
-                    <div class="score-hero__label">Champions</div>
+                    <div class="score-hero__label">Reigns</div>
                     <div class="score-hero__main">@title.ReignCount</div>
                 </div>
             </div>

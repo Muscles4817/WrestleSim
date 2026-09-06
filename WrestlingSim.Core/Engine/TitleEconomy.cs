@@ -360,10 +360,26 @@ namespace WrestlingSim.Engine
         /// Mutates the title's standing. Doc 21 §4.1.
         /// </summary>
         public static TitleUpdate ApplyNonTitleLoss(
-            Title title, Wrestler opponent, FinishWeight finish)
+            Title title, Wrestler opponent, FinishWeight finish) =>
+            ApplyNonTitleLoss(title, title.Champion, opponent, finish);
+
+        /// <summary>
+        /// As above, naming which holder actually lost.
+        ///
+        /// The single-argument form priced and named <see cref="Title.Champion"/> — the
+        /// first man listed — whoever had really been beaten. On a tag belt that produced
+        /// results reading "Ricky Morton lost to X" when Robert Gibson took the fall, and
+        /// priced the penalty against the wrong man's standing.
+        /// </summary>
+        public static TitleUpdate ApplyNonTitleLoss(
+            Title title, Wrestler? beaten, Wrestler opponent, FinishWeight finish)
         {
-            var champion = title.Champion
-                ?? throw new InvalidOperationException("A vacant title cannot lose a non-title match.");
+            if (title.CurrentReign is not { } reign || reign.Champions.Count == 0)
+                throw new InvalidOperationException("A vacant title cannot lose a non-title match.");
+
+            // Whoever was actually beaten, if they hold it. Falls back to the first holder
+            // so the old one-argument callers behave exactly as they did.
+            var champion = beaten is not null && reign.HeldBy(beaten) ? beaten : reign.Champions[0];
 
             double standingBefore = title.Standing;
             double prestigeBefore = title.Prestige;
@@ -371,9 +387,13 @@ namespace WrestlingSim.Engine
             double penalty = NonTitleLossPenalty(champion, opponent, finish);
             title.Standing = Clamp(standingBefore - penalty);
 
+            string who = reign.Champions.Count > 1
+                ? $"{champion.RingName}, one half of the {title.Name} champions,"
+                : champion.RingName;
+
             return Build(title, TitleEvent.NonTitleLoss, champion, champion,
                 standingBefore, prestigeBefore, 0,
-                $"{champion.RingName} lost to {opponent.RingName} with the title not on the line.",
+                $"{who} lost to {opponent.RingName} with the title not on the line.",
                 null);
         }
 
@@ -396,8 +416,13 @@ namespace WrestlingSim.Engine
 
             title.Standing = Clamp(standingBefore - VacancyCost);
 
+            string who = title.Lineage.LastOrDefault(r => r.Vacated) is { Champions.Count: > 1 } tag
+                ? tag.ChampionName
+                : champion?.RingName ?? "";
+
             return Build(title, TitleEvent.Vacated, champion, null,
-                standingBefore, prestigeBefore, reignDays, reason, null);
+                standingBefore, prestigeBefore, reignDays,
+                string.IsNullOrEmpty(who) ? reason : $"{reason} — stripped from {who}.", null);
         }
 
         // ── Time ─────────────────────────────────────────────────────────────
@@ -427,7 +452,12 @@ namespace WrestlingSim.Engine
                 return;
             }
 
-            double pull = (reign.Champion.EffectiveOverness - title.Standing) * ChampionPullPerDay;
+            // Read from the reign as a whole, not from whoever is listed first. A tag belt
+            // is pulled by the team holding it — top-weighted, exactly as the crowd and the
+            // status economy read a side, because a team is mostly its best man.
+            double championStanding = HeatEconomy.SideStanding(reign.Champions);
+
+            double pull = (championStanding - title.Standing) * ChampionPullPerDay;
             title.Standing = Clamp(title.Standing + pull + ScarcityPerDay);
         }
 

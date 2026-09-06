@@ -601,3 +601,33 @@ create UI; the seeding was reverted.
 ### Result
 
 **403 tests passing.** Singles equivalence still byte-identical.
+
+---
+
+## Follow-up — tag titles finished
+
+Phase 5 introduced joint reigns and taught `TitleEconomy.ResolveTitleMatch` about sides. What
+it did not do was revisit every *other* place the title economy reads "the champion". On a
+singles belt `Champions[0]` and "the champion" are the same thing, so nothing failed; on a tag
+belt they are the same thing half the time, which is worse than failing.
+
+An audit of every `.Champion` read outside the shim itself found five:
+
+| Site | Was | Now |
+|---|---|---|
+| `TitleEconomy.ApplyDailyDrift` | Pulled the belt's standing toward `reign.Champion.EffectiveOverness` — the first-listed holder. Swapping the billing order of the same two champions changed what the belt was worth over time. | Reads the reign through `HeatEconomy.SideStanding`, top-weighted exactly as the crowd and the status economy read a side. |
+| `TitleEconomy.ApplyNonTitleLoss` | Named and priced `Champions[0]` whoever had really been beaten, producing results reading "Ricky lost to X" when Robert took the fall. | Takes the man who lost. `ShowSimulator` passes `engineResult.Pinned`. Measured: the 80-overness half losing to a nobody costs the belt 2.50, the 40-overness half 1.50. |
+| `TitleEconomy.Vacate` | Reported one name when stripping a belt from two people. | Names both. |
+| `Title.ReignsOf` | Matched on `r.Champion == w`, so the second-listed champion's own title history did not exist. | Matches on `r.HeldBy(w)`. |
+| `DashboardScreen`, `MatchBuilder` | Rendered one holder of a tag belt. | Render `ChampionName`. The belt list also marks which shape a title is, since both now appear together. |
+
+Also: the Championships screen's "Champions" stat showed the *reign count*, which reads as a
+number of people the moment a belt can be held by two. Renamed to "Reigns".
+
+**Still not seeded by default**, and the reasoning has not changed: a tag belt claims the same
+finite attention as any other ([21](wrestling-reference/21-championships.md) §2.1), so shipping
+one would spend the player's first real title decision for them. A test now pins that —
+introducing a tag belt measurably dilutes every belt already on the books, which is the cost
+that makes the decision a decision.
+
+**414 tests passing.** Singles equivalence still byte-identical.

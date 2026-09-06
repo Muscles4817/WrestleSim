@@ -164,7 +164,7 @@ namespace WrestlingSim.Models.World
         // ── Lineage helpers ──────────────────────────────────────────────────
 
         public IEnumerable<TitleReign> ReignsOf(Wrestler w) =>
-            Lineage.Where(r => r.Champion == w);
+            Lineage.Where(r => r.HeldBy(w));
 
         /// <summary>The longest reign in the belt's history, for the lineage display.</summary>
         public TitleReign? LongestReign(DateOnly today) =>
