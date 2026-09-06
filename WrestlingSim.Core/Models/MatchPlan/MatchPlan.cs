@@ -49,6 +49,22 @@ namespace WrestlingSim.Models.MatchPlan
         // Active feud between the two sides, if any.
         public Feud? Feud { get; set; }
 
+        /// <summary>
+        /// The booker declaring that this match ends the feud.
+        ///
+        /// A declaration rather than something derived from the beats, because that is what
+        /// it is in real booking: nothing about a match's shape makes it a blow-off, and
+        /// the same beats are a blow-off or another chapter depending on whether anybody
+        /// decided the story was over. Doc 20 §6 is the standard — a blow-off has to
+        /// *resolve*, has to be *proportional* to what was built, and is the point at which
+        /// the debt is settled.
+        ///
+        /// The cost of declaring one is that it is spent: the feud ends, its heat goes to
+        /// zero, and the pairing has to be built again from nothing. The cost of never
+        /// declaring one is <see cref="Models.MatchPlan.Feud.Distrust"/>.
+        /// </summary>
+        public bool IsBlowOff { get; set; }
+
         public MatchType MatchType { get; set; } = MatchType.Standard;
 
         /// <summary>
@@ -155,7 +171,7 @@ namespace WrestlingSim.Models.MatchPlan
                 if (beat.Type == BeatType.AllFourBrawl)
                 {
                     if (!SideA.IsTag || !SideB.IsTag)
-                        errors.Add("All Four In needs a partner on both sides.");
+                        errors.Add("Everybody In needs a partner on both sides.");
                     continue;
                 }
 
@@ -221,6 +237,17 @@ namespace WrestlingSim.Models.MatchPlan
             foreach (var side in new[] { SideA, SideB })
                 if (side.Members.Count != side.Members.Distinct().Count())
                     errors.Add("A wrestler is booked twice on the same side.");
+
+            // A blow-off ends a story. Declaring one where there is no story is not a
+            // booking the engine can price, and silently treating it as an ordinary match
+            // would hide the mistake rather than report it.
+            if (IsBlowOff)
+            {
+                if (Feud is null)
+                    errors.Add("A blow-off has to end a feud, and no feud is attached to this match.");
+                else if (Feud.Concluded)
+                    errors.Add($"{Feud.SideAName} vs {Feud.SideBName} has already been blown off — that story is over.");
+            }
 
             if (!Beats.Any())
                 errors.Add("Plan has no beats.");

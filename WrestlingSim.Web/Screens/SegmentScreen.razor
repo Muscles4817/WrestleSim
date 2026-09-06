@@ -99,7 +99,8 @@ else
         result = new SegmentSimulator().Simulate(segment);
 
         feudUpdates = State.FeudBook
-            .RecordSegment(segment.Participants, result.HeatGenerated, result.HistoryTags)
+            .RecordSegment(segment.Participants, result.HeatGenerated, result.HistoryTags,
+                           State.Career?.CurrentDate)
             .ToList();
 
         State.Notify();

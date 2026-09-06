@@ -66,6 +66,16 @@ namespace WrestlingSim.Engine
         /// </summary>
         public IReadOnlyList<StatusChange> PartnerBonuses { get; init; } = [];
 
+        /// <summary>
+        /// Everyone who lost the belt, and everyone who now holds it.
+        /// <see cref="OutgoingChampion"/> and <see cref="Champion"/> are the first of each
+        /// — fine for a singles belt, and exactly the "meant Champions[0]" pattern on a tag
+        /// one, which is why these exist alongside them.
+        /// </summary>
+        public IReadOnlyList<Wrestler> OutgoingChampions { get; init; } = [];
+
+        public IReadOnlyList<Wrestler> Champions { get; init; } = [];
+
         public bool IsMeaningful =>
             Event is not (TitleEvent.Retained or TitleEvent.NonTitleLoss)
             || Math.Abs(PrestigeDelta) >= 0.05;
@@ -294,7 +304,8 @@ namespace WrestlingSim.Engine
                     standingBefore, prestigeBefore, 0,
                     $"{winningSideName} win{(winningSide.Count > 1 ? "" : "s")} the vacant title.",
                     WinBonus(title, winner),
-                    Partners(title, winningSide, winner, WinBonus));
+                    Partners(title, winningSide, winner, WinBonus),
+                    championSide: winningSide);
             }
 
             // The champions retained if the belt stayed on the side that came in with it.
@@ -332,7 +343,8 @@ namespace WrestlingSim.Engine
                 return Build(title, evt, champion, champion,
                     standingBefore, prestigeBefore, 0, reason,
                     DefenceBonus(title, champion),
-                    Partners(title, reign2.Champions, champion, DefenceBonus));
+                    Partners(title, reign2.Champions, champion, DefenceBonus),
+                    outgoingSide: reign2.Champions, championSide: reign2.Champions);
             }
 
             // ── New champion ────────────────────────────────────────────────
@@ -343,6 +355,7 @@ namespace WrestlingSim.Engine
             title.Standing = Clamp(standingBefore + delta);
 
             string outgoingName = outgoing.ChampionName;
+            var outgoingChampions = outgoing.Champions.ToList();
 
             CloseReign(outgoing, date, showName);
             OpenReign(title, winningSide, date, showName);
@@ -352,7 +365,8 @@ namespace WrestlingSim.Engine
                 $"{winningSideName} end{(winningSide.Count > 1 ? "" : "s")} {outgoingName}'s " +
                 $"{reignDays}-day reign.",
                 WinBonus(title, winner),
-                Partners(title, winningSide, winner, WinBonus));
+                Partners(title, winningSide, winner, WinBonus),
+                outgoingSide: outgoingChampions, championSide: winningSide);
         }
 
         /// <summary>
@@ -360,10 +374,26 @@ namespace WrestlingSim.Engine
         /// Mutates the title's standing. Doc 21 §4.1.
         /// </summary>
         public static TitleUpdate ApplyNonTitleLoss(
-            Title title, Wrestler opponent, FinishWeight finish)
+            Title title, Wrestler opponent, FinishWeight finish) =>
+            ApplyNonTitleLoss(title, title.Champion, opponent, finish);
+
+        /// <summary>
+        /// As above, naming which holder actually lost.
+        ///
+        /// The single-argument form priced and named <see cref="Title.Champion"/> — the
+        /// first man listed — whoever had really been beaten. On a tag belt that produced
+        /// results reading "Ricky Morton lost to X" when Robert Gibson took the fall, and
+        /// priced the penalty against the wrong man's standing.
+        /// </summary>
+        public static TitleUpdate ApplyNonTitleLoss(
+            Title title, Wrestler? beaten, Wrestler opponent, FinishWeight finish)
         {
-            var champion = title.Champion
-                ?? throw new InvalidOperationException("A vacant title cannot lose a non-title match.");
+            if (title.CurrentReign is not { } reign || reign.Champions.Count == 0)
+                throw new InvalidOperationException("A vacant title cannot lose a non-title match.");
+
+            // Whoever was actually beaten, if they hold it. Falls back to the first holder
+            // so the old one-argument callers behave exactly as they did.
+            var champion = beaten is not null && reign.HeldBy(beaten) ? beaten : reign.Champions[0];
 
             double standingBefore = title.Standing;
             double prestigeBefore = title.Prestige;
@@ -371,9 +401,13 @@ namespace WrestlingSim.Engine
             double penalty = NonTitleLossPenalty(champion, opponent, finish);
             title.Standing = Clamp(standingBefore - penalty);
 
+            string who = reign.Champions.Count > 1
+                ? $"{champion.RingName}, one of the {title.Name} champions,"
+                : champion.RingName;
+
             return Build(title, TitleEvent.NonTitleLoss, champion, champion,
                 standingBefore, prestigeBefore, 0,
-                $"{champion.RingName} lost to {opponent.RingName} with the title not on the line.",
+                $"{who} lost to {opponent.RingName} with the title not on the line.",
                 null);
         }
 
@@ -388,8 +422,24 @@ namespace WrestlingSim.Engine
             var champion = title.Champion;
             int reignDays = title.CurrentReign?.DaysHeld(date) ?? 0;
 
+            // Naming whoever is being stripped, and only when somebody actually is.
+            //
+            // Two bugs lived here. The name was looked up by searching the whole lineage
+            // for the last vacated reign, which on an already-vacant belt found an *older*
+            // vacancy and reported its holders as the people being stripped now. And the
+            // suffix was appended unconditionally, so a singles vacancy read "Stripped by
+            // the promotion — stripped from Ricky Morton." where it used to read "Stripped
+            // by the promotion" — a change to singles output, which this work is not
+            // allowed to make. Only a reign closed by *this* call, and only a tag one,
+            // earns the suffix.
+            string suffix = "";
+            IReadOnlyList<Wrestler> strippedFrom = [];
+
             if (title.CurrentReign is { } reign)
             {
+                strippedFrom = reign.Champions.ToList();
+                if (reign.Champions.Count > 1) suffix = $" — stripped from {reign.ChampionName}.";
+
                 CloseReign(reign, date, reason);
                 reign.Vacated = true;
             }
@@ -397,7 +447,8 @@ namespace WrestlingSim.Engine
             title.Standing = Clamp(standingBefore - VacancyCost);
 
             return Build(title, TitleEvent.Vacated, champion, null,
-                standingBefore, prestigeBefore, reignDays, reason, null);
+                standingBefore, prestigeBefore, reignDays, reason + suffix, null,
+                outgoingSide: strippedFrom);
         }
 
         // ── Time ─────────────────────────────────────────────────────────────
@@ -409,7 +460,7 @@ namespace WrestlingSim.Engine
         /// defended, or is sitting vacant, bleeds. Doc 21 §4 — being ignored is the
         /// fastest killer.
         /// </summary>
-        public static void ApplyDailyDrift(Title title, DateOnly today)
+        public static void ApplyDailyDrift(Title title, DateOnly today, double chemistry = 0.0)
         {
             if (title.Retired) return;
 
@@ -427,7 +478,16 @@ namespace WrestlingSim.Engine
                 return;
             }
 
-            double pull = (reign.Champion.EffectiveOverness - title.Standing) * ChampionPullPerDay;
+            // Read from the reign as a whole, not from whoever is listed first. A tag belt
+            // is pulled by the team holding it — top-weighted, exactly as the crowd and the
+            // status economy read a side, because a team is mostly its best man.
+            // Chemistry passed through, not defaulted. SideStanding's own documentation is
+            // a post-mortem of these two readings being allowed to drift apart once
+            // already; calling it without the argument would have done it again, reading a
+            // drilled 92/30 team at 76.50 for the belt and 87.35 for the crowd.
+            double championStanding = HeatEconomy.SideStanding(reign.Champions, chemistry);
+
+            double pull = (championStanding - title.Standing) * ChampionPullPerDay;
             title.Standing = Clamp(title.Standing + pull + ScarcityPerDay);
         }
 
@@ -493,7 +553,9 @@ namespace WrestlingSim.Engine
             Title title, TitleEvent evt, Wrestler? outgoing, Wrestler? champion,
             double standingBefore, double prestigeBefore, int reignDays,
             string reason, StatusChange? bonus,
-            List<StatusChange>? partnerBonuses = null) => new()
+            List<StatusChange>? partnerBonuses = null,
+            IReadOnlyList<Wrestler>? outgoingSide = null,
+            IReadOnlyList<Wrestler>? championSide = null) => new()
         {
             Title             = title,
             Event             = evt,
@@ -506,7 +568,13 @@ namespace WrestlingSim.Engine
             OutgoingReignDays = reignDays,
             Reason            = reason,
             StatusBonus       = bonus,
-            PartnerBonuses    = partnerBonuses ?? []
+            PartnerBonuses    = partnerBonuses ?? [],
+
+            // The plural forms. OutgoingChampion and Champion are Champions[0] on a tag
+            // belt, which is the very pattern this work exists to remove — they are kept
+            // for singles readers and these carry the whole side.
+            OutgoingChampions = outgoingSide ?? (outgoing is null ? [] : [outgoing]),
+            Champions         = championSide ?? (champion is null ? [] : [champion])
         };
     }
 }

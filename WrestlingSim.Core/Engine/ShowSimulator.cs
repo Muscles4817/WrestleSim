@@ -94,7 +94,7 @@ namespace WrestlingSim.Engine
                 {
                     BookedMatch match => RunMatch(
                         match, itemResult, result, i, showDate, show.Name, starMaking),
-                    Segment segment   => RunSegment(segment, itemResult, result),
+                    Segment segment   => RunSegment(segment, itemResult, result, showDate),
                     _                 => 0
                 };
 
@@ -337,9 +337,44 @@ namespace WrestlingSim.Engine
             double heat = engineResult.StarRating * 2.0;
 
             var update = _feudBook.Record(
-                sideA, sideB, heat, tags: new[] { FeudHistoryTag.PriorMatch });
+                sideA, sideB, heat, tags: new[] { FeudHistoryTag.PriorMatch }, date: showDate);
 
             update.Feud.RecordMatch(showDate);
+
+            // Did this settle anything? Doc 20 §6 — a blow-off resolves, and until one does
+            // the audience is being asked to keep caring about a question nobody is
+            // answering. Past the third such match they stop, and the pairing carries that
+            // for good (§9's interference loop: nothing resolves, so nothing matters).
+            if (match.Plan.IsBlowOff && match.Plan.Feud is { } declared)
+            {
+                // A blow-off has to *resolve* — doc 20 §6.1 puts that first. Booked to a
+                // disqualification, a count-out or a run-in it settles nothing, and it
+                // costs more than an ordinary unfinished match because the crowd was told
+                // this was the ending.
+                if (weight == FinishWeight.Protected)
+                {
+                    declared.RecordBrokenPromise();
+                    itemResult.Notes.Add(
+                        $"The {declared.SideAName}–{declared.SideBName} blow-off settled nothing. " +
+                        "They were promised an ending and did not get one.");
+                }
+                else
+                {
+                    declared.BlowOff(showDate);
+                    itemResult.Notes.Add(
+                        $"The {declared.SideAName}–{declared.SideBName} feud is settled. That story is over.");
+                }
+            }
+            else
+            {
+                var beforeDistrust = update.Feud.Distrust;
+                update.Feud.RecordUnresolved();
+                if (update.Feud.Distrust > beforeDistrust)
+                    itemResult.Notes.Add(
+                        $"{update.Feud.MatchesSinceHot} matches and nothing settled — the crowd is " +
+                        "starting to believe this is not going anywhere.");
+            }
+
             showResult.FeudUpdates.Add(update);
 
             // A tag programme also builds the singles rivalries inside it, at a fraction —
@@ -354,7 +389,7 @@ namespace WrestlingSim.Engine
             {
                 foreach (var a in sideA)
                 foreach (var b in sideB)
-                    _feudBook.Record(a, b, heat * CrossPairHeatShare);
+                    _feudBook.Record(a, b, heat * CrossPairHeatShare, date: showDate);
             }
 
             // ── Teams ────────────────────────────────────────────────────────
@@ -391,8 +426,11 @@ namespace WrestlingSim.Engine
             }
             else if (_titles != null)
             {
-                foreach (var held in _titles.HeldBy(engineResult.Loser))
-                    updates.Add(TitleEconomy.ApplyNonTitleLoss(held, engineResult.Winner, weight));
+                // Charged against the man who was actually beaten, not against whichever
+                // holder happens to be listed first on the belt.
+                foreach (var held in _titles.HeldBy(engineResult.Pinned))
+                    updates.Add(TitleEconomy.ApplyNonTitleLoss(
+                        held, engineResult.Pinned, engineResult.Pinner, weight));
             }
 
             foreach (var update in updates)
@@ -416,7 +454,8 @@ namespace WrestlingSim.Engine
             }
         }
 
-        private double RunSegment(Segment segment, CardItemResult itemResult, ShowResult showResult)
+        private double RunSegment(Segment segment, CardItemResult itemResult, ShowResult showResult,
+            DateOnly showDate)
         {
             var segResult = new SegmentSimulator(_seed).Simulate(segment);
             itemResult.SegmentResult = segResult;
@@ -428,7 +467,7 @@ namespace WrestlingSim.Engine
                 itemResult.Notes.Add($"{change.Wrestler.RingName} popularity {change.Delta:+0;-0}.");
 
             var updates = _feudBook.RecordSegment(
-                segment.Participants, segResult.HeatGenerated, segResult.HistoryTags);
+                segment.Participants, segResult.HeatGenerated, segResult.HistoryTags, showDate);
 
             showResult.FeudUpdates.AddRange(updates);
 
