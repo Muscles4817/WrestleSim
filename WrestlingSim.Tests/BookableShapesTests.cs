@@ -143,5 +143,115 @@ namespace WrestlingSim.Tests
             Assert.Equal(sideCount - 1, booked.Name.Split(" vs ").Length - 1);
         }
 
+        // ── Aiming a beat ────────────────────────────────────────────────────
+        //
+        // The builder used to offer "who it is against" only on the finish, so every other
+        // beat a player booked was undirected and `MatchBeat.Against` — the field the whole
+        // three-way commentary reads — was unreachable from the UI for all but the last
+        // beat. The engine could aim a beat and the booker could not, which is the rule in
+        // CLAUDE.md failing in the small.
+
+        /// <summary>
+        /// **A beat aimed at any side in the match is a legal booking, on every beat.**
+        ///
+        /// Booked the way the builder now writes it: an opening, a beat aimed at each side
+        /// in turn, and a finish. If `Validate` rejected any of these the chip row would be
+        /// offering plans the confirm button refuses.
+        /// </summary>
+        [Theory]
+        [InlineData(3)]
+        [InlineData(4)]
+        public void EveryNonFinishBeat_CanBeAimedAtAnySideButItsOwn(int sideCount)
+        {
+            var people = Enumerable.Range(0, sideCount)
+                                   .Select(i => W($"W{i}")).ToList();
+
+            for (int worker = 0; worker < sideCount; worker++)
+            for (int target = 0; target < sideCount; target++)
+            {
+                if (worker == target) continue;
+
+                var plan = new MatchPlanModel
+                {
+                    Sides = people.Select(w => MatchSide.Of(w)).ToList(),
+                    Beats =
+                    [
+                        new() { Type = BeatType.HotOpening, Control = BeatControl.Even },
+                        new() { Type    = BeatType.NearFall,
+                                Control = MatchPlanModel.ControlFor(worker),
+                                Against = MatchPlanModel.ControlFor(target) },
+                        new() { Type    = BeatType.FinishClean,
+                                Control = MatchPlanModel.ControlFor(0),
+                                Against = MatchPlanModel.ControlFor(sideCount - 1) }
+                    ]
+                };
+
+                var errors = plan.Validate();
+                if (errors.Count > 0) output.WriteLine($"  {worker}->{target}: {string.Join(" | ", errors)}");
+                Assert.Empty(errors);
+
+                // And it reaches the engine, rather than validating and then being ignored.
+                var r = new MatchEngine(20260906).Execute(plan);
+                string line = string.Join(" ", r.BeatResults
+                    .Single(x => x.BeatType == BeatType.NearFall).Commentary);
+
+                Assert.Contains($"W{target}", line);
+            }
+        }
+
+        /// <summary>
+        /// **A beat aimed at somebody who is not in the match is refused, not narrated.**
+        ///
+        /// Without this it falls through to the engine's rotation and quietly describes
+        /// somebody else — the plan is wrong and the play-by-play is plausible, which is the
+        /// worst combination.
+        /// </summary>
+        [Fact]
+        public void ABeatAimedOutsideTheMatch_IsRefused()
+        {
+            var plan = ThreeWay(new() { Type = BeatType.NearFall,
+                                        Control = BeatControl.WrestlerA,
+                                        Against = BeatControl.SideD });
+
+            var errors = plan.Validate();
+            output.WriteLine($"  {string.Join(" | ", errors)}");
+
+            Assert.Contains(errors, e => e.Contains("not in this match"));
+        }
+
+        /// <summary>
+        /// **And a beat aimed at the side working it is refused.** Nobody runs a spot on
+        /// themselves; that is the sentence two review rounds were spent removing.
+        ///
+        /// Reachable by going backwards through the chip rows rather than forwards: the
+        /// "against" options hide the controlling side, so aim a beat at Bravo and then hand
+        /// Bravo the control. `SetControl` drops the target when that happens, and this is
+        /// the backstop for a plan built any other way.
+        /// </summary>
+        [Fact]
+        public void ABeatAimedAtItsOwnWorker_IsRefused()
+        {
+            var plan = ThreeWay(new() { Type = BeatType.NearFall,
+                                        Control = BeatControl.WrestlerB,
+                                        Against = BeatControl.WrestlerB });
+
+            var errors = plan.Validate();
+            output.WriteLine($"  {string.Join(" | ", errors)}");
+
+            Assert.Contains(errors, e => e.Contains("aimed at the side working it"));
+        }
+
+        /// <summary>A three-way carrying one beat under test, otherwise valid.</summary>
+        private static MatchPlanModel ThreeWay(MatchBeat middle) => new()
+        {
+            Sides = [MatchSide.Of(W("Alpha")), MatchSide.Of(W("Bravo")), MatchSide.Of(W("Charlie"))],
+            Beats =
+            [
+                new() { Type = BeatType.HotOpening, Control = BeatControl.Even },
+                middle,
+                new() { Type = BeatType.FinishClean, Control = BeatControl.WrestlerA,
+                        Against = BeatControl.SideC }
+            ]
+        };
     }
 }

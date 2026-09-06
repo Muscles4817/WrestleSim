@@ -1957,3 +1957,66 @@ Two things review named that are logged rather than fixed here:
 - **`AllLegal` walks every side without regard to `State.DisposedSide`.** A `CrowdBrawl` or
   `FeudalEscalation` booked during a disposal window bills somebody who is supposed to be on the
   floor. Wrong in the same way the rotation was, one level up.
+
+## The booker can aim a beat
+
+Review of the commentary work found the builder offering "who is on top" on every beat and
+"who it is against" only on the finish. So every non-finish beat a player booked was
+undirected, and `MatchBeat.Against` — the field the entire three-way commentary reads — could
+not be set from the UI for any beat but the last. The engine could aim a beat and the booker
+could not.
+
+That is the `CLAUDE.md` rule failing in the small, and it is worth noticing that it failed
+*while the rule was being followed*. The previous PR made three-ways bookable and was checked
+against exactly that: pick the shape, fill the slots, confirm, read the result. What it did not
+ask was whether every field the engine reads has a control, and the answer was no for the one
+the whole feature turned on. "Can the player reach the feature" is a coarser question than "can
+the player express what the engine can consume", and the coarse one passes first.
+
+### One field, two meanings
+
+The chip row is multi-man only, because with two sides there is nothing to choose — "against"
+is the other side and always was, which is why `Opponent` needed no help for singles and tag.
+Within multi-man it says two different things:
+
+- On the **finish** it is *who takes the fall*, it is required, and `Validate` refuses a plan
+  that does not say. Unchanged.
+- On **every other beat** it is *who it is worked on*, and it is optional. "The two who are
+  still standing go at it" is a real booking rather than an omission, so there is a
+  **Whoever is standing** chip that means null — the engine's upright rotation, stated as a
+  choice instead of arrived at by not asking.
+
+The controlling side is filtered out of the options, which closes the pairing going forwards.
+It was still reachable going backwards — aim a beat at Bravo, then hand Bravo the control, and
+the plan says Bravo works it on Bravo with no chip on screen showing it. `SetControl` drops the
+target when it becomes the worker.
+
+### Two things the change surfaced
+
+**The finish row was offering `Even` and `Contested` as who takes the fall.** It used
+`BookableControls`, which includes both, and `Validate` then rejected the plan with "the side
+booked to take the fall is not in this match". A chip that can only produce an error should not
+be a chip; there is a `BookableSides` now for the places that name a side rather than a state.
+
+**Nothing validated `Against` on a non-finish beat**, because until now nothing could set one.
+Both ways of naming an impossible target are refused rather than resolved: a beat aimed outside
+the match used to fall through to the rotation and narrate somebody else — the plan wrong and
+the play-by-play plausible, which is the worst pair — and a beat aimed at the side working it
+is the wrestler-does-something-to-themselves sentence two review rounds were spent removing.
+
+The beat list shows the target too (`Rhea Ripley → Becky Lynch`), because a booking you have to
+open a sheet to read is one you will not check.
+
+### Verified in the browser, not only in tests
+
+The claim here is about an affordance, so the test suite cannot make it. At 390×844 with touch:
+a triple threat between Roman Reigns, Rhea Ripley and Becky Lynch, the Triple Threat preset,
+beat 3 aimed at Roman — the row updates to `Rhea Ripley → Roman Reigns`, the play-by-play reads
+*"Roman Reigns with the hook of the leg — two count only! Rhea Ripley still breathing!"*, and
+handing Roman the control clears the target back to **Whoever is standing** with his chip gone
+from the row. The finish sheet still reads "Who takes the fall" with no null option; a singles
+match shows no such field at all. Zero console errors on any of it.
+
+One mutation killed: disabling the new validation reddens both refusal tests.
+
+**622 tests passing.**
