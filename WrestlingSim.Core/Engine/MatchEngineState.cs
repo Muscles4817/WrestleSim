@@ -168,28 +168,9 @@ namespace WrestlingSim.Engine
 
         public int TimesUsed(BeatType type) => _typeCounts.TryGetValue(type, out int n) ? n : 0;
 
-        /// <summary>
-        /// Beat types that are connective tissue rather than moments, and so are excluded
-        /// from the variety reading on both sides of the fraction.
-        ///
-        /// A routine tag is not a spot. Nobody watching a six-man thinks "that is the third
-        /// tag, I have seen this" — the tags are how the match moves, the way a rope-running
-        /// exchange is. Counting them as repetition taxed a trios structure for exactly the
-        /// beats that put its third man in the ring, which is a perverse incentive to book
-        /// him on the apron all night.
-        ///
-        /// Deliberately only <see cref="BeatType.Tag"/>. A hot tag and a blind tag are
-        /// moments and stay counted, and no singles or two-a-side preset in the library
-        /// contains a plain Tag — so every structure that shipped before trios reads exactly
-        /// as it did.
-        /// </summary>
-        private static bool IsConnective(BeatType type) => type is BeatType.Tag;
-
         /// <summary>How many distinct beat types the match has used. Rewards varied booking.</summary>
-        public int DistinctBeatTypes => _typeCounts.Keys.Count(t => !IsConnective(t));
+        public int DistinctBeatTypes => _typeCounts.Count;
 
-        /// <summary>Beats that count toward the variety reading — see <see cref="IsConnective"/>.</summary>
-        public int VarietyBeatCount => _typeCounts.Where(kv => !IsConnective(kv.Key)).Sum(kv => kv.Value);
 
         /// <summary>0-based position of the beat currently resolving.</summary>
         public int BeatIndex { get; private set; } = -1;

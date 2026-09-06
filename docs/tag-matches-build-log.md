@@ -879,27 +879,41 @@ about long heats. It was taxing a structure for its connective tissue, which is 
 incentive to leave the third man on the apron all night — the failure this whole PR exists
 to fix, re-entering through the rating formula.
 
-**Fixed at the source.** `BeatType.Tag` is excluded from both halves of the variety
-fraction. A routine tag is not a spot: nobody watching a six-man thinks *"that is the third
-tag, I have seen this"* — the tags are how the match moves, the way a rope-running exchange
-is. A hot tag and a blind tag are moments and stay counted. Deliberately narrow: **no
-singles or two-a-side preset in the library contains a plain `Tag`**, so every structure
-that shipped before trios reads exactly as it did.
+**I tried to fix it at the source and it was a bad trade.** `BeatType.Tag` was excluded from
+both halves of the variety fraction, on the reasoning that a routine tag is not a spot:
+nobody watching a six-man thinks *"that is the third tag, I have seen this"* — the tags are
+how the match moves, the way a rope-running exchange is. That reasoning is still sound.
+
+The implementation was not, and round 3 measured why. **The variety nudge is not only
+measuring variety — it is also the brake on padding**, and exempting anything from the
+*denominator* makes that thing free length. With the exemption in, appending `Quick Tag`s to
+a `Southern Tag` raised its rating monotonically:
 
 ```
-                     before    after
-Six-Man War   3v3    4.4403    4.4882
-Lucha Trios   3v3    3.6926    3.7572
-Southern Tag  3v3    4.4893    4.4893   (unchanged — contains no plain Tag)
-Southern Tag  2v2  4.504411  4.504411
-Formula Tag   2v2  4.124584  4.124584
-Tag Sprint    2v2  3.377380  3.377380
+Southern Tag 2v2, Technical      +0      +4      +8     +16
+  with Tag in the denominator  4.3232  4.4400  4.4719  4.4573    (padding punished)
+  with Tag exempted            4.3232  4.5241  4.6367  4.7168    (+0.394★ for booking nothing)
 ```
 
-`Six-Man War` and `Southern Tag` at 3v3 now sit 0.0011 apart, which is the honest resting
-place: two different matches of similar quality, with the six-man no longer penalised for
-booking the tags that make it a six-man. What that is *not* is a claim that a third man
-raises the ceiling — side size still has no term in the engine, correctly.
+`BeatType.Tag` is on-type for `Technical`, so the exploit was largest exactly where a player
+would declare it — and `Validate` permits it at two a side as well, since a `Quick Tag` with
+no `IncomingIndex` alternates 0→1→0→1 forever. A hand-built plan of opening + 40 tags +
+finish went from the −5 clamp to a nudge of exactly zero, because `VarietyBeatCount` fell to
+2 and the "too short to judge" guard silently became "not judged at all".
+
+A 0.05★ cosmetic gap traded for a 0.4★ exploit, shipped with no test. **Reverted.**
+
+`Six-Man War` keeps its 0.049★ deficit, and this time the deferral has the right reason
+attached: the engine is correctly observing that seventeen beats using twelve distinct types
+repeats more than thirteen using eleven, and three isolations and three tags is more
+repetition than two and none. Separating "variety" from "the padding brake" so that
+connective beats can be forgiven by one and not the other is a rating-formula change that
+genuinely has nothing to do with trios — which is what I claimed the first time, for the
+wrong reason.
+
+`PaddingATagMatchWithTags_IsNotFree` is the guard that came out of it, in the shape of the
+existing "length is still a substitute for quality" test but aimed at a tag plan. It fails
+with the exemption restored.
 
 ### The rest
 
@@ -915,11 +929,14 @@ raises the ceiling — side size still has no term in the engine, correctly.
 
 ### Two findings recorded and deferred, with reasons
 
-* **M1.** `Lucha Trios` names all six individually in 300 of 500 matches. Its starters are
-  only ever named by the `Hot Start` opening, and two of that beat's four templates name
-  nobody. The Description says "all six work", which is true of the *booking* in every match
-  and visible in the *commentary* in three out of five. The new test measures the aggregate
-  over seeds and is honest about doing so, but the gap is real.
+* **M1.** `Lucha Trios` names all six individually in 300 of 500 matches. Side A's starter is
+  only ever named by the `Hot Start` opening, and two of that beat's **five** templates name
+  nobody — hence three in five. (I wrote "four templates" in the first draft of this bullet,
+  which the 300/500 in the same sentence contradicts. Round 3 caught it. Side B's starter is
+  also named by `Shine`, so it is A's starter that binds.) The Description says "all six
+  work", which is true of the *booking* in every match and visible in the *commentary* in
+  three out of five. The new test measures the aggregate over seeds and is honest about doing
+  so, but the gap is real.
 * **M2.** Neither front end exposes `IncomingIndex`, so a player hand-building a trios cannot
   name who comes in — everything falls through to next-man-round. Pre-existing, correctly
   persisted, and the presets cover the common case; but the third man only works if you take
@@ -927,8 +944,31 @@ raises the ceiling — side size still has no term in the engine, correctly.
 
 Both belong with the UX pass, along with the commentary calling every wrestler "him".
 
-**434 tests passing.** Equivalence re-run after the `VarietyNudge` change across 353,808
-dumped lines (every non-feud-gated structure × every match type × 14 wrestlers × both side
-sizes × 3 seeds, per-beat deltas at `"R"` precision plus full commentary): **zero
-non-commentary differences**, zero differences of any kind at one a side, and the 2v2
-differences are 560 instances of the one near-tag template rewritten for finding 5.
+**435 tests passing.** Equivalence across 353,808 dumped lines (every non-feud-gated
+structure × every match type × 14 wrestlers × both side sizes × 3 seeds, per-beat deltas at
+`"R"` precision plus full commentary): **zero non-commentary differences**, zero differences
+of any kind at one a side, and the 2v2 differences are 560 instances of the one near-tag
+template rewritten for finding 5. Round 3 reproduced this independently on a 145,200-record
+harness of its own and got the same result.
+
+---
+
+## Trios — review round 3
+
+Round 3's verdict: *"not safe to merge. This round it is the engine, not the text."* The
+seven text fixes were all made and correct, the byte-identity claim held under an independent
+harness, and every number in the round 2 section reproduced exactly — and the substantive
+change I made beyond what round 2 asked for opened a rating exploit larger than the gap it
+closed. That is written up in the round 2 section above, where the change was made, rather
+than only here.
+
+The short version: the variety nudge is doing two jobs, and I only noticed one of them.
+Reverted, guarded by `PaddingATagMatchWithTags_IsNotFree`, and the 0.049★ deferred with the
+correct reason this time.
+
+Round 3 also caught one more claim my own sentence denied — the M1 bullet said "four
+templates" beside a measurement that implies five — corrected above.
+
+Three rounds, and the pattern in every one of them was the same: the engineering held up
+under everything three reviewers could throw at it, and what did not hold up was what I said
+about it. Worth stating plainly at the end of this file rather than leaving implied.
