@@ -1335,15 +1335,74 @@ written for "he" usually reads worse than the sentence deserves:
 | `He reaches for the corner and is dragged back` (Near Tag's description) | `A hand reaches for the corner and is dragged back` |
 
 That last one is there because **the test caught it and I had not**. My grep was
-case-sensitive, so a template beginning `"He reaches…"` went straight past it. The guard is
-`NoBeatTemplate_AssumesAWrestlersGender` plus `NoCommentaryLine_AssumesAWrestlersGender`, which
-runs 6,528 real commentary lines through the engine at one, two and three a side and scans
-them **after stripping the ring names** — otherwise a surname containing "her" or "his" would
-false-positive for ever and the test would be quietly disabled within a month.
+case-sensitive, so a template beginning `"He reaches…"` went straight past it.
+
+### Review round 1, and the guard was two-thirds of a guard
+
+Verdict: **do not merge as-is** — nothing broken, but the headline claim was not delivered.
+The reviewer independently reproduced byte-identity (20,544 rows, md5-identical on both
+worktrees, commentary the only difference) and confirmed `Pick` is index-based. Then they
+mutated each of the eight changed templates back to its old wording, one at a time:
+
+> Six make `NoCommentaryLine_AssumesAWrestlersGender` fail. **Two do not** … Those are
+> precisely the two the author found by grep. The build log's "measured rather than grepped"
+> is 6/8.
+
+The disqualification finish appears in **no shipped structure at all**, and the low-charge hot
+tag needs a charge under 0.85 that no preset produces. So the sweep — which ran only the
+presets — could never reach either, and the claim that it improved on grep was true of six
+lines and false of the two that grep had actually been needed for.
+
+Fixed by booking **every beat type in the library by hand**, not just what the presets happen
+to use: finishes as the only finish, feud-flavoured beats with a Nuclear feud carrying every
+history tag, and `AlliesRejected` given the `ThirdPartyPullIn` its validation requires. The
+coverage is now itself an assertion — *"a beat type nothing books is a beat type nothing
+checks"* — so it fails if a future beat becomes unreachable. **9,208 lines across all 32 beat
+types**, up from 6,528 across 26.
+
+### Three more of the same defect, in text I had just written
+
+The reviewer's second finding is the more embarrassing one. My sweep was for *pronouns*, and I
+had also been rewriting gendered **nouns** — "the big man", "one man kept cut off from his
+corner". Nothing scanned for those, so the identical phrasing survived in three places, two of
+which I wrote earlier the same night:
+
+* `MatchBuilder.razor` — the trios branch of *the very notice that was fixed*, four lines
+  below it: "A third man buys a deeper heat — three fresh opponents can rotate on the man in
+  peril".
+* `SideSizeBlurb(3)`, on the Trios button: "Three fresh opponents on one man, and a fresh man
+  for the finish."
+* `Six-Man War`'s `Description`, rendered in the structure picker: "three heels rotating on
+  one man — then the hot tag and a fresh third man to finish" — the same phrase I had just
+  rewritten in `Face in Peril`.
+
+Plus the README's tag section. All rewritten, and `NoLibraryText_AssumesAWrestlersGender` now
+scans `MatchStructureLibrary` as well as `BeatLibrary` and looks for the noun form too. The
+policy is unchanged and now enforced: "six-man tag" and "the legal man" are the names of
+things and stay; "one man", "the big man", "a fresh third man" describe a person in a role by
+gender and do not.
+
+### Two rewrites that read worse than what they replaced
+
+Worth recording because a clumsy neutral rewrite is a real cost, not a free win:
+
+| | |
+|---|---|
+| "A 450° splash from **somebody that size**" | No antecedent — nothing establishes anyone as big. → "from a heavyweight". |
+| "That is not how **they** drew it up — {control} just wiped out **their** own partner." | Two referents for they/their in one sentence. "his own partner" disambiguated for free. → "That is not how it was drawn up — {control} just flattened a partner instead of an opponent." |
+| "a long way from **that** corner" | Deictic with nothing to point at. → "a long way from home", which is the actual commentary idiom. |
+| "**A hand** reaches for the corner and is dragged back" | Drags the hand. → "Reaching for the corner, and dragged back at the last moment." |
+
+The reviewer read full play-by-plays to check the rest in flow and found "drags/pulls them
+back", "gets back up… drags them down again" and "not that anybody had time to miss them"
+unambiguous, and "The referee has finally had enough" better than what it replaced.
 
 **Every number is unchanged.** `Pick()` selects by index, so rewriting the strings cannot move
 an RNG draw. Verified rather than asserted: 131,328 dumped rows — every non-feud-gated
 structure × every match type × 12 wrestlers × all three side sizes × 3 seeds, per-beat deltas
-at `"R"` round-trip precision — are **md5-identical** to `main`.
+at `"R"` round-trip precision — are **md5-identical** to `main`, and the reviewer reproduced
+that independently on a harness of their own.
 
-**471 tests passing.**
+**471 tests passing**, with all three of the previously-escaping cases — the DQ line, the
+low-charge hot tag, and a noun in a structure description — verified to fail the guard when
+reintroduced.

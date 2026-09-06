@@ -211,7 +211,7 @@ namespace WrestlingSim.Engine
             new BeatTemplate
             {
                 Name             = "Jaw-Dropper",
-                Description      = "The move nobody expected. A 450° splash from somebody that size, a shooting star from a powerhouse. Maximum spectacle.",
+                Description      = "The move nobody expected. A 450° splash from a heavyweight, a shooting star from a powerhouse. Maximum spectacle.",
                 Category         = CatSpot,
                 Type             = BeatType.HighSpot,
                 DefaultIntensity = BeatIntensity.Extreme,
@@ -487,7 +487,7 @@ namespace WrestlingSim.Engine
             new BeatTemplate
             {
                 Name             = "Near Tag",
-                Description      = "A hand reaches for the corner and is dragged back. The crowd groans — and that groan is stored energy.",
+                Description      = "Reaching for the corner, and dragged back at the last moment. The crowd groans — and that groan is stored energy.",
                 Category         = CatTag,
                 Type             = BeatType.NearTag,
                 DefaultIntensity = BeatIntensity.High,

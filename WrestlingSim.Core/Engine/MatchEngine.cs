@@ -1206,7 +1206,7 @@ namespace WrestlingSim.Engine
 
             r.Commentary.Add(Pick(
                 $"{control.RingName} cuts {other.RingName} off at the knees — and just like that, the complexion of this match has changed.",
-                $"One moment of distraction and {control.RingName} takes over. {other.RingName} is a long way from that corner.",
+                $"One moment of distraction and {control.RingName} takes over. {other.RingName} is a long way from home.",
                 $"There it is — {control.RingName} shuts the door, and {other.RingName} is in trouble.",
                 $"{control.RingName} catches {other.RingName} coming in and the heat is on."
             ));
@@ -1553,7 +1553,7 @@ namespace WrestlingSim.Engine
                 $"Disaster! {control.RingName} takes out {partner} by mistake — and the two of them are jawing at each other!",
                 $"{control.RingName} and {partner} collide! There is trouble in that corner.",
                 $"Miscommunication! {partner} is furious with {control.RingName}, and {other.RingName} is more than happy to watch.",
-                $"That is not how they drew it up — {control.RingName} just wiped out their own partner."
+                $"That is not how it was drawn up — {control.RingName} just flattened a partner instead of an opponent."
             ));
         }
 

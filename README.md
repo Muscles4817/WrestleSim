@@ -473,13 +473,13 @@ commentary tells you: duelling chants, the crowd talking amongst itself, a beach
 
 ### Who takes the fall
 
-The result is not a team result. The man who scored the fall and the man who ate it take the
-full swing; their partners take **50%** of a win and **35%** of a loss. That asymmetry is the
-point — it makes putting the fall on your star's partner a real way to protect him, and it
-still costs something, so it stays a decision.
+The result is not a team result. Whoever scored the fall and whoever ate it take the full
+swing; their partners take **50%** of a win and **35%** of a loss. That asymmetry is the
+point — it makes putting the fall on your star's partner a real way to protect the star, and
+it still costs something, so it stays a decision.
 
-Which man is legal for the finish is decided by the tags you book. Putting your star in on the
-hot tag rather than your rookie is worth about half a star on its own.
+Who is legal for the finish is decided by the tags you book. Putting your star in on the hot
+tag rather than your rookie is worth about half a star on its own.
 
 ### Teams
 
