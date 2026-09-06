@@ -259,3 +259,48 @@ carrying per-beat deltas and full commentary text) is **byte-identical** to the 
 ### Review — round 2
 
 *(pending)*
+
+---
+
+## Phase 3 — Playable end to end
+
+**Goal:** book, run, save and reload a tag match through both front ends.
+
+### What changed
+
+| File | Change |
+|---|---|
+| `Persistence/SaveGame.cs` | Save **v3**. `CardItemDto` gains `SideA`/`SideB` (id lists) and `StartingIndexA`/`B`; `BeatDto` gains `IncomingIndex`. `WrestlerA`/`WrestlerB` retained as read-only v2 fields. |
+| `Persistence/SaveSerializer.cs` | Writes sides; reads either. A v2 card item becomes two sides of one. The phase 1 `NotSupportedException` guard is removed — v3 can carry the thing it was refusing. |
+| `Web/Shared/MatchBuilder.razor` | Singles/tag toggle, partner pickers on both sides, structures filtered by `ForSideSize`, side names throughout the beat editor, tag beats gated out of singles matches, and a warning when a hot tag has no peril before it. |
+| `UI/MatchBookingFlow.cs` | The same flow in the terminal build. The beat-editor chain now takes `MatchSide` rather than two wrestlers. |
+| `Web/Screens/MatchScreen.razor` | Title reads `BookedMatch.Name` instead of rebuilding "A vs B" by hand — the phase 1 review flagged this exact site. |
+
+### Two deliberate choices worth recording
+
+**A v3 save does not write `WrestlerA`/`WrestlerB` at all**, even for a singles match. Writing
+them would let an older build open the save and silently drop every partner. Refusing to load
+is a better failure than loading a lie, and `SaveSerializer` already rejects a save whose
+version is newer than the build.
+
+**A card naming somebody the roster no longer has is dropped whole**, rather than rebuilt a
+man short. Three-quarters of a tag match is not a match, and running one would be worse than
+losing the booking.
+
+### Left for phase 5, deliberately
+
+`ShowSimulator.RunMatch` and `MatchScreen` still key familiarity and feud heat on
+`WrestlerA`/`WrestlerB` — the two *starters*. For a tag match that records the story against
+the men who took the opening bell rather than against the teams. It works and it is wrong, and
+side-keyed feuds are exactly what phase 5 is for. Marked here so it is not mistaken for an
+oversight.
+
+### Result
+
+**356 tests passing.** An end-to-end test books a Southern Tag onto a card, runs it through
+`ShowSimulator`, and asserts the fall is credited to the partner who came in on the hot tag —
+which is what the notes say: `Robert def. Bobby — ★★★¾`.
+
+### Review — round 3
+
+*(pending)*

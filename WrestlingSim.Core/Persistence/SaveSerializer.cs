@@ -201,30 +201,27 @@ namespace WrestlingSim.Persistence
 
         private static CardItemDto? ToDto(ICardItem item) => item switch
         {
-            // The save format still describes a match as two wrestlers, so a side with a
-            // partner on it has nowhere to go. Refusing is not a limitation worth hiding:
-            // saving silently would drop every partner and turn a booked tag match back
-            // into a singles match on reload. Sides land in save v3 — see
-            // docs/tag-matches-plan.md §4.
-            BookedMatch { Plan.IsTagMatch: true } tag => throw new NotSupportedException(
-                $"Cannot save the tag match '{tag.Name}' — the save format stores two " +
-                "wrestlers per match. Tag sides are added in save v3."),
-
+            // Sides, not two wrestlers. WrestlerA/WrestlerB are deliberately not written
+            // any more — a v2 reader could not have made sense of a tag match anyway, and
+            // writing a half-truth would mean a downgrade silently loses the partners.
             BookedMatch m => new CardItemDto
             {
-                Kind          = CardItemKind.Match,
-                WrestlerA     = m.Plan.WrestlerA.Id,
-                WrestlerB     = m.Plan.WrestlerB.Id,
-                MatchType     = m.Plan.MatchType,
-                StructureName = m.StructureName,
-                TitleId       = m.Plan.TitleAtStake?.Id,
+                Kind           = CardItemKind.Match,
+                SideA          = m.Plan.SideA.Members.Select(w => w.Id).ToList(),
+                SideB          = m.Plan.SideB.Members.Select(w => w.Id).ToList(),
+                StartingIndexA = m.Plan.SideA.StartingIndex,
+                StartingIndexB = m.Plan.SideB.StartingIndex,
+                MatchType      = m.Plan.MatchType,
+                StructureName  = m.StructureName,
+                TitleId        = m.Plan.TitleAtStake?.Id,
                 Beats = m.Plan.Beats.Select(b => new BeatDto
                 {
-                    Type      = b.Type,
-                    Control   = b.Control,
-                    Intensity = b.Intensity,
-                    Duration  = b.Duration,
-                    StyleHint = b.StyleHint
+                    Type          = b.Type,
+                    Control       = b.Control,
+                    Intensity     = b.Intensity,
+                    Duration      = b.Duration,
+                    StyleHint     = b.StyleHint,
+                    IncomingIndex = b.IncomingIndex
                 }).ToList()
             },
 
@@ -489,19 +486,53 @@ namespace WrestlingSim.Persistence
             return show;
         }
 
+        /// <summary>
+        /// Resolves a saved side against the live roster, or null if anybody is missing.
+        /// </summary>
+        private static List<Wrestler>? Bind(List<string> ids, Dictionary<string, Wrestler> byId)
+        {
+            var members = new List<Wrestler>(ids.Count);
+            foreach (var id in ids)
+            {
+                if (!byId.TryGetValue(id, out var w)) return null;
+                members.Add(w);
+            }
+            return members.Count == 0 ? null : members;
+        }
+
         private static ICardItem? FromDto(
             CardItemDto dto, Dictionary<string, Wrestler> byId, FeudBook feudBook, TitleRegistry titles)
         {
             if (dto.Kind == CardItemKind.Match)
             {
-                if (dto.WrestlerA == null || dto.WrestlerB == null) return null;
-                if (!byId.TryGetValue(dto.WrestlerA, out var a)) return null;
-                if (!byId.TryGetValue(dto.WrestlerB, out var b)) return null;
+                // v3 writes SideA/SideB; a v2 save has one wrestler per side instead.
+                var sideAIds = dto.SideA ?? (dto.WrestlerA is null ? null : [dto.WrestlerA]);
+                var sideBIds = dto.SideB ?? (dto.WrestlerB is null ? null : [dto.WrestlerB]);
+                if (sideAIds is null || sideBIds is null) return null;
+
+                var sideA = Bind(sideAIds, byId);
+                var sideB = Bind(sideBIds, byId);
+
+                // A card item naming somebody the roster no longer has is dropped whole
+                // rather than rebuilt a man short — a three-quarters tag match is not a
+                // match, and silently running one would be worse than losing the booking.
+                if (sideA is null || sideB is null) return null;
+
+                var a = sideA[Math.Clamp(dto.StartingIndexA, 0, sideA.Count - 1)];
+                var b = sideB[Math.Clamp(dto.StartingIndexB, 0, sideB.Count - 1)];
 
                 var plan = new MatchPlanModel
                 {
-                    WrestlerA = a,
-                    WrestlerB = b,
+                    SideA = new MatchSide
+                    {
+                        Members       = sideA,
+                        StartingIndex = Math.Clamp(dto.StartingIndexA, 0, sideA.Count - 1)
+                    },
+                    SideB = new MatchSide
+                    {
+                        Members       = sideB,
+                        StartingIndex = Math.Clamp(dto.StartingIndexB, 0, sideB.Count - 1)
+                    },
                     MatchType = dto.MatchType,
                     // Re-bind to the live feud so a reloaded card reads current heat.
                     Feud      = feudBook.Find(a, b),
@@ -514,7 +545,8 @@ namespace WrestlingSim.Persistence
                         Control   = x.Control,
                         Intensity = x.Intensity,
                         Duration  = x.Duration,
-                        StyleHint = x.StyleHint
+                        StyleHint = x.StyleHint,
+                        IncomingIndex = x.IncomingIndex
                     }).ToList()
                 };
 

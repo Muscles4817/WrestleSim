@@ -428,6 +428,61 @@ namespace WrestlingSim.Tests
                 "The full formula should beat the opener that deliberately skips the peril.");
         }
 
+        // ── End to end ───────────────────────────────────────────────────────
+
+        [Fact]
+        public void ATagMatchRunsOnAShowCard_AndReportsTheTeamsInItsNotes()
+        {
+            // Phase 3's actual claim: a tag match is not just constructible in code, it
+            // goes on a card, runs through the show simulator, and reports sensibly.
+            var roster = new List<Wrestler>
+            {
+                W("Ricky"), W("Robert"), W("Bobby"), W("Dennis")
+            };
+
+            var career = new WrestlingSim.Models.World.Career
+            {
+                Promotion   = new WrestlingSim.Models.World.Promotion { Name = "Mid-South", Tier = PromotionTier.Established },
+                StartDate   = new DateOnly(2025, 1, 6),
+                CurrentDate = new DateOnly(2025, 1, 6),
+                Roster      = roster
+            };
+
+            var show = career.Schedule("Saturday Night", career.CurrentDate, ShowType.HouseShow);
+            var structure = MatchStructureLibrary.Find("Southern Tag")!;
+
+            show.Card.Add(new WrestlingSim.Models.BookedMatch
+            {
+                Plan = new MatchPlanModel
+                {
+                    SideA = MatchSide.Of(roster[0], roster[1]),
+                    SideB = MatchSide.Of(roster[2], roster[3]),
+                    Beats = structure.Beats.Select(b => b.Clone()).ToList()
+                },
+                StructureName = structure.Name
+            });
+
+            var result = new ShowSimulator(career.FeudBook).Simulate(show.ToShow());
+
+            Assert.Single(result.Items);
+            Assert.True(result.OverallRating > 0);
+
+            var item = result.Items[0];
+            output.WriteLine($"  {item.Label}");
+            foreach (var note in item.Notes) output.WriteLine($"    {note}");
+
+            // The label carries its card position, so this checks the name inside it.
+            Assert.Contains("Ricky & Robert vs Bobby & Dennis", item.Label);
+
+            // The fall goes to whoever was legal at the finish. Southern Tag books a hot
+            // tag, so that is the partner who started on the apron — not the man who took
+            // the beating, and not "the team".
+            Assert.Same(item.MatchResult!.WinningSide[1], item.MatchResult.Pinner);
+
+            // The fall is credited to the man who was legal at the finish, not to the team.
+            Assert.Contains(item.Notes, n => n.Contains("def."));
+        }
+
         // ── Association ──────────────────────────────────────────────────────
 
         [Fact]

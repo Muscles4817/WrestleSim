@@ -29,7 +29,12 @@ namespace WrestlingSim.Persistence
         /// none at all (see <see cref="SaveSerializer.FromDto"/>); it simply has no
         /// brands, which needs no seeding because an undivided promotion is a valid state.
         /// </summary>
-        public const int CurrentVersion = 2;
+        /// <summary>
+        /// v3 stores a match as two *sides* rather than two wrestlers, so a tag match can
+        /// be saved. v2 saves still load: a v2 card item carries WrestlerA/WrestlerB, and
+        /// each becomes a side of one.
+        /// </summary>
+        public const int CurrentVersion = 3;
 
         public int Version { get; set; } = CurrentVersion;
 
@@ -216,6 +221,21 @@ namespace WrestlingSim.Persistence
         public CardItemKind Kind { get; set; }
 
         // ── Match ────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Everyone on each side, in booking order. Written from v3 onward.
+        /// </summary>
+        public List<string>? SideA { get; set; }
+        public List<string>? SideB { get; set; }
+
+        /// <summary>Index of the member who takes the opening bell for each side.</summary>
+        public int StartingIndexA { get; set; }
+        public int StartingIndexB { get; set; }
+
+        /// <summary>
+        /// v2 form: one wrestler per side. Still read, never written — a v2 card becomes
+        /// two sides of one. Kept nullable so a v3 save can omit them entirely.
+        /// </summary>
         public string? WrestlerA { get; set; }
         public string? WrestlerB { get; set; }
         public MatchType MatchType { get; set; }
@@ -242,6 +262,9 @@ namespace WrestlingSim.Persistence
         public BeatIntensity Intensity { get; set; }
         public BeatDuration Duration { get; set; }
         public WrestlingStyle? StyleHint { get; set; }
+
+        /// <summary>Which member a tag beat brings in. Null tags to the next man round.</summary>
+        public int? IncomingIndex { get; set; }
     }
 
     public class SegmentActionDto

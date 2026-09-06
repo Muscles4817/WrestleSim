@@ -45,6 +45,17 @@ namespace WrestlingSim.Tests
             return SaveSerializer.FromJson(json, Roster());
         }
 
+        /// <summary>Round-trip against a roster the caller controls, for tag cards.</summary>
+        private static Career RoundTrip(Career career, List<Wrestler> roster)
+        {
+            string json = SaveSerializer.ToJson(career);
+            // Rebind against equivalent-but-fresh instances, as a real reload does.
+            var fresh = Roster();
+            foreach (var extra in roster.Where(w => fresh.All(f => f.Id != w.Id)))
+                fresh.Add(TestRoster.Make(extra.RingName, overness: extra.Overness));
+            return SaveSerializer.FromJson(json, fresh);
+        }
+
         [Fact]
         public void RoundTripKeepsPromotionAndClock()
         {
@@ -172,14 +183,11 @@ namespace WrestlingSim.Tests
         }
 
         [Fact]
-        public void SavingATagMatch_RefusesRatherThanSilentlyHalvingIt()
+        public void ATagMatchRoundTrips_WithBothPartnersAndTheBeatsIntact()
         {
-            // Save v2 stores two wrestlers per match, so a side with a partner on it has
-            // nowhere to go. Before this guard, ToDto wrote only each side's starter and
-            // a booked 2v2 came back off disk as a singles match with no error at all.
-            // Tag sides land in save v3 (docs/tag-matches-plan.md §4); until then this
-            // fails loudly.
             var roster = Roster();
+            var extra  = TestRoster.Make("Delta Four", overness: 50);
+            roster.Add(extra);
             var career = NewCareer(roster);
             var show = career.Schedule("Weekly", career.CurrentDate, ShowType.Television);
 
@@ -188,17 +196,170 @@ namespace WrestlingSim.Tests
                 Plan = new MatchPlanModel
                 {
                     SideA = MatchSide.Of(roster[0], roster[1]),
-                    SideB = MatchSide.Of(roster[2], TestRoster.Make("Delta Four", overness: 50)),
+                    SideB = MatchSide.Of(roster[2], extra),
                     Beats =
                     [
-                        new MatchBeat { Type = BeatType.HotOpening, Control = BeatControl.Even },
+                        new MatchBeat { Type = BeatType.StandardOpening, Control = BeatControl.Even },
+                        new MatchBeat { Type = BeatType.Cutoff,    Control = BeatControl.WrestlerB },
+                        new MatchBeat { Type = BeatType.Isolation,  Control = BeatControl.WrestlerB },
+                        new MatchBeat { Type = BeatType.HotTag,     Control = BeatControl.WrestlerA, IncomingIndex = 1 },
+                        new MatchBeat { Type = BeatType.FinishClean, Control = BeatControl.WrestlerA }
+                    ]
+                },
+                StructureName = "Formula Tag"
+            });
+
+            var loaded = RoundTrip(career, roster);
+            var match = Assert.IsType<BookedMatch>(loaded.Shows.Single().Card.Single());
+
+            Assert.Equal(2, match.Plan.SideA.Size);
+            Assert.Equal(2, match.Plan.SideB.Size);
+            Assert.Equal(new[] { "alpha-one", "beta-two" }, match.Plan.SideA.Members.Select(w => w.Id));
+            Assert.Equal(new[] { "gamma-three", "delta-four" }, match.Plan.SideB.Members.Select(w => w.Id));
+            Assert.Equal(1, match.Plan.Beats.Single(b => b.Type == BeatType.HotTag).IncomingIndex);
+            Assert.Empty(match.Plan.Validate());
+        }
+
+        [Fact]
+        public void ATagMatchSurvivesReload_AndStillRuns()
+        {
+            var roster = Roster();
+            var extra  = TestRoster.Make("Delta Four", overness: 50);
+            roster.Add(extra);
+            var career = NewCareer(roster);
+            var show = career.Schedule("Weekly", career.CurrentDate, ShowType.Television);
+
+            var structure = MatchStructureLibrary.Find("Formula Tag")!;
+            show.Card.Add(new BookedMatch
+            {
+                Plan = new MatchPlanModel
+                {
+                    SideA = MatchSide.Of(roster[0], roster[1]),
+                    SideB = MatchSide.Of(roster[2], extra),
+                    Beats = structure.Beats.Select(b => b.Clone()).ToList()
+                },
+                StructureName = structure.Name
+            });
+
+            var loaded = RoundTrip(career, roster);
+            var result = new Engine.ShowSimulator(loaded.FeudBook)
+                .Simulate(loaded.Shows.Single().ToShow());
+
+            Assert.True(result.OverallRating > 0);
+            Assert.Single(result.Items);
+        }
+
+        [Fact]
+        public void StartingIndexSurvivesTheRoundTrip()
+        {
+            var roster = Roster();
+            var extra  = TestRoster.Make("Delta Four", overness: 50);
+            roster.Add(extra);
+            var career = NewCareer(roster);
+            var show = career.Schedule("Weekly", career.CurrentDate, ShowType.Television);
+
+            show.Card.Add(new BookedMatch
+            {
+                Plan = new MatchPlanModel
+                {
+                    SideA = new MatchSide { Members = { roster[0], roster[1] }, StartingIndex = 1 },
+                    SideB = MatchSide.Of(roster[2], extra),
+                    Beats =
+                    [
+                        new MatchBeat { Type = BeatType.StandardOpening, Control = BeatControl.Even },
                         new MatchBeat { Type = BeatType.FinishClean, Control = BeatControl.WrestlerA }
                     ]
                 }
             });
 
-            var ex = Assert.Throws<NotSupportedException>(() => SaveSerializer.ToJson(career));
-            Assert.Contains("save v3", ex.Message);
+            var match = Assert.IsType<BookedMatch>(
+                RoundTrip(career, roster).Shows.Single().Card.Single());
+
+            Assert.Equal(1, match.Plan.SideA.StartingIndex);
+            Assert.Equal("beta-two", match.Plan.SideA.Starter.Id);
+        }
+
+        [Fact]
+        public void AV2Save_LoadsAsTwoSidesOfOne()
+        {
+            // The migration that matters: every save anybody already has is v2, and none
+            // of them may break. A v2 card item names one wrestler per side.
+            const string v2Json = """
+            {
+              "Version": 2,
+              "CareerId": "abc",
+              "PromotionName": "Legacy Wrestling",
+              "Tier": "National",
+              "CurrentDate": "2025-01-06",
+              "StartDate": "2025-01-06",
+              "Wrestlers": [],
+              "ShowDefinitions": [],
+              "Feuds": [],
+              "Titles": [],
+              "Shows": [
+                {
+                  "Id": "show1",
+                  "Name": "Weekly",
+                  "Date": "2025-01-06",
+                  "Type": "Television",
+                  "Venue": "",
+                  "RuntimeMinutes": 120,
+                  "Attendance": 5000,
+                  "Card": [
+                    {
+                      "Kind": "Match",
+                      "WrestlerA": "alpha-one",
+                      "WrestlerB": "beta-two",
+                      "MatchType": "Standard",
+                      "StructureName": "TV Formula",
+                      "Beats": [
+                        { "Type": "StandardOpening", "Control": "Even", "Intensity": "Medium", "Duration": "Medium" },
+                        { "Type": "FinishClean", "Control": "WrestlerA", "Intensity": "Medium", "Duration": "Medium" }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+            """;
+
+            var career = SaveSerializer.FromJson(v2Json, Roster());
+            var match = Assert.IsType<BookedMatch>(career.Shows.Single().Card.Single());
+
+            Assert.Equal(1, match.Plan.SideA.Size);
+            Assert.Equal(1, match.Plan.SideB.Size);
+            Assert.Equal("alpha-one", match.Plan.WrestlerA.Id);
+            Assert.Equal("beta-two", match.Plan.WrestlerB.Id);
+            Assert.False(match.Plan.IsTagMatch);
+            Assert.Empty(match.Plan.Validate());
+        }
+
+        [Fact]
+        public void ACardNamingSomebodyTheRosterLost_IsDroppedWholeRatherThanRebuiltAManShort()
+        {
+            var roster = Roster();
+            var departed = TestRoster.Make("Departed", overness: 50);
+            var career = NewCareer(roster);
+            var show = career.Schedule("Weekly", career.CurrentDate, ShowType.Television);
+
+            show.Card.Add(new BookedMatch
+            {
+                Plan = new MatchPlanModel
+                {
+                    SideA = MatchSide.Of(roster[0], departed),
+                    SideB = MatchSide.Of(roster[1], roster[2]),
+                    Beats =
+                    [
+                        new MatchBeat { Type = BeatType.StandardOpening, Control = BeatControl.Even },
+                        new MatchBeat { Type = BeatType.FinishClean, Control = BeatControl.WrestlerA }
+                    ]
+                }
+            });
+
+            // Reloaded against a roster that never had "Departed" in it.
+            var loaded = RoundTrip(career, Roster());
+
+            Assert.Empty(loaded.Shows.Single().Card);
         }
 
         [Fact]
