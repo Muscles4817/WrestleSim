@@ -287,6 +287,33 @@ namespace WrestlingSim.Tests
                 "A denied tag has to buy the room back, or a long heat can never be booked well.");
         }
 
+        [Fact]
+        public void DeniedTagsSelfLimit_WithoutNeedingAPatienceRuleOfTheirOwn()
+        {
+            // Adjudication declined to give the near tag the same patience rule as the
+            // isolation, on the grounds that it self-limits: it over-rewards slightly past
+            // its cap of two and then turns over on its own, because its crowd delta is
+            // negative and negative deltas correctly escape repetition decay, so every
+            // extra one costs full price.
+            //
+            // That is a real property and worth pinning, because it is the reason there is
+            // no second rule here. If the turning point ever disappears, the near tag needs
+            // the same treatment the isolation got.
+            var counts = new[] { 2, 3, 4, 5, 6 }
+                .Select(n => (n, stars: AtFixedLength("III" + new string('N', n)).stars))
+                .ToList();
+
+            foreach (var (n, stars) in counts)
+                output.WriteLine($"  3 isolations + {n} denied tags → {stars:F3}★");
+
+            double peak = counts.Max(c => c.stars);
+            double last = counts[^1].stars;
+
+            Assert.True(last < peak,
+                "Denied tags must stop paying at some point — they cost the room real energy " +
+                "every time, so spamming them has to turn over on its own.");
+        }
+
         // ── Legality ─────────────────────────────────────────────────────────
 
         [Fact]
