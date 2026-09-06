@@ -249,7 +249,14 @@ which unlocks the feud-gated beats in the match editor.
 Selecting **Book a Match** walks you through a five-step flow:
 
 ### 1 — Pick your wrestlers
-Numbered list of the loaded roster showing Overness, Skill, and Charisma.
+First, singles or tag. Then the roster, showing Overness, Skill and Charisma — one name a
+side for a singles match, two for a tag match, where the second man starts on the apron.
+
+A wrestler cannot be booked on both sides, and the sides must be the same size. Handicap
+matches are not blocked out of squeamishness: the engine has no term for a numbers advantage
+at all, so a 1v2 would be graded as though it were a normal match rather than generously or
+harshly. The error says so, because the rule lifts when that mechanic exists — not when
+somebody decides handicap matches are allowed.
 
 ### 2 — Set the match type
 Standard, Technical, Storytelling or Spotfest.
@@ -298,6 +305,9 @@ are stamped by the segments that earn them and gate certain beats:
 Feud intensity also still pays off through starting crowd energy and beat unlocks.
 
 ### 4 — Choose a match structure
+
+You are only offered structures the shape of match can actually work — a singles match is
+never shown a hot tag, and a tag match is never left with only singles presets.
 Pick one of seven pre-built structures as your starting plan, or build from scratch.
 
 | Structure | Beats | Description |
@@ -413,6 +423,76 @@ Every beat in the editor is drawn from a library of named archetypes. Each templ
 | Dirty Win | FinishInterference |
 | DQ Finish | FinishDQ |
 | Count-Out | FinishCountout |
+
+### Tag
+| Template | Type | Notes |
+|---|---|---|
+| Shine | Shine | The face side on top early. Bookable in a singles match too |
+| Cut-Off | Cutoff | The takeover. The only one-beat control shift that *costs* crowd energy |
+| Face in Peril | Isolation | Charges the hot tag. Three is the most that pays |
+| Near Tag | NearTag | Quietens the room on purpose, and resets its patience |
+| Hot Tag | HotTag | The payoff. Worth about half if nothing bought it |
+| Quick Tag | Tag | Changes who is legal. Also spends the charge |
+| Blind Tag | BlindTag | A tag the opponents did not see |
+| Double Team | DoubleTeam | Reads off team chemistry, not the legal man |
+| Miscommunication | Miscommunication | Control is the side that blunders; advantage moves against them |
+| Save | SaveBreakup | Breaks up the pin. Wears out fast |
+| All Four In | AllFourBrawl | Resets the room. Moves nobody's advantage |
+
+---
+
+## Tag Matches
+
+A tag match is not a singles match with four names on it. The format has a specific narrative
+machine, and the engine models it:
+
+**Shine → cut-off → isolation → the tag denied → the hot tag.**
+
+The hot tag is the loudest planned moment in professional wrestling, and here it is worth
+exactly what the isolation paid for it. `HotTagCharge` returns **0.55** with no peril behind
+it — deliberately the same unearned-payoff penalty the engine charges for a finish that
+momentum did not support — rising to about **2.0** for three isolations and two denied tags.
+
+| what you spent | hot-tag pop | rating |
+|---|---|---|
+| nothing | 20.75 | 2.301★ |
+| 1 isolation | 44.45 | 2.944★ |
+| 3 isolations | 55.76 | 3.079★ |
+| 3 isolations + 2 denied tags | 66.61 | 3.209★ |
+
+**The denied tag is the one beat that is supposed to take energy out of the building.** The
+room going quiet and frustrated is stored energy, not lost energy, and it comes back bigger
+than another isolation would have made it. It also does a second job: it resets the crowd's
+patience.
+
+**A long heat is good; an unbroken one is not.** The engine punishes a *run* of isolations
+with no hope spot, never the count — because a big match is one that adds a second
+heat/comeback cycle, not one that keeps the beating short. Eight isolations in a row rate well
+below three; eight punctuated by denied tags rate above both. Past the room's patience the
+commentary tells you: duelling chants, the crowd talking amongst itself, a beach ball.
+
+### Who takes the fall
+
+The result is not a team result. The man who scored the fall and the man who ate it take the
+full swing; their partners take **50%** of a win and **35%** of a loss. That asymmetry is the
+point — it makes putting the fall on your star's partner a real way to protect him, and it
+still costs something, so it stays a decision.
+
+Which man is legal for the finish is decided by the tags you book. Putting your star in on the
+hot tag rather than your rookie is worth about half a star on its own.
+
+### Teams
+
+Two singles wrestlers on the same side and a standing team are different acts. `TagTeam`
+carries **chemistry**, built from matches worked together and decayed when they stop. It makes
+tandem offence land better, and it makes the pair read to a crowd as one act — which is what
+lets a strong partner carry a weak one, and why the tag division is where you elevate somebody.
+
+### Tag titles
+
+Held and lost jointly. A tag belt competes for the same finite pool of audience attention as
+every other title, so adding one dilutes the singles belts exactly as another singles belt
+would.
 
 ---
 
@@ -638,7 +718,8 @@ WrestlingSim.Core/                  — the engine. No UI, no I/O assumptions.
 │   └── SaveSerializer.cs       — Career ⇄ save JSON, rebinding against the shipped roster
 ├── Models/
 │   ├── World/
-│   │   ├── Career.cs           — A save: promotion, clock, roster, feuds, calendar
+│   │   ├── Career.cs           — A save: promotion, clock, roster, feuds, teams, calendar
+│   │   ├── TagTeam.cs          — A standing team: members, tenure, chemistry and its decay
 │   │   ├── Promotion.cs        — Name + tier, and the constraints tier derives
 │   │   ├── ShowDefinition.cs   — A recurring show and its recurrence maths
 │   │   └── ScheduledShow.cs    — A show on the calendar, its card and its result
@@ -655,7 +736,8 @@ WrestlingSim.Core/                  — the engine. No UI, no I/O assumptions.
 │   │   ├── SegmentTemplate.cs  — Named, reusable segment archetype
 │   │   └── SegmentResult.cs    — Engine output for one segment
 │   ├── MatchPlan/
-│   │   ├── MatchPlan.cs        — The booker's plan: wrestlers + beats + feud
+│   │   ├── MatchPlan.cs        — The booker's plan: two sides + beats + feud
+│   │   ├── MatchSide.cs        — One side of a match: one wrestler, or a team
 │   │   ├── MatchBeat.cs        — A single beat (type, control, intensity, duration)
 │   │   ├── BeatTemplate.cs     — Named, reusable beat archetype
 │   │   ├── MatchStructure.cs   — Named preset beat sequence
@@ -714,6 +796,11 @@ WrestlingSim.Web/                   — browser front end (Blazor WebAssembly)
 
 WrestlingSim.Tests/
 ├── MatchEngineTests.cs         — Match engine tests incl. real-world match recreations
+├── MatchSideTests.cs           — The sides abstraction, and singles equivalence
+├── TagMatchTests.cs            — The tag formula: the hot-tag charge and what buys it
+├── TagMatrixTests.cs           — Distribution audit across every tag structure
+├── TagTeamTests.cs             — Chemistry: how it builds, decays and reads
+├── TagConsequenceTests.cs      — Heat split, side-keyed feuds, tag titles
 ├── BeatLibraryTests.cs         — Beat library catalogue and round-trip tests
 ├── MatchStructureLibraryTests.cs — Structure preset tests
 ├── SegmentSimulatorTests.cs    — Botch, injury, overness, location, heat
@@ -763,6 +850,11 @@ Start at [docs/wrestling-reference/README.md](docs/wrestling-reference/README.md
 ```bash
 dotnet test
 ```
+
+Singles behaviour is held byte-identical across the tag-match work by an equivalence harness
+described in [docs/tag-matches-build-log.md](docs/tag-matches-build-log.md) — 48,720 matches
+covering every structure, match type, roster pairing and familiarity level, comparing per-beat
+deltas *and the commentary text*, which is the canary for a changed RNG draw order.
 
 The test suite includes recreations of real-world matches to validate the engine:
 
