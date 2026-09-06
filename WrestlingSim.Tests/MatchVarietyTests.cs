@@ -159,6 +159,88 @@ namespace WrestlingSim.Tests
                 $"{tightScore:F3} vs {bloatedScore:F3}");
         }
 
+        /// <summary>
+        /// The same rule for a tag plan, and specifically for `Quick Tag` — because trios
+        /// nearly shipped with a hole here.
+        ///
+        /// `Six-Man War` rates a hair below `Southern Tag` at three a side, and review
+        /// traced that to `VarietyNudge`: seventeen beats using twelve distinct types is a
+        /// worse ratio than thirteen using eleven, and three of the extra beats are the
+        /// `Quick Tag`s that put the third man in the ring. The fix I reached for was to
+        /// exempt `BeatType.Tag` from both halves of the fraction — a routine tag is not a
+        /// spot, so why should it read as repetition?
+        ///
+        /// Because the variety nudge is not only measuring variety. It is also the brake on
+        /// padding, and exempting anything from the denominator makes that thing *free
+        /// length*. Round 3 measured the result: with the exemption in, appending Quick Tags
+        /// to a `Southern Tag` **raised** its rating monotonically (Technical: 4.323 at +0
+        /// to 4.717 at +16, a gain of 0.394★ for booking nothing) where before it fell.
+        /// Worse on a hand-built plan of opening + 40 tags + finish, which went from the −5
+        /// clamp to a nudge of exactly zero. A 0.05★ cosmetic gap traded for a 0.4★ exploit.
+        ///
+        /// So the exemption is reverted and this is the guard. `Six-Man War` keeps its 0.05,
+        /// which is the engine correctly observing that it repeats more beats than the
+        /// Southern Tag does.
+        /// </summary>
+        [Fact]
+        public void PaddingATagMatchWithTags_IsNotFree()
+        {
+            var a = MatchSide.Of(TestRoster.Make("A1", overness: 80), TestRoster.Make("A2", overness: 78));
+            var b = MatchSide.Of(TestRoster.Make("B1", overness: 79), TestRoster.Make("B2", overness: 77));
+
+            double Rate(int padding, MatchType type)
+            {
+                var beats = MatchStructureLibrary.Find("Southern Tag")!
+                                .Beats.Select(x => x.Clone()).ToList();
+                var finish = beats[^1];
+                beats.RemoveAt(beats.Count - 1);
+                for (int i = 0; i < padding; i++)
+                    beats.Add(T("Quick Tag", i % 2 == 0 ? BeatControl.WrestlerA : BeatControl.WrestlerB));
+                beats.Add(finish);
+
+                double total = 0;
+                for (int seed = 0; seed < 120; seed++)
+                    total += new MatchEngine(seed).Execute(new MatchPlan
+                    {
+                        SideA = a, SideB = b, MatchType = type,
+                        Beats = beats.Select(x => x.Clone()).ToList()
+                    }).StarRating;
+                return total / 120;
+            }
+
+            // Technical is the case that matters: BeatType.Tag is on-type for it, so it is
+            // where padding paid best when the exemption was in.
+            foreach (var type in new[] { MatchType.Standard, MatchType.Technical })
+            {
+                double clean = Rate(0, type), padded = Rate(16, type);
+                output.WriteLine($"  {type,-10} Southern Tag {clean:F3}  +16 quick tags {padded:F3}  " +
+                                 $"({padded - clean:+0.000;-0.000})");
+
+                Assert.True(padded < clean,
+                    $"Bolting sixteen tags onto a tag match made it better ({clean:F3} → " +
+                    $"{padded:F3}). Tags are not free length.");
+            }
+
+            // And the degenerate plan the variety guard exists for.
+            var allTags = new List<MatchBeat> { T("Standard Collar-and-Elbow", BeatControl.Even) };
+            for (int i = 0; i < 40; i++)
+                allTags.Add(T("Quick Tag", i % 2 == 0 ? BeatControl.WrestlerA : BeatControl.WrestlerB));
+            allTags.Add(T("Clean Victory", BeatControl.WrestlerA));
+
+            double spam = 0;
+            for (int seed = 0; seed < 120; seed++)
+                spam += new MatchEngine(seed).Execute(new MatchPlan
+                {
+                    SideA = a, SideB = b, Beats = allTags.Select(x => x.Clone()).ToList()
+                }).StarRating;
+            spam /= 120;
+
+            double reference = Rate(0, MatchType.Standard);
+            output.WriteLine($"  42 beats, 40 of them tags: {spam:F3} (vs a real tag match {reference:F3})");
+            Assert.True(spam < reference - 1.0,
+                $"Forty tags and a finish rated {spam:F3} — that is not a match.");
+        }
+
         // ── Booking decisions have to cost something ─────────────────────────
 
         [Fact]

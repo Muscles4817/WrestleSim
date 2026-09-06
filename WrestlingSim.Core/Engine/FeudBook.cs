@@ -78,17 +78,25 @@ namespace WrestlingSim.Engine
         /// Deposits heat and history tags from a booked segment or match.
         /// Returns the affected feud so the caller can report what changed.
         /// </summary>
-        public FeudUpdate Record(Wrestler a, Wrestler b, double heat, IEnumerable<FeudHistoryTag>? tags = null) =>
-            Record([a], [b], heat, tags);
+        public FeudUpdate Record(Wrestler a, Wrestler b, double heat,
+            IEnumerable<FeudHistoryTag>? tags = null, DateOnly? date = null) =>
+            Record([a], [b], heat, tags, date);
 
         /// <summary>Deposits heat into the rivalry between two sides.</summary>
         public FeudUpdate Record(
             IReadOnlyList<Wrestler> sideA, IReadOnlyList<Wrestler> sideB,
-            double heat, IEnumerable<FeudHistoryTag>? tags = null)
+            double heat, IEnumerable<FeudHistoryTag>? tags = null, DateOnly? date = null)
         {
             var feud = GetOrCreate(sideA, sideB);
             var before = feud.Intensity;
 
+            // Advance *before* AddHeat, because AddHeat's reopen rule asks how long ago
+            // this feud was settled and needs today's date to answer.
+            //
+            // Anything on screen between these two restarts the decay clock, whether or not
+            // it added heat — a beatdown on a feud already at Nuclear adds nothing to the
+            // number and is still the story being told this week.
+            feud.Advance(date);
             feud.AddHeat(heat);
 
             var newTags = new List<FeudHistoryTag>();
@@ -112,7 +120,8 @@ namespace WrestlingSim.Engine
         /// builds one feud; a faction beatdown builds one per attacker/victim pairing.
         /// </summary>
         public IReadOnlyList<FeudUpdate> RecordSegment(
-            IReadOnlyList<Wrestler> participants, double heat, IEnumerable<FeudHistoryTag>? tags = null)
+            IReadOnlyList<Wrestler> participants, double heat,
+            IEnumerable<FeudHistoryTag>? tags = null, DateOnly? date = null)
         {
             var updates = new List<FeudUpdate>();
             if (participants.Count < 2 || heat <= 0) return updates;
@@ -127,7 +136,7 @@ namespace WrestlingSim.Engine
 
             double perPair = heat / pairs.Count;
             foreach (var (x, y) in pairs)
-                updates.Add(Record(x, y, perPair, tagList));
+                updates.Add(Record(x, y, perPair, tagList, date));
 
             return updates;
         }

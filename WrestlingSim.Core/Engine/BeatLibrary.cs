@@ -563,7 +563,7 @@ namespace WrestlingSim.Engine
             },
             new BeatTemplate
             {
-                Name             = "All Four In",
+                Name             = "Everybody In",
                 Description      = "It breaks down, everyone is in the ring, the referee has lost control.",
                 Category         = CatTag,
                 Type             = BeatType.AllFourBrawl,

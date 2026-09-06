@@ -106,6 +106,119 @@ namespace WrestlingSim.Tests
         }
 
         [Fact]
+        public void RoundTripKeepsDecayAndResolutionState()
+        {
+            var roster = Roster();
+            var career = NewCareer(roster);
+            var day = career.CurrentDate;
+
+            career.FeudBook.Record(roster[0], roster[1], heat: 70, date: day);
+            var before = career.FeudBook.Find(roster[0], roster[1])!;
+            for (int i = 0; i < 6; i++) before.RecordUnresolved();
+            before.BlowOff(day.AddDays(10));
+            before.AddHeat(40);                       // a new chapter
+            before.ApplyDailyDecay(day.AddDays(90));
+
+            var loaded = RoundTrip(career);
+            var after = loaded.FeudBook.Find(
+                loaded.FindWrestler("alpha-one")!, loaded.FindWrestler("beta-two")!)!;
+
+            Assert.Equal(before.Heat, after.Heat, 3);
+            Assert.Equal(before.Distrust, after.Distrust, 3);
+            Assert.Equal(before.MatchesSinceHot, after.MatchesSinceHot);
+            Assert.Equal(before.ChaptersSettled, after.ChaptersSettled);
+            Assert.Equal(before.Concluded, after.Concluded);
+            Assert.Equal(before.ConcludedOn, after.ConcludedOn);
+
+            // The clock has to survive too, or a reload hands every feud in the save a
+            // fresh grace period and the decay rule quietly stops applying to old games.
+            double beforeNext = before.Heat;
+            before.ApplyDailyDecay(day.AddDays(120));
+            after.ApplyDailyDecay(day.AddDays(120));
+            Assert.True(before.Heat < beforeNext, "setup: should still be decaying");
+            Assert.Equal(before.Heat, after.Heat, 6);
+        }
+
+        /// <summary>
+        /// A feud from a save written before A3 is not exempt from a rule that did not exist
+        /// when the save was made.
+        ///
+        /// This goes through the real JSON — the A3 fields are stripped from the text, which
+        /// is exactly what an older save looks like — because the first version of this test
+        /// called `RestoreDecay` directly and so never touched the fallback it was written
+        /// to protect. Review deleted the fallback and the suite stayed green.
+        ///
+        /// Two cases, and the second is the one that was actually broken: a feud built out of
+        /// *segments only* has no `LastMatchDate` either, because `RecordSegment` took no
+        /// date before A3. Review measured such a feud sitting at 70 heat after 400 simulated
+        /// days. Falling back to the save's own clock closes it.
+        /// </summary>
+        [Theory]
+        [InlineData(true)]   // a feud with a dated match behind it
+        [InlineData(false)]  // built from promos only — no LastMatchDate at all
+        public void AFeudFromAPreA3Save_StillCools(bool hadAMatch)
+        {
+            var roster = Roster();
+            var career = NewCareer(roster);
+
+            career.FeudBook.Record(roster[0], roster[1], heat: 70, date: career.CurrentDate);
+            var feud = career.FeudBook.Find(roster[0], roster[1])!;
+            if (hadAMatch) feud.RecordMatch(career.CurrentDate);
+
+            // Everything A3 added, removed from the JSON — a genuine older save.
+            string json = SaveSerializer.ToJson(career);
+            foreach (var field in new[]
+                     { "LastAdvanced", "DecayedTo", "Concluded", "ConcludedOn",
+                       "MatchesSinceHot", "Distrust", "ChaptersSettled" })
+                json = System.Text.RegularExpressions.Regex.Replace(
+                    json, $"\\s*\"{field}\"\\s*:\\s*(\"[^\"]*\"|[^,}}\\s]+),?", "");
+
+            var loaded = SaveSerializer.FromJson(json, Roster());
+            var after  = loaded.FeudBook.Find(
+                loaded.FindWrestler("alpha-one")!, loaded.FindWrestler("beta-two")!)!;
+
+            double before = after.Heat;
+            Assert.True(before > 60, $"setup: the feud should have loaded hot, got {before:F1}");
+
+            for (int i = 0; i < 90; i++) loaded.AdvanceOneDay();
+
+            Assert.True(after.Heat < before * 0.2,
+                $"A pre-A3 feud ({(hadAMatch ? "with a match" : "promos only")}) is exempt " +
+                $"from decay — {after.Heat:F1} of {before:F1} after ninety days.");
+        }
+
+        [Fact]
+        public void ABlowOffOnACardSurvivesAReload()
+        {
+            var roster = Roster();
+            var career = NewCareer(roster);
+            var feud = career.FeudBook.GetOrCreate(roster[0], roster[1]);
+            feud.SetMinimumIntensity(FeudIntensity.Nuclear);
+
+            var show = career.Schedule("Blow-off Night", career.CurrentDate, ShowType.Television);
+            show.Card.Add(new BookedMatch
+            {
+                StructureName = "TV Formula",
+                Plan = new MatchPlan
+                {
+                    WrestlerA = roster[0], WrestlerB = roster[1],
+                    Feud = feud, IsBlowOff = true,
+                    Beats = MatchStructureLibrary.Find("TV Formula")!
+                                .Beats.Select(x => x.Clone()).ToList()
+                }
+            });
+
+            var loaded = RoundTrip(career);
+            var match = loaded.Shows.First().Card.OfType<BookedMatch>().Single();
+
+            // Without this a saved card came back as another chapter rather than the
+            // ending the player booked, and settled nothing when it ran.
+            Assert.True(match.Plan.IsBlowOff);
+            Assert.NotNull(match.Plan.Feud);
+            Assert.Empty(match.Plan.Validate());
+        }
+
+        [Fact]
         public void LoadedWrestlersAreTheSameInstancesTheRosterHolds()
         {
             var roster = Roster();

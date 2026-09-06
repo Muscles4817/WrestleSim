@@ -195,6 +195,14 @@ namespace WrestlingSim.Models.World
             foreach (var team in Teams.Where(t => t.IsActive))
                 team.Decay(CurrentDate);
 
+            // And a story nobody is telling stops being a story. Heat only ever went up
+            // before this, which made a feud a ratchet: every segment ever booked was still
+            // paying off months later, and there was no cost at all to starting five
+            // programmes and finishing none. Doc 20 §9 names being left off television as
+            // one of the things that kills a feud.
+            foreach (var feud in FeudBook.AllIncludingDormant)
+                feud.ApplyDailyDecay(CurrentDate);
+
             // Keep the rolling window full, so the calendar never runs dry ahead of you.
             MaterialiseSchedule();
             return true;

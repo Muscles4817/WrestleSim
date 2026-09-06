@@ -38,6 +38,32 @@ namespace WrestlingSim.UI
                 tags: new[] { FeudHistoryTag.PriorMatch });
             update.Feud.RecordMatch(null);
 
+            // Same rule the show simulator applies: a match either settles the story or
+            // joins the pile of ones that did not.
+            if (booked.Plan.IsBlowOff && booked.Plan.Feud is { } declared)
+            {
+                var finish = booked.Plan.Beats.LastOrDefault(x => x.IsFinish);
+                bool settled = finish is null
+                            || HeatEconomy.WeightOf(finish.Type) != FinishWeight.Protected;
+
+                if (settled)
+                {
+                    declared.BlowOff(null);
+                    WriteLine($"\n  {declared.SideAName} vs {declared.SideBName} is settled. " +
+                              "That story is over.", ConsoleColor.Cyan);
+                }
+                else
+                {
+                    declared.RecordBrokenPromise();
+                    WriteLine($"\n  That blow-off settled nothing — they were promised an ending " +
+                              "and did not get one.", ConsoleColor.Yellow);
+                }
+            }
+            else
+            {
+                update.Feud.RecordUnresolved();
+            }
+
             DisplayResults(result, result.Pinner, result.Pinned);
             SegmentBookingFlow.DisplayFeudUpdates(new[] { update });
             Pause("Press any key to return to the main menu...");
@@ -49,36 +75,25 @@ namespace WrestlingSim.UI
         /// </summary>
         public static BookedMatch? BuildMatch(List<Wrestler> wrestlers, FeudBook feudBook)
         {
-            bool isTag = AskTag();
+            int sideSize = AskSideSize();
 
-            var a = SelectWrestler(isTag ? "TEAM A — WHO STARTS" : "WRESTLER A", wrestlers);
-            if (a == null) return null;
+            var chosen = new List<Wrestler>();
 
-            Wrestler? partnerA = null;
-            if (isTag)
-            {
-                partnerA = SelectWrestler("TEAM A — PARTNER", wrestlers, exclude: a);
-                if (partnerA == null) return null;
-            }
+            // "SIDE A" is right for a team and wrong for a singles match, where there is
+            // no side to speak of.
+            var membersA = PickSide(sideSize > 1 ? "SIDE A" : "WRESTLER A", sideSize, wrestlers, chosen);
+            if (membersA == null) return null;
 
-            var b = SelectWrestler(isTag ? "TEAM B — WHO STARTS" : "WRESTLER B", wrestlers,
-                                   exclude: a, exclude2: partnerA);
-            if (b == null) return null;
+            var membersB = PickSide(sideSize > 1 ? "SIDE B" : "WRESTLER B", sideSize, wrestlers, chosen);
+            if (membersB == null) return null;
 
-            Wrestler? partnerB = null;
-            if (isTag)
-            {
-                partnerB = SelectWrestler("TEAM B — PARTNER", wrestlers,
-                                          exclude: a, exclude2: partnerA, exclude3: b);
-                if (partnerB == null) return null;
-            }
-
-            var sideA = partnerA is null ? MatchSide.Of(a) : MatchSide.Of(a, partnerA);
-            var sideB = partnerB is null ? MatchSide.Of(b) : MatchSide.Of(b, partnerB);
+            var sideA = MatchSide.Of(membersA.ToArray());
+            var sideB = MatchSide.Of(membersB.ToArray());
 
             var matchType = SelectMatchType();
-            var feud      = ResolveFeud(a, b, feudBook);
-            var (beats, structureName) = SelectStructure(feud, isTag ? 2 : 1);
+            var feud      = ResolveFeud(sideA, sideB, feudBook);
+            bool blowOff  = AskBlowOff(feud);
+            var (beats, structureName) = SelectStructure(feud, sideSize);
 
             while (true)
             {
@@ -90,6 +105,7 @@ namespace WrestlingSim.UI
                     SideB     = sideB,
                     MatchType = matchType,
                     Feud      = feud,
+                    IsBlowOff = blowOff,
                     Beats     = beats
                 };
 
@@ -107,10 +123,10 @@ namespace WrestlingSim.UI
         // ── Wrestler selection ───────────────────────────────────────────────
 
         private static Wrestler? SelectWrestler(
-            string label, List<Wrestler> wrestlers,
-            Wrestler? exclude = null, Wrestler? exclude2 = null, Wrestler? exclude3 = null)
+            string label, List<Wrestler> wrestlers, IEnumerable<Wrestler>? exclude = null)
         {
-            var pool = wrestlers.Where(w => w != exclude && w != exclude2 && w != exclude3).ToList();
+            var barred = exclude?.ToHashSet() ?? new HashSet<Wrestler>();
+            var pool = wrestlers.Where(w => !barred.Contains(w)).ToList();
 
             Rule(label, 40);
             for (int i = 0; i < pool.Count; i++)
@@ -143,11 +159,18 @@ namespace WrestlingSim.UI
         /// Reads the feud these two have actually built through booked segments and
         /// matches. Falls back to declaring one by hand when there is no history yet.
         /// </summary>
-        private static Feud? ResolveFeud(Wrestler a, Wrestler b, FeudBook feudBook)
+        private static Feud? ResolveFeud(MatchSide sideA, MatchSide sideB, FeudBook feudBook)
         {
             Rule("FEUD", 34);
 
-            var existing = feudBook.Find(a, b);
+            // Keyed on the whole side, not on the starters. Feuds have been stored
+            // side-to-side since phase 5, and looking one up by the two people who happen
+            // to begin the match found nothing for a team that had been feuding for months.
+            // The starters are pulled out only to name the sides in the prompts below.
+            var a = sideA.Starter;
+            var b = sideB.Starter;
+
+            var existing = feudBook.Find(sideA.Members, sideB.Members);
             if (existing != null && existing.Intensity > FeudIntensity.None)
             {
                 WriteLine($"\n  {a.RingName} and {b.RingName} have history:", ConsoleColor.Cyan);
@@ -203,11 +226,46 @@ namespace WrestlingSim.UI
                 .ToList();
 
             // Declared feuds go into the book too, so later segments build on them.
-            var feud = feudBook.GetOrCreate(a, b);
+            var feud = feudBook.GetOrCreate(sideA.Members, sideB.Members);
             feud.SetMinimumIntensity(intensity);
             foreach (var tag in history) feud.AddTag(tag);
 
             return feud;
+        }
+
+        /// <summary>
+        /// Whether the booker is calling this the end of the story. Priced up front rather
+        /// than left as a surprise: doc 20 §6 says a blow-off has to be proportional to what
+        /// was built, so the multiplier is quoted before the choice is made, and a blow-off
+        /// on a story the audience was never told mattered is quoted as the penalty it is.
+        /// </summary>
+        private static bool AskBlowOff(Feud? feud)
+        {
+            if (feud is null) return false;
+
+            if (feud.Concluded)
+            {
+                WriteLine($"\n  That feud has already been blown off — the story is over.",
+                          ConsoleColor.DarkGray);
+                return false;
+            }
+
+            Rule("BLOW-OFF", 34);
+            WriteLine($"\n  Settling this one now is worth ×{feud.BlowOffPayoff:F2} on the finish.",
+                      feud.WorthBlowingOff ? ConsoleColor.Green : ConsoleColor.Yellow);
+
+            if (!feud.WorthBlowingOff)
+                WriteLine("  A blow-off is worth what was built. This one is not built yet, and\n" +
+                          "  settling it lands worse than not settling it.", ConsoleColor.Yellow);
+            else if (feud.MatchesSinceHot > Feud.PatienceMatches)
+                WriteLine($"  {feud.MatchesSinceHot} matches and nothing settled — this pairing is\n" +
+                          $"  drawing {feud.Credibility * 100:F0}% of what it should.", ConsoleColor.Yellow);
+
+            WriteLine("  The feud ends here: heat to zero, and these two start again from nothing.",
+                      ConsoleColor.DarkGray);
+            Console.WriteLine();
+
+            return YesNo("Is this the blow-off?");
         }
 
         // ── Structure selection ──────────────────────────────────────────────
@@ -393,14 +451,46 @@ namespace WrestlingSim.UI
         /// Singles or tag, asked first because it decides who gets picked and which
         /// structures are on offer.
         /// </summary>
-        private static bool AskTag()
+        private static int AskSideSize()
         {
             Console.WriteLine();
             Rule("MATCH SHAPE", 30);
             WriteLine("  [1] Singles", ConsoleColor.White);
             WriteLine("  [2] Tag team — two a side", ConsoleColor.White);
+            WriteLine("  [3] Trios — three a side", ConsoleColor.White);
             Console.Write("  Select (Enter = singles): ");
-            return (Console.ReadLine() ?? "").Trim() == "2";
+
+            return (Console.ReadLine() ?? "").Trim() switch
+            {
+                "2" => 2,
+                "3" => 3,
+                _   => 1
+            };
+        }
+
+        /// <summary>
+        /// Picks a whole side, one man at a time, excluding anybody already booked. The
+        /// first man picked is the one who starts; the rest begin on the apron.
+        /// </summary>
+        private static List<Wrestler>? PickSide(
+            string label, int size, List<Wrestler> wrestlers, List<Wrestler> alreadyChosen)
+        {
+            var members = new List<Wrestler>();
+
+            for (int i = 0; i < size; i++)
+            {
+                string prompt = size == 1
+                    ? label
+                    : i == 0 ? $"{label} — WHO STARTS" : $"{label} — PARTNER {i}";
+
+                var pick = SelectWrestler(prompt, wrestlers, exclude: alreadyChosen.Concat(members));
+                if (pick == null) return null;
+
+                members.Add(pick);
+            }
+
+            alreadyChosen.AddRange(members);
+            return members;
         }
 
         /// <summary>

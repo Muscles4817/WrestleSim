@@ -226,6 +226,20 @@ namespace WrestlingSim.Persistence
 
         public string? LastMatchDate { get; set; }
 
+        // ── Decay and resolution. Absent from saves written before A3. ───────
+
+        /// <summary>Last day anything advanced the feud. Null in a pre-A3 save.</summary>
+        public string? LastAdvanced { get; set; }
+
+        /// <summary>How far daily decay has already been charged.</summary>
+        public string? DecayedTo { get; set; }
+
+        public bool Concluded { get; set; }
+        public string? ConcludedOn { get; set; }
+        public int MatchesSinceHot { get; set; }
+        public int ChaptersSettled { get; set; }
+        public double Distrust { get; set; }
+
         public List<FeudHistoryTag> History { get; set; } = new();
     }
 
@@ -282,6 +296,12 @@ namespace WrestlingSim.Persistence
 
         /// <summary>The championship on the line, by <see cref="TitleDto.Id"/>. Null if none.</summary>
         public string? TitleId { get; set; }
+
+        /// <summary>
+        /// Whether the booker declared this the blow-off. Absent from pre-A3 saves, which
+        /// read as false — correct, since no save written before A3 could have declared one.
+        /// </summary>
+        public bool IsBlowOff { get; set; }
 
         // ── Segment ──────────────────────────────────────────────────────────
         public string? SegmentName { get; set; }

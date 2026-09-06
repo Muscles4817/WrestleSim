@@ -107,9 +107,24 @@ else
         var update = State.FeudBook.Record(
             sideA, sideB,
             heat: result.StarRating * 2.0,
-            tags: new[] { FeudHistoryTag.PriorMatch });
+            tags: new[] { FeudHistoryTag.PriorMatch },
+            date: today);
 
         update.Feud.RecordMatch(today);
+
+        // Same rule the show simulator applies — a match either settles the story or adds
+        // to the pile of ones that did not.
+        if (booked.Plan.IsBlowOff && booked.Plan.Feud is { } declared)
+        {
+            // A blow-off booked to a DQ or a count-out resolves nothing — doc 20 §6.1.
+            var finish = booked.Plan.Beats.LastOrDefault(x => x.IsFinish);
+            bool settled = finish is null
+                        || HeatEconomy.WeightOf(finish.Type) != FinishWeight.Protected;
+
+            if (settled) declared.BlowOff(today);
+            else declared.RecordBrokenPromise();
+        }
+        else update.Feud.RecordUnresolved();
         feudUpdates = new List<FeudUpdate> { update };
 
         State.Notify();
