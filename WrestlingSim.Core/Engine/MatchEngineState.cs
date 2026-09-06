@@ -46,6 +46,31 @@ namespace WrestlingSim.Engine
         /// <summary>Running readings for average crowd calculation.</summary>
         public List<double> CrowdEnergyReadings { get; set; } = new();
 
+        // ── Legal performers ─────────────────────────────────────────────────
+
+        // Who is currently in the ring for each side, as an index into that side's
+        // Members. Lives here rather than on MatchSide because a MatchPlan is a booking
+        // and can be executed more than once — the test suite re-runs the same plan to
+        // compare bookings, and a plan that remembered who was legal last time would not
+        // survive that.
+        private int _legalA;
+        private int _legalB;
+
+        /// <summary>Index of side A's legal performer.</summary>
+        public int LegalA => _legalA;
+
+        /// <summary>Index of side B's legal performer.</summary>
+        public int LegalB => _legalB;
+
+        public int LegalIndexFor(bool sideA) => sideA ? _legalA : _legalB;
+
+        /// <summary>Sets who begins the match for each side.</summary>
+        public void InitialiseLegal(int sideA, int sideB)
+        {
+            _legalA = sideA;
+            _legalB = sideB;
+        }
+
         // ── Repetition tracking ──────────────────────────────────────────────
 
         /// <summary>

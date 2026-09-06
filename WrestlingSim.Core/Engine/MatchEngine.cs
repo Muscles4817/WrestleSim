@@ -37,16 +37,67 @@ namespace WrestlingSim.Engine
         {
             public required MatchPlan Plan { get; init; }
             public required MatchEngineState State { get; init; }
-            public required PerformerProfile A { get; init; }
-            public required PerformerProfile B { get; init; }
+
+            /// <summary>
+            /// One profile per participant, resolved once. A dictionary rather than two
+            /// fields because a side can have more than one member — and because the old
+            /// two-field version silently returned side B's profile for any wrestler it
+            /// did not recognise, which is a wrong answer rather than an error.
+            /// </summary>
+            public required IReadOnlyDictionary<Wrestler, PerformerProfile> Profiles { get; init; }
 
             /// <summary>How much the crowd still wants to see this specific pairing, 0–1.</summary>
             public double Familiarity { get; init; } = 1.0;
 
-            public PerformerProfile For(Wrestler w) => w == Plan.WrestlerA ? A : B;
+            /// <summary>Whoever is legal for side A right now.</summary>
+            public Wrestler LegalA => Plan.SideA.Members[State.LegalA];
 
-            /// <summary>Average of both performers on a factor — for beats nobody controls.</summary>
-            public double Pair(Func<PerformerProfile, double> f) => (f(A) + f(B)) / 2.0;
+            /// <summary>Whoever is legal for side B right now.</summary>
+            public Wrestler LegalB => Plan.SideB.Members[State.LegalB];
+
+            /// <summary>Profile of side A's legal performer.</summary>
+            public PerformerProfile A => For(LegalA);
+
+            /// <summary>Profile of side B's legal performer.</summary>
+            public PerformerProfile B => For(LegalB);
+
+            public PerformerProfile For(Wrestler w) =>
+                Profiles.TryGetValue(w, out var profile)
+                    ? profile
+                    : throw new InvalidOperationException(
+                        $"{w.RingName} has no profile in this match — they are not in it.");
+
+            public bool IsSideA(Wrestler w) => Plan.SideA.Contains(w);
+
+            /// <summary>The legal performer for a given side.</summary>
+            public Wrestler LegalOf(MatchSide side) => side == Plan.SideA ? LegalA : LegalB;
+
+            /// <summary>The legal performer on the side this wrestler is *not* on.</summary>
+            public Wrestler Opponent(Wrestler w) => IsSideA(w) ? LegalB : LegalA;
+
+            /// <summary>The legal performer for a beat's control, or null for Even / Contested.</summary>
+            public Wrestler? ControlLegal(MatchBeat beat) => beat.Control switch
+            {
+                BeatControl.WrestlerA => LegalA,
+                BeatControl.WrestlerB => LegalB,
+                _                     => null
+            };
+
+            /// <summary>Average of a profile factor across one side's members.</summary>
+            public double SideAvg(MatchSide side, Func<PerformerProfile, double> f) =>
+                side.Members.Average(m => f(For(m)));
+
+            /// <summary>
+            /// Average of both sides on a factor — for beats nobody controls. Each side is
+            /// averaged first so a two-man side counts once, not twice: a tag team is one
+            /// side of the match, however many people are in it.
+            /// </summary>
+            public double Pair(Func<PerformerProfile, double> f) =>
+                (SideAvg(Plan.SideA, f) + SideAvg(Plan.SideB, f)) / 2.0;
+
+            /// <summary>Average of a raw wrestler stat across both sides, side-averaged first.</summary>
+            public double PairStat(Func<Wrestler, double> f) =>
+                (Plan.SideA.Members.Average(f) + Plan.SideB.Members.Average(f)) / 2.0;
         }
 
         // ── Public entry point ───────────────────────────────────────────────
@@ -71,12 +122,14 @@ namespace WrestlingSim.Engine
                 throw new InvalidOperationException(
                     "Invalid match plan:\n" + string.Join("\n", errors.Select(e => "  • " + e)));
 
+            var state = new MatchEngineState();
+            state.InitialiseLegal(plan.SideA.StartingIndex, plan.SideB.StartingIndex);
+
             var ctx = new Ctx
             {
                 Plan        = plan,
-                State       = new MatchEngineState(),
-                A           = new PerformerProfile(plan.WrestlerA),
-                B           = new PerformerProfile(plan.WrestlerB),
+                State       = state,
+                Profiles    = plan.AllParticipants.ToDictionary(w => w, w => new PerformerProfile(w)),
                 Familiarity = Math.Clamp(familiarity, 0.0, 1.5)
             };
 
@@ -104,12 +157,14 @@ namespace WrestlingSim.Engine
             var plan  = ctx.Plan;
             var state = ctx.State;
 
-            double avgPop = (plan.WrestlerA.EffectiveOverness + plan.WrestlerB.EffectiveOverness) / 2.0;
+            double avgPop = ctx.PairStat(w => w.EffectiveOverness);
 
             // Crowd disposition modifier: rewards having BOTH wrestlers over, not just one.
             // Using Min rather than average means one nobody eliminates the bonus —
             // the crowd doesn't start hot just because one star is in the match.
-            double bothOverBonus = Math.Min(ctx.A.Disposition, ctx.B.Disposition) * 8.0; // up to +8
+            double bothOverBonus = Math.Min(
+                ctx.SideAvg(plan.SideA, p => p.Disposition),
+                ctx.SideAvg(plan.SideB, p => p.Disposition)) * 8.0; // up to +8
 
             // Connection also moves the opening bell: a building that came to see these two
             // specific people starts louder than one that recognises neither.
@@ -186,8 +241,8 @@ namespace WrestlingSim.Engine
             };
 
             // Wrestler references for this beat
-            Wrestler? control = plan.ControlWrestler(beat);
-            Wrestler other    = control != null ? plan.OtherWrestler(control) : plan.WrestlerB;
+            Wrestler? control = ctx.ControlLegal(beat);
+            Wrestler other    = control != null ? ctx.Opponent(control) : ctx.LegalB;
 
             double iMod = beat.IntensityModifier;
             double dMod = beat.DurationModifier;
@@ -398,16 +453,19 @@ namespace WrestlingSim.Engine
         /// fall back to WrestlerA when control is Even/Contested, so reading the enum
         /// directly sent the momentum to B while the commentary credited A.
         /// </summary>
+        // Advantage is a side-level axis, so this asks which side the controlling
+        // performer is on. Reference equality against a single named wrestler gave the
+        // wrong sign the moment a side had a second member who could take control.
         private static int ControlSign(Ctx ctx, Wrestler control) =>
-            ReferenceEquals(control, ctx.Plan.WrestlerA) ? 1 : -1;
+            ctx.IsSideA(control) ? 1 : -1;
 
         // ── Individual beat handlers ─────────────────────────────────────────
 
         private void ApplyHotOpening(BeatResult r, Ctx ctx, double iMod, double dMod)
         {
             var plan = ctx.Plan;
-            double avgRing     = AvgRingSkill(plan);
-            double avgCharisma = (plan.WrestlerA.Charisma + plan.WrestlerB.Charisma) / 2.0;
+            double avgRing     = AvgRingSkill(ctx);
+            double avgCharisma = ctx.PairStat(w => w.Charisma);
 
             double connection = ctx.Pair(p => p.Connection);
 
@@ -420,10 +478,10 @@ namespace WrestlingSim.Engine
             r.StorytellingContribution = 2.5 * iMod * PerformerProfile.Blend(connection, 0.6);
 
             r.Commentary.Add(Pick(
-                $"{plan.WrestlerA.RingName} and {plan.WrestlerB.RingName} immediately go at each other before the bell finishes ringing!",
+                $"{ctx.LegalA.RingName} and {ctx.LegalB.RingName} immediately go at each other before the bell finishes ringing!",
                 $"No feeling-out process — the crowd erupts as these two collide from the first second!",
-                $"{plan.WrestlerA.RingName} and {plan.WrestlerB.RingName} are at each other's throats right away!",
-                $"The bell barely sounds before {plan.WrestlerA.RingName} and {plan.WrestlerB.RingName} are trading shots!",
+                $"{ctx.LegalA.RingName} and {ctx.LegalB.RingName} are at each other's throats right away!",
+                $"The bell barely sounds before {ctx.LegalA.RingName} and {ctx.LegalB.RingName} are trading shots!",
                 $"There will be no feeling out here — these two want each other right now!"
             ));
             r.Commentary.Add(Pick(
@@ -438,7 +496,7 @@ namespace WrestlingSim.Engine
         private void ApplySlowOpening(BeatResult r, Ctx ctx, double iMod, double dMod)
         {
             var plan = ctx.Plan;
-            double avgTech = (plan.WrestlerA.RingSkills.Technical + plan.WrestlerB.RingSkills.Technical) / 2.0;
+            double avgTech = ctx.PairStat(w => w.RingSkills.Technical);
 
             // A slow start only works if the crowd trusts these two to go somewhere with it.
             double patience = PerformerProfile.Blend(ctx.Pair(p => p.Connection), 0.7);
@@ -451,10 +509,10 @@ namespace WrestlingSim.Engine
             r.StorytellingContribution = 3.0 * dMod * PerformerProfile.Blend(ctx.Pair(p => p.RingPsych), 0.6);
 
             r.Commentary.Add(Pick(
-                $"{plan.WrestlerA.RingName} and {plan.WrestlerB.RingName} circle each other, measuring the distance carefully.",
+                $"{ctx.LegalA.RingName} and {ctx.LegalB.RingName} circle each other, measuring the distance carefully.",
                 $"A deliberate, methodical start as both wrestlers respect each other's ability.",
                 $"The feeling-out process begins — neither willing to show their hand too soon.",
-                $"{plan.WrestlerA.RingName} and {plan.WrestlerB.RingName} are in no rush — this is going to be a war of attrition.",
+                $"{ctx.LegalA.RingName} and {ctx.LegalB.RingName} are in no rush — this is going to be a war of attrition.",
                 $"Slow, deliberate movements from both competitors — each hunting for an opening."
             ));
             r.Commentary.Add(Pick(
@@ -469,7 +527,7 @@ namespace WrestlingSim.Engine
         private void ApplyStandardOpening(BeatResult r, Ctx ctx, double iMod, double dMod)
         {
             var plan = ctx.Plan;
-            double avgRing = AvgRingSkill(plan);
+            double avgRing = AvgRingSkill(ctx);
 
             r.CrowdEnergyDelta      = Rng(3, 8) * iMod * ctx.Pair(p => p.Connection);
             r.AdvantageDelta         = Rng(-4, 4);
@@ -477,9 +535,9 @@ namespace WrestlingSim.Engine
             r.StorytellingContribution = 2.0 * dMod * PerformerProfile.Blend(ctx.Pair(p => p.RingPsych), 0.5);
 
             r.Commentary.Add(Pick(
-                $"{plan.WrestlerA.RingName} and {plan.WrestlerB.RingName} lock up.",
+                $"{ctx.LegalA.RingName} and {ctx.LegalB.RingName} lock up.",
                 $"The match gets under way with both wrestlers testing each other.",
-                $"An even start as {plan.WrestlerA.RingName} and {plan.WrestlerB.RingName} feel each other out.",
+                $"An even start as {ctx.LegalA.RingName} and {ctx.LegalB.RingName} feel each other out.",
                 $"A collar-and-elbow tie-up to open — both wrestlers gauging what they're dealing with.",
                 $"Standard opening exchanges, but the undercurrent of tension is already obvious."
             ));
@@ -488,8 +546,8 @@ namespace WrestlingSim.Engine
         private void ApplyHeatSegment(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod, double dMod)
         {
-            control ??= ctx.Plan.WrestlerA;
-            other = ctx.Plan.OtherWrestler(control);
+            control ??= ctx.LegalA;
+            other = ctx.Opponent(control);
 
             var pControl = ctx.For(control);
             var pOther   = ctx.For(other);
@@ -552,8 +610,8 @@ namespace WrestlingSim.Engine
         private void ApplyComeback(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod, double dMod)
         {
-            control ??= ctx.Plan.WrestlerA;
-            other = ctx.Plan.OtherWrestler(control);
+            control ??= ctx.LegalA;
+            other = ctx.Opponent(control);
 
             var state    = ctx.State;
             var pControl = ctx.For(control);
@@ -587,7 +645,7 @@ namespace WrestlingSim.Engine
 
             r.AdvantageDelta = sign * swing;
 
-            r.TechnicalContribution    = 4.5 * (AvgRingSkill(ctx.Plan) / 5.0) * iMod * pControl.Workrate
+            r.TechnicalContribution    = 4.5 * (AvgRingSkill(ctx) / 5.0) * iMod * pControl.Workrate
                                          * PerformerProfile.Blend(pControl.Athleticism, 0.40);
             r.StorytellingContribution = 8.0 * iMod                              // comebacks are prime storytelling
                                          * PerformerProfile.Blend(pControl.Connection, 0.55)
@@ -612,8 +670,8 @@ namespace WrestlingSim.Engine
         private void ApplyNearFall(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod, double feudMult, int timesUsed)
         {
-            control ??= ctx.Plan.WrestlerA;
-            other = ctx.Plan.OtherWrestler(control);
+            control ??= ctx.LegalA;
+            other = ctx.Opponent(control);
 
             var state  = ctx.State;
             var pOther = ctx.For(other);
@@ -639,7 +697,7 @@ namespace WrestlingSim.Engine
                               * Rng(2, 5) * PerformerProfile.Blend(pOther.Resilience, 0.5);
 
             // Psychology / selling drive near-fall quality
-            double avgPsych = (ctx.Plan.WrestlerA.Mental.Psychology + ctx.Plan.WrestlerB.Mental.Psychology) / 2.0;
+            double avgPsych = ctx.PairStat(w => w.Mental.Psychology);
             r.TechnicalContribution    = 2.5 * (avgPsych / 100.0) * iMod
                                          * PerformerProfile.Blend(pOther.Selling, 0.6);
             r.StorytellingContribution = 5.5 * iMod * feudMult * credibility;
@@ -668,7 +726,7 @@ namespace WrestlingSim.Engine
         private void ApplyHighSpot(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, double iMod)
         {
-            control ??= ctx.Plan.WrestlerA;
+            control ??= ctx.LegalA;
             var pControl = ctx.For(control);
 
             double flyerSkill = control.RingSkills.HighFlyer;
@@ -695,8 +753,8 @@ namespace WrestlingSim.Engine
         private void ApplyRestHold(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, double iMod, double dMod)
         {
-            control ??= ctx.Plan.WrestlerA;
-            Wrestler other = ctx.Plan.OtherWrestler(control);
+            control ??= ctx.LegalA;
+            Wrestler other = ctx.Opponent(control);
             var pControl = ctx.For(control);
 
             // A rest hold from someone who can hold a crowd is a breather.
@@ -728,7 +786,7 @@ namespace WrestlingSim.Engine
             // When control is Even/Contested, use the average of both.
             double brawlerSkill = control != null
                 ? control.RingSkills.Brawler
-                : (plan.WrestlerA.RingSkills.Brawler + plan.WrestlerB.RingSkills.Brawler) / 2.0;
+                : ctx.PairStat(w => w.RingSkills.Brawler);
             double brawlFactor = 0.5 + brawlerSkill / 5.0 * 0.8; // 0.66–1.30
 
             double connection = control != null ? ctx.For(control).Connection : ctx.Pair(p => p.Connection);
@@ -744,7 +802,7 @@ namespace WrestlingSim.Engine
 
             r.Commentary.Add(Pick(
                 $"This match spills out to the floor! The crowd parts as the brawl comes to them!",
-                $"{plan.WrestlerA.RingName} and {plan.WrestlerB.RingName} are fighting into the crowd!",
+                $"{ctx.LegalA.RingName} and {ctx.LegalB.RingName} are fighting into the crowd!",
                 $"Chaos! These two are taking this war everywhere!",
                 $"We have completely lost control — they're brawling through the entire arena!",
                 $"The guardrail is not going to contain this one — they're spilling out into the audience!"
@@ -754,8 +812,8 @@ namespace WrestlingSim.Engine
         private void ApplyPsychologicalWarfare(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod, double feudMult)
         {
-            control ??= ctx.Plan.WrestlerA;
-            other = ctx.Plan.OtherWrestler(control);
+            control ??= ctx.LegalA;
+            other = ctx.Opponent(control);
 
             var pControl = ctx.For(control);
 
@@ -810,10 +868,10 @@ namespace WrestlingSim.Engine
                                          * PerformerProfile.Blend(connection, 0.5);
 
             r.Commentary.Add(Pick(
-                $"This feud reaches a boiling point! {plan.WrestlerA.RingName} and {plan.WrestlerB.RingName} can no longer contain their hatred!",
+                $"This feud reaches a boiling point! {ctx.LegalA.RingName} and {ctx.LegalB.RingName} can no longer contain their hatred!",
                 $"Everything this feud has been building toward is pouring out right now!",
                 $"The bad blood between these two erupts — the crowd is absolutely unhinged!",
-                $"The gloves are off! The real hatred between {plan.WrestlerA.RingName} and {plan.WrestlerB.RingName} is on full display!",
+                $"The gloves are off! The real hatred between {ctx.LegalA.RingName} and {ctx.LegalB.RingName} is on full display!",
                 $"This match has just become something completely different — the feud has taken over everything!"
             ));
             r.Commentary.Add(Pick(
@@ -828,8 +886,8 @@ namespace WrestlingSim.Engine
         private void ApplyRevengeSpot(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod, double feudMult)
         {
-            control ??= ctx.Plan.WrestlerA;
-            other = ctx.Plan.OtherWrestler(control);
+            control ??= ctx.LegalA;
+            other = ctx.Opponent(control);
 
             var state    = ctx.State;
             var pControl = ctx.For(control);
@@ -879,7 +937,7 @@ namespace WrestlingSim.Engine
         private void ApplyAlliesRejected(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, double iMod)
         {
-            control ??= ctx.Plan.WrestlerA;
+            control ??= ctx.LegalA;
             var pControl = ctx.For(control);
 
             // The whole beat is "the crowd loves this person for refusing help".
@@ -910,8 +968,8 @@ namespace WrestlingSim.Engine
         private void ApplyFinish(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod, double feudMult)
         {
-            control ??= ctx.Plan.WrestlerA;
-            other = ctx.Plan.OtherWrestler(control);
+            control ??= ctx.LegalA;
+            other = ctx.Opponent(control);
 
             var state    = ctx.State;
             var pControl = ctx.For(control);
@@ -1084,10 +1142,19 @@ namespace WrestlingSim.Engine
 
             double starRating = Math.Clamp(finalScore / 20.0, 0, 5);
 
+            // Who actually scored the fall. In singles this is the same person the plan
+            // booked to win; in a tag match it is whoever was legal for the winning side
+            // when the finish landed, which depends on the tags booked along the way and
+            // so can only be known here.
+            var winningSide = plan.BookedWinningSide!;
+            var losingSide  = plan.BookedLosingSide!;
+
             return new MatchEngineResult
             {
-                Winner             = plan.BookedWinner!,
-                Loser              = plan.BookedLoser!,
+                Winner             = ctx.LegalOf(winningSide),
+                Loser              = ctx.LegalOf(losingSide),
+                WinningSide        = winningSide.Members.ToList(),
+                LosingSide         = losingSide.Members.ToList(),
                 BeatResults        = beatResults,
                 TechnicalScore     = state.TechnicalScore,
                 StorytellingScore  = state.StorytellingScore,
@@ -1175,8 +1242,8 @@ namespace WrestlingSim.Engine
 
         // ── Helpers ──────────────────────────────────────────────────────────
 
-        private double AvgRingSkill(MatchPlan plan) =>
-            (plan.WrestlerA.RingSkills.GetOverallSkill() + plan.WrestlerB.RingSkills.GetOverallSkill()) / 2.0;
+        private double AvgRingSkill(Ctx ctx) =>
+            ctx.PairStat(w => w.RingSkills.GetOverallSkill());
 
         private double Rng(double min, double max) =>
             min + _rand.NextDouble() * (max - min);

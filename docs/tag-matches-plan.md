@@ -21,7 +21,7 @@ Two things have to be true for this to be worth building:
    specific narrative machine — shine, cut-off, isolation, the near-tag denied, the hot tag —
    and the hot tag is the single loudest planned moment in professional wrestling. If the
    engine does not model *earning* it, there is no point.
-2. **The refactor must not disturb singles.** There are 285 tests, several of which recreate
+2. **The refactor must not disturb singles.** There are 321 tests, several of which recreate
    real matches against a fixed seed and assert on threshold star ratings
    (`MatchEngineTests` — WM20, WM34). A change that shifts RNG draw order in the singles path
    will move those numbers. Phase 1 below is designed so that singles execution is
@@ -43,7 +43,7 @@ right primitive — it also opens trios, handicap, multi-man and battle royals l
 third code path.
 
 **Recommendation: sides, introduced behind compatibility shims** so the existing call sites
-and all 285 tests keep compiling unchanged.
+and all 321 tests keep compiling unchanged.
 
 ```csharp
 public sealed class MatchSide
@@ -209,7 +209,7 @@ Each phase ends green and, from phase 3, playable.
 
 | Phase | Work | Ends with |
 |---|---|---|
-| **1. Sides** | `MatchSide`, shims on `MatchPlan`, `Ctx` by dictionary, validation. No new beats, no UI, no persistence change. | All 285 existing tests pass **unmodified**; new tests build a 2v2 plan in code and run it. It plays like a singles match with four names — that is the correct outcome for this phase. |
+| **1. Sides** | `MatchSide`, shims on `MatchPlan`, `Ctx` by dictionary, validation. No new beats, no UI, no persistence change. | All 321 existing tests pass **unmodified**; new tests build a 2v2 plan in code and run it. It plays like a singles match with four names — that is the correct outcome for this phase. |
 | **2. The machine** | Tag beat types, legal-man tracking, hot-tag charge rule, three structures. Engine-only, test-driven. | A Southern Tag structure out-rates a beat-for-beat identical plan with the hot tag booked cold. |
 | **3. Playable** | Save v3 + migration, web builder, console flow. | You can book, run, save and reload a tag match end to end. |
 | **4. Teams** | `TagTeam` (name, members, chemistry, tenure), chemistry feeding `DoubleTeam` and suppressing `Miscommunication`, `Career.Teams`. | A veteran team out-performs two strangers of identical individual skill. |
