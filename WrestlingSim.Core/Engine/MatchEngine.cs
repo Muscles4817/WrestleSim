@@ -202,6 +202,26 @@ namespace WrestlingSim.Engine
         /// </summary>
         public const double AttentionFloor = 0.45;
 
+        /// <summary>
+        /// Joins names the way a person says them: "A and B", "A, B and C".
+        ///
+        /// **Two names must read exactly as they always did.** Every singles and tag
+        /// commentary line goes through this, so a different answer at two would rewrite the
+        /// whole existing play-by-play — and the byte-identity harness would say so, which is
+        /// the point of having it.
+        /// </summary>
+        public static string Billing(IEnumerable<string> names)
+        {
+            var list = names.ToList();
+            return list.Count switch
+            {
+                0 => "",
+                1 => list[0],
+                2 => $"{list[0]} and {list[1]}",
+                _ => $"{string.Join(", ", list.Take(list.Count - 1))} and {list[^1]}"
+            };
+        }
+
         public static double MultiManNearFallFactor(bool multiMan, bool somebodyDisposed) =>
             multiMan && !somebodyDisposed ? CrowdedOutNearFall : 1.0;
 
@@ -296,17 +316,152 @@ namespace WrestlingSim.Engine
                 : side.Members[0];
 
             /// <summary>The legal performer on the side this wrestler is *not* on.</summary>
-            public Wrestler Opponent(Wrestler w) => IsSideA(w) ? LegalB : LegalA;
+            /// <summary>
+            /// The beat currently being resolved. Set once per beat by the dispatcher so
+            /// <see cref="Opponent"/> can answer for it.
+            ///
+            /// Hidden state is a cost, and it buys the thing this codebase has repeatedly
+            /// failed to get any other way: **one answer to "who is this against".** The
+            /// alternative was passing the beat to sixteen handlers that each recompute the
+            /// opponent — sixteen places to keep in step, which is how `LegalOf`,
+            /// `MatchEngine.Dominant` and `ControlLegal` each went wrong in turn.
+            /// </summary>
+            public MatchBeat? CurrentBeat { get; set; }
 
-            /// <summary>The legal performer for a beat's control, or null for Even / Contested.</summary>
-            public Wrestler? ControlLegal(MatchBeat beat) => beat.Control switch
+            /// <summary>
+            /// Who the current beat is against.
+            ///
+            /// With two sides this is "the one you are not", which is what it always meant
+            /// and why nothing needed more. With three it is a question only the booking can
+            /// answer, and it does: `MatchBeat.Against` names the side a beat is aimed at.
+            ///
+            /// Without this a beat booked against side C narrated side B — sixteen handlers
+            /// asked "the one you are not" in a match where that has no single answer, and
+            /// took the first one.
+            ///
+            /// With no declared target it is whoever is still upright, because a beat that
+            /// does not say is between the people not currently lying on the floor.
+            /// </summary>
+            public Wrestler Opponent(Wrestler w) =>
+                !Plan.IsMultiMan ? (IsSideA(w) ? LegalB : LegalA)
+                                 : LegalOf(OtherSide(SideOf(w)));
+
+            /// <summary>
+            /// The side a beat is against, given the side it is worked by. The one answer:
+            /// `Opponent` reads it for the general path, `TargetOf` for the five multi-man
+            /// beats, and there is no third copy.
+            ///
+            /// Review round two found `TargetOf` outside this — a plain
+            /// `Sides.FirstOrDefault(x => x != self)` with no disposal filter — so a spite
+            /// break during a disposal window read "Alpha breaks up Bravo's cover" with
+            /// Bravo on the floor, and in a fatal four-way side D could never be the target
+            /// of anything, because the first side that is not the controller never is.
+            /// </summary>
+            public MatchSide OtherSide(MatchSide? mine)
             {
-                BeatControl.WrestlerA => LegalA,
-                BeatControl.WrestlerB => LegalB,
-                _                     => null
+                if (CurrentBeat is { } beat
+                    && Models.MatchPlan.MatchPlan.SideIndex(beat.Against ?? BeatControl.Even) is { } i
+                    && i < Plan.Sides.Count && Plan.Sides[i] != mine)
+                    return Plan.Sides[i];
+
+                var upright = Plan.Sides
+                    .Where(side => side != mine)
+                    .Where(side => !State.SomebodyIsDisposed
+                                   || Plan.Sides.IndexOf(side) != State.DisposedSide)
+                    .ToList();
+
+                // Math.Max because BeatIndex is -1 before RegisterBeat has run, and C# gives
+                // -1 % 2 == -1 rather than 1. Callers are meant to be inside a registered
+                // beat; an index out of range is a crash, which is worse than a wrong name.
+                return upright.Count > 0
+                    ? upright[Math.Max(0, State.BeatIndex) % upright.Count]
+                    : Plan.Sides.FirstOrDefault(side => side != mine) ?? Plan.SideB;
+            }
+
+            /// <summary>
+            /// Who a beat that named nobody is worked by.
+            ///
+            /// `Even` and `Contested` resolve to no side, and every handler falls back with
+            /// `control ??= …`. That fallback was `LegalA` — side A whether or not side A is
+            /// the one who was just put through a table. Review round two: an Even heat
+            /// segment inside a disposal window read "Alpha takes over, imposing their will
+            /// on a struggling Bravo" with Alpha on the floor and Charlie, the only other
+            /// man in the ring, unmentioned.
+            ///
+            /// Two sides return `LegalA` untouched, so singles and tag are unchanged.
+            /// </summary>
+            public Wrestler LegalDefault
+            {
+                get
+                {
+                    if (!Plan.IsMultiMan || !State.SomebodyIsDisposed) return LegalA;
+
+                    var upright = Plan.Sides
+                        .Where(side => Plan.Sides.IndexOf(side) != State.DisposedSide)
+                        .ToList();
+
+                    return LegalOf(upright.Count > 0 ? upright[0] : Plan.SideA);
+                }
+            }
+
+            /// <summary>
+            /// Everyone legal right now, in side order — for the beats that address the room
+            /// rather than a pairing. An opening in a three-way is three people going at each
+            /// other, and saying "A and B" leaves one of them out of their own match.
+            /// </summary>
+            public IReadOnlyList<Wrestler> AllLegal =>
+                Plan.Sides.Select(LegalOf).ToList();
+
+            /// <summary>Everyone legal, billed — "A and B", or "A, B and C".</summary>
+            public string LegalBilling => MatchEngine.Billing(AllLegal.Select(w => w.RingName));
+
+            /// <summary>
+            /// How commentary refers to the field without naming it — "these two", "all
+            /// three", "all four".
+            ///
+            /// Only for lines that address the room. A line about two specific rivals should
+            /// still say "these two", because it is about those two and not about the match;
+            /// the openings are the ones that were counting wrong.
+            /// </summary>
+            public string LegalCollective => Plan.Sides.Count switch
+            {
+                <= 2 => "these two",
+                3    => "all three",
+                _    => "all four"
             };
 
-            public MatchSide SideOf(Wrestler w) => IsSideA(w) ? Plan.SideA : Plan.SideB;
+            /// <summary>The same, as a sentence subject — "Both wrestlers", "All three".</summary>
+            public string LegalSubject => Plan.Sides.Count switch
+            {
+                <= 2 => "Both wrestlers",
+                3    => "All three",
+                _    => "All four"
+            };
+
+
+
+            /// <summary>The legal performer for a beat's control, or null for Even / Contested.</summary>
+            /// <summary>
+            /// Whoever is legal for the side a beat is booked to. Null for Even and Contested.
+            ///
+            /// This was a third copy of the BeatControl-to-side mapping, and like the other
+            /// two it only knew about A and B — so a beat booked to side C resolved to
+            /// *null* and every handler's `control ??= ctx.LegalA` quietly credited it to
+            /// side A. A pin break booked for the third party read "Alpha covers, and Alpha
+            /// is there to break it up."
+            ///
+            /// It goes through the one resolver now. That is the third time this exact
+            /// defect has appeared in this codebase — `LegalOf`, `MatchEngine.Dominant`, and
+            /// here — and every time the fix has been to delete the copy rather than teach
+            /// it about one more case.
+            /// </summary>
+            public Wrestler? ControlLegal(MatchBeat beat) =>
+                Models.MatchPlan.MatchPlan.SideIndex(beat.Control) is { } i && i < Plan.Sides.Count
+                    ? LegalOf(Plan.Sides[i])
+                    : null;
+
+            public MatchSide SideOf(Wrestler w) =>
+                Plan.SideOf(w) ?? Plan.SideA;
 
             // ── Aggregation ──────────────────────────────────────────────────
             //
@@ -540,19 +695,23 @@ namespace WrestlingSim.Engine
                 Control  = beat.Control
             };
 
-            // Wrestler references for this beat
-            Wrestler? control = ctx.ControlLegal(beat);
-            Wrestler other    = control != null ? ctx.Opponent(control) : ctx.LegalB;
-
             double iMod = beat.IntensityModifier;
             double dMod = beat.DurationModifier;
 
-            // ── Repetition and fatigue ───────────────────────────────────────
+            // ── Repetition and fatigue ───────────────────────────────
             // The crowd's appetite for a beat type falls off each time it is repeated,
             // and both wrestlers slow down as a long match wears on.
             int timesUsed = state.RegisterBeat(beat.Type);
             double repetition = Math.Pow(RepetitionDecay(beat.Type), timesUsed - 1);
             double fade = FadeFactor(ctx);
+
+            // Wrestler references for this beat — resolved *after* RegisterBeat, because
+            // every handler recomputes `other` from the context, and dispatch reading a
+            // different beat number than its handlers is how the same beat got two answers.
+            // BeatIndex is -1 until RegisterBeat makes it a beat number at all.
+            ctx.CurrentBeat   = beat;
+            Wrestler? control = ctx.ControlLegal(beat);
+            Wrestler other    = control != null ? ctx.Opponent(control) : ctx.LegalB;
 
             // Technical work accumulates more legitimately than crowd reaction does —
             // limb work repeated is a story, a third identical brawl is not.
@@ -904,16 +1063,12 @@ namespace WrestlingSim.Engine
 
         // ── Multi-man (doc 18 §2.5) ──────────────────────────────────────────
 
-        /// <summary>The side a beat is aimed at, or the first side that is not the control.</summary>
-        private static MatchSide TargetOf(MatchBeat beat, Ctx ctx, Wrestler? control)
-        {
-            if (Models.MatchPlan.MatchPlan.SideIndex(beat.Against ?? BeatControl.Even) is { } i
-                && i < ctx.Plan.Sides.Count)
-                return ctx.Plan.Sides[i];
-
-            var self = control is null ? null : ctx.SideOf(control);
-            return ctx.Plan.Sides.FirstOrDefault(x => x != self) ?? ctx.Plan.SideB;
-        }
+        /// <summary>
+        /// The side a beat is aimed at. One line, because the resolver is `Ctx.OtherSide` and
+        /// this used to be a fourth copy of it that had drifted.
+        /// </summary>
+        private static MatchSide TargetOf(MatchBeat beat, Ctx ctx, Wrestler? control) =>
+            ctx.OtherSide(control is null ? null : ctx.SideOf(control));
 
         /// <summary>
         /// The third man is put through something and the ring belongs to the other two.
@@ -926,7 +1081,7 @@ namespace WrestlingSim.Engine
         private void ApplyDisposalSpot(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, double iMod, double dMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             var target = TargetOf(beat, ctx, control);
             var victim = ctx.LegalOf(target);
 
@@ -959,7 +1114,7 @@ namespace WrestlingSim.Engine
         private void ApplyPinBreak(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, double iMod, int timesUsed)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             var denied = ctx.LegalOf(TargetOf(beat, ctx, control));
 
             r.CrowdEnergyDelta = Rng(8, 15) * iMod
@@ -993,7 +1148,7 @@ namespace WrestlingSim.Engine
         private void ApplySpiteBreak(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, double iMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             var rival = ctx.LegalOf(TargetOf(beat, ctx, control));
 
             var feud = ctx.Plan.FeudBetween(control, rival);
@@ -1033,7 +1188,7 @@ namespace WrestlingSim.Engine
         private void ApplyIgnoredOpportunity(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, double iMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             var rival = ctx.LegalOf(TargetOf(beat, ctx, control));
 
             var feud = ctx.Plan.FeudBetween(control, rival);
@@ -1064,7 +1219,7 @@ namespace WrestlingSim.Engine
         private void ApplyMutualDestruction(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, double iMod, double dMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             var rival = ctx.LegalOf(TargetOf(beat, ctx, control));
 
             var feud = ctx.Plan.FeudBetween(control, rival);
@@ -1229,18 +1384,18 @@ namespace WrestlingSim.Engine
             r.StorytellingContribution = 2.5 * iMod * PerformerProfile.Blend(connection, 0.6);
 
             r.Commentary.Add(Pick(
-                $"{ctx.LegalA.RingName} and {ctx.LegalB.RingName} immediately go at each other before the bell finishes ringing!",
-                $"No feeling-out process — the crowd erupts as these two collide from the first second!",
-                $"{ctx.LegalA.RingName} and {ctx.LegalB.RingName} are at each other's throats right away!",
-                $"The bell barely sounds before {ctx.LegalA.RingName} and {ctx.LegalB.RingName} are trading shots!",
-                $"There will be no feeling out here — these two want each other right now!"
+                $"{ctx.LegalBilling} immediately go at each other before the bell finishes ringing!",
+                $"No feeling-out process — the crowd erupts as {ctx.LegalCollective} collide from the first second!",
+                $"{ctx.LegalBilling} are at each other's throats right away!",
+                $"The bell barely sounds before {ctx.LegalBilling} are trading shots!",
+                $"There will be no feeling out here — {ctx.LegalCollective} want each other right now!"
             ));
             r.Commentary.Add(Pick(
                 "The pace is frenetic from the opening bell!",
                 "Neither wrestler is willing to take a step back.",
                 "The energy in the arena is electric — this is must-see television!",
                 "The crowd is immediately invested — they came to see exactly this!",
-                "Both wrestlers throwing everything at each other from the jump — breathtaking stuff!"
+                $"{ctx.LegalSubject} throwing everything at each other from the jump — breathtaking stuff!"
             ));
         }
 
@@ -1260,17 +1415,17 @@ namespace WrestlingSim.Engine
             r.StorytellingContribution = 3.0 * dMod * PerformerProfile.Blend(ctx.LegalPair(p => p.RingPsych), 0.6);
 
             r.Commentary.Add(Pick(
-                $"{ctx.LegalA.RingName} and {ctx.LegalB.RingName} circle each other, measuring the distance carefully.",
-                $"A deliberate, methodical start as both wrestlers respect each other's ability.",
+                $"{ctx.LegalBilling} circle each other, measuring the distance carefully.",
+                $"A deliberate, methodical start as {ctx.LegalSubject.ToLowerInvariant()} respect each other's ability.",
                 $"The feeling-out process begins — neither willing to show their hand too soon.",
-                $"{ctx.LegalA.RingName} and {ctx.LegalB.RingName} are in no rush — this is going to be a war of attrition.",
+                $"{ctx.LegalBilling} are in no rush — this is going to be a war of attrition.",
                 $"Slow, deliberate movements from both competitors — each hunting for an opening."
             ));
             r.Commentary.Add(Pick(
                 "Both competitors are playing the long game.",
                 "The chess match has begun.",
                 "They know this is a marathon, not a sprint.",
-                "This crowd is patient — they trust these two to take them somewhere special.",
+                $"This crowd is patient — they trust {ctx.LegalCollective} to take them somewhere special.",
                 "Every movement is calculated. Every step deliberate. Something is being built here."
             ));
         }
@@ -1286,10 +1441,10 @@ namespace WrestlingSim.Engine
             r.StorytellingContribution = 2.0 * dMod * PerformerProfile.Blend(ctx.LegalPair(p => p.RingPsych), 0.5);
 
             r.Commentary.Add(Pick(
-                $"{ctx.LegalA.RingName} and {ctx.LegalB.RingName} lock up.",
-                $"The match gets under way with both wrestlers testing each other.",
-                $"An even start as {ctx.LegalA.RingName} and {ctx.LegalB.RingName} feel each other out.",
-                $"A collar-and-elbow tie-up to open — both wrestlers gauging what they're dealing with.",
+                $"{ctx.LegalBilling} lock up.",
+                $"The match gets under way with {ctx.LegalSubject.ToLowerInvariant()} testing each other.",
+                $"An even start as {ctx.LegalBilling} feel each other out.",
+                $"A collar-and-elbow tie-up to open — {ctx.LegalSubject.ToLowerInvariant()} gauging what they're dealing with.",
                 $"Standard opening exchanges, but the undercurrent of tension is already obvious."
             ));
         }
@@ -1297,7 +1452,7 @@ namespace WrestlingSim.Engine
         private void ApplyHeatSegment(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod, double dMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             other = ctx.Opponent(control);
 
             var pControl = ctx.For(control);
@@ -1361,7 +1516,7 @@ namespace WrestlingSim.Engine
         private void ApplyComeback(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod, double dMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             other = ctx.Opponent(control);
 
             var state    = ctx.State;
@@ -1421,7 +1576,7 @@ namespace WrestlingSim.Engine
         private void ApplyNearFall(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod, double feudMult, int timesUsed)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             other = ctx.Opponent(control);
 
             var state  = ctx.State;
@@ -1490,7 +1645,7 @@ namespace WrestlingSim.Engine
         private void ApplyHighSpot(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, double iMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             var pControl = ctx.For(control);
 
             double flyerSkill = control.RingSkills.HighFlyer;
@@ -1523,7 +1678,7 @@ namespace WrestlingSim.Engine
         private void ApplyRestHold(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, double iMod, double dMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             Wrestler other = ctx.Opponent(control);
             var pControl = ctx.For(control);
 
@@ -1572,8 +1727,8 @@ namespace WrestlingSim.Engine
 
             r.Commentary.Add(Pick(
                 $"This match spills out to the floor! The crowd parts as the brawl comes to them!",
-                $"{ctx.LegalA.RingName} and {ctx.LegalB.RingName} are fighting into the crowd!",
-                $"Chaos! These two are taking this war everywhere!",
+                $"{ctx.LegalBilling} are fighting into the crowd!",
+                $"Chaos! {char.ToUpperInvariant(ctx.LegalCollective[0]) + ctx.LegalCollective[1..]} are taking this war everywhere!",
                 $"We have completely lost control — they're brawling through the entire arena!",
                 $"The guardrail is not going to contain this one — they're spilling out into the audience!"
             ));
@@ -1582,7 +1737,7 @@ namespace WrestlingSim.Engine
         private void ApplyPsychologicalWarfare(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod, double feudMult)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             other = ctx.Opponent(control);
 
             var pControl = ctx.For(control);
@@ -1641,10 +1796,10 @@ namespace WrestlingSim.Engine
                                          * PerformerProfile.Blend(workedConnection, 0.5);
 
             r.Commentary.Add(Pick(
-                $"This feud reaches a boiling point! {ctx.LegalA.RingName} and {ctx.LegalB.RingName} can no longer contain their hatred!",
+                $"This feud reaches a boiling point! {ctx.LegalBilling} can no longer contain their hatred!",
                 $"Everything this feud has been building toward is pouring out right now!",
                 $"The bad blood between these two erupts — the crowd is absolutely unhinged!",
-                $"The gloves are off! The real hatred between {ctx.LegalA.RingName} and {ctx.LegalB.RingName} is on full display!",
+                $"The gloves are off! The real hatred between {ctx.LegalBilling} is on full display!",
                 $"This match has just become something completely different — the feud has taken over everything!"
             ));
             r.Commentary.Add(Pick(
@@ -1659,7 +1814,7 @@ namespace WrestlingSim.Engine
         private void ApplyRevengeSpot(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod, double feudMult)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             other = ctx.Opponent(control);
 
             var state    = ctx.State;
@@ -1711,7 +1866,7 @@ namespace WrestlingSim.Engine
         private void ApplyAlliesRejected(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, double iMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             var pControl = ctx.For(control);
 
             // The whole beat is "the crowd loves this person for refusing help".
@@ -1755,7 +1910,7 @@ namespace WrestlingSim.Engine
         private void ApplyShine(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod, double dMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             other = ctx.Opponent(control);
 
             var pControl = ctx.For(control);
@@ -1797,7 +1952,7 @@ namespace WrestlingSim.Engine
         private void ApplyCutoff(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod, double dMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             other = ctx.Opponent(control);
 
             var pControl = ctx.For(control);
@@ -1833,7 +1988,7 @@ namespace WrestlingSim.Engine
         private void ApplyIsolation(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod, double dMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             other = ctx.Opponent(control);
 
             var pControl    = ctx.For(control);
@@ -1920,7 +2075,7 @@ namespace WrestlingSim.Engine
         private void ApplyNearTag(BeatResult r, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod, double feudMult)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             other = ctx.Opponent(control);
 
             var pDenied  = ctx.For(other);
@@ -1967,7 +2122,7 @@ namespace WrestlingSim.Engine
         private void ApplyHotTag(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             other = ctx.Opponent(control);
 
             var state = ctx.State;
@@ -2062,7 +2217,7 @@ namespace WrestlingSim.Engine
         private void ApplyTag(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             other = ctx.Opponent(control);
 
             bool sideA = ctx.IsSideA(control);
@@ -2097,7 +2252,7 @@ namespace WrestlingSim.Engine
         private void ApplyDoubleTeam(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod, double dMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             other = ctx.Opponent(control);
 
             var side   = ctx.SideOf(control);
@@ -2145,7 +2300,7 @@ namespace WrestlingSim.Engine
         private void ApplyMiscommunication(BeatResult r, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             other = ctx.Opponent(control);
 
             var side = ctx.SideOf(control);
@@ -2189,7 +2344,7 @@ namespace WrestlingSim.Engine
         private void ApplySaveBreakup(BeatResult r, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod, int timesUsed)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             other = ctx.Opponent(control);
 
             var side  = ctx.SideOf(control);
@@ -2243,7 +2398,7 @@ namespace WrestlingSim.Engine
         private void ApplyFinish(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod, double feudMult)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             other = ctx.Opponent(control);
 
             var state    = ctx.State;

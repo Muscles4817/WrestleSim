@@ -1765,3 +1765,195 @@ The play-by-play still narrates a three-way with two names — `Ctx.LegalA`/`Leg
 `Opponent(w)` as "the one you are not", and about fifty commentary lines written for two people.
 The result is right and the commentary describes two of the three. Elimination, battle royals
 and the Rumble need multiple falls, which is a different shape from "first fall wins".
+
+## The commentary knows there are three people
+
+The previous section ended by admitting the play-by-play narrated a three-way with two names.
+The result was right and the story was about two of the three, which is the wrong half to get
+right: the finish is a number on a card, the commentary is what the player actually reads.
+
+### The third copy of the same mapping
+
+`BeatControl` → side index has now been got wrong three separate times, in three different
+places, each fixed independently:
+
+| Where | What it did | Symptom |
+|---|---|---|
+| `Ctx.LegalOf` | `side == SideA ? LegalA : LegalB` | side C resolved to B's wrestler |
+| `MatchEngine.Dominant` | knew only two sides | three-ways reported the wrong winner |
+| `Ctx.ControlLegal` | knew only `A` and `B` | a beat booked to C fell through to `control ??= ctx.LegalA` |
+
+The third is the worst of them, because the fallback made it silent. A beat booked to side C
+returned null, the `??=` credited it to side A, and the line came out **"Alpha covers — and
+Alpha is there to break it up."** Nobody breaks up their own pin, and no test asserted otherwise.
+
+The fix, again, was to delete the copy rather than teach it one more case. There is one resolver
+— `MatchPlan.SideIndex(BeatControl)` and its inverse `ControlFor(int)` — and everything routes
+through it. A fourth copy is the thing to look for the next time a multi-man line reads oddly.
+
+### The dispatch-level fix that did nothing
+
+`Opponent(w)` was "the one you are not", which in a three-way means "one of the two you are
+not", picked arbitrarily. The obvious fix is to resolve the opponent at dispatch from the beat's
+`Against` and hand it to the handler.
+
+That fix was inert. Sixteen handlers **recompute** `other = ctx.Opponent(control)` from the
+context rather than taking what dispatch worked out, so the corrected value was calculated,
+passed, and then thrown away sixteen times. A grep for `Opponent(` is what found it; reading the
+dispatch site was not enough, because the bug is in what the callees ignore.
+
+So `Opponent` itself became beat-aware. `Ctx.CurrentBeat` is set before each beat runs, and:
+
+```csharp
+if (CurrentBeat is { } beat
+    && MatchPlan.SideIndex(beat.Against ?? BeatControl.Even) is { } i
+    && i < Plan.Sides.Count && Plan.Sides[i] != mine)
+    return LegalOf(Plan.Sides[i]);
+```
+
+An undirected beat falls back to rotating through the sides that are still upright — skipping
+the disposed one, because the whole point of disposing of somebody is that they are not in the
+exchange. Singles and tag return early and are byte-identical.
+
+### "These two" when there are three
+
+Eleven lines hard-coded `ctx.LegalA` and `ctx.LegalB` — a billing of the first two sides
+*listed*, so in a three-way the third person was absent from the sentence by typing order.
+`MatchEngine.Billing` is a public static that renders a list as "A and B" or "A, B and C", and
+`LegalBilling` feeds it the legal wrestler from every side.
+
+Eight more lines were room-wide but counted to two in words: "these two", "Both wrestlers". Those
+now go through `LegalCollective` ("these two" / "all three" / "all four") and `LegalSubject`
+("Both wrestlers" / "All three"). Pair-specific feud lines were deliberately left alone — "these
+two have history" is *about* a pair, and widening it to the room would be a different and wronger
+sentence.
+
+Five mutations, all killed: `Opponent` ignoring `Against`; `ControlLegal` knowing only A and B;
+billing rendering only the first two; `CurrentBeat` never set; an undirected beat targeting the
+disposed side.
+
+> **Correction, from review.** Two of those five were killed by weaker tests than I thought, and
+> a sixth thing was not tested at all. See "What review found" below. The count was right; what
+> it was counting was not.
+
+### What review found
+
+**A crash, and an ordinary booking reaches it.** `State.BeatIndex` starts at `-1` and only
+becomes a beat number when `RegisterBeat` runs — which `ExecuteBeat` called *after* resolving
+`other`. So on the first beat of a match the rotation computed `upright[-1 % 2]`, and C# gives
+`-1 % 2 == -1` rather than `1`. `ArgumentOutOfRangeException`.
+
+Reachable as a completely ordinary booking, because of an asymmetry in the builder: it offers
+"who is on top" on **every** beat but `Against` only on the finish, so every non-finish beat a
+player books is undirected — the opening included, and booking the opening to a side is a normal
+thing to do. Every test in `ThreeWayCommentaryTests` opened on `Even`, which is why 600 tests
+were green over a crash. `TheFirstBeatCanBeBookedToASide` covers all three openings now.
+
+Two fixes rather than one, because they answer different questions. The resolution moved to
+after `RegisterBeat`, so dispatch and the sixteen handlers read the same beat number instead of
+numbers one apart — that is the actual bug, and it also silently shifted the disposal window by
+one beat at the dispatch call. And the modulo is `Math.Max(0, …)` regardless, because a future
+caller outside a registered beat should get a wrong name at worst, never an exception.
+
+**Four tests named a mechanism they did not touch.** Reverting the whole engine change at once
+left 9 of 14 passing. The interesting ones:
+
+- `ABeatAimedAtTheThirdSide_NamesTheThirdSide` and `TheTargetFollowsTheBooking` — their doc
+  comments said "this is the bug: `Opponent(w)` returning whichever side was listed second", and
+  they pass with exactly that restored, because `ApplyDisposalSpot` reads `beat.Against` itself
+  and never asks `Opponent`. They pin the disposal handler, which is worth pinning. The comments
+  now say so instead of claiming the general path.
+- `AnUndirectedBeat_DoesNotTargetSomebodyLyingOnTheFloor` disposed of Charlie and asserted Bravo
+  was targeted — which is precisely what the old two-side `Opponent` returned for every beat
+  regardless. It could not distinguish the mechanism from the bug it was written against. It is
+  a `Theory` now, and the disposed-Bravo case is the one that catches it: the old code names the
+  wrestler lying on the floor.
+- `NobodyGoesUnmentionedForTheWholeMatch` passed because Charlie is named by the finish's
+  `Against`, which predates this work. Excluding the finish is what makes it say something the
+  booking does not say for it; it is `…BeforeTheFinish` now, and documented as an end-to-end
+  property rather than a test of anything.
+
+`AnOrdinaryBeatKicksOutTheSideItWasAimedAt` was carrying the whole new `Opponent` body on one
+case; it runs over three beat types now.
+
+That is the same failure a third time in one day, and it is worth naming precisely rather than
+resolving to be more careful: **a test written from a bug report tends to assert the symptom the
+report described, and the symptom is often something the buggy code also produces.** The check
+that catches it is not re-reading the test, it is reverting the fix and watching which tests
+notice.
+
+### A test that asserted nothing
+
+`TwoSidedCommentaryIsUnchanged` was written, run, passed, and deleted, because what it asserted
+was that a local function returns the constant it returns. The collective test had the same
+shape in weaker form — it checked that "these two" was *absent* from a three-way. Absence is not
+a pass; a crash before the line is emitted produces the same green. It now sweeps forty seeds
+looking for the *positive* form, "all three", and fails if the phrasing never appears.
+
+That is the third time today a test measured the neighbourhood of a mechanism rather than the
+mechanism. It is the standing failure mode of this work and worth more suspicion than it gets.
+
+Browser-verified rather than only asserted: **"Roman Reigns vs Rhea Ripley vs Becky Lynch"** —
+the disposal spot names Becky, the spite break names Rhea and Roman, Becky steals the fall, zero
+console errors.
+
+**608 tests passing** — 600 before review, and the eight it took to make the mechanism
+actually load-bearing. (618 after round two, below.)
+
+### Still not built
+
+Elimination, battle royals and the Rumble still need multiple falls. The pair-specific feud
+lines are correct but never mention that a third party is watching them cost each other the
+match, which is the beat a viewer would call.
+
+### Round two: the disposal window was consulted in one place
+
+Round one's crash was the rotation reading a beat number that did not exist yet. Round two found
+that the rotation was the *only* thing consulting `State.DisposedSide` at all, and it only
+filtered the target. Two consequences, both of them a name in the play-by-play belonging to
+somebody lying on the floor outside.
+
+**The man nobody booked to be in control was side A, always.** `Even` and `Contested` resolve to
+no side, and all twenty-three handlers fall back with `control ??= ctx.LegalA` — side A, whether
+or not side A is the one who has just been put through a table. An Even heat segment inside a
+disposal window read:
+
+> Bravo puts Alpha down hard on the outside — for now, this is one on one.
+> **Alpha takes over, imposing their will on a struggling Bravo.**
+
+Alpha is outside. Charlie — the only other man in the ring, and the entire reason the disposal
+exists — is not in either line. This is not an exotic booking: the builder offers the Even chip
+on every beat and the presets use it for openings, and the disposal's victim is not settable at
+all, so a disposal controlled by Bravo dumps Alpha every time and the player cannot book around
+it. The fallback is `LegalDefault` now, which is `LegalA` at two sides or with nobody disposed —
+so singles and tag do not move — and the first upright side otherwise.
+
+**And `TargetOf` was a fourth copy of the mapping.** `Sides.FirstOrDefault(x => x != self)`, no
+disposal filter, sitting eight hundred lines from the `Opponent` that had one. So a spite break
+during a window read *"Alpha breaks up Bravo's cover"* with Bravo on the floor, and a pin break
+read *"Bravo had it won."*
+
+The second consequence of that same line is worse and nothing would have surfaced it as a
+misread name: since `Against` is unsettable on every non-finish beat, "the first side that is not
+the controller" is **side A for everybody except side A**. In a fatal four-way, side D could
+never be disposed of, pin-broken, spite-broken or mutually destroyed by anyone, and a beat
+controlled by B, C or D always named Alpha. A quarter of the match was unreachable.
+
+Both now go through one resolver — `Ctx.OtherSide` — and `TargetOf` is a single expression that
+calls it. That is the fourth copy of this mapping found and deleted; the count is worth keeping
+because it is the strongest argument in this document for the shim pattern being worth its cost.
+
+Three mutations, all killed: reverting `LegalDefault` reddens five of six Even beat types;
+reverting `TargetOf` reddens all three multi-man beats **and** the four-way reachability test.
+
+**618 tests passing.**
+
+Two things review named that are logged rather than fixed here:
+
+- **The builder only offers `Against` on the finish.** So the `Against` branch of `Opponent` —
+  the one this section is about — is unreachable from the UI for every beat but the last, and
+  the rotation fallback is what players actually get. The engine is ahead of the builder again,
+  which is the thing `CLAUDE.md` says not to do.
+- **`AllLegal` walks every side without regard to `State.DisposedSide`.** A `CrowdBrawl` or
+  `FeudalEscalation` booked during a disposal window bills somebody who is supposed to be on the
+  floor. Wrong in the same way the rotation was, one level up.
