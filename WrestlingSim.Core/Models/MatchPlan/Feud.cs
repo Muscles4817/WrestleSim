@@ -77,7 +77,13 @@ namespace WrestlingSim.Models.MatchPlan
         };
 
         // Crowd energy bonus at match start from feud heat
-        public double StartingEnergyBonus => Intensity switch
+        /// <summary>
+        /// What the feud puts in the room before the bell, after distrust. A crowd that has
+        /// been shown five unfinished stories brings less to the sixth.
+        /// </summary>
+        public double StartingEnergyBonus => RawStartingEnergyBonus * Credibility;
+
+        private double RawStartingEnergyBonus => Intensity switch
         {
             FeudIntensity.Cold     => 3,
             FeudIntensity.Building => 7,
@@ -189,6 +195,34 @@ namespace WrestlingSim.Models.MatchPlan
         {
             if (amount <= 0) return false;
 
+            // New heat on a settled feud starts a new chapter. Without this a blow-off was
+            // permanent in the wrong sense: `GetOrCreate` returns the same object for a
+            // pairing forever, so two people who ever finished a programme could never
+            // feud again — and the rematch years later is one of the oldest things in
+            // wrestling. Distrust deliberately does *not* clear: what the booker taught the
+            // crowd about whether their stories finish outlives the story.
+            if (Concluded)
+            {
+                Concluded       = false;
+                MatchesSinceHot = 0;
+                ChaptersSettled++;
+
+                // Doc 31's A3 brief also asks that **continuing past the blow-off be
+                // penalised**, and the first version made it free — which is worse than
+                // not having a blow-off, because it lets a booker take the payoff and
+                // keep the programme.
+                //
+                // The cost is time-sensitive, because the two cases are genuinely
+                // different. Restarting a fortnight after the cage match is telling the
+                // audience the ending they were sold did not count, and it is exactly
+                // doc 20 §6.2's scarcity argument — a stipulation used again immediately
+                // means nothing. Reviving the same rivalry two years later is one of the
+                // oldest and best things in wrestling and should cost nothing at all.
+                if (ConcludedOn is { } settled && LastAdvanced is { } now
+                    && now.DayNumber - settled.DayNumber < RespectTheEndingDays)
+                    Distrust = Math.Clamp(Distrust + ReopenedTooSoonDistrust, 0, 1);
+            }
+
             var before = Intensity;
             Heat += amount;
             Intensity = IntensityFor(Heat);
@@ -241,6 +275,229 @@ namespace WrestlingSim.Models.MatchPlan
         {
             Heat = 0;
             Intensity = FeudIntensity.None;
+
+            // Not the same thing as a blow-off, deliberately: nothing was *settled*, the
+            // two were separated. So `Concluded` stays false — these two still have
+            // unfinished business if a later draft puts them back together — but the
+            // patience clock resets, because a programme that was taken off the player is
+            // not one the player refused to pay off.
+            MatchesSinceHot = 0;
+            DecayedTo       = null;
+        }
+
+        // ── Decay ────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Marks the feud as advanced today, restarting the decay clock. Called whenever
+        /// anything happens between these two on screen — a segment, a match, a run-in.
+        /// Deliberately separate from <see cref="AddHeat"/>: a beatdown that adds no heat
+        /// because the feud is already Nuclear is still television, and still keeps the
+        /// story in front of the audience.
+        /// </summary>
+        public void Advance(DateOnly? date)
+        {
+            if (date is not { } d) return;
+            LastAdvanced = d;
+            DecayedTo    = null;
+        }
+
+        /// <summary>Days a feud can go unadvanced before it starts bleeding heat.</summary>
+        public const int HeatGraceDays = 14;
+
+        /// <summary>
+        /// Heat kept per day once past the grace. Doc 20 §9 lists "a feud left off TV for
+        /// three weeks loses its heat" as one of the things that kills them.
+        ///
+        /// Measured against that, not asserted: three weeks idle is seven days past the
+        /// grace and costs **27.6%**; a month costs 51%; two months costs 88%. The first
+        /// draft of this comment said three weeks "should cost most of it", which the
+        /// constant does not do and review caught. Fourteen days of grace is what makes the
+        /// three-week figure modest — a feud is not punished for missing one week of
+        /// television, and doc 20 §9 does not say it should be.
+        /// </summary>
+        public const double HeatDailyRetention = 0.955;
+
+        /// <summary>The last day anything advanced this feud — a match or a segment.</summary>
+        public DateOnly? LastAdvanced { get; private set; }
+
+        /// <summary>How far decay has already been charged, so the clock cannot double-bill.</summary>
+        public DateOnly? DecayedTo { get; set; }
+
+        /// <summary>
+        /// Bleeds heat for time spent ignored. Called by the world clock.
+        ///
+        /// Heat only ever accumulated before this. That made a feud a ratchet: every
+        /// segment you ever booked was still paying off months later, and there was no cost
+        /// to starting five stories and finishing none.
+        /// </summary>
+        public void ApplyDailyDecay(DateOnly today)
+        {
+            if (Concluded || Heat <= 0) return;
+            if (LastAdvanced is not { } last) return;
+
+            var from = DecayedTo ?? last.AddDays(HeatGraceDays);
+            if (today <= from) return;
+
+            int days = today.DayNumber - from.DayNumber;
+            Heat = Math.Max(0, Heat * Math.Pow(HeatDailyRetention, days));
+            Intensity = IntensityFor(Heat);
+            DecayedTo = today;
+
+            // A feud that has cooled below Hot is not being told any more, so the clock
+            // measuring "how long have you been refusing to pay this off" stops and resets.
+            // Distrust already accrued stays — the crowd learned something — but a
+            // programme that quietly died should not have its next chapter start one match
+            // away from the patience limit.
+            if (Intensity < FeudIntensity.Hot) MatchesSinceHot = 0;
+        }
+
+        // ── The blow-off ─────────────────────────────────────────────────────
+
+        /// <summary>True once this feud has been paid off and ended.</summary>
+        public bool Concluded { get; private set; }
+
+        /// <summary>When the most recent chapter was settled.</summary>
+        public DateOnly? ConcludedOn { get; private set; }
+
+        /// <summary>How many chapters of this rivalry have been paid off and reopened.</summary>
+        public int ChaptersSettled { get; private set; }
+
+        /// <summary>
+        /// Matches worked since this feud became worth blowing off. Doc 20 §9.1: three
+        /// matches is the natural life of a feud, and the third is the one that should end
+        /// it.
+        /// </summary>
+        public int MatchesSinceHot { get; private set; }
+
+        /// <summary>
+        /// 0–1. How much the audience has stopped believing this story is going anywhere.
+        ///
+        /// Doc 20 §9 lists the interference loop — every match ends in a run-in, nothing
+        /// resolves — as a feud killer, and §6.1 says a blow-off must *resolve*. A booker
+        /// who keeps escalating and never pays off is teaching the crowd not to invest,
+        /// and that lesson outlives the feud: distrust suppresses what this pairing can
+        /// ever draw again.
+        /// </summary>
+        public double Distrust { get; private set; }
+
+        /// <summary>Matches past the third before distrust starts accruing.</summary>
+        public const int PatienceMatches = 3;
+
+        /// <summary>
+        /// How long an ending is owed before restarting the same programme reads as a
+        /// revival rather than as the ending not having counted. Six months.
+        /// </summary>
+        public const int RespectTheEndingDays = 180;
+
+        /// <summary>What restarting a settled feud inside that window costs.</summary>
+        public const double ReopenedTooSoonDistrust = 0.25;
+
+        /// <summary>
+        /// What a blow-off is worth right now, as a multiplier on the match.
+        ///
+        /// Proportional to what was actually built — doc 20 §5, the stipulation must match
+        /// the escalation. A blow-off declared on a feud nobody has been following is the
+        /// unearned resolution §9 warns about, and is worth less than not declaring one.
+        /// </summary>
+        public double BlowOffPayoff => PayoffFor(Intensity);
+
+        /// <summary>
+        /// The same curve as a plain function, so the booking screens can price a blow-off
+        /// on a feud the player is declaring by hand and has not created yet.
+        /// </summary>
+        public static double PayoffFor(FeudIntensity intensity) => intensity switch
+        {
+            FeudIntensity.Nuclear  => 1.45,
+            FeudIntensity.Hot      => 1.28,
+            FeudIntensity.Building => 1.05,
+            _                      => 0.72   // unearned: the audience was not told this mattered
+        };
+
+        /// <summary>Whether declaring a blow-off would actually pay off.</summary>
+        public bool WorthBlowingOff => Intensity >= FeudIntensity.Hot;
+
+        /// <summary>
+        /// A blow-off that did not resolve anything.
+        ///
+        /// Doc 20 §6.1 puts **resolve — someone definitively wins** first in the list of
+        /// what a blow-off has to do, and §9 names the interference loop — every match ends
+        /// in a run-in, nothing is settled — as one of the things that kills a feud. So a
+        /// blow-off booked to a disqualification, a count-out or a run-in does not settle
+        /// the story, and it costs more than an ordinary unresolved match: the crowd was
+        /// told this was the end and it was not.
+        ///
+        /// This is what makes declaring a blow-off a decision rather than a free bonus.
+        /// </summary>
+        public const double BrokenPromiseDistrust = 0.30;
+
+        /// <summary>
+        /// The promise was made and not kept. The feud stays open, and the pairing pays
+        /// 1.67× what an ordinary unresolved match costs (0.30 against 0.18).
+        /// </summary>
+        public void RecordBrokenPromise()
+        {
+            MatchesSinceHot++;
+            Distrust = Math.Clamp(Distrust + BrokenPromiseDistrust, 0, 1);
+        }
+
+        /// <summary>
+        /// Pays the feud off and ends it. The debt is settled — doc 20 §3.1.
+        /// </summary>
+        public void BlowOff(DateOnly? date)
+        {
+            Concluded   = true;
+            ConcludedOn = date;
+            Heat        = 0;
+            Intensity   = FeudIntensity.None;
+            DecayedTo   = null;
+
+            // The blow-off is itself an event, so it is the last thing that advanced the
+            // feud. This is what the reopen check in AddHeat measures "too soon" against
+            // when nothing else has happened since.
+            if (date is { } d) LastAdvanced = d;
+            Distrust    = Math.Max(0, Distrust - 0.35);  // resolving earns some belief back
+        }
+
+        /// <summary>
+        /// Records that a match happened without resolving anything. Past the third, the
+        /// audience starts to conclude nothing is at stake.
+        /// </summary>
+        public void RecordUnresolved()
+        {
+            if (Intensity < FeudIntensity.Hot) return;
+
+            MatchesSinceHot++;
+            if (MatchesSinceHot > PatienceMatches)
+                Distrust = Math.Clamp(Distrust + 0.18, 0, 1);
+        }
+
+        /// <summary>
+        /// What this pairing can still draw, after everything the booker has taught the
+        /// crowd about whether their stories finish. 1.0 is untainted.
+        /// </summary>
+        public double Credibility => 1.0 - Distrust * 0.45;
+
+        /// <summary>
+        /// Restores the decay clock from a save. For loading only, in the same spirit as
+        /// <see cref="RestoreHeat"/> — <see cref="Advance"/> would stamp today's date and
+        /// hand every loaded feud a free reset.
+        /// </summary>
+        public void RestoreDecay(DateOnly? lastAdvanced, DateOnly? decayedTo)
+        {
+            LastAdvanced = lastAdvanced;
+            DecayedTo    = decayedTo;
+        }
+
+        /// <summary>Restores resolution state from a save. Loading only.</summary>
+        public void RestoreResolution(bool concluded, DateOnly? concludedOn,
+                                      int matchesSinceHot, double distrust,
+                                      int chaptersSettled = 0)
+        {
+            Concluded       = concluded;
+            ConcludedOn     = concludedOn;
+            MatchesSinceHot = Math.Max(0, matchesSinceHot);
+            Distrust        = Math.Clamp(distrust, 0, 1);
+            ChaptersSettled = Math.Max(0, chaptersSettled);
         }
 
         /// <summary>Stamps a history tag onto the feud. Duplicates are ignored.</summary>
