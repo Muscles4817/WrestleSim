@@ -1222,3 +1222,48 @@ green unit tests", which was the count on a different branch.
 
 
 ---
+
+---
+
+## The roster is real wrestlers again
+
+The roster expansion took the game from 30 to 76 and got the requirement wrong. The ask was to
+**expand the WWE roster**; what I built was 30 real wrestlers plus **46 invented ones** — Grady
+Kilbride, Nova Kilgore, Solveig Braun and 43 others — with invented tag teams to match. Nobody
+asked for original characters and nothing in the brief implied them. I filled a gap I had been
+told how to fill, my own way, and did not check.
+
+All 46 are replaced with real WWE wrestlers, and the nine tag teams with real ones: the Usos,
+the New Day, Alpha Academy, the Street Profits, the Viking Raiders, Imperium, the Kabuki
+Warriors, Damage CTRL, and Alba Fyre & Isla Dawn.
+
+**Each replacement was matched to the slot it fills.** The 89-overness slot got CM Punk, the
+23-overness slot got a developmental hand — because overness is not a free label here.
+`MatchEngine.TypicalInvestment` is the *measured median* of this roster, so a reshuffle that
+moved the distribution would silently decalibrate the crowd model. Keeping the distribution and
+changing only who occupies each position means the swap is a renaming, not a rebalance:
+
+```
+before   n=34,200  p05 0.7452  median 0.9998  p95 1.0523   0.33% at the maximum
+after    n=34,200  p05 0.7453  median 0.9996  p95 1.0522   0.33% at the maximum
+```
+
+**One thing the swap did break, and it was mine.** Twenty-four of the replacements needed a
+different `Style` — Finn Bálor is not a powerhouse — and I changed the label without moving the
+ratings underneath it. `EveryWrestler_HasADistinctAverageRating` caught it: `BaseMatchScore`
+reads `RingSkills.GetStandardScore(Style)`, so a wrestler billed as something their skill block
+does not support rates below their paper standing, and the roster's measured floor stopped
+being the roster's worst wrestler.
+
+Fixed by **swapping** each affected wrestler's peak skill into their billed style rather than
+raising it. The skill multiset is unchanged, so overall ability, the ratings distribution and
+the calibration are all untouched — but a wrestler billed as a high-flyer is now actually best
+at flying. That invariant (`Style` is the wrestler's strongest ring skill) held for all 52
+untouched wrestlers and now holds for all 76; it had never been written down.
+
+**What is not verified.** Real names, alignments and card positions are from a snapshot and
+WWE's roster churns constantly. Four wrestlers carry their ring name as their real name because
+I was not confident of the legal name and would rather leave a gap than invent one — which is
+the mistake this whole section exists to undo. Corrections welcome; they are data, not code.
+
+**521 tests passing**, unchanged.
