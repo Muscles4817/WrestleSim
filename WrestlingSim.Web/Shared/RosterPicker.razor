@@ -1,0 +1,243 @@
+@*
+    One roster picker, used everywhere a name is chosen.
+
+    Before this, the match builder rendered the roster four separate times, inline and
+    simultaneously — corner A, A's partners, corner B, B's partners — with no way to
+    collapse a list once it had been used. Picking A did not shrink A's list; it added
+    another list below it. A UX review measured step 1 of a tag booking at roughly 116
+    pick cards, about 12,000px, seventeen phone screens; at three a side and a seventy-name
+    roster it is nearer thirty thousand. And because every improvement to selection had to
+    be made in four places (five, with the segment builder), none of them were ever made:
+    no keyboard, no recency, no relevance, and a single shared search box so that typing to
+    find B's partner re-filtered corner A's list and reflowed the page underneath you.
+
+    So: a sheet, opened from a slot, closed on choose. One list at a time.
+
+    Two rules that are the point rather than decoration:
+
+      • **Rows carry the consequence, not the stats.** A row says "Upper card · 4th meeting,
+        61% of what the first drew", not "Pop 78 · Cha 3.4". The game already computes all
+        of that and showed it three wizard steps later, after the pairing was made and the
+        sunk cost of going back was 116 cards of scrolling.
+
+      • **Names already booked stay visible.** Hiding them is what forces the re-scroll, and
+        it hides the mistake. They are marked, and tapping one swaps the two slots.
+*@
+@inherits StateComponent
+
+<div class="sheet" role="dialog" aria-modal="true" aria-label="@Title" @onkeydown="OnKey" tabindex="-1">
+    <div class="sheet__head">
+        <div class="sheet__title">
+            <span class="label">@Title</span>
+            @if (Current is { } filled) { <span class="badge badge--gold">@filled.RingName</span> }
+        </div>
+        <button class="btn btn--ghost btn--sm" @onclick="Cancel" aria-label="Close">✕</button>
+    </div>
+
+    <div class="sheet__filters">
+        <CastFilter Query="@query" QueryChanged="@OnQuery"
+                    Division="@division" DivisionChanged="@(v => { division = v; cursor = 0; })"
+                    HomeBrand="@State.BookingBrand"
+                    IncludeCrossover="@includeCrossover"
+                    IncludeCrossoverChanged="@(v => { includeCrossover = v; cursor = 0; })"
+                    Placeholder="@($"Search {State.Roster.Count} names…")" />
+    </div>
+
+    <div class="sheet__body">
+        @{ var rows = Rows().ToList(); }
+        @if (rows.Count == 0)
+        {
+            <div class="empty">Nobody matches that search.</div>
+        }
+        else
+        {
+            @foreach (var band in rows.GroupBy(r => r.Section))
+            {
+                <div class="group-label">@band.Key</div>
+                @foreach (var row in band)
+                {
+                    var w = row.Wrestler;
+                    int index = rows.IndexOf(row);
+                    <button class="prow @(index == cursor ? "is-cursor" : "") @(row.UsedAs is null ? "" : "is-used")"
+                            @onclick="() => Choose(w)"
+                            @onmouseover="() => cursor = index">
+                        <span class="prow__name">
+                            @w.RingName
+                            @if (row.UsedAs is { } role) { <span class="badge badge--dim">@role</span> }
+                            @if (State.IsCrossover(w))
+                            {
+                                <span class="badge badge--heel">crossover −@BrandIntegrity.CostOf(w).ToString("F1")</span>
+                            }
+                        </span>
+                        <span class="prow__why">@row.Why</span>
+                        <span class="prow__pop tabnum">@w.OvernessDisplay</span>
+                        <Trend Momentum="@w.Momentum" ShowLabel="false" />
+                    </button>
+                }
+            }
+        }
+    </div>
+</div>
+<div class="sheet__scrim" @onclick="Cancel"></div>
+
+@code {
+    /// <summary>What this slot is, for the sheet's heading. "Corner A", "A's partner 2".</summary>
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+
+    /// <summary>Whoever is in the slot now, so the sheet can show it and offer to clear it.</summary>
+    [Parameter] public Wrestler? Current { get; set; }
+
+    /// <summary>
+    /// Names already booked into this match, and what they were booked as. Kept visible and
+    /// labelled rather than filtered out — see the file comment.
+    /// </summary>
+    [Parameter] public Func<Wrestler, string?> UsedAs { get; set; } = _ => null;
+
+    /// <summary>
+    /// The other side of the match, when it is known. Drives the whole relevance sort: who
+    /// has heat with these people, and who the crowd is sick of watching them fight.
+    /// </summary>
+    [Parameter] public IReadOnlyList<Wrestler> Against { get; set; } = [];
+
+    [Parameter] public EventCallback<Wrestler> Picked { get; set; }
+    [Parameter] public EventCallback Cancelled { get; set; }
+
+    private string query = "";
+    private Division? division;
+    private bool includeCrossover;
+    private int cursor;
+
+    private sealed record Row(Wrestler Wrestler, string Section, string Why, string? UsedAs, int Rank);
+
+    private Task Cancel() => Cancelled.InvokeAsync();
+    private Task Choose(Wrestler w) => Picked.InvokeAsync(w);
+
+    private void OnQuery(string v) { query = v; cursor = 0; }
+
+    /// <summary>
+    /// Arrow keys move the highlight, Enter takes it, Escape closes. Ten lines, and the app
+    /// had none of it anywhere — a grep for `onkeydown` across every screen returned nothing.
+    /// </summary>
+    private async Task OnKey(KeyboardEventArgs e)
+    {
+        var rows = Rows().ToList();
+        switch (e.Key)
+        {
+            case "ArrowDown": cursor = Math.Min(cursor + 1, Math.Max(0, rows.Count - 1)); break;
+            case "ArrowUp":   cursor = Math.Max(cursor - 1, 0); break;
+            case "Enter":     if (cursor < rows.Count) await Choose(rows[cursor].Wrestler); break;
+            case "Escape":    await Cancel(); break;
+        }
+    }
+
+    private DateOnly? Today => State.Career?.CurrentDate;
+
+    private IEnumerable<Row> Rows()
+    {
+        var pool = State.Roster
+            .Where(w => includeCrossover || !State.IsCrossover(w))
+            .Where(w => division is null || w.Division == division)
+            .Where(w => Matches(w, query));
+
+        return pool.Select(Describe)
+                   .OrderBy(r => r.Rank)
+                   .ThenByDescending(r => r.Wrestler.Overness)
+                   .ToList();
+    }
+
+    private static bool Matches(Wrestler w, string q) =>
+        string.IsNullOrWhiteSpace(q)
+        || (w.RingName?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false)
+        || (w.RealName?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false);
+
+    /// <summary>
+    /// One row's section, its one-line reason, and where it sorts.
+    ///
+    /// The sort is the whole point of the rewrite. Every list in the old builder was
+    /// `OrderByDescending(Overness)` — so after picking A, with the app knowing who A has a
+    /// live feud with and who the crowd has seen A fight four times this month, side B was
+    /// offered in order of popularity.
+    /// </summary>
+    private Row Describe(Wrestler w)
+    {
+        string? used = UsedAs(w);
+        string position = w.CardPosition.Label();
+
+        // Booked already: kept visible and swappable, but at the *bottom*. The first draft
+        // ranked these first, on the reasoning that a mis-pick should be easy to see — and a
+        // browser test caught what that actually does: the top row of every picker becomes
+        // somebody already in the match, so tapping the obvious thing swaps two slots
+        // instead of filling an empty one. Filling six slots left one filled. What you
+        // almost always want from a picker is somebody who is not in the match yet.
+        if (used is not null)
+            return new Row(w, "Already in this match", $"{position} · {used} — tap to swap",
+                           used, 90);
+
+        var feud = Against.Count > 0 ? State.FeudBook.Find([w], Against) : null;
+
+        if (feud is { Intensity: > FeudIntensity.None })
+        {
+            double freshness = feud.Familiarity(Today);
+            string against = string.Join(" & ", Against.Select(x => x.RingName));
+
+            // A worn-out pairing sinks, and says why. This is FreshnessAdvice's job and it
+            // used to live three wizard steps after the decision it is about.
+            if (freshness < 0.75)
+                return new Row(w, "The crowd has seen this",
+                    $"{position} · meeting {feud.NextMeetingNumber(Today):F0} with {against} — " +
+                    $"{freshness * 100:F0}% of what the first one drew",
+                    null, 60);
+
+            return new Row(w, "There is a story here",
+                $"{position} · {feud.Intensity.ToString().ToLowerInvariant()} feud with {against}" +
+                (feud.MatchCount > 0 ? $", {feud.MatchCount} match{(feud.MatchCount == 1 ? "" : "es")} in" : ""),
+                null, 1);
+        }
+
+        if (Against.Count > 0 && StandingPartnerOf(w) is { } mate && Against.Contains(mate) is false
+            && UsedAs(mate) is not null)
+            return new Row(w, "Suggested", $"{position} · {mate.RingName}'s partner", null, 2);
+
+        if (RecentlyBooked().Contains(w))
+            return new Row(w, "Recently booked", $"{position} · on the last card", null, 10);
+
+        return new Row(w, position, WhyPlain(w), null, 20 + (int)CardPosition.MainEvent - (int)w.CardPosition);
+    }
+
+    /// <summary>A row with no story attached still has to say something a booker can use.</summary>
+    private string WhyPlain(Wrestler w)
+    {
+        var parts = new List<string> { w.Style.ToString() };
+        if (w.Gimmick?.NaturalAlignment is { } alignment) parts.Add(alignment.ToString().ToLowerInvariant());
+        if (State.Career is { } career && w.LastAppearance is { } seen)
+        {
+            int days = career.CurrentDate.DayNumber - seen.DayNumber;
+            if (days > 21) parts.Add($"not seen in {days / 7} weeks");
+        }
+        return string.Join(" · ", parts);
+    }
+
+    private Wrestler? StandingPartnerOf(Wrestler w) =>
+        State.Career?.Teams.FirstOrDefault(t => t.IsActive && t.Contains(w))
+             ?.Members.FirstOrDefault(m => m != w);
+
+    private HashSet<Wrestler>? _recent;
+
+    /// <summary>Who was on the last card. Cheap, cached for the lifetime of the sheet.</summary>
+    private HashSet<Wrestler> RecentlyBooked()
+    {
+        if (_recent is not null) return _recent;
+
+        _recent = State.Career is { } career
+            ? career.Completed
+                    .OrderByDescending(s => s.Date)
+                    .Take(1)
+                    .SelectMany(s => s.Card)
+                    .OfType<BookedMatch>()
+                    .SelectMany(m => m.Plan.AllParticipants)
+                    .ToHashSet()
+            : [];
+
+        return _recent;
+    }
+}

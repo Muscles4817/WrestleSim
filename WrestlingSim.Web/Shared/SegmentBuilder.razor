@@ -502,7 +502,7 @@
         if (t.HistoryTag.HasValue && !segment.HistoryTags.Contains(t.HistoryTag.Value))
             segment.HistoryTags.Add(t.HistoryTag.Value);
 
-        showAddAction = false;
+        // Deliberately left open — see MatchBuilder.AddBeat.
     }
 
     private void SetPerformer(SegmentAction action, string? realName)

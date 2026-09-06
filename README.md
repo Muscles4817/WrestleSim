@@ -246,11 +246,23 @@ which unlocks the feud-gated beats in the match editor.
 
 ## Booking a Match
 
-Selecting **Book a Match** walks you through a five-step flow:
+Selecting **Book a Match** walks you through up to six steps. Steps that have nothing in
+them for this booking are skipped rather than shown empty — most matches have no belt on
+the line, so most bookings are five.
 
 ### 1 — Pick your wrestlers
-First, singles or tag. Then the roster, showing Overness, Skill and Charisma — one name a
-side for a singles match, two for a tag match, where the second man starts on the apron.
+First, how many a side: one, two or three. Then the lineup — a slot for each place in the
+match, each opening a picker over the page rather than another list on it.
+
+The picker sorts by what matters rather than by popularity: anyone with a live feud against
+the side you have already filled comes first, then anyone the crowd has been shown too often
+(with the number, so you can see what the pairing is still worth), then by card position.
+Names already booked into this match stay in the list, marked, and tapping one swaps the two
+slots. Arrow keys move, Enter picks, Escape closes.
+
+The moment both sides are complete, the pairing's freshness appears under the lineup — how
+many times these two have met and what the next one is worth. That is the point at which it
+is useful, which is while you can still book something else.
 
 A wrestler cannot be booked on both sides, and the sides must be the same size. Handicap
 matches are not blocked out of squeamishness: the engine has no term for a numbers advantage
@@ -271,7 +283,12 @@ The match type is a real commitment, not a label. It does two things:
    book a brawl and call it a technical classic and you lose up to 8. Standard promises
    nothing specific, so it is neutral — the safe choice, never the free one.
 
-### 3 — The feud
+### 3 — The championship *(only when one applies)*
+Any belt held by somebody in the match, and contested at this side size, can be put on the
+line. A tag belt needs *all* of its champions in the match — beating one half of a team does
+not take the straps. If nobody in the match holds anything, this step does not appear.
+
+### 4 — The feud
 The booker reads the feud these two have actually built. If they have history, it is
 shown and used automatically; if they have none you can still declare one by hand,
 and that declaration is written back into the feud book so later segments build on it.
@@ -304,7 +321,7 @@ are stamped by the segments that earn them and gate certain beats:
 
 Feud intensity also still pays off through starting crowd energy and beat unlocks.
 
-### 4 — Choose a match structure
+### 5 — Choose a match structure
 
 You are only offered structures the shape of match can actually work — a singles match is
 never shown a hot tag, and a tag match is never left with only singles presets.
@@ -320,7 +337,7 @@ Pick one of seven pre-built structures as your starting plan, or build from scra
 | **Feud Blowoff** | 8 | The definitive end to a rivalry. Requires an active feud at Building+. |
 | **Big Match Epic** | 9 | WrestleMania main event structure. Slow build to a defining finish. |
 
-### 5 — Edit in the Beat Editor
+### 6 — Edit in the Beat Editor
 
 ```
   ╔══════════════════════════════════════════════════════╗

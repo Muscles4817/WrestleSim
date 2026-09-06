@@ -6,7 +6,10 @@
     {
         <div class="step @(step == index ? "is-current" : step > index ? "is-done" : "")">
             <span class="step__n">@(step > index ? "✓" : (index + 1).ToString())</span>
-            @label
+            @* Wrapped, so the mobile rule that collapses these pills to numerals applies
+               here too. Without the span, this screen showed every label while the match
+               and segment builders showed one — the same component behaving two ways. *@
+            <span>@label</span>
         </div>
     }
 </div>
