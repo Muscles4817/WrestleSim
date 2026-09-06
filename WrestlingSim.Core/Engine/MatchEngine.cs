@@ -75,7 +75,7 @@ namespace WrestlingSim.Engine
         /// technical and storytelling scores. What it loses is the third of the grade that
         /// was supposed to be about the audience.
         /// </summary>
-        private static double InvestmentFactor(double investment) =>
+        public static double InvestmentFactor(double investment) =>
             investment >= TypicalInvestment
                 ? 1.0 + (investment - TypicalInvestment) * InvestmentUpside
                 : 1.0 - (TypicalInvestment - investment) * InvestmentDownside;
@@ -2004,7 +2004,9 @@ namespace WrestlingSim.Engine
             // moves is the tails, and they move by different amounts in the two directions:
             // see InvestmentDownside / InvestmentUpside.
             double investment = state.Reaction.Investment;
-            double crowdComponent = crowdNorm * 100 * crowdWeight * InvestmentFactor(investment);
+            double crowdBeforeInvestment = crowdNorm * 100 * crowdWeight;
+            double investmentFactor      = InvestmentFactor(investment);
+            double crowdComponent        = crowdBeforeInvestment * investmentFactor;
 
             // Finish quality nudges the final score (±10 points), so an unearned finish
             // costs around half a star.
@@ -2053,6 +2055,17 @@ namespace WrestlingSim.Engine
                 MatchTypeCoherence = coherence,
                 Reaction           = state.Reaction,
                 Familiarity        = ctx.Familiarity,
+                Breakdown          = new ScoreBreakdown
+                {
+                    Technical             = techComponent,
+                    Storytelling          = storyComponent,
+                    Crowd                 = crowdComponent,
+                    CrowdBeforeInvestment = crowdBeforeInvestment,
+                    InvestmentFactor      = investmentFactor,
+                    FinishNudge           = finishNudge,
+                    VarietyNudge          = varietyNudge,
+                    CoherenceNudge        = coherenceNudge
+                },
                 FinalScore         = finalScore,
                 StarRating         = starRating
             };

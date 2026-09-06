@@ -88,14 +88,18 @@ What it covers:
 - **Tension and silence are separated.** The two quiet rooms that mean opposite things — an
   audience holding its breath and one that has stopped caring — were a single negative
   number. The denied tag reads as tension; an overworked heat reads as go-away heat.
-- **Silence is the failure state**, per §2.1. The crowd component is scaled by
-  `Investment`, and the scaling is deliberately asymmetric: down to 0.65, up only to 1.06.
+- **Silence is the failure state**, per §2.1. The crowd component is scaled by `Investment`
+  on an asymmetric curve — a dead room keeps 69% of it, a room present all night gains 5.9%.
   An invested crowd is the baseline a match is supposed to earn; being ignored is what costs.
-- **Booking, not just casting.** A beat repeated past the point anybody is still watching
-  records go-away heat however over the wrestlers are.
+- **Booking, not just casting.** Repetition feeds investment continuously, so a beat the
+  crowd has already seen three times costs their attention however over the wrestlers are.
+- **Heat means alignment, not unpopularity.** A heel draws heat and a babyface draws pop at
+  the same overness, and §2's two important crossovers — cheers for a heel, boos for a
+  babyface — are both reachable.
 
-Measured: the same plan worked by the same skill level rates **2.17★ in front of a room that
-never turned up and 3.99★ in front of one that did**.
+Measured: investment moves the score in **98.5%** of shipped-roster singles matches, by up to
+**4.72 points (0.236★)**. The median match comes out at ×0.995, so the effect really is in
+the tails.
 
 Still open from the original entry: `nuclear heat` as distinct from ordinary heat, and
 reaction as an input to the *business* result rather than only the quality rating (C5).

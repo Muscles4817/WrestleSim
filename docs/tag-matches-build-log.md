@@ -729,3 +729,192 @@ the recreations and the distribution tests, not equality.
 
 Measured: the same plan worked to the same standard rates **2.17★ in front of a room that
 never turned up and 3.99★ in front of one that did.**
+
+> **This claim is withdrawn.** Review reproduced both numbers on the *parent* commit —
+> 2.1658 with A5 absent, 2.1658 with it present, identical to four decimal places. The dead
+> pairing it uses has a raw crowd reading below `CrowdFloor`, so its crowd component is
+> already zero and the investment multiplier is mathematically incapable of touching it. The
+> spread is produced entirely by the pre-existing `CrowdCeiling`/`CrowdFloor` machinery. See
+> the round 1 section at the end of this file for what A5 is actually worth.
+
+---
+
+## A5 — review round 1, and a feature that was mostly not there
+
+The verdict was **not safe to merge**, with four blocking findings, and the review was right
+about all of them. The summary I would give of my own first attempt: the per-beat simulation
+was untouched and correct, the `Tension` component was a genuine addition — and almost
+everything I claimed *about* the feature was either unmeasured or measurably false.
+
+### The headline claim was causally false
+
+Three places — the commit message, the build log and doc 31 — carried the same number as
+proof the feature worked: *"the same plan worked to the same standard now rates 2.17★ in
+front of a room that never turned up and 3.99★ in front of one that did."*
+
+Review ran that harness on the **parent** commit. The dead-room figure is **2.1658 with A5
+absent and 2.1658 with it present**, identical to four decimal places. That pairing's raw
+crowd reading is below `CrowdFloor`, so `crowdNorm` is already zero and the investment
+multiplier is arithmetically incapable of touching it. The whole spread was produced by the
+pre-existing `CrowdCeiling`/`CrowdFloor` machinery. A5's real contribution to that comparison
+was +0.083★ on the good match and **exactly zero** on the bad one.
+
+Withdrawn in all three places, with the retraction left visible where the claim was made.
+
+### Two of three constants were fitted to the test suite
+
+* `InvestmentSwing = 0.70` cleared `GoldbergVsBrock_WM20_BetterBooking`'s `>= 2.25` bar by
+  **0.0001★**, and 0.71 failed it. I had written a paragraph explaining that the asymmetry
+  "is the point rather than a tuning convenience". It was a tuning convenience.
+* `TypicalInvestment = 0.50` was documented as *"the investment reading a normal match
+  produces"*. Review measured the shipped roster's actual median at **0.7635**. The
+  consequence was not cosmetic: **64.6%** of all matches saturated the upper clamp and
+  received an identical flat uplift, so what I described as tail movement was, for
+  two-thirds of the roster, a blanket bonus.
+* Meanwhile the **0.65 floor** — the one bound I defended on doctrinal grounds — was
+  constrained by nothing. Review passed the whole suite at 0.30, 0.50, 0.90 and **1.00**,
+  and 1.00 removes the silence penalty entirely.
+
+**Re-derived.** `TypicalInvestment` is now the measured median (0.7635), and the clamp is
+gone: the curve is two slopes, `InvestmentDownside = 0.40` below typical and
+`InvestmentUpside = 0.25` above. A dead room keeps 69.5% of its crowd component; a room
+present all night gains 5.9%. The asymmetry doc 16 §2.1 argues for is now expressed in the
+slopes rather than in a clamp that flattened two-thirds of the corpus, and every match gets a
+distinct multiplier.
+
+```
+n=5,220   p05 0.7451   median 0.9948   p95 1.0540   1.15% at the maximum
+investment moves the score in 98.5% of matches, by up to 4.72 points (0.236★)
+```
+
+`ATypicalMatchIsUnmoved_AndThatIsMeasuredNotAsserted` pins the median to the *corpus*, not to
+the constant, so it fails if either drifts away from the other. That is the test the old
+claim should have had.
+
+**And the two recreation tests were re-baselined deliberately**, which is the point the
+review made that I want to keep visible: a bar cleared by 0.0001 is not a test, and a
+constant chosen to clear it is not a calibration. Both `GoldbergVsBrock_WM20_BetterBooking`
+and `RomanVsBrock_WM34_BetterBooking` now assert what their own comments always said they
+meant — *this beats the original booking of the same match* — against the original plan,
+which is immune to recalibration of the crowd axis and is the claim anyone reading the test
+cares about. `WM34OriginalPlan()` was extracted so the comparison could exist.
+
+### `ResolvedReaction` reported the opposite of what it recorded
+
+The positive branch ended `return liked >= 0.5 ? Pop : Heat`, so it could **never** say
+`Silence` however absent the room. Two nobodies in a Spotfest produced seven beats every one
+of which reported `Heat` — documented as engagement and a *good* outcome — in a match whose
+own aggregate recorded 45.1 silence, zero heat, and the note "the room never turned up".
+
+Now a `Dominant(...)` helper returns whichever share was actually largest. Same pairing today:
+
+```
+nobodies  silence 43.5 · go-away 1.6  (0% invested)   →  Silence ×7
+stars     pop 111.8 · silence 2.4     (95% invested)  →  Pop ×7
+```
+
+### The half about booking never fired
+
+`if (r.RepetitionFactor < 0.5) → GoAwayHeat` was singled out in the commit message, the build
+log and doc 31 as what made A5 respond to booking rather than only to casting. Review
+measured it firing on **0 of 33,060 beats**. It cannot fire: `RepetitionFactor` bottoms out
+at 0.680 on shipped content, because no preset repeats a beat type often enough. A threshold
+nothing reaches is not a mechanism.
+
+Repetition is a continuous input to investment now — `invested = attention × RepetitionFactor`
+— so it applies to a main-eventer's fourth near-fall as much as to a jobber's first, and it
+fires on every repeat rather than on none. Same two stars, one heat segment versus five:
+investment 0.978 → 0.906, and the go-away component rises with it.
+
+That also fixed something the review raised as a style point but which was a real
+inconsistency: the uninvested share of a *positive* beat was recorded as silence and of a
+*negative* beat as go-away heat, so the two branches made opposite assumptions about the same
+disengaged crowd. The split is now by **cause** rather than by sign — a room worn out by
+repetition entertains itself, a room that never cared is quiet — which is what doc 16 §2's
+distinction between silence ("Nothing") and go-away heat (loud, active, counting along)
+actually rests on.
+
+### Heat meant "unpopular", not "heel"
+
+`liked` came off `Disposition`, which is popularity. `Gimmick.NaturalAlignment` existed and
+the engine never read it. So a hugely over heel recorded `Pop`, an unloved babyface recorded
+`Heat`, and the two readings doc 16 §2 flags as mattering most — cheers for a heel, boos for
+a babyface — were unrepresentable by construction.
+
+New `PerformerProfile.Favour`: alignment sets the intent (0.85 face / 0.15 heel / 0.50
+tweener) and disposition can override it, with the coefficient chosen so the crossover is
+reachable but not routine. At identical overness and charisma:
+
+```
+babyface on top   pop 44.8 · heat  2.0
+heel on top       pop 19.6 · heat 27.2
+adored heel       pop 38.2 · heat 36.9     ← the crossover §2 says matters most
+```
+
+### The vector no longer collapses to two components
+
+Review measured `Dominant` as *only ever* `Pop` or `Silence` across 7,560 matches, and three
+of five `Label` branches dead. Across the shipped-roster singles sweep now:
+
+```
+match-level dominant   Pop 2951 · Silence 1790 · Heat 479
+beat-level             Pop 16735 · Silence 10984 · Heat 4012 · Tension 1300
+labels in use          6 of 6
+```
+
+`GoAwayHeat` still never dominates a whole match, which I think is correct rather than a
+remaining gap — a match the crowd spent entirely entertaining itself is a catastrophe, not a
+common outcome — but it is now reachable per beat and it rises with repetition.
+
+### Every mutation the review found surviving is now caught
+
+Review deleted or inverted nine things and five survived. All seven that are still applicable
+were re-run after these changes, each against the full suite:
+
+| mutation | before | now |
+|---|---|---|
+| delete the investment→rating multiplier | 429 passed | **fails** `TheCrowdComponent_IsActuallyScaledByInvestment` |
+| repetition no longer feeds investment | 429 passed | **fails** `RepeatingABeat_CostsInvestment…` |
+| remove the `Math.Max(1.5, …)` weight floor | 429 passed | **fails** `ABeatThatMovesNobody…` |
+| remove the NearTag → Tension override | 429 passed | **fails** `ADeniedTag_ReadsAsTension…` |
+| `Favour` back to popularity only | n/a | **fails** `HeatIsAboutAlignment…` |
+| empty reaction back to reporting `Pop` | n/a | **fails** `AReactionWithNothingRecorded…` |
+| `Dominant()` back to the `liked >= 0.5` shortcut | n/a | **fails** `EveryBeatsLabel…` |
+
+Three of the old tests were vacuous and are replaced rather than patched.
+`ADeadRoom_CostsTheCrowdComponent_ButNotTheWholeMatch` compared a 15-overness pairing to a
+92-overness one and asserted the second rated higher, which holds with A5 entirely absent —
+and it was the *only* test aimed at the rating effect. `ADeniedTag_ReadsAsTension` used
+default roster values that land at investment 0.545, so the ordinary negative branch already
+returned `Tension` and the override was untested; it now runs at three connection levels,
+including one where only the override can produce that answer.
+`EveryBeatRecordsSomething…` said "the weight has a floor for exactly this reason" and did
+not test the floor.
+
+### What made the tests possible: the score breakdown
+
+Every claim about what a term does to a rating had to be made through the star rating, which
+is the sum of six things and therefore proves nothing about any one of them. That is exactly
+how a deleted term went unnoticed. `MatchEngineResult.Breakdown` now reports the six terms,
+the crowd component before and after investment, and the factor itself — so the test is an
+identity rather than a statistical argument. My first attempt at that test *was* statistical
+(bin by crowd energy, compare within bins) and it was confounded by structure: it reported
+higher investment producing *lower* ratings, because a high-connection pairing in a weak
+structure lands in the same crowd bin as a low-connection pairing in a strong one. Worth
+recording, because a confounded test that happens to fail is only marginally better than a
+vacuous one that happens to pass.
+
+The breakdown is also the thing the UX pass needs: a rating with no explanation is a verdict,
+not feedback.
+
+### Still open, and not claimed
+
+* **`Investment` is still substantially a restatement of `Connection`**, which `CrowdCeiling`
+  already scales the crowd axis by. Repetition now supplies a genuine booking term, but the
+  casting term dominates it. The review is right that A5's stated purpose — *is anybody
+  invested?* as a signal distinct from how loud the room is — is only partly delivered.
+* **Nuclear heat** as distinct from ordinary heat, and duelling chants, are not modelled.
+* `CrowdReaction` has private setters and does not round-trip through a save. Nothing
+  persists it today.
+
+**436 tests passing.**

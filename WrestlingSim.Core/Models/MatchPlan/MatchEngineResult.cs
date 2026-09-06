@@ -71,6 +71,19 @@ namespace WrestlingSim.Models.MatchPlan
         };
 
         // Final rating
+        /// <summary>
+        /// How the 0–100 <see cref="FinalScore"/> was actually assembled.
+        ///
+        /// Reported rather than kept private for two reasons. The player one: a rating with
+        /// no breakdown is a verdict, not feedback — a booker who cannot see that a match
+        /// lost four points on variety cannot learn to book a better one. The engineering
+        /// one: it makes the composite *testable*. Every claim about what a term does to a
+        /// rating had to be made through the star rating before this, which is the sum of
+        /// six things and so proves nothing about any one of them — and review found
+        /// exactly that hiding a term that had been deleted without a single test noticing.
+        /// </summary>
+        public ScoreBreakdown Breakdown { get; init; } = new();
+
         public double FinalScore  { get; init; }  // 0–100
         public double StarRating  { get; init; }  // 0–5
 
@@ -117,4 +130,50 @@ namespace WrestlingSim.Models.MatchPlan
                 .Concat(b.Commentary)
                 .Concat(new[] { $"  ▶ {b.StatsLine}", "" }));
     }
+
+    /// <summary>
+    /// The terms that make up <see cref="MatchEngineResult.FinalScore"/>. Weighted
+    /// components first, then the nudges — they sum to the score before clamping.
+    /// </summary>
+    public class ScoreBreakdown
+    {
+        /// <summary>Saturated technical score × the match type's technical weight.</summary>
+        public double Technical { get; init; }
+
+        /// <summary>Saturated storytelling score × the match type's storytelling weight.</summary>
+        public double Storytelling { get; init; }
+
+        /// <summary>
+        /// Normalised crowd reading × the crowd weight × <see cref="InvestmentFactor"/>.
+        /// </summary>
+        public double Crowd { get; init; }
+
+        /// <summary>The crowd term before investment was applied. Crowd / this = the factor.</summary>
+        public double CrowdBeforeInvestment { get; init; }
+
+        /// <summary>How much of the crowd term investment kept — 1.0 is a typical room.</summary>
+        public double InvestmentFactor { get; init; }
+
+        public double FinishNudge    { get; init; }
+        public double VarietyNudge   { get; init; }
+        public double CoherenceNudge { get; init; }
+
+        /// <summary>What investment was worth, in points of the final score.</summary>
+        public double InvestmentPoints => Crowd - CrowdBeforeInvestment;
+
+        /// <summary>Largest-first, for display. Nudges included, signed.</summary>
+        public IEnumerable<(string Label, double Points)> Ordered =>
+            new[]
+            {
+                ("Crowd",        Crowd),
+                ("Storytelling", Storytelling),
+                ("Technical",    Technical),
+                ("Finish",       FinishNudge),
+                ("Variety",      VarietyNudge),
+                ("Match type",   CoherenceNudge)
+            }
+            .Where(x => Math.Abs(x.Item2) > 0.005)
+            .OrderByDescending(x => Math.Abs(x.Item2));
+    }
+
 }
