@@ -20,6 +20,7 @@ namespace WrestlingSim.Engine
         public const string CatNearFall     = "Near Fall";
         public const string CatStorytelling = "Storytelling";
         public const string CatFinish       = "Finish";
+        public const string CatTag          = "Tag";
 
         // ── Full catalogue ───────────────────────────────────────────────────
 
@@ -441,6 +442,135 @@ namespace WrestlingSim.Engine
                 DefaultDuration  = BeatDuration.Brief,
                 BookerTip        = "Even weaker than a DQ finish. Reserve for injury angles or deliberate heel cowardice spots.",
                 Tags             = ["Controversy"]
+            },
+
+            // ── Tag ──────────────────────────────────────────────────────────
+            //
+            // The tag formula in the order it is worked. Shine and cut-off set it up,
+            // isolation and the denied near-tag charge it, the hot tag spends it. Booking
+            // the hot tag without the isolation is the tag-match equivalent of an unearned
+            // finish, and is penalised the same way.
+
+            new BeatTemplate
+            {
+                Name             = "Shine",
+                Description      = "The face side on top early — clean offence, and the opponents cannot get settled. Works in a singles match too.",
+                Category         = CatTag,
+                Type             = BeatType.Shine,
+                DefaultIntensity = BeatIntensity.Medium,
+                DefaultDuration  = BeatDuration.Medium,
+                BookerTip        = "Book before the heat. A crowd that never saw them look good has no reason to want them saved.",
+                Tags             = ["Tag", "Singles", "Fast"]
+            },
+            new BeatTemplate
+            {
+                Name             = "Cut-Off",
+                Description      = "The heels take over, usually off a distraction. The shine ends here and the heat begins.",
+                Category         = CatTag,
+                Type             = BeatType.Cutoff,
+                DefaultIntensity = BeatIntensity.Medium,
+                DefaultDuration  = BeatDuration.Short,
+                BookerTip        = "Control is the side taking over. Quietens the room on purpose — that is what makes the hot tag loud.",
+                Tags             = ["Tag", "Singles", "Heel"]
+            },
+            new BeatTemplate
+            {
+                Name             = "Face in Peril",
+                Description      = "One man kept cut off from his corner and worked over. The heart of the tag formula.",
+                Category         = CatTag,
+                Type             = BeatType.Isolation,
+                DefaultIntensity = BeatIntensity.Medium,
+                DefaultDuration  = BeatDuration.Medium,
+                BookerTip        = "Control is the side doing the isolating. Each one charges the hot tag; three is the most that pays.",
+                Tags             = ["Tag", "Heat"]
+            },
+            new BeatTemplate
+            {
+                Name             = "Near Tag",
+                Description      = "He reaches for the corner and is dragged back. The crowd groans — and that groan is stored energy.",
+                Category         = CatTag,
+                Type             = BeatType.NearTag,
+                DefaultIntensity = BeatIntensity.High,
+                DefaultDuration  = BeatDuration.Brief,
+                BookerTip        = "Takes energy out of the room now and pays it back at the hot tag, harder than another isolation would.",
+                Tags             = ["Tag", "Tension"]
+            },
+            new BeatTemplate
+            {
+                Name             = "Hot Tag",
+                Description      = "The fresh partner finally gets in. The loudest planned moment in professional wrestling.",
+                Category         = CatTag,
+                Type             = BeatType.HotTag,
+                DefaultIntensity = BeatIntensity.High,
+                DefaultDuration  = BeatDuration.Short,
+                BookerTip        = "Worth what the isolation paid for it. Booked cold it lands at barely half — book the peril first.",
+                Tags             = ["Tag", "Payoff"]
+            },
+            new BeatTemplate
+            {
+                Name             = "Quick Tag",
+                Description      = "A routine tag. Changes who is legal without being a moment in itself.",
+                Category         = CatTag,
+                Type             = BeatType.Tag,
+                DefaultIntensity = BeatIntensity.Low,
+                DefaultDuration  = BeatDuration.Brief,
+                BookerTip        = "Moves a partner in without spending the hot tag. Also clears the charge, so do not use it mid-heat.",
+                Tags             = ["Tag"]
+            },
+            new BeatTemplate
+            {
+                Name             = "Blind Tag",
+                Description      = "A tag the opponents never saw. Heel cheating, or a face stealing a moment.",
+                Category         = CatTag,
+                Type             = BeatType.BlindTag,
+                DefaultIntensity = BeatIntensity.Medium,
+                DefaultDuration  = BeatDuration.Brief,
+                BookerTip        = "Sets up a finish nobody expected. Works best when the crowd saw it and the opponent did not.",
+                Tags             = ["Tag", "Cheat"]
+            },
+            new BeatTemplate
+            {
+                Name             = "Double Team",
+                Description      = "Tandem offence. Only as good as the worse half of the pair.",
+                Category         = CatTag,
+                Type             = BeatType.DoubleTeam,
+                DefaultIntensity = BeatIntensity.High,
+                DefaultDuration  = BeatDuration.Short,
+                BookerTip        = "Reads off both partners rather than whoever is legal. A team of strangers should not book many.",
+                Tags             = ["Tag", "Teamwork"]
+            },
+            new BeatTemplate
+            {
+                Name             = "Miscommunication",
+                Description      = "The partners collide. A story now, and a team that splits up later.",
+                Category         = CatTag,
+                Type             = BeatType.Miscommunication,
+                DefaultIntensity = BeatIntensity.Medium,
+                DefaultDuration  = BeatDuration.Brief,
+                BookerTip        = "Control is the side that blunders — advantage moves against them. The one beat where that is true.",
+                Tags             = ["Tag", "Story"]
+            },
+            new BeatTemplate
+            {
+                Name             = "Save",
+                Description      = "The partner dives in to break up the pin at two and a half.",
+                Category         = CatTag,
+                Type             = BeatType.SaveBreakup,
+                DefaultIntensity = BeatIntensity.High,
+                DefaultDuration  = BeatDuration.Brief,
+                BookerTip        = "Book after a near fall. Wears out fast — by the third the referee is being openly ignored.",
+                Tags             = ["Tag", "Near Fall"]
+            },
+            new BeatTemplate
+            {
+                Name             = "All Four In",
+                Description      = "It breaks down, everyone is in the ring, the referee has lost control.",
+                Category         = CatTag,
+                Type             = BeatType.AllFourBrawl,
+                DefaultIntensity = BeatIntensity.High,
+                DefaultDuration  = BeatDuration.Short,
+                BookerTip        = "Resets the room before a finish. Moves nobody's advantage — it is punctuation, not a turning point.",
+                Tags             = ["Tag", "Chaos"]
             },
         };
 

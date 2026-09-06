@@ -470,11 +470,12 @@ public class GameState
     /// Introduces a belt. Deliberately routed through the registry so the dilution is
     /// recalculated and every other title on the books immediately reads lower.
     /// </summary>
-    public async Task CreateTitleAsync(string name, TitleTier tier, Division division)
+    public async Task CreateTitleAsync(
+        string name, TitleTier tier, Division division, int sideSize = 1)
     {
         if (Career == null) return;
 
-        Career.Titles.Create(name, tier, division, Career.CurrentDate);
+        Career.Titles.Create(name, tier, division, Career.CurrentDate, sideSize);
         await SaveAsync();
         Notify();
     }

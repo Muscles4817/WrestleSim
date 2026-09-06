@@ -12,6 +12,14 @@ namespace WrestlingSim.Models.MatchPlan
         public required string Name        { get; init; }
         public required string Description { get; init; }
 
+        /// <summary>
+        /// How many people per side this structure is written for. 1 is a singles
+        /// structure; 2 is a tag structure and its beats will not validate against a side
+        /// with nobody on the apron. The booking UI filters on this so a player is never
+        /// offered a hot tag for a singles match.
+        /// </summary>
+        public int SideSize { get; init; } = 1;
+
         /// <summary>Tags for filtering (e.g. "Technical", "Brawl", "Feud").</summary>
         public IReadOnlyList<string> Tags { get; init; } = [];
 

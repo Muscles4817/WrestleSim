@@ -13,10 +13,29 @@ namespace WrestlingSim.Engine
         public bool IsMeaningful => Math.Abs(OvernessDelta) >= 0.05 || Math.Abs(MomentumDelta) >= 0.5;
     }
 
-    /// <summary>Both sides of a match result.</summary>
-    public sealed record MatchStatusOutcome(StatusChange Winner, StatusChange Loser)
+    /// <summary>
+    /// Both sides of a match result.
+    ///
+    /// <see cref="Winner"/> and <see cref="Loser"/> are the two people the fall was
+    /// actually between — the pinner and the man who was pinned. In a tag match
+    /// <see cref="Partners"/> carries what the result did to everybody else on the two
+    /// sides, which is deliberately not the same thing.
+    /// </summary>
+    public sealed record MatchStatusOutcome(
+        StatusChange Winner, StatusChange Loser, IReadOnlyList<StatusChange>? Partners = null)
     {
-        public IEnumerable<StatusChange> All => new[] { Winner, Loser };
+        public IEnumerable<StatusChange> All =>
+            new[] { Winner, Loser }.Concat(Partners ?? []);
+
+        /// <summary>
+        /// The winner's overness swing before it was dampened against his own ceiling.
+        /// Partners take their share of this rather than of the dampened figure, so a
+        /// star's compression is not charged to the man standing next to him.
+        /// </summary>
+        public double RawWinnerOverness { get; init; }
+
+        /// <summary>The loser's swing before dampening, as a positive magnitude.</summary>
+        public double RawLoserOverness { get; init; }
     }
 
     /// <summary>How decisively a match ended, from the audience's point of view.</summary>
@@ -81,12 +100,129 @@ namespace WrestlingSim.Engine
         /// statement; losing to him again is not a fall. Nobody gains, and nobody much
         /// loses either, which is precisely why a stale series is dead weight on a card.
         /// </summary>
+        /// <summary>
+        /// Share of the winner's gain that goes to a partner who did not score the fall.
+        /// Half, because being on the winning team is genuinely worth something and
+        /// standing on the apron while somebody else wins the match is genuinely worth
+        /// less than winning it.
+        /// </summary>
+        public const double PartnerWinShare = 0.50;
+
+        /// <summary>
+        /// Share of the loser's hit that a partner takes when somebody else ate the fall.
+        ///
+        /// This asymmetry is the point of the whole method. At 0.35 a booker can protect
+        /// someone by having their partner take the pin, which is the single most common
+        /// use a tag match is put to
+        /// (docs/wrestling-reference/12-pushes-and-positioning.md §6.1) — and it still
+        /// costs something, so it is a lever rather than a free pass.
+        /// </summary>
+        public const double PartnerLossShare = 0.35;
+
+        /// <summary>
+        /// What a side is worth to the audience.
+        ///
+        /// Top-weighted rather than averaged, for the same reason the match engine reads a
+        /// side that way: beating a team reads as beating the team, and a team is mostly
+        /// its best man. A flat mean would make adding a jobber to a main-eventer's side a
+        /// way of quietly halving what beating them is worth.
+        /// </summary>
+        public static double SideStanding(IReadOnlyList<Wrestler> side, double chemistry = 0.0)
+        {
+            if (side.Count == 0) return 0;
+            if (side.Count == 1) return side[0].EffectiveOverness;
+
+            double best = side.Max(w => w.EffectiveOverness);
+            double mean = side.Average(w => w.EffectiveOverness);
+            return best + (mean - best) * DragFor(chemistry);
+        }
+
+        /// <summary>
+        /// Mirrors <c>MatchEngine.Ctx</c>, including its chemistry lift — an established
+        /// team reads as one act to the status economy for exactly the reason it does to
+        /// the crowd. These were allowed to drift apart once already: this method shipped
+        /// with a flat 0.5 and a comment claiming it mirrored a term that by then had a
+        /// chemistry factor in it, so the engine read a drilled star-and-rookie side at
+        /// 84.75 and the heat economy read the same side at 72.50.
+        /// </summary>
+        public static double DragFor(double chemistry) =>
+            SideDragWeight * (1.0 - SideChemistryLift * Math.Clamp(chemistry, 0, 1));
+
+        public const double SideDragWeight   = 0.5;
+        public const double SideChemistryLift = 0.7;
+
+        /// <summary>
+        /// What a result did to everybody in a tag match.
+        ///
+        /// The fall itself is priced exactly as a singles match between the two men in it,
+        /// against the two *sides'* standing rather than their own — so beating a team of
+        /// mid-carders is not the same statement as beating one main-eventer. Then the
+        /// pinner and the man who was pinned take it in full, and their partners take a
+        /// share.
+        /// </summary>
+        public static MatchStatusOutcome ForSides(
+            IReadOnlyList<Wrestler> winningSide, Wrestler pinner,
+            IReadOnlyList<Wrestler> losingSide, Wrestler pinned,
+            double starRating, FinishWeight finish, double familiarity = 1.0,
+            double winningChemistry = 0.0, double losingChemistry = 0.0)
+        {
+            // ForMatch is protected by MatchPlan.Validate upstream; this is public and has
+            // no such guard, and the degenerate calls are not harmlessly wrong — an empty
+            // winning side reads as a maximum upset and pays about five times a normal win,
+            // and a pinner who is not on either side has three people paid for one result.
+            if (winningSide.Count == 0) throw new ArgumentException("The winning side is empty.", nameof(winningSide));
+            if (losingSide.Count == 0)  throw new ArgumentException("The losing side is empty.", nameof(losingSide));
+            if (!winningSide.Contains(pinner))
+                throw new ArgumentException(
+                    $"{pinner.RingName} scored the fall but is not on the winning side.", nameof(pinner));
+            if (!losingSide.Contains(pinned))
+                throw new ArgumentException(
+                    $"{pinned.RingName} took the fall but is not on the losing side.", nameof(pinned));
+            if (winningSide.Intersect(losingSide).Any())
+                throw new ArgumentException("A wrestler cannot be on both sides.", nameof(winningSide));
+
+            var core = ForMatch(
+                pinner, pinned, starRating, finish, familiarity,
+                winnerStanding: SideStanding(winningSide, winningChemistry),
+                loserStanding:  SideStanding(losingSide, losingChemistry));
+
+            var partners = new List<StatusChange>();
+
+            // The share is taken from the *undampened* swing, then dampened once against
+            // this partner's own ceiling.
+            //
+            // Taking it from core.Winner.OvernessDelta instead charged the partner for the
+            // pinner's ceiling compression as well as his own, and the worst case was the
+            // one this whole method exists for: a rookie partnered with a 95-overness star
+            // received about a sixth of what the constant says, because the star's own
+            // compression had already eaten it. The nominal 50%/35% were coming out as
+            // 24%/30%, and 47%/11% at the extremes.
+            foreach (var w in winningSide.Where(m => m != pinner))
+                partners.Add(new StatusChange(
+                    w,
+                    DampenGain(w.Overness, core.RawWinnerOverness * PartnerWinShare),
+                    core.Winner.MomentumDelta * PartnerWinShare,
+                    $"On the winning team, but {pinner.RingName} scored the fall."));
+
+            foreach (var w in losingSide.Where(m => m != pinned))
+                partners.Add(new StatusChange(
+                    w,
+                    -DampenLoss(w.Overness, core.RawLoserOverness * PartnerLossShare),
+                    core.Loser.MomentumDelta * PartnerLossShare,
+                    $"On the losing team, but {pinned.RingName} took the fall."));
+
+            return core with { Partners = partners };
+        }
+
         public static MatchStatusOutcome ForMatch(
             Wrestler winner, Wrestler loser, double starRating, FinishWeight finish,
-            double familiarity = 1.0)
+            double familiarity = 1.0,
+            double? winnerStanding = null, double? loserStanding = null)
         {
-            double w = winner.EffectiveOverness;
-            double l = loser.EffectiveOverness;
+            // Normally each man's own standing. A tag match passes its sides' standing
+            // instead, because that is what the audience is weighing.
+            double w = winnerStanding ?? winner.EffectiveOverness;
+            double l = loserStanding  ?? loser.EffectiveOverness;
 
             // You can only take status from someone who has it. Beating a nobody is worth
             // nothing however cleanly you do it.
@@ -131,6 +267,9 @@ namespace WrestlingSim.Engine
 
             // Approaching the ceiling is much harder than leaving the floor, and someone
             // the crowd already ignores has little further to fall.
+            double rawWinnerOverness = winnerOverness;
+            double rawLoserOverness  = loserOverness;
+
             winnerOverness = DampenGain(winner.Overness, winnerOverness);
             loserOverness  = DampenLoss(loser.Overness, loserOverness);
 
@@ -138,7 +277,11 @@ namespace WrestlingSim.Engine
                 new StatusChange(winner, winnerOverness, winnerMomentum + showcase,
                     DescribeWin(gap, prize, finish)),
                 new StatusChange(loser, -loserOverness, -loserMomentum + showcase,
-                    DescribeLoss(gap, prize, finish)));
+                    DescribeLoss(gap, prize, finish)))
+            {
+                RawWinnerOverness = rawWinnerOverness,
+                RawLoserOverness  = rawLoserOverness
+            };
         }
 
         /// <summary>Reads a finish beat as how decisive the audience found it.</summary>

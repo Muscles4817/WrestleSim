@@ -15,7 +15,7 @@ namespace WrestlingSim.UI
         public static void Run(List<Wrestler> wrestlers, FeudBook feudBook)
         {
             ConsoleUi.Clear();
-            DrawHeader("BOOK A SINGLES MATCH");
+            DrawHeader("BOOK A MATCH");
 
             var booked = BuildMatch(wrestlers, feudBook);
             if (booked == null) return;
@@ -23,16 +23,22 @@ namespace WrestlingSim.UI
             // Read the pairing's freshness before this match is added to it — see
             // docs/wrestling-reference/20-storylines-and-feuds.md §9.1. The console sandbox
             // has no world clock, so no date is passed and nothing is ever forgotten.
-            var pairing = feudBook.GetOrCreate(booked.Plan.WrestlerA, booked.Plan.WrestlerB);
+            // Keyed on the two sides, exactly as ShowSimulator does. Keying on the
+            // starters meant the same tag match deposited heat into a different feud
+            // depending on whether it was run here or on a show card.
+            var sideA = booked.Plan.SideA.Members;
+            var sideB = booked.Plan.SideB.Members;
+
+            var pairing = feudBook.GetOrCreate(sideA, sideB);
             var result = new MatchEngine().Execute(booked.Plan, pairing.Familiarity(null));
 
             var update = feudBook.Record(
-                booked.Plan.WrestlerA, booked.Plan.WrestlerB,
+                sideA, sideB,
                 heat: result.StarRating * 2.0,
                 tags: new[] { FeudHistoryTag.PriorMatch });
             update.Feud.RecordMatch(null);
 
-            DisplayResults(result, booked.Plan.WrestlerA, booked.Plan.WrestlerB);
+            DisplayResults(result, result.Pinner, result.Pinned);
             SegmentBookingFlow.DisplayFeudUpdates(new[] { update });
             Pause("Press any key to return to the main menu...");
         }
@@ -43,24 +49,45 @@ namespace WrestlingSim.UI
         /// </summary>
         public static BookedMatch? BuildMatch(List<Wrestler> wrestlers, FeudBook feudBook)
         {
-            var a = SelectWrestler("WRESTLER A", wrestlers);
+            bool isTag = AskTag();
+
+            var a = SelectWrestler(isTag ? "TEAM A — WHO STARTS" : "WRESTLER A", wrestlers);
             if (a == null) return null;
 
-            var b = SelectWrestler("WRESTLER B", wrestlers, exclude: a);
+            Wrestler? partnerA = null;
+            if (isTag)
+            {
+                partnerA = SelectWrestler("TEAM A — PARTNER", wrestlers, exclude: a);
+                if (partnerA == null) return null;
+            }
+
+            var b = SelectWrestler(isTag ? "TEAM B — WHO STARTS" : "WRESTLER B", wrestlers,
+                                   exclude: a, exclude2: partnerA);
             if (b == null) return null;
+
+            Wrestler? partnerB = null;
+            if (isTag)
+            {
+                partnerB = SelectWrestler("TEAM B — PARTNER", wrestlers,
+                                          exclude: a, exclude2: partnerA, exclude3: b);
+                if (partnerB == null) return null;
+            }
+
+            var sideA = partnerA is null ? MatchSide.Of(a) : MatchSide.Of(a, partnerA);
+            var sideB = partnerB is null ? MatchSide.Of(b) : MatchSide.Of(b, partnerB);
 
             var matchType = SelectMatchType();
             var feud      = ResolveFeud(a, b, feudBook);
-            var (beats, structureName) = SelectStructure(feud);
+            var (beats, structureName) = SelectStructure(feud, isTag ? 2 : 1);
 
             while (true)
             {
-                BeatEditor(beats, a, b, feud);
+                BeatEditor(beats, sideA, sideB, feud);
 
                 var plan = new MatchPlan
                 {
-                    WrestlerA = a,
-                    WrestlerB = b,
+                    SideA     = sideA,
+                    SideB     = sideB,
                     MatchType = matchType,
                     Feud      = feud,
                     Beats     = beats
@@ -79,9 +106,11 @@ namespace WrestlingSim.UI
 
         // ── Wrestler selection ───────────────────────────────────────────────
 
-        private static Wrestler? SelectWrestler(string label, List<Wrestler> wrestlers, Wrestler? exclude = null)
+        private static Wrestler? SelectWrestler(
+            string label, List<Wrestler> wrestlers,
+            Wrestler? exclude = null, Wrestler? exclude2 = null, Wrestler? exclude3 = null)
         {
-            var pool = wrestlers.Where(w => w != exclude).ToList();
+            var pool = wrestlers.Where(w => w != exclude && w != exclude2 && w != exclude3).ToList();
 
             Rule(label, 40);
             for (int i = 0; i < pool.Count; i++)
@@ -183,9 +212,13 @@ namespace WrestlingSim.UI
 
         // ── Structure selection ──────────────────────────────────────────────
 
-        private static (List<MatchBeat> Beats, string Name) SelectStructure(Feud? feud)
+        /// <summary>
+        /// Only structures this shape of match can work. A singles match cannot book a hot
+        /// tag, and a tag match offered only singles presets never gets to be one.
+        /// </summary>
+        private static (List<MatchBeat> Beats, string Name) SelectStructure(Feud? feud, int sideSize = 1)
         {
-            var all = MatchStructureLibrary.All;
+            var all = MatchStructureLibrary.ForSideSize(sideSize).ToList();
 
             Rule("MATCH STRUCTURE", 29);
             Console.WriteLine();
@@ -225,14 +258,14 @@ namespace WrestlingSim.UI
 
         // ── Beat editor ──────────────────────────────────────────────────────
 
-        private static void BeatEditor(List<MatchBeat> beats, Wrestler a, Wrestler b, Feud? feud)
+        private static void BeatEditor(List<MatchBeat> beats, MatchSide a, MatchSide b, Feud? feud)
         {
             while (true)
             {
                 ConsoleUi.Clear();
                 DrawHeader("BEAT EDITOR");
                 Console.WriteLine();
-                WriteLine($"  {a.RingName}  (A)     vs     {b.RingName}  (B)", ConsoleColor.Cyan);
+                WriteLine($"  {a.Name}  (A)     vs     {b.Name}  (B)", ConsoleColor.Cyan);
 
                 if (feud != null)
                     WriteLine($"  Feud: {feud.Intensity} ({feud.Heat:F0} heat)" +
@@ -243,6 +276,9 @@ namespace WrestlingSim.UI
 
                 int minutes = 2 + beats.Sum(x => x.DurationMinutes);
                 WriteLine($"  Estimated runtime: ~{minutes} min", ConsoleColor.DarkGray);
+
+                if (HotTagWarning(beats) is { } advice)
+                    WriteLine($"  ⚠  {advice}", ConsoleColor.DarkYellow);
 
                 Write("\n  [A]dd   [R]emove   [C]hange control   [I]ntensity   [G]o", ConsoleColor.Cyan);
                 Console.Write("\n\n  > ");
@@ -258,11 +294,17 @@ namespace WrestlingSim.UI
             }
         }
 
-        private static void AddBeat(List<MatchBeat> beats, Wrestler a, Wrestler b, Feud? feud)
+        private static void AddBeat(List<MatchBeat> beats, MatchSide a, MatchSide b, Feud? feud)
         {
             Rule("ADD A BEAT", 34);
 
-            var available = BeatLibrary.Available(feud).ToList();
+            // Only what this shape of match can work. The web builder gates these; the
+            // console did not, so a singles booking was offered nine tag-only templates and
+            // only found out at [G]o.
+            bool isTag = a.IsTag || b.IsTag;
+            var available = BeatLibrary.Available(feud)
+                .Where(t => isTag || !new MatchBeat { Type = t.Type }.IsTagBeat)
+                .ToList();
             var indexed   = new List<BeatTemplate>();
             string? lastCat = null;
             int n = 1;
@@ -296,7 +338,7 @@ namespace WrestlingSim.UI
             beats.Insert(at, template.ToMatchBeat(control));
         }
 
-        private static void RemoveBeat(List<MatchBeat> beats, Wrestler a, Wrestler b)
+        private static void RemoveBeat(List<MatchBeat> beats, MatchSide a, MatchSide b)
         {
             Rule("REMOVE A BEAT", 31);
             DisplayPlan(beats, a, b);
@@ -311,7 +353,7 @@ namespace WrestlingSim.UI
             beats.RemoveAt(idx);
         }
 
-        private static void ChangeControl(List<MatchBeat> beats, Wrestler a, Wrestler b)
+        private static void ChangeControl(List<MatchBeat> beats, MatchSide a, MatchSide b)
         {
             Rule("CHANGE CONTROL", 30);
             DisplayPlan(beats, a, b);
@@ -328,7 +370,7 @@ namespace WrestlingSim.UI
         /// Intensity and duration were previously fixed at the template defaults with
         /// no way to reach the overrides ToMatchBeat already supported.
         /// </summary>
-        private static void ChangeIntensity(List<MatchBeat> beats, Wrestler a, Wrestler b)
+        private static void ChangeIntensity(List<MatchBeat> beats, MatchSide a, MatchSide b)
         {
             Rule("INTENSITY / DURATION", 24);
             DisplayPlan(beats, a, b);
@@ -347,13 +389,52 @@ namespace WrestlingSim.UI
             if (duration.HasValue) beats[idx].Duration = duration.Value;
         }
 
-        private static BeatControl SelectControl(Wrestler? a = null, Wrestler? b = null)
+        /// <summary>
+        /// Singles or tag, asked first because it decides who gets picked and which
+        /// structures are on offer.
+        /// </summary>
+        private static bool AskTag()
+        {
+            Console.WriteLine();
+            Rule("MATCH SHAPE", 30);
+            WriteLine("  [1] Singles", ConsoleColor.White);
+            WriteLine("  [2] Tag team — two a side", ConsoleColor.White);
+            Console.Write("  Select (Enter = singles): ");
+            return (Console.ReadLine() ?? "").Trim() == "2";
+        }
+
+        /// <summary>
+        /// Warns when a hot tag has nothing still charged behind it. Mirrors the web
+        /// builder's check, including the part that matters: a plain tag on the same side
+        /// spends the charge, so peril booked before one buys the hot tag nothing.
+        /// </summary>
+        private static string? HotTagWarning(List<MatchBeat> beats)
+        {
+            foreach (var beat in beats.Where(x => x.Type == BeatType.HotTag))
+            {
+                int at = beats.IndexOf(beat);
+                int since = beats.Take(at).ToList()
+                    .FindLastIndex(x => x.IsTagChange && x.Control == beat.Control) + 1;
+
+                var charged = beats.Skip(since).Take(at - since).ToList();
+                bool isolated = charged.Any(x => x.Type == BeatType.Isolation && x.Control != beat.Control);
+                bool nearTag  = charged.Any(x => x.Type == BeatType.NearTag && x.Control != beat.Control);
+
+                if (!isolated && !nearTag)
+                    return "That hot tag has nothing behind it — it will land at about half.";
+                if (!isolated)
+                    return "That hot tag has denied tags but no Face in Peril behind it.";
+            }
+            return null;
+        }
+
+        private static BeatControl SelectControl(MatchSide? a = null, MatchSide? b = null)
         {
             Console.WriteLine("\n  Control:");
             Write("  [1] ", ConsoleColor.DarkGray);
-            WriteLine(a != null ? $"WrestlerA — {a.RingName}" : "WrestlerA", ConsoleColor.White);
+            WriteLine(a != null ? $"Side A — {a.Name}" : "Side A", ConsoleColor.White);
             Write("  [2] ", ConsoleColor.DarkGray);
-            WriteLine(b != null ? $"WrestlerB — {b.RingName}" : "WrestlerB", ConsoleColor.White);
+            WriteLine(b != null ? $"Side B — {b.Name}" : "Side B", ConsoleColor.White);
             WriteLine("  [3] Even", ConsoleColor.DarkGray);
             WriteLine("  [4] Contested (rapid back-and-forth)", ConsoleColor.DarkGray);
             Console.Write("  Select (Enter = Even): ");
@@ -369,7 +450,7 @@ namespace WrestlingSim.UI
 
         // ── Plan display ─────────────────────────────────────────────────────
 
-        private static void DisplayPlan(List<MatchBeat> beats, Wrestler? a, Wrestler? b)
+        private static void DisplayPlan(List<MatchBeat> beats, MatchSide? a, MatchSide? b)
         {
             const int typeW = 24;
             Console.WriteLine();
@@ -453,10 +534,10 @@ namespace WrestlingSim.UI
             _                            => type.ToString()
         };
 
-        private static string ControlLabel(BeatControl control, Wrestler? a, Wrestler? b) => control switch
+        private static string ControlLabel(BeatControl control, MatchSide? a, MatchSide? b) => control switch
         {
-            BeatControl.WrestlerA => a != null ? $"A — {a.RingName}" : "WrestlerA",
-            BeatControl.WrestlerB => b != null ? $"B — {b.RingName}" : "WrestlerB",
+            BeatControl.WrestlerA => a != null ? $"A — {a.Name}" : "Side A",
+            BeatControl.WrestlerB => b != null ? $"B — {b.Name}" : "Side B",
             BeatControl.Even      => "Even",
             BeatControl.Contested => "Contested",
             _                     => control.ToString()

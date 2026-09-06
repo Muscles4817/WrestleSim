@@ -33,7 +33,10 @@ namespace WrestlingSim.Tests
         {
             var cells = new List<Cell>();
 
-            foreach (var st in MatchStructureLibrary.All)
+            // Singles structures only — this sweep books one wrestler against another, and
+            // a tag structure's beats do not validate against a side with nobody on the
+            // apron. The equivalent sweep for tag structures lives in TagMatchTests.
+            foreach (var st in MatchStructureLibrary.ForSideSize(1))
             foreach (var feudMode in new[] { "None", "Nuclear" })
             {
                 if (st.RequiresFeud && feudMode == "None") continue;
@@ -83,7 +86,7 @@ namespace WrestlingSim.Tests
         {
             var cells = Sweep();
             output.WriteLine($"  {cells.Count:N0} matches executed across " +
-                             $"{MatchStructureLibrary.All.Count} structures × " +
+                             $"{MatchStructureLibrary.ForSideSize(1).Count()} structures × " +
                              $"{Enum.GetValues<MatchType>().Length} types × {Roster.Count} wrestlers");
 
             Assert.NotEmpty(cells);
@@ -108,7 +111,7 @@ namespace WrestlingSim.Tests
             foreach (var kv in byStructure.OrderBy(k => k.Value))
                 output.WriteLine($"  {kv.Key,-20} {kv.Value:F3}");
 
-            Assert.Equal(MatchStructureLibrary.All.Count, byStructure.Count);
+            Assert.Equal(MatchStructureLibrary.ForSideSize(1).Count(), byStructure.Count);
 
             // Structures should be meaningfully different from each other, but no structure
             // should be so dominant that it is the only correct answer.

@@ -365,11 +365,18 @@ namespace WrestlingSim.Tests
             // rating by exactly 0.00.
             foreach (var structure in new[] { "TV Formula", "Face-in-Peril", "Technical Showcase", "Big Match Epic" })
             {
-                var dull    = TestRoster.Make("Dull",    overness: 80, charisma: 0.5, skill: 3.5);
-                var magnet  = TestRoster.Make("Magnet",  overness: 80, charisma: 5.0, skill: 3.5);
+                // Two distinct instances per pairing rather than the same object twice.
+                // A wrestler cannot be on both sides of a match, and the engine now says
+                // so — but this also fixes what the test was measuring: with one instance
+                // filling both corners, every beat resolved as side A's, so advantage
+                // only ever swung one way and no structure worked as booked.
+                var dullA   = TestRoster.Make("Dull A",   overness: 80, charisma: 0.5, skill: 3.5);
+                var dullB   = TestRoster.Make("Dull B",   overness: 80, charisma: 0.5, skill: 3.5);
+                var magnetA = TestRoster.Make("Magnet A", overness: 80, charisma: 5.0, skill: 3.5);
+                var magnetB = TestRoster.Make("Magnet B", overness: 80, charisma: 5.0, skill: 3.5);
 
-                double low  = Mean(dull, dull, structure, runs: 150).stars;
-                double high = Mean(magnet, magnet, structure, runs: 150).stars;
+                double low  = Mean(dullA, dullB, structure, runs: 150).stars;
+                double high = Mean(magnetA, magnetB, structure, runs: 150).stars;
 
                 output.WriteLine($"  {structure,-20} charisma 0.5 -> {low:F2}   5.0 -> {high:F2}   delta {high - low:+0.00;-0.00}");
 

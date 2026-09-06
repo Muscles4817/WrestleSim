@@ -13,7 +13,7 @@ namespace WrestlingSim.Models
         /// <summary>Name of the structure preset this was built from, for display.</summary>
         public string StructureName { get; init; } = "Custom";
 
-        public string Name => $"{Plan.WrestlerA.RingName} vs {Plan.WrestlerB.RingName}";
+        public string Name => $"{Plan.SideA.Name} vs {Plan.SideB.Name}";
 
         public CardItemKind Kind => CardItemKind.Match;
 
@@ -21,6 +21,6 @@ namespace WrestlingSim.Models
         public int DurationMinutes =>
             2 + Plan.Beats.Sum(b => b.DurationMinutes);
 
-        public IReadOnlyList<Wrestler> Wrestlers => new[] { Plan.WrestlerA, Plan.WrestlerB };
+        public IReadOnlyList<Wrestler> Wrestlers => Plan.AllParticipants.ToList();
     }
 }

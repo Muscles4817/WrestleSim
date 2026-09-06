@@ -29,7 +29,12 @@ namespace WrestlingSim.Persistence
         /// none at all (see <see cref="SaveSerializer.FromDto"/>); it simply has no
         /// brands, which needs no seeding because an undivided promotion is a valid state.
         /// </summary>
-        public const int CurrentVersion = 2;
+        /// <summary>
+        /// v3 stores a match as two *sides* rather than two wrestlers, so a tag match can
+        /// be saved. v2 saves still load: a v2 card item carries WrestlerA/WrestlerB, and
+        /// each becomes a side of one.
+        /// </summary>
+        public const int CurrentVersion = 3;
 
         public int Version { get; set; } = CurrentVersion;
 
@@ -51,6 +56,9 @@ namespace WrestlingSim.Persistence
 
         /// <summary>The brand split, or null for a promotion that has never divided.</summary>
         public BrandSplitDto? Brands { get; set; }
+
+        /// <summary>Standing tag teams. Absent in v2 saves; an empty list is correct there.</summary>
+        public List<TagTeamDto> Teams { get; set; } = new();
     }
 
     /// <summary>
@@ -59,12 +67,34 @@ namespace WrestlingSim.Persistence
     /// shares wrestler instances, and writing one by value here would hand the loaded
     /// career a second copy of that person.
     /// </summary>
+    public class TagTeamDto
+    {
+        public string Id { get; set; } = "";
+        public string Name { get; set; } = "";
+        public List<string> Members { get; set; } = new();
+        public string Formed { get; set; } = "";
+        public string? Disbanded { get; set; }
+        public int MatchesTogether { get; set; }
+        public string? LastTeamed { get; set; }
+
+        /// <summary>How far decay has already been charged. Without it a reloaded team
+        /// re-pays every idle day it had already paid for.</summary>
+        public string? DecayedTo { get; set; }
+
+        public double Chemistry { get; set; }
+    }
+
     public class TitleDto
     {
         public string Id { get; set; } = "";
         public string Name { get; set; } = "";
         public TitleTier Tier { get; set; }
         public Division Division { get; set; }
+
+        /// <summary>1 for a singles belt, 2 for a tag belt. Absent in v2 saves, where 0
+        /// means "not recorded" and loads as 1.</summary>
+        public int SideSize { get; set; }
+
         public string Established { get; set; } = "";
         public double Standing { get; set; }
         public bool Retired { get; set; }
@@ -75,7 +105,11 @@ namespace WrestlingSim.Persistence
     public class TitleReignDto
     {
         /// <summary>The champion's <see cref="Wrestler.Id"/>, never the wrestler itself.</summary>
-        public string Champion { get; set; } = "";
+        /// <summary>Everyone who held the belt for this reign. Written from v3.</summary>
+        public List<string>? Champions { get; set; }
+
+        /// <summary>v2 form: a single holder. Read, never written.</summary>
+        public string? Champion { get; set; }
 
         public int ReignNumber { get; set; }
         public string Won { get; set; } = "";
@@ -173,8 +207,13 @@ namespace WrestlingSim.Persistence
 
     public class FeudDto
     {
-        public string WrestlerA { get; set; } = "";
-        public string WrestlerB { get; set; } = "";
+        /// <summary>Both sides of the rivalry. Written from v3; absent in v2 saves.</summary>
+        public List<string>? SideA { get; set; }
+        public List<string>? SideB { get; set; }
+
+        /// <summary>v2 form: one wrestler per side. Read, never written.</summary>
+        public string? WrestlerA { get; set; }
+        public string? WrestlerB { get; set; }
         public double Heat { get; set; }
         public int MatchCount { get; set; }
 
@@ -216,6 +255,25 @@ namespace WrestlingSim.Persistence
         public CardItemKind Kind { get; set; }
 
         // ── Match ────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Everyone on each side, in booking order. Written from v3 onward.
+        /// </summary>
+        public List<string>? SideA { get; set; }
+        public List<string>? SideB { get; set; }
+
+        /// <summary>Standing team on each side, by <see cref="TagTeamDto.Id"/>, if any.</summary>
+        public string? TeamAId { get; set; }
+        public string? TeamBId { get; set; }
+
+        /// <summary>Index of the member who takes the opening bell for each side.</summary>
+        public int StartingIndexA { get; set; }
+        public int StartingIndexB { get; set; }
+
+        /// <summary>
+        /// v2 form: one wrestler per side. Still read, never written — a v2 card becomes
+        /// two sides of one. Kept nullable so a v3 save can omit them entirely.
+        /// </summary>
         public string? WrestlerA { get; set; }
         public string? WrestlerB { get; set; }
         public MatchType MatchType { get; set; }
@@ -242,6 +300,9 @@ namespace WrestlingSim.Persistence
         public BeatIntensity Intensity { get; set; }
         public BeatDuration Duration { get; set; }
         public WrestlingStyle? StyleHint { get; set; }
+
+        /// <summary>Which member a tag beat brings in. Null tags to the next man round.</summary>
+        public int? IncomingIndex { get; set; }
     }
 
     public class SegmentActionDto

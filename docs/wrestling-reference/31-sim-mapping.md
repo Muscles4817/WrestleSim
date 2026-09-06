@@ -38,6 +38,10 @@ Worth stating clearly, because several of these are subtle and correct:
 
 Ordered by **value-per-unit-of-work**, highest first.
 
+Note that **tag matches do not appear below**. They are a genuine gap — the format is a
+third of a real card — but a Tier-B-sized one that this analysis never listed. A plan for
+them lives in [../tag-matches-plan.md](../tag-matches-plan.md).
+
 ### Tier A — high value, contained work
 
 #### A1. Split `Popularity` into `Overness` (stock) and `Momentum` (flow)

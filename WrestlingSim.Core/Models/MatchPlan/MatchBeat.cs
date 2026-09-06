@@ -26,6 +26,13 @@ namespace WrestlingSim.Models.MatchPlan
         /// </summary>
         public WrestlingStyle? StyleHint { get; set; }
 
+        /// <summary>
+        /// For a tag beat, which member of the controlling side comes in — an index into
+        /// that side's Members. Null tags to the next member round, which is the only
+        /// possibility on a two-man team.
+        /// </summary>
+        public int? IncomingIndex { get; set; }
+
         // ── Derived helpers ──────────────────────────────────────────────────
 
         public double IntensityModifier => Intensity switch
@@ -69,6 +76,15 @@ namespace WrestlingSim.Models.MatchPlan
         public bool IsOpening => Type is
             BeatType.HotOpening or BeatType.SlowOpening or BeatType.StandardOpening;
 
+        /// <summary>Beats that only mean anything with somebody on the apron.</summary>
+        public bool IsTagBeat => Type is
+            BeatType.Isolation or BeatType.NearTag or BeatType.HotTag or BeatType.Tag or
+            BeatType.BlindTag or BeatType.DoubleTeam or BeatType.Miscommunication or
+            BeatType.SaveBreakup or BeatType.AllFourBrawl;
+
+        /// <summary>Beats that change who is legal.</summary>
+        public bool IsTagChange => Type is BeatType.HotTag or BeatType.Tag or BeatType.BlindTag;
+
         /// <summary>
         /// Independent copy. Structures in MatchStructureLibrary are static singletons,
         /// so a plan built from a preset must clone its beats or editing the plan
@@ -82,7 +98,8 @@ namespace WrestlingSim.Models.MatchPlan
             Intensity       = Intensity,
             Duration        = Duration,
             FeudalResonance = FeudalResonance,
-            StyleHint       = StyleHint
+            StyleHint       = StyleHint,
+            IncomingIndex   = IncomingIndex
         };
     }
 }

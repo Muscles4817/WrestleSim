@@ -2,8 +2,30 @@ namespace WrestlingSim.Models.MatchPlan
 {
     public class MatchEngineResult
     {
+        /// <summary>
+        /// The person who actually scored the fall — pinned, submitted or was awarded the
+        /// decision. In a tag match this is whoever was legal for the winning side when
+        /// the finish landed, not the whole team.
+        /// </summary>
         public required Wrestler Winner { get; init; }
+
+        /// <summary>The person who was beaten. In a tag match, the man who ate the fall.</summary>
         public required Wrestler Loser  { get; init; }
+
+        /// <summary>Everyone on the winning side, including anyone who never got in.</summary>
+        public IReadOnlyList<Wrestler> WinningSide { get; init; } = [];
+
+        /// <summary>Everyone on the losing side.</summary>
+        public IReadOnlyList<Wrestler> LosingSide { get; init; } = [];
+
+        /// <summary>Reads better than <see cref="Winner"/> where the fall itself is the point.</summary>
+        public Wrestler Pinner => Winner;
+
+        /// <summary>Reads better than <see cref="Loser"/> where the fall itself is the point.</summary>
+        public Wrestler Pinned => Loser;
+
+        /// <summary>True when either side had more than one member.</summary>
+        public bool WasTagMatch => WinningSide.Count > 1 || LosingSide.Count > 1;
 
         public List<BeatResult> BeatResults { get; init; } = new();
 

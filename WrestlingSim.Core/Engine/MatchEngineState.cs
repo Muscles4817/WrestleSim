@@ -46,6 +46,108 @@ namespace WrestlingSim.Engine
         /// <summary>Running readings for average crowd calculation.</summary>
         public List<double> CrowdEnergyReadings { get; set; } = new();
 
+        // ── Legal performers ─────────────────────────────────────────────────
+
+        // Who is currently in the ring for each side, as an index into that side's
+        // Members. Lives here rather than on MatchSide because a MatchPlan is a booking
+        // and can be executed more than once — the test suite re-runs the same plan to
+        // compare bookings, and a plan that remembered who was legal last time would not
+        // survive that.
+        private int _legalA;
+        private int _legalB;
+
+        /// <summary>Index of side A's legal performer.</summary>
+        public int LegalA => _legalA;
+
+        /// <summary>Index of side B's legal performer.</summary>
+        public int LegalB => _legalB;
+
+        public int LegalIndexFor(bool sideA) => sideA ? _legalA : _legalB;
+
+        /// <summary>Sets who begins the match for each side.</summary>
+        public void InitialiseLegal(int sideA, int sideB)
+        {
+            _legalA = sideA;
+            _legalB = sideB;
+        }
+
+        /// <summary>
+        /// Brings a fresh performer in for one side and returns who is now legal.
+        ///
+        /// With an explicit index, that member comes in. Without one the tag goes to the
+        /// next member round, which is the only sensible default for a two-man team and a
+        /// reasonable one for a trio.
+        /// </summary>
+        public int Tag(bool sideA, int memberCount, int? incoming = null)
+        {
+            int current = sideA ? _legalA : _legalB;
+
+            // An explicit index naming the man who is already legal used to fall through
+            // to "next man round", silently bringing in somebody the booker did not ask
+            // for. On a two-man side that is invisible; on a trio it is a different match.
+            // MatchPlan.Validate rejects it now, so this only has to be defensive.
+            int next = incoming is { } i && i >= 0 && i < memberCount
+                ? i
+                : (current + 1) % Math.Max(1, memberCount);
+
+            if (sideA) _legalA = next; else _legalB = next;
+
+            // Coming in fresh is the whole point of a tag, so the charge the isolation
+            // built is spent and starts again from nothing.
+            ClearTagCharge(sideA);
+            return next;
+        }
+
+        // ── Hot-tag charge ───────────────────────────────────────────────────
+
+        // How much stored energy each side's corner has built while its man has been cut
+        // off. Indexed 0 = side A, 1 = side B, and always credited to the side being
+        // worked over rather than the side doing the working — it is their tag to make.
+        private readonly int[] _isolations = new int[2];
+        private readonly int[] _nearTags   = new int[2];
+
+        // How many isolation beats in a row this side has taken with no hope spot in
+        // between. Deliberately separate from the charge above, because the two measure
+        // different things: the charge is what was spent buying the payoff and resets on a
+        // tag; the run is how long the room has been asked to wait and resets on a *near
+        // tag* as well. docs/wrestling-reference/18-match-craft.md §2.3 is explicit that a
+        // long heat is good and that the hope spots are what make it bearable — so what
+        // costs the crowd is a run of isolations, never the count of them.
+        private readonly int[] _isolationRun = new int[2];
+
+        /// <summary>Isolation beats this side has suffered since its last tag.</summary>
+        public int IsolationsSuffered(bool sideA) => _isolations[sideA ? 0 : 1];
+
+        /// <summary>Tags this side has been denied since its last successful one.</summary>
+        public int NearTagsDenied(bool sideA) => _nearTags[sideA ? 0 : 1];
+
+        /// <summary>Consecutive isolations this side has taken without a hope spot.</summary>
+        public int IsolationRun(bool sideA) => _isolationRun[sideA ? 0 : 1];
+
+        public void RecordIsolation(bool isolatedSideA)
+        {
+            _isolations[isolatedSideA ? 0 : 1]++;
+            _isolationRun[isolatedSideA ? 0 : 1]++;
+        }
+
+        /// <summary>
+        /// A denied tag does two jobs: it charges the payoff, and it buys the room back.
+        /// Reaching for the corner and being dragged away is the hope spot — it is what
+        /// stops a long heat becoming a crowd that has given up.
+        /// </summary>
+        public void RecordNearTag(bool reachingSideA)
+        {
+            _nearTags[reachingSideA ? 0 : 1]++;
+            _isolationRun[reachingSideA ? 0 : 1] = 0;
+        }
+
+        private void ClearTagCharge(bool sideA)
+        {
+            _isolations[sideA ? 0 : 1]   = 0;
+            _nearTags[sideA ? 0 : 1]     = 0;
+            _isolationRun[sideA ? 0 : 1] = 0;
+        }
+
         // ── Repetition tracking ──────────────────────────────────────────────
 
         /// <summary>

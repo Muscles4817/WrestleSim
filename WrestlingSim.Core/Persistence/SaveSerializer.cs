@@ -102,11 +102,24 @@ namespace WrestlingSim.Persistence
 
             Brands = ToDto(career.Brands),
 
+            Teams = career.Teams.Select(t => new TagTeamDto
+            {
+                Id              = t.Id,
+                Name            = t.Name,
+                Members         = t.Members.Select(w => w.Id).ToList(),
+                Formed          = Iso(t.Formed),
+                Disbanded       = t.Disbanded is { } d ? Iso(d) : null,
+                MatchesTogether = t.MatchesTogether,
+                LastTeamed      = t.LastTeamed is { } l ? Iso(l) : null,
+                DecayedTo       = t.DecayedTo is { } dt ? Iso(dt) : null,
+                Chemistry       = Math.Round(t.Chemistry, 4)
+            }).ToList(),
+
             Feuds = career.FeudBook.AllIncludingDormant
                 .Select(f => new FeudDto
                 {
-                    WrestlerA          = f.WrestlerA.Id,
-                    WrestlerB          = f.WrestlerB.Id,
+                    SideA              = f.SideA.Select(w => w.Id).ToList(),
+                    SideB              = f.SideB.Select(w => w.Id).ToList(),
                     Heat               = f.Heat,
                     MatchCount         = f.MatchCount,
                     RememberedMeetings = f.RememberedMeetings,
@@ -124,13 +137,14 @@ namespace WrestlingSim.Persistence
                 Tier        = t.Tier,
                 Division    = t.Division,
                 Established = Iso(t.Established),
+                SideSize    = t.SideSize,
                 Standing    = Math.Round(t.Standing, 3),
                 Retired     = t.Retired,
                 RetiredOn   = t.RetiredOn is { } retired ? Iso(retired) : null,
                 Lineage = t.Lineage.Select(r => new TitleReignDto
                 {
-                    // By id, never by value — the champion is a live roster instance.
-                    Champion     = r.Champion.Id,
+                    // By id, never by value — champions are live roster instances.
+                    Champions    = r.Champions.Select(c => c.Id).ToList(),
                     ReignNumber  = r.ReignNumber,
                     Won          = Iso(r.Won),
                     Lost         = r.Lost is { } lost ? Iso(lost) : null,
@@ -201,21 +215,29 @@ namespace WrestlingSim.Persistence
 
         private static CardItemDto? ToDto(ICardItem item) => item switch
         {
+            // Sides, not two wrestlers. WrestlerA/WrestlerB are deliberately not written
+            // any more — a v2 reader could not have made sense of a tag match anyway, and
+            // writing a half-truth would mean a downgrade silently loses the partners.
             BookedMatch m => new CardItemDto
             {
-                Kind          = CardItemKind.Match,
-                WrestlerA     = m.Plan.WrestlerA.Id,
-                WrestlerB     = m.Plan.WrestlerB.Id,
-                MatchType     = m.Plan.MatchType,
-                StructureName = m.StructureName,
-                TitleId       = m.Plan.TitleAtStake?.Id,
+                Kind           = CardItemKind.Match,
+                SideA          = m.Plan.SideA.Members.Select(w => w.Id).ToList(),
+                SideB          = m.Plan.SideB.Members.Select(w => w.Id).ToList(),
+                TeamAId        = m.Plan.SideA.Team?.Id,
+                TeamBId        = m.Plan.SideB.Team?.Id,
+                StartingIndexA = m.Plan.SideA.StartingIndex,
+                StartingIndexB = m.Plan.SideB.StartingIndex,
+                MatchType      = m.Plan.MatchType,
+                StructureName  = m.StructureName,
+                TitleId        = m.Plan.TitleAtStake?.Id,
                 Beats = m.Plan.Beats.Select(b => new BeatDto
                 {
-                    Type      = b.Type,
-                    Control   = b.Control,
-                    Intensity = b.Intensity,
-                    Duration  = b.Duration,
-                    StyleHint = b.StyleHint
+                    Type          = b.Type,
+                    Control       = b.Control,
+                    Intensity     = b.Intensity,
+                    Duration      = b.Duration,
+                    StyleHint     = b.StyleHint,
+                    IncomingIndex = b.IncomingIndex
                 }).ToList()
             },
 
@@ -309,12 +331,39 @@ namespace WrestlingSim.Persistence
                 BrandId        = d.BrandId
             }));
 
+            // Teams before cards, because a card item refers to a team by id.
+            foreach (var t in dto.Teams)
+            {
+                var members = Bind(t.Members, byId);
+                // A team one of whose members has left the roster is not a team any more.
+                if (members is null || members.Count < 2) continue;
+
+                career.Teams.Add(new TagTeam
+                {
+                    Id              = t.Id,
+                    Name            = t.Name,
+                    Members         = members,
+                    Formed          = ParseDate(t.Formed),
+                    Disbanded       = ParseOptionalDate(t.Disbanded),
+                    MatchesTogether = t.MatchesTogether,
+                    LastTeamed      = ParseOptionalDate(t.LastTeamed),
+                    DecayedTo       = ParseOptionalDate(t.DecayedTo),
+                    Chemistry       = t.Chemistry
+                });
+            }
+
             if (dto.Brands is { } brands) career.Brands = FromDto(brands, byId);
 
             foreach (var f in dto.Feuds)
             {
-                if (!byId.TryGetValue(f.WrestlerA, out var a)) continue;
-                if (!byId.TryGetValue(f.WrestlerB, out var b)) continue;
+                // v3 writes sides; a v2 feud names one wrestler per side.
+                var sideAIds = f.SideA ?? (string.IsNullOrEmpty(f.WrestlerA) ? null : [f.WrestlerA]);
+                var sideBIds = f.SideB ?? (string.IsNullOrEmpty(f.WrestlerB) ? null : [f.WrestlerB]);
+                if (sideAIds is null || sideBIds is null) continue;
+
+                var a = Bind(sideAIds, byId);
+                var b = Bind(sideBIds, byId);
+                if (a is null || b is null) continue;
 
                 var feud = career.FeudBook.GetOrCreate(a, b);
                 feud.RestoreHeat(f.Heat);
@@ -333,7 +382,7 @@ namespace WrestlingSim.Persistence
             RestoreTitles(dto, career, byId);
 
             foreach (var s in dto.Shows)
-                career.Shows.Add(FromDto(s, byId, career.FeudBook, career.Titles));
+                career.Shows.Add(FromDto(s, byId, career.FeudBook, career.Titles, career.Teams));
 
             return career;
         }
@@ -363,6 +412,9 @@ namespace WrestlingSim.Persistence
                     Name        = t.Name,
                     Tier        = t.Tier,
                     Division    = t.Division,
+                    // v2 saves have no SideSize; 0 means "not recorded" and every belt in
+                    // one of those is a singles belt by definition.
+                    SideSize    = t.SideSize <= 0 ? 1 : t.SideSize,
                     Established = ParseDate(t.Established),
                     Standing    = Math.Clamp(t.Standing, 0, 100),
                     Retired     = t.Retired,
@@ -377,11 +429,17 @@ namespace WrestlingSim.Persistence
                     // rule the rest of the save follows: never resurrect a half-built
                     // person. ReignNumber is stored, so the numbering left behind still
                     // reads correctly.
-                    if (!byId.TryGetValue(r.Champion, out var champion)) continue;
+                    // v3 writes Champions; a v2 reign names a single holder.
+                    var championIds = r.Champions
+                        ?? (string.IsNullOrEmpty(r.Champion) ? null : [r.Champion]);
+                    if (championIds is null) continue;
+
+                    var champions = Bind(championIds, byId);
+                    if (champions is null) continue;
 
                     title.Lineage.Add(new TitleReign
                     {
-                        Champion     = champion,
+                        Champions    = champions,
                         ReignNumber  = r.ReignNumber,
                         Won          = ParseDate(r.Won),
                         Lost         = ParseOptionalDate(r.Lost),
@@ -454,7 +512,8 @@ namespace WrestlingSim.Persistence
         }
 
         private static ScheduledShow FromDto(
-            ShowDto dto, Dictionary<string, Wrestler> byId, FeudBook feudBook, TitleRegistry titles)
+            ShowDto dto, Dictionary<string, Wrestler> byId, FeudBook feudBook,
+            TitleRegistry titles, List<TagTeam> teams)
         {
             var show = new ScheduledShow
             {
@@ -471,7 +530,7 @@ namespace WrestlingSim.Persistence
 
             foreach (var item in dto.Card)
             {
-                var built = FromDto(item, byId, feudBook, titles);
+                var built = FromDto(item, byId, feudBook, titles, teams);
                 if (built != null) show.Card.Add(built);
             }
 
@@ -480,22 +539,64 @@ namespace WrestlingSim.Persistence
             return show;
         }
 
+        /// <summary>
+        /// Resolves a saved side against the live roster, or null if anybody is missing.
+        /// </summary>
+        private static List<Wrestler>? Bind(List<string> ids, Dictionary<string, Wrestler> byId)
+        {
+            var members = new List<Wrestler>(ids.Count);
+            foreach (var id in ids)
+            {
+                if (!byId.TryGetValue(id, out var w)) return null;
+                members.Add(w);
+            }
+            return members.Count == 0 ? null : members;
+        }
+
         private static ICardItem? FromDto(
-            CardItemDto dto, Dictionary<string, Wrestler> byId, FeudBook feudBook, TitleRegistry titles)
+            CardItemDto dto, Dictionary<string, Wrestler> byId, FeudBook feudBook,
+            TitleRegistry titles, List<TagTeam> teams)
         {
             if (dto.Kind == CardItemKind.Match)
             {
-                if (dto.WrestlerA == null || dto.WrestlerB == null) return null;
-                if (!byId.TryGetValue(dto.WrestlerA, out var a)) return null;
-                if (!byId.TryGetValue(dto.WrestlerB, out var b)) return null;
+                // v3 writes SideA/SideB; a v2 save has one wrestler per side instead.
+                var sideAIds = dto.SideA ?? (dto.WrestlerA is null ? null : [dto.WrestlerA]);
+                var sideBIds = dto.SideB ?? (dto.WrestlerB is null ? null : [dto.WrestlerB]);
+                if (sideAIds is null || sideBIds is null) return null;
+
+                var sideA = Bind(sideAIds, byId);
+                var sideB = Bind(sideBIds, byId);
+
+                // A card item naming somebody the roster no longer has is dropped whole
+                // rather than rebuilt a man short — a three-quarters tag match is not a
+                // match, and silently running one would be worse than losing the booking.
+                if (sideA is null || sideB is null) return null;
+
+                var a = sideA[Math.Clamp(dto.StartingIndexA, 0, sideA.Count - 1)];
+                var b = sideB[Math.Clamp(dto.StartingIndexB, 0, sideB.Count - 1)];
 
                 var plan = new MatchPlanModel
                 {
-                    WrestlerA = a,
-                    WrestlerB = b,
+                    SideA = new MatchSide
+                    {
+                        Members       = sideA,
+                        StartingIndex = Math.Clamp(dto.StartingIndexA, 0, sideA.Count - 1),
+                        Team          = teams.FirstOrDefault(t => t.Id == dto.TeamAId)
+                    },
+                    SideB = new MatchSide
+                    {
+                        Members       = sideB,
+                        StartingIndex = Math.Clamp(dto.StartingIndexB, 0, sideB.Count - 1),
+                        Team          = teams.FirstOrDefault(t => t.Id == dto.TeamBId)
+                    },
                     MatchType = dto.MatchType,
                     // Re-bind to the live feud so a reloaded card reads current heat.
-                    Feud      = feudBook.Find(a, b),
+                    //
+                    // Keyed on the two SIDES. Looking it up by the two starters found
+                    // nothing for a tag match — the feud lives under the side key — so a
+                    // reloaded tag card silently lost its feud, and a card carrying a
+                    // feud-gated beat came back unrunnable.
+                    Feud      = feudBook.Find(sideA, sideB),
                     // Likewise the belt: the same Title instance the registry holds, so a
                     // reloaded card can still put it on the line.
                     TitleAtStake = dto.TitleId is null ? null : titles.Find(dto.TitleId),
@@ -505,7 +606,8 @@ namespace WrestlingSim.Persistence
                         Control   = x.Control,
                         Intensity = x.Intensity,
                         Duration  = x.Duration,
-                        StyleHint = x.StyleHint
+                        StyleHint = x.StyleHint,
+                        IncomingIndex = x.IncomingIndex
                     }).ToList()
                 };
 
