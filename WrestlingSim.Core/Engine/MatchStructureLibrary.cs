@@ -296,7 +296,7 @@ namespace WrestlingSim.Engine
             {
                 Name        = "Six-Man War",
                 Description = "The American six-man. A deeper heat than a tag can carry — three heels " +
-                              "rotating on one man — then the hot tag and a fresh third man to finish.",
+                              "rotating on whoever is cut off — then the hot tag and a fresh partner to finish.",
                 Tags        = ["Trios", "Classic", "Crowd"],
                 SideSize    = 3,
                 Beats       =

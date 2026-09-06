@@ -52,13 +52,15 @@
         @if (IsTeamMatch)
         {
             <div class="notice">
-                A team match is worked as a formula: shine, cut-off, one man kept from his corner,
-                the tag denied, then the hot tag. The payoff is worth what the peril paid for it.
+                A team match is worked as a formula: shine, cut-off, one of them kept from the
+                corner, the tag denied, then the hot tag. The payoff is worth what the peril
+                paid for it.
                 @if (sideSize > 2)
                 {
                     <text>
-                        A third man buys a deeper heat — three fresh opponents can rotate on the
-                        man in peril — and a partner who has not been in the match yet to finish it.
+                        A third partner buys a deeper heat — three fresh opponents rotating on
+                        whoever is cut off — and someone who has not been in the match yet to
+                        finish it.
                     </text>
                 }
             </div>
@@ -902,7 +904,7 @@
     {
         1 => "One against one.",
         2 => "Two a side, with a corner to be kept away from.",
-        _ => "Three a side. Three fresh opponents on one man, and a fresh man for the finish."
+        _ => "Three a side. Three fresh opponents on whoever is cut off, and a fresh partner to finish."
     };
     private MatchType matchType = MatchType.Standard;
     private Title? title;

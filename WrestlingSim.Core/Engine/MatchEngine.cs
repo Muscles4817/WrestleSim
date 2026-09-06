@@ -1206,7 +1206,7 @@ namespace WrestlingSim.Engine
 
             r.Commentary.Add(Pick(
                 $"{control.RingName} cuts {other.RingName} off at the knees — and just like that, the complexion of this match has changed.",
-                $"One moment of distraction and {control.RingName} takes over. {other.RingName} is a long way from his corner.",
+                $"One moment of distraction and {control.RingName} takes over. {other.RingName} is a long way from their corner.",
                 $"There it is — {control.RingName} shuts the door, and {other.RingName} is in trouble.",
                 $"{control.RingName} catches {other.RingName} coming in and the heat is on."
             ));
@@ -1283,7 +1283,7 @@ namespace WrestlingSim.Engine
                 ? Pick(
                     $"{control.RingName} keeps {other.RingName} grounded in the wrong corner — miles from help.",
                     $"{other.RingName} is cut off and being taken apart. That corner might as well be a mile away.",
-                    $"Every time {other.RingName} gets to his feet, {control.RingName} drags him back. Textbook isolation.",
+                    $"Every time {other.RingName} gets back up, {control.RingName} drags them down again. Textbook isolation.",
                     $"{control.RingName} is working {other.RingName} over methodically, and the crowd is getting restless.")
                 : Pick(
                     $"{control.RingName} is still grinding away on {other.RingName}, and you can hear duelling chants starting up in the lower bowl.",
@@ -1325,8 +1325,8 @@ namespace WrestlingSim.Engine
             string partner = NameCorner(deniedSide, other);
 
             r.Commentary.Add(Pick(
-                $"{other.RingName} reaches — and {control.RingName} drags him back! You can see {partner} pleading on the apron!",
-                $"SO CLOSE! {other.RingName} was inches from {partner} and {control.RingName} pulled him away!",
+                $"{other.RingName} reaches — and {control.RingName} drags them back! You can see {partner} pleading on the apron!",
+                $"SO CLOSE! {other.RingName} was inches from {partner} and {control.RingName} pulled them away!",
                 $"The referee is distracted, {other.RingName} makes the tag — and it does not count! The crowd is furious!",
                 $"{other.RingName} lunges for {partner}... and comes up empty. You can hear the air go out of this building."
             ));
@@ -1393,7 +1393,7 @@ namespace WrestlingSim.Engine
                         $"The tag is made — {fresh.RingName} comes in fresh and goes straight after {other.RingName}.")
                     : Pick(
                         $"{beaten.RingName} tags {fresh.RingName} in. The crowd is not quite sure why that was the moment.",
-                        $"{fresh.RingName} comes in. He had not been out there long enough for anyone to miss him."));
+                        $"{fresh.RingName} comes in — not that anybody had time to miss them."));
 
             if (isolations == 0)
                 r.Commentary.Add(
@@ -1459,7 +1459,7 @@ namespace WrestlingSim.Engine
             r.Commentary.Add(blind
                 ? Pick(
                     $"A blind tag! {fresh.RingName} came in without {other.RingName} seeing a thing!",
-                    $"{fresh.RingName} tags himself in behind {other.RingName}'s back — nobody saw that but the referee!")
+                    $"{fresh.RingName} tags in behind {other.RingName}'s back — nobody saw that but the referee!")
                 : Pick(
                     $"{fresh.RingName} tags in.",
                     $"A quick tag brings {fresh.RingName} into the match."));
@@ -1553,7 +1553,7 @@ namespace WrestlingSim.Engine
                 $"Disaster! {control.RingName} takes out {partner} by mistake — and the two of them are jawing at each other!",
                 $"{control.RingName} and {partner} collide! There is trouble in that corner.",
                 $"Miscommunication! {partner} is furious with {control.RingName}, and {other.RingName} is more than happy to watch.",
-                $"That is not how they drew it up — {control.RingName} just wiped out his own partner."
+                $"That is not how it was drawn up — {control.RingName} just flattened a partner instead of an opponent."
             ));
         }
 
@@ -1685,7 +1685,7 @@ namespace WrestlingSim.Engine
                         $"{other.RingName} has been disqualified! {control.RingName} wins — but not how they wanted it.",
                         $"A disqualification! The crowd is not happy about how this ended.",
                         $"The referee has no choice — {other.RingName} is DQ'd.",
-                        $"The referee finally reaches his limit — {other.RingName} is out of here via disqualification!",
+                        $"The referee has finally had enough — {other.RingName} is out of here via disqualification!",
                         $"{other.RingName} pushed too far — they're disqualified, and the crowd lets them know it."
                     ));
                     break;

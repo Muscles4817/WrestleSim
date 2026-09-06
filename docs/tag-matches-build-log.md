@@ -1251,6 +1251,218 @@ rather than this one — recorded rather than done, so the next reader knows it 
 
 ---
 
+## The bigger roster — review round 1
+
+Verdict: **safe to merge.** Every headline claim survived measurement, including the one I
+flagged in the PR body as most worth scrutinising — the `MatchMatrixTests` caching change.
+Worth recording what the reviewer did to it, because it is the shape of scrutiny this change
+needed and I had only argued for it in prose:
+
+* Diffed the sweep body and found it byte-identical — no loop bound, seed, threshold or
+  assertion changed; the optional `runsPerCell` was never once overridden, so caching could
+  not narrow anything.
+* Built **uncached twins** of three engine mutants and confirmed cached and uncached produce
+  identical pass/fail verdicts.
+* Mutation-tested five ways. The base branch killed **0 of 5**; the branch kills **1 of 5** —
+  a mutant that makes `BeatControl` a no-op now fails `Ratings_SpanAWideRange`, where on the
+  thirty-person roster the same mutant slipped through. Detection got *better*, not worse.
+* Checked the memory hypothesis I had not thought of: the cache **saves** 186 MB of peak RSS
+  (471 vs 657), because holding one matrix beats churning eight.
+
+Four findings, all minor, all fixed:
+
+| | |
+|---|---|
+| `SeededTeams_AreSkippedRatherThanBrokenWhenAMemberIsMissing` dropped `Roster.Skip(1)` — Demi Bennett, who is in **no** tag team. Measured `full=9, missing=9`: both assertions passed vacuously and the arm never exercised the path it is named for. | Removes an actual team member now, and asserts the count *falls by exactly one*. |
+| "grew from 500k matches to 1.8m" in the test's own comment and the PR body. Measured: **271,440 → 1,778,400**. The second figure is right; the first was overstated ~1.8×. | Corrected, with the real numbers. |
+| "`RosterDifferentiationTests` names eight of the original thirty" — it names **eleven**. All eleven are still present, so the substance held. | Noted here rather than restated. |
+| `Assert.InRange(mean, 2.8, 4.3)`: the sweep mean fell 3.35 → 2.99 because the additions are weighted to the lower card, so the margin to the floor went 0.55 → **0.19**. | Left as it is — it is currently the assertion doing the mutation-killing — with a comment saying the next tranche of enhancement talent will trip it and that the failure will be a data change wearing an engine regression's clothes. |
+
+### And one real gap the roster made reachable
+
+`Draft.Apply` explicitly ends **feuds** split across brands — *"there is no show left on which
+to continue it"* — and had no equivalent for tag teams, while `DraftBoard` picks individuals
+with no team awareness. Review measured an AutoPick draft on the shipped roster splitting
+**five of the nine seeded teams across brands**, all left `IsActive` and quietly decaying
+chemistry for a pairing nobody could ever book again.
+
+This was unreachable before: `career.Teams` was empty at career start, so a day-one draft had
+nothing to split. Seeding nine teams ships it reachable. Fixed with the same rule the feuds
+get, `TeamsDisbanded` reported alongside `FeudsEnded`, and two tests — one that the draft
+breaks up a team it separates, one that it leaves alone a team it keeps together.
+
+### The caveat the review drew out, which the PR body already had right
+
+Distinct rating tiers went 16/30 (53%) → **23/76 (30%)** while the total spread barely moved
+(1.342 → 1.356): 53 of the 76 land within 0.02 stars of a neighbour. The additions fill in
+*between* existing positions rather than extending the range. That is crowding, not cloning —
+no two entries share an attribute vector, and the closest new pair is *less* similar than the
+closest pre-existing one — and it is what a bigger roster at a fixed quality ceiling has to
+look like. Recorded because the honest reading of "23 tiers" is denser, not wider.
+
+**467 tests passing.**
+
+---
+
+## The commentary called everybody "him"
+
+Flagged during the trios round and deferred twice — once because fixing it would have muddied
+that PR's byte-identity claim, once into the UX pass. Both were reasonable at the time and
+neither is any more: the roster is now **thirty-eight women and thirty-eight men**, the match
+builder supports intergender bookings on purpose and *warns* about them rather than blocking
+them, and a near tag in a women's tag match read:
+
+```
+Rhea Ripley reaches — and Bianca Belair drags him back!
+```
+
+Eight interpolated templates in `MatchEngine`, three beat descriptions, and one line of UI.
+
+Wrestling's own vocabulary is left alone where it is the name of a thing. A six-man tag is a
+six-man tag; the face in peril is the face in peril; "the legal man" is what the rule is
+called. What changed is the pronouns that attach to a *named performer* — and the referee's,
+who has no stated gender either.
+
+Most of them wanted rewriting rather than substituting, because "they" dropped into a sentence
+written for "he" usually reads worse than the sentence deserves:
+
+| before | after |
+|---|---|
+| `{other} is a long way from his corner` | `…a long way from that corner` |
+| `Every time {other} gets to his feet, {control} drags him back` | `Every time {other} gets back up, {control} drags them down again` |
+| `{fresh} comes in. He had not been out there long enough for anyone to miss him.` | `{fresh} comes in — not that anybody had time to miss them.` |
+| `The referee finally reaches his limit` | `The referee has finally had enough` |
+| `He reaches for the corner and is dragged back` (Near Tag's description) | `A hand reaches for the corner and is dragged back` |
+
+That last one is there because **the test caught it and I had not**. My grep was
+case-sensitive, so a template beginning `"He reaches…"` went straight past it.
+
+### Review round 1, and the guard was two-thirds of a guard
+
+Verdict: **do not merge as-is** — nothing broken, but the headline claim was not delivered.
+The reviewer independently reproduced byte-identity (20,544 rows, md5-identical on both
+worktrees, commentary the only difference) and confirmed `Pick` is index-based. Then they
+mutated each of the eight changed templates back to its old wording, one at a time:
+
+> Six make `NoCommentaryLine_AssumesAWrestlersGender` fail. **Two do not** … Those are
+> precisely the two the author found by grep. The build log's "measured rather than grepped"
+> is 6/8.
+
+The disqualification finish appears in **no shipped structure at all**, and the low-charge hot
+tag needs a charge under 0.85 that no preset produces. So the sweep — which ran only the
+presets — could never reach either, and the claim that it improved on grep was true of six
+lines and false of the two that grep had actually been needed for.
+
+Fixed by booking **every beat type in the library by hand**, not just what the presets happen
+to use: finishes as the only finish, feud-flavoured beats with a Nuclear feud carrying every
+history tag, and `AlliesRejected` given the `ThirdPartyPullIn` its validation requires. The
+coverage is now itself an assertion — *"a beat type nothing books is a beat type nothing
+checks"* — so it fails if a future beat becomes unreachable. **9,208 lines across all 32 beat
+types**, up from 6,528 across 26.
+
+### Three more of the same defect, in text I had just written
+
+The reviewer's second finding is the more embarrassing one. My sweep was for *pronouns*, and I
+had also been rewriting gendered **nouns** — "the big man", "one man kept cut off from his
+corner". Nothing scanned for those, so the identical phrasing survived in three places, two of
+which I wrote earlier the same night:
+
+* `MatchBuilder.razor` — the trios branch of *the very notice that was fixed*, four lines
+  below it: "A third man buys a deeper heat — three fresh opponents can rotate on the man in
+  peril".
+* `SideSizeBlurb(3)`, on the Trios button: "Three fresh opponents on one man, and a fresh man
+  for the finish."
+* `Six-Man War`'s `Description`, rendered in the structure picker: "three heels rotating on
+  one man — then the hot tag and a fresh third man to finish" — the same phrase I had just
+  rewritten in `Face in Peril`.
+
+Plus the README's tag section. All rewritten, and `NoLibraryText_AssumesAWrestlersGender` now
+scans `MatchStructureLibrary` as well as `BeatLibrary` and looks for the noun form too. The
+policy is unchanged and now enforced: "six-man tag" and "the legal man" are the names of
+things and stay; "one man", "the big man", "a fresh third man" describe a person in a role by
+gender and do not.
+
+### Four rewrites that read worse than what they replaced
+
+Worth recording because a clumsy neutral rewrite is a real cost, not a free win:
+
+| | |
+|---|---|
+| "A 450° splash from **somebody that size**" | No antecedent — nothing establishes anyone as big. → "from a heavyweight". |
+| "That is not how **they** drew it up — {control} just wiped out **their** own partner." | Two referents for they/their in one sentence. "his own partner" disambiguated for free. → "That is not how it was drawn up — {control} just flattened a partner instead of an opponent." |
+| "a long way from **that** corner" | Deictic with nothing to point at. → "a long way from home", which is the actual commentary idiom. |
+| "**A hand** reaches for the corner and is dragged back" | Drags the hand. → "Reaching for the corner, and dragged back at the last moment." |
+
+The reviewer read full play-by-plays to check the rest in flow and found "drags/pulls them
+back", "gets back up… drags them down again" and "not that anybody had time to miss them"
+unambiguous, and "The referee has finally had enough" better than what it replaced.
+
+**Every number is unchanged.** `Pick()` selects by index, so rewriting the strings cannot move
+an RNG draw. Verified rather than asserted: 131,328 dumped rows — every non-feud-gated
+structure × every match type × 12 wrestlers × all three side sizes × 3 seeds, per-beat deltas
+at `"R"` round-trip precision — are **md5-identical** to `main`, and the reviewer reproduced
+that independently on a harness of their own.
+
+**471 tests passing**, with all three of the previously-escaping cases — the DQ line, the
+low-charge hot tag, and a noun in a structure description — verified to fail the guard when
+reintroduced.
+
+
+---
+
+## The commentary — review round 2
+
+**Safe to merge after one edit**, and the edit was a real miss inside the scope this PR
+claimed to have cleared: `README.md:253`, *"two for a tag match, where the second **man**
+starts on the apron"* — one section above the part I did fix, same file, same defect class.
+Fixed, along with the manual still saying "Thirty wrestlers ship in `Wrestlers.json`" when it
+now holds seventy-six.
+
+Verified by the reviewer and worth recording as settled: the guard catches **all eight**
+templates now, including the two that escaped round 1; the coverage assertion genuinely fails
+when a beat type becomes unreachable (checked both by adding an enum member and by breaking a
+beat's validation); the 6,528/26 → 9,208/32 figures are exact; and byte identity reproduces on
+an independent harness.
+
+Four things corrected:
+
+| | |
+|---|---|
+| **"a long way from home"** — the idiom is real and means the wrong thing. It is "out of your element" or "far from your hometown", not far from your corner, which is the entire point of a Cut-Off. My note calling it "the actual commentary idiom" was true of the phrase and false of the sense. | "a long way from **their** corner". |
+| `GenderedNoun` had `legal` in its alternation, so **"the legal man" matches** — three lines under a doc comment exempting it as the name of a rule. Latent only: no scanned surface contains the phrase, so the contradiction never fired. | `legal\|` dropped. |
+| "two lines of UI" — there are three. The round-1 doc nit, recurring one field along. | Corrected, and the docstring now states plainly what these tests do **not** cover. |
+| "Two rewrites that read worse" over a four-row table. | Four. |
+
+### The one that is about this file rather than this PR
+
+> the build log attributes to the round-1 reviewer both a byte-identity reproduction and
+> positive readability verdicts on four specific lines. PR #18 has **zero** GitHub reviews and
+> zero comments, and nothing in the repo records them. Not contradicted, just unverifiable —
+> and it is a paraphrase of a reviewer put in that reviewer's mouth.
+
+Correct, and it applies to every "review found…" in this document, not only #18's. The reviews
+were independent agents working from pinned clones; none of them are recorded in the repo or
+on the pull requests. A note now says so at the top of the A5 section, and the standard it
+sets is the right one: the *measurements* are reproduced in the code and the tests and that is
+the checkable part; the quotes are my account and should be read as such.
+
+### Not guarded, and now said so in the test itself
+
+Reintroducing the Six-Man War description fails the suite. Reintroducing either of the two
+`.razor` strings does not — nothing scans `.razor` or `README.md`, because neither is
+reachable through the object model. My commit message said "all three previously-escaping
+cases verified to fail the guard when reintroduced"; one of the three does. Guarding the
+other two means a file-scanning test, which is a different kind of test with different failure
+modes and is not obviously worth it. Recorded in the test's own docstring rather than left as
+an assumption a reader would make.
+
+Also fixed while here: `BeatEnums.cs:43` still carried "one man kept cut off from **his**
+corner" in an XML doc — internal, but it is the exact sentence rewritten in `Face in Peril`.
+
+**471 tests passing.**
+
+---
+
 ## The UX pass
 
 Commissioned as a read-only review of the whole front end, and it came back with a diagnosis

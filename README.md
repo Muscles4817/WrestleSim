@@ -251,6 +251,7 @@ them for this booking are skipped rather than shown empty — most matches have 
 the line, so most bookings are five.
 
 ### 1 — Pick your wrestlers
+<<<<<<< HEAD
 First, how many a side: one, two or three. Then the lineup — a slot for each place in the
 match, each opening a picker over the page rather than another list on it.
 
@@ -263,6 +264,10 @@ slots. Arrow keys move, Enter picks, Escape closes.
 The moment both sides are complete, the pairing's freshness appears under the lineup — how
 many times these two have met and what the next one is worth. That is the point at which it
 is useful, which is while you can still book something else.
+=======
+First, singles or tag. Then the roster, showing Overness, Skill and Charisma — one name a
+side for a singles match, two for a tag match, where the second starts on the apron.
+>>>>>>> origin/main
 
 A wrestler cannot be booked on both sides, and the sides must be the same size. Handicap
 matches are not blocked out of squeamishness: the engine has no term for a numbers advantage
@@ -490,13 +495,13 @@ commentary tells you: duelling chants, the crowd talking amongst itself, a beach
 
 ### Who takes the fall
 
-The result is not a team result. The man who scored the fall and the man who ate it take the
-full swing; their partners take **50%** of a win and **35%** of a loss. That asymmetry is the
-point — it makes putting the fall on your star's partner a real way to protect him, and it
-still costs something, so it stays a decision.
+The result is not a team result. Whoever scored the fall and whoever ate it take the full
+swing; their partners take **50%** of a win and **35%** of a loss. That asymmetry is the
+point — it makes putting the fall on your star's partner a real way to protect the star, and
+it still costs something, so it stays a decision.
 
-Which man is legal for the finish is decided by the tags you book. Putting your star in on the
-hot tag rather than your rookie is worth about half a star on its own.
+Who is legal for the finish is decided by the tags you book. Putting your star in on the hot
+tag rather than your rookie is worth about half a star on its own.
 
 ### Teams
 
@@ -576,8 +581,8 @@ strategy**: a repeated-beat plan peaks and then declines.
 
 ## Wrestlers
 
-Thirty wrestlers ship in `Wrestlers.json` — 15 in the women's division, 15 in the men's,
-each division spanning all five card positions.
+Seventy-six wrestlers ship in `Wrestlers.json` — 38 in the women's division, 38 in the
+men's, each division spanning all five card positions.
 
 The spread is deliberate. An earlier roster clustered everyone between popularity 70–95
 and skill 2.83–3.82, which used a quarter of each stat's range and made every match rate
