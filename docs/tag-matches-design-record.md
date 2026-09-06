@@ -2111,3 +2111,135 @@ the library and the blocked count reads 17; revealing them shows all five disabl
 **needs a third party**; in a triple threat they are listed and bookable. No console errors.
 
 **625 tests passing.**
+
+## Elimination — falls remove people, and the order is the match
+
+Doc 18 §2.5, which is the whole specification:
+
+> **Elimination.** Falls remove people; last one standing wins. Solves the third-man problem
+> by construction, which is why it scales where a four-way does not. The drama moves from the
+> fall to the *order* of eliminations.
+
+Three claims, and each one is a thing to build rather than a thing to describe.
+
+### "Solves the third-man problem by construction"
+
+A three-way's characteristic failure is the man who vanishes and comes back with no
+explanation — which is why the disposal window exists, and why it is deliberately short. An
+elimination match does not have that problem, because the reason somebody is not in the ring
+is that he was pinned and went to the back.
+
+So the engine needs two different kinds of absence, and keeping them apart is most of the
+work. Disposal is a **window**: the man is coming back, the commentary should be aware he
+exists, and the filter is soft — a beat with nobody upright left to aim at settles for
+somebody who is down. Elimination is **permanent**: naming him is not a wrong emphasis, it is
+a wrestler who left through the curtain two beats ago. `MatchEngineState.Eliminate` also
+clears the disposal window if the man being eliminated was the one on the floor, because
+otherwise the soft filter would be hiding somebody who is already gone and the *next* beat
+would be free to aim at him.
+
+Everything that asks "who else is in this match" goes through one property, `Ctx.Remaining`.
+That is not tidiness: this codebase has now had the BeatControl→side mapping wrong in four
+separate places and the disposal filter missing from two more, and every one of those was an
+independent copy of a side predicate. A fifth copy was not going to be the one that came out
+right.
+
+### "The drama moves from the fall to the order"
+
+A result that reported only the winner would be reporting the least interesting fact about
+the match. `MatchEngineResult.Eliminations` carries who went out, in order, who did it, and
+how many were left after — and the result screen renders it as the field thinning, ending in
+the one still standing.
+
+The order is also *said*, in the play-by-play, because a viewer keeping a count in their head
+is a viewer doing the commentary team's job:
+
+> That is it for Cody Rhodes! Rhea Ripley takes them out of this match!
+> **3 left in this match.**
+> Becky Lynch has been eliminated — Roman Reigns did it!
+> **And then there were two. Roman Reigns and Rhea Ripley — one of them wins this.**
+
+Down to two is scored louder than the others (×1.35 on crowd and story), because it is not
+another fall — it is the moment the match becomes the singles match everybody has been
+waiting for.
+
+### The order only means something if the falls are spaced
+
+This is the part that would have been easy to leave as a comment. Three eliminations in four
+minutes is a scramble, and nobody remembers who went second; what makes the order a story is
+work between the falls, so each one is something the match arrived at rather than something
+that happened while you were reading the last one.
+
+`MatchEngine.EliminationPacing` is a `public static` pure function — the smallest gap between
+falls, measured against the gap an evenly spaced match would have, with the finish counted as
+the last fall. **The minimum rather than the mean, deliberately**: averaging lets a long
+stretch of work pay for two falls back to back, and it does not. One bunched pair spoils the
+run whatever else the match did, and there is a test that fails if the measure ever starts
+averaging.
+
+It is scored, asymmetrically, and the asymmetry is the honest part: even spacing is what the
+format is *supposed* to do, so it earns about a fifth of a star, while falls landing on top of
+each other genuinely wreck it and cost up to three fifths. Measured over 25 seeds, the same
+beats with the falls spread out beat the same beats with the falls bunched **25 times out of
+25, by a mean of 4.7 points** — nearly a quarter of a star, from nothing but where the falls
+sit.
+
+A dead-even match only reaches exactly 1.0 when the fall count divides the beat count. Ten
+beats and three falls cannot be split evenly, so the best a booker can do there is 0.90. That
+is a property of counting in whole beats, not a penalty, and it is written down rather than
+rounded away.
+
+### The format's one structural promise, enforced
+
+An elimination match runs until one side is left. A plan that eliminates one of four and then
+books a finish has not had an elimination match — it has had a four-way with a spare beat in
+it, and the two are graded differently, so the difference has to be real rather than a matter
+of what the booker called it. `Validate` walks the beats in booking order and refuses:
+
+- a plan that does not thin the field to exactly one,
+- a beat booked for, or aimed at, a side that has already gone,
+- an elimination that does not say who goes out,
+- a side eliminating itself,
+- and an elimination in a two-sided match, free from the gate added the day before — a
+  two-sided elimination match is a normal finish with a longer name.
+
+### Bookable, because that is the rule
+
+Two presets (Triple Threat Elimination, Four-Way Elimination), the beat in the library gated
+to multi-man, and the beat sheet's target row relabelled: **who goes out**, with the
+"whoever is standing" option withheld, because an elimination that does not name somebody is
+not a booking.
+
+Browser-verified at 390×844 with touch. A four-way of Reigns / Ripley / Lynch / Rhodes on the
+shipped preset: Rhodes out first by Ripley, Lynch second by Reigns, Reigns last one standing,
+4.42 stars, the eliminations panel reading the field down, no console errors.
+
+### Five mutations, all killed
+
+| | Mutation | Result |
+|---|---|---|
+| M1 | `EliminationPacing` returns 1.0 always | 6 red, including the averaging test |
+| M2 | pacing measured but never scored | the scramble comparison goes red |
+| M3 | `OtherSide` treats eliminated as returnable | the eliminated wrestler is named again |
+| M4 | `Remaining` returns every side | 3 red — names, counts and the recorded order |
+| M5 | the field need not thin to one | the structural rule goes unenforced |
+
+M2 is the one worth keeping: a measure that is recorded but never scored is not a claim about
+the format, it is a number on a screen, and only a test that compares two *matches* catches
+the difference.
+
+**650 tests passing.**
+
+### Still not built, and why
+
+- **Survivor Series elimination** — five a side, eliminating *individuals* rather than sides.
+  A different axis entirely: this work eliminates whole sides, and that needs elimination
+  inside `MatchSide.Members`, plus the tag formula running with a shrinking team. Not a
+  variation on what is here.
+- **Battle royals and the Rumble.** Over-the-top elimination with everyone in at once, and
+  timed entry for the Rumble — and doc 18 is blunt that these are "barely a match: a vehicle
+  for a spectacle, a surprise return, and one story told in eliminations. Judged on moments,
+  not on work." The grading model this engine is built on measures work, so a Rumble scored
+  by it would be scored on the wrong axis. That is a design problem before it is a
+  code problem, and pretending otherwise would produce a feature that runs and lies.
+- **Handicap matches**, still: the engine has no numbers-advantage term.

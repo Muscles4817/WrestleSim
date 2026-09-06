@@ -619,6 +619,17 @@ namespace WrestlingSim.Engine
             },
             new BeatTemplate
             {
+                Name             = "Elimination",
+                Description      = "A fall that takes somebody out. The match carries on with one fewer.",
+                Category         = CatMultiMan,
+                Type             = BeatType.Elimination,
+                DefaultIntensity = BeatIntensity.High,
+                DefaultDuration  = BeatDuration.Short,
+                BookerTip        = "Say who goes out, and leave work between the falls — three eliminations in a row is a scramble, not a story.",
+                Tags             = ["Multi-Man", "Story", "Finish"]
+            },
+            new BeatTemplate
+            {
                 Name             = "Everybody In",
                 Description      = "It breaks down, everyone is in the ring, the referee has lost control.",
                 Category         = CatTag,

@@ -42,6 +42,24 @@ namespace WrestlingSim.Models.MatchPlan
         /// </summary>
         public List<GrudgeMoment> GrudgeMoments { get; init; } = new();
 
+        /// <summary>
+        /// Who went out, in the order they went out, last one first — so reading it top to
+        /// bottom is the story working backwards from the win.
+        ///
+        /// Empty for a match with no eliminations in it. The order rather than the set,
+        /// because doc 18 §2.5 puts the drama of an elimination match in the order, and a
+        /// result that only said who won would be reporting the least interesting fact
+        /// about it.
+        /// </summary>
+        public List<EliminatedSide> Eliminations { get; init; } = new();
+
+        /// <summary>
+        /// How well the falls were spaced, 0–1. 1.0 is evenly spread or better, 0.0 is falls
+        /// with nothing between them. See <see cref="Engine.MatchEngine.EliminationPacing"/>.
+        /// Always 1.0 when nobody was eliminated.
+        /// </summary>
+        public double EliminationPacing { get; init; } = 1.0;
+
         // Accumulated scores (raw, pre-normalisation)
         public double TechnicalScore     { get; init; }
         public double StorytellingScore  { get; init; }
@@ -174,6 +192,9 @@ namespace WrestlingSim.Models.MatchPlan
         public double VarietyNudge   { get; init; }
         public double CoherenceNudge { get; init; }
 
+        /// <summary>What the spacing of the eliminations was worth. Zero in every other match.</summary>
+        public double PacingNudge    { get; init; }
+
         /// <summary>What investment was worth, in points of the final score.</summary>
         public double InvestmentPoints => Crowd - CrowdBeforeInvestment;
 
@@ -186,10 +207,28 @@ namespace WrestlingSim.Models.MatchPlan
                 ("Technical",    Technical),
                 ("Finish",       FinishNudge),
                 ("Variety",      VarietyNudge),
-                ("Match type",   CoherenceNudge)
+                ("Match type",   CoherenceNudge),
+                ("Fall spacing", PacingNudge)
             }
             .Where(x => Math.Abs(x.Item2) > 0.005)
             .OrderByDescending(x => Math.Abs(x.Item2));
     }
+
+    /// <summary>One wrestler's exit from an elimination match, and who did it.</summary>
+    public class EliminatedSide
+    {
+        /// <summary>The one who went out.</summary>
+        public required Wrestler Wrestler { get; init; }
+
+        /// <summary>Who scored the fall.</summary>
+        public required Wrestler By { get; init; }
+
+        /// <summary>Which elimination this was, 1-based. The order is the story.</summary>
+        public int Order { get; init; }
+
+        /// <summary>How many sides were still in *after* this one went out.</summary>
+        public int Remaining { get; init; }
+    }
+
 
 }

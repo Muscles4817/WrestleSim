@@ -165,6 +165,20 @@ namespace WrestlingSim.Tests
                     {
                         beats.Add(template.ToMatchBeat(BeatControl.WrestlerA));
                     }
+                    else if (template.ToMatchBeat(BeatControl.WrestlerA).IsElimination)
+                    {
+                        // An elimination match runs until one side is left, so a three-way
+                        // takes exactly one elimination plus the finish. Booking this beat
+                        // twice like the others would eliminate everybody including the
+                        // winner, and Validate — correctly — refuses it.
+                        var elim = template.ToMatchBeat(BeatControl.WrestlerA);
+                        elim.Against = BeatControl.WrestlerB;
+                        beats.Add(elim);
+
+                        var win = BeatLibrary.Find("Clean Victory")!.ToMatchBeat(BeatControl.WrestlerA);
+                        win.Against = BeatControl.SideC;
+                        beats.Add(win);
+                    }
                     else
                     {
                         beats.Add(template.ToMatchBeat(BeatControl.WrestlerB));
@@ -184,9 +198,10 @@ namespace WrestlingSim.Tests
                         beats.Insert(1, BeatLibrary.All.First(t => t.Type == BeatType.ThirdPartyPullIn)
                                                        .ToMatchBeat(BeatControl.WrestlerB));
 
-                    // A multi-man finish has to name who takes the fall.
+                    // A multi-man finish has to name who takes the fall. The elimination
+                    // branch above has already said, and says something different.
                     if (multiMan)
-                        foreach (var b in beats.Where(x => x.IsFinish))
+                        foreach (var b in beats.Where(x => x.IsFinish && x.Against is null))
                             b.Against = BeatControl.SideC;
 
                     for (int seed = 0; seed < 4; seed++)
