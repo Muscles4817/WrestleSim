@@ -341,6 +341,26 @@ namespace WrestlingSim.Engine
 
             update.Feud.RecordMatch(showDate);
 
+            // In a multi-man match sides A and B are not "the two sides" — they are the
+            // first two listed, and everybody in there wrestled everybody. Recording only
+            // the first pair credited a rivalry to whoever happened to be typed first and
+            // gave the third side's stories nothing, which a test looking for the *absence*
+            // of heat is how this surfaced.
+            //
+            // The other pairs get the same fraction the cross-pairs of a tag match get, and
+            // for the same reason: they were in there together, which is not the same as
+            // having had the match.
+            if (match.Plan.IsMultiMan)
+            {
+                for (int i = 0; i < match.Plan.Sides.Count; i++)
+                for (int j = i + 1; j < match.Plan.Sides.Count; j++)
+                {
+                    if (i == 0 && j == 1) continue;      // recorded in full above
+                    _feudBook.Record(match.Plan.Sides[i].Members, match.Plan.Sides[j].Members,
+                                     heat * CrossPairHeatShare, date: showDate);
+                }
+            }
+
             // Did this settle anything? Doc 20 §6 — a blow-off resolves, and until one does
             // the audience is being asked to keep caring about a question nobody is
             // answering. Past the third such match they stop, and the pairing carries that
@@ -376,6 +396,37 @@ namespace WrestlingSim.Engine
             }
 
             showResult.FeudUpdates.Add(update);
+
+            // ── Blame ────────────────────────────────────────────────────────
+            // A multi-man match advances the stories *inside* it, not just the one it was
+            // billed as. Doc 18 §2.5: the reason to run two rivals into a three-way is that
+            // being cost the match by somebody you already hate escalates the feud without
+            // spending the singles match on it — which is why the finish where two big names
+            // wreck each other and the third steals it is booked as often as it is.
+            //
+            // The grievance runs one way. Whoever was denied leaves with it, and how much
+            // depends on what it actually cost them.
+            foreach (var moment in engineResult.GrudgeMoments)
+            {
+                bool aggrievedPinned = engineResult.LosingSide.Contains(moment.Against);
+                bool aggrievedLost   = aggrievedPinned
+                                       || !engineResult.WinningSide.Contains(moment.Against);
+
+                double blame = MatchEngine.BlameHeat(
+                    engineResult.StarRating, aggrievedLost, aggrievedPinned);
+                if (blame <= 0) continue;
+
+                var blamed = _feudBook.Record(
+                    moment.Against, moment.By, blame,
+                    tags: new[] { FeudHistoryTag.PersonalInsult }, date: showDate);
+
+                showResult.FeudUpdates.Add(blamed);
+
+                if (aggrievedPinned)
+                    itemResult.Notes.Add(
+                        $"{moment.Against.RingName} took the fall after {moment.By.RingName} " +
+                        "cost them the match. That is not going to be forgotten.");
+            }
 
             // A tag programme also builds the singles rivalries inside it, at a fraction —
             // which is how a team feud pays off in a singles blow-off. Only recorded for a

@@ -207,7 +207,18 @@ namespace WrestlingSim.Persistence
 
     public class FeudDto
     {
-        /// <summary>Both sides of the rivalry. Written from v3; absent in v2 saves.</summary>
+        /// <summary>
+        /// v4: every camp in the story. A feud can have more than two — a triangle, or a
+        /// faction war — and SideA/SideB below can only name the first two.
+        ///
+        /// Written alongside them rather than instead of them, so a save from this build
+        /// still opens in one that predates multi-party feuds: that build reads the two
+        /// sides and loses the third camp, which is wrong but survivable, where an unknown
+        /// field would lose the whole feud.
+        /// </summary>
+        public List<List<string>>? Camps { get; set; }
+
+        /// <summary>The first two camps. Written from v3; absent in v2 saves.</summary>
         public List<string>? SideA { get; set; }
         public List<string>? SideB { get; set; }
 

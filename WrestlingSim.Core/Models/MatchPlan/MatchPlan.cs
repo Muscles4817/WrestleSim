@@ -7,18 +7,52 @@ namespace WrestlingSim.Models.MatchPlan
     public class MatchPlan
     {
         /// <summary>
-        /// The two sides. A singles match is a match between two sides of one, which is
-        /// why there is no separate singles plan type.
+        /// The sides. A singles match is two sides of one, a tag match two sides of two, a
+        /// triple threat three sides of one — which is why there is no separate plan type
+        /// for any of them.
         ///
-        /// <see cref="WrestlerA"/> and <see cref="WrestlerB"/> below are compatibility
-        /// shims over these, so an object initialiser written for the singles-only engine
-        /// still reads and behaves the same. Set either the shims or the sides for a given
-        /// side, not both — the shim appends to whatever <see cref="SideA"/> currently is,
-        /// so doing both would leave you with three people on one side.
+        /// <see cref="SideA"/> and <see cref="SideB"/> are shims over the first two, exactly
+        /// as <see cref="WrestlerA"/>/<see cref="WrestlerB"/> are shims over their starters.
+        /// The same reasoning applies one level up: almost everything the engine asks is
+        /// side-level, and "who is on top" does not become a different question with a third
+        /// side in the match — but *some things do*, and those are the whole of what a
+        /// multi-man match is. See <see cref="MatchFormat"/>.
+        ///
+        /// Two sides is the default so every existing plan, save file and test keeps working
+        /// unchanged; a plan is only multi-man if somebody adds a third side.
         /// </summary>
-        public MatchSide SideA { get; init; } = new();
+        public List<MatchSide> Sides { get; init; } = [new(), new()];
 
-        public MatchSide SideB { get; init; } = new();
+        /// <summary>The first side. Shim over <see cref="Sides"/>.</summary>
+        public MatchSide SideA
+        {
+            get => Sides[0];
+            init { while (Sides.Count < 1) Sides.Add(new()); Sides[0] = value; }
+        }
+
+        /// <summary>The second side. Shim over <see cref="Sides"/>.</summary>
+        public MatchSide SideB
+        {
+            get => Sides[1];
+            init { while (Sides.Count < 2) Sides.Add(new()); Sides[1] = value; }
+        }
+
+        /// <summary>
+        /// What kind of match this is, structurally — which is not the same question as
+        /// <see cref="MatchType"/>, which is how it is *worked* (technical, spotfest…).
+        ///
+        /// Derived rather than stored, because the format is a fact about the sides and
+        /// storing it would let a plan disagree with itself.
+        /// </summary>
+        public MatchFormat Format => Sides.Count switch
+        {
+            <= 2 => MatchFormat.TwoSided,
+            3    => MatchFormat.TripleThreat,
+            _    => MatchFormat.MultiWay
+        };
+
+        /// <summary>True when more than two sides can win — the third-man problem applies.</summary>
+        public bool IsMultiMan => Sides.Count > 2;
 
         /// <summary>The wrestler who starts for side A. Shim; see <see cref="SideA"/>.</summary>
         public Wrestler WrestlerA
@@ -38,16 +72,46 @@ namespace WrestlingSim.Models.MatchPlan
             init => SideB.Members.Add(value);
         }
 
-        /// <summary>Everyone in the match, side A first.</summary>
-        public IEnumerable<Wrestler> AllParticipants => SideA.Members.Concat(SideB.Members);
+        /// <summary>Everyone in the match, in side order.</summary>
+        public IEnumerable<Wrestler> AllParticipants => Sides.SelectMany(s => s.Members);
 
-        /// <summary>True when either side has a partner on the apron.</summary>
-        public bool IsTagMatch => SideA.IsTag || SideB.IsTag;
+        /// <summary>True when any side has a partner on the apron.</summary>
+        public bool IsTagMatch => Sides.Any(s => s.IsTag);
 
         public List<MatchBeat> Beats { get; set; } = new();
 
-        // Active feud between the two sides, if any.
-        public Feud? Feud { get; set; }
+        /// <summary>
+        /// Every live story among the people in this match.
+        ///
+        /// A two-side match has at most one and the singular <see cref="Feud"/> shim below
+        /// is all anybody needed. A multi-man match routinely has more than one, and the
+        /// story that decides the finish is often between two people who are both about to
+        /// lose to the third — which is the entire reason
+        /// <see cref="Engine.FeudBook.Among"/> exists.
+        /// </summary>
+        public List<Feud> Feuds { get; set; } = new();
+
+        /// <summary>The headline feud. Shim over <see cref="Feuds"/>.</summary>
+        public Feud? Feud
+        {
+            get => Feuds.FirstOrDefault();
+            set
+            {
+                Feuds.Clear();
+                if (value is not null) Feuds.Add(value);
+            }
+        }
+
+        /// <summary>
+        /// The live story that puts these two on opposite sides in this match, if there is
+        /// one. Prefers a story that is actually about the pair over a larger one that
+        /// merely contains them.
+        /// </summary>
+        public Feud? FeudBetween(Wrestler a, Wrestler b) =>
+            Feuds.Where(f => f.Opposes(a, b))
+                 .OrderBy(f => f.Participants.Count())
+                 .ThenByDescending(f => f.Heat)
+                 .FirstOrDefault();
 
         /// <summary>
         /// The booker declaring that this match ends the feud.
@@ -92,19 +156,36 @@ namespace WrestlingSim.Models.MatchPlan
             {
                 var finish = Beats.LastOrDefault(b => b.IsFinish);
                 if (finish == null) return null;
-                return finish.Control == BeatControl.WrestlerA ? SideA : SideB;
+                return ControlSide(finish);
             }
         }
 
+        /// <summary>
+        /// The side that takes the fall.
+        ///
+        /// With two sides, whoever did not win. With more, the finish has to say — see
+        /// <see cref="MatchBeat.Against"/>. Null when it cannot be determined, which
+        /// <see cref="Validate"/> refuses to let a bookable plan reach.
+        /// </summary>
         public MatchSide? BookedLosingSide
         {
             get
             {
                 var winning = BookedWinningSide;
-                if (winning == null) return null;
-                return winning == SideA ? SideB : SideA;
+                if (winning is null) return null;
+
+                if (Beats.LastOrDefault(b => b.IsFinish)?.Against is { } pinned
+                    && SideIndex(pinned) is { } pi && pi < Sides.Count)
+                    return Sides[pi];
+
+                var others = Sides.Where(s => s != winning).ToList();
+                return others.Count == 1 ? others[0] : null;
             }
         }
+
+        /// <summary>Everyone who did not win — which in a multi-man match is more than one side.</summary>
+        public IEnumerable<MatchSide> BookedNonWinningSides =>
+            BookedWinningSide is { } w ? Sides.Where(s => s != w) : [];
 
         /// <summary>
         /// Winner inferred from the finish beat's Control.
@@ -129,8 +210,12 @@ namespace WrestlingSim.Models.MatchPlan
             // ── Sides ────────────────────────────────────────────────────────
             // Checked first and returned on, because everything below reads people out
             // of the sides and would throw rather than report.
-            if (SideA.Members.Count == 0) errors.Add("Side A has nobody in it.");
-            if (SideB.Members.Count == 0) errors.Add("Side B has nobody in it.");
+            if (Sides.Count < 2) errors.Add("A match needs at least two sides.");
+            if (Sides.Count > 4)
+                errors.Add($"A match has at most four sides; this one has {Sides.Count}.");
+            for (int i = 0; i < Sides.Count; i++)
+                if (Sides[i].Members.Count == 0)
+                    errors.Add($"Side {(char)('A' + i)} has nobody in it.");
             if (errors.Count > 0) return errors;
 
             // The engine indexes Members with the raw StartingIndex, so an out-of-range
@@ -154,11 +239,11 @@ namespace WrestlingSim.Models.MatchPlan
             //
             // The exit condition for this rule is a numbers term in the engine, not a
             // decision that handicap is allowed.
-            if (SideA.Size != SideB.Size)
+            if (Sides.Select(s => s.Size).Distinct().Count() > 1)
                 errors.Add(
-                    $"Sides are uneven ({SideA.Size} v {SideB.Size}). The engine has no " +
-                    "model for a numbers advantage yet, so a handicap match would be " +
-                    "graded as a normal one.");
+                    $"Sides are uneven ({string.Join(" v ", Sides.Select(s => s.Size))}). The " +
+                    "engine has no model for a numbers advantage yet, so a handicap match " +
+                    "would be graded as a normal one.");
 
             // Every beat has to be workable by the side it is booked for. This is the rule
             // that actually protects the tag formula — a hot tag needs someone to tag, and
@@ -262,11 +347,14 @@ namespace WrestlingSim.Models.MatchPlan
                 errors.Add("Plan has more than one finish beat.");
             else if (!Beats.Last().IsFinish)
                 errors.Add("Finish beat must be the last beat.");
-            else if (finishBeats[0].Control is not (BeatControl.WrestlerA or BeatControl.WrestlerB))
+            else if (SideIndex(finishBeats[0].Control) is not { } finishSide
+                     || finishSide >= Sides.Count)
                 // BookedWinner reads the finish's Control, so Even/Contested silently resolved
                 // to WrestlerB while the engine's commentary credited WrestlerA. A finish has
-                // to say who won.
-                errors.Add("Finish beat must be controlled by WrestlerA or WrestlerB — a finish decides who wins.");
+                // to say who won — and in a multi-man match it has to name a side that is
+                // actually in the match.
+                errors.Add($"Finish beat must be controlled by one of the {Sides.Count} sides " +
+                           "— a finish decides who wins.");
 
             // ── Title ────────────────────────────────────────────────────────
             if (TitleAtStake is { } title)
@@ -310,20 +398,75 @@ namespace WrestlingSim.Models.MatchPlan
                 }
             }
 
+            // ── Multi-man rules (doc 18 §2.5) ────────────────────────────────
+            if (IsMultiMan)
+            {
+                // "No disqualification, no count-out, first fall wins." Not a house rule —
+                // it is what makes the format work: with three people there is no way to
+                // enforce a count on two of them at once, so the format drops the rule
+                // rather than pretending.
+                var finish = Beats.LastOrDefault(b => b.IsFinish);
+                if (finish is not null &&
+                    finish.Type is BeatType.FinishDQ or BeatType.FinishCountout)
+                    errors.Add($"A {Sides.Count}-way has no disqualification or count-out — " +
+                               "first fall wins. Book a clean finish, a submission, or " +
+                               "interference.");
+
+                // The fall has to name who took it. Without this the format's one real
+                // booking tool — beating a champion without beating the champion — cannot
+                // be expressed, and the loss would land on whoever happened to be listed.
+                if (finish is not null)
+                {
+                    if (finish.Against is null)
+                        errors.Add($"A {Sides.Count}-way finish has to say who takes the fall, " +
+                                   "not just who wins — that is the whole point of the format.");
+                    else if (SideIndex(finish.Against.Value) is not { } pi || pi >= Sides.Count)
+                        errors.Add("The side booked to take the fall is not in this match.");
+                    else if (SideIndex(finish.Control) == pi)
+                        errors.Add("The winner cannot also be the one pinned.");
+                }
+
+                if (IsTagMatch)
+                    errors.Add("Multi-man matches are one wrestler a side for now. Trios are " +
+                               "booked as two sides of three, which is a different match.");
+            }
+
             return errors;
         }
 
-        /// <summary>The side a beat's control refers to, or null for Even / Contested.</summary>
-        public MatchSide? ControlSide(MatchBeat beat) => beat.Control switch
+        /// <summary>
+        /// The side index a control value names, or null for Even / Contested.
+        ///
+        /// **The only place this mapping exists.** Everything that needs to turn a
+        /// <see cref="BeatControl"/> into a side goes through here, so adding a fifth side
+        /// later is one edit rather than a hunt through a hundred `== WrestlerA` comparisons.
+        /// </summary>
+        public static int? SideIndex(BeatControl control) => control switch
         {
-            BeatControl.WrestlerA => SideA,
-            BeatControl.WrestlerB => SideB,
+            BeatControl.WrestlerA => 0,
+            BeatControl.WrestlerB => 1,
+            BeatControl.SideC     => 2,
+            BeatControl.SideD     => 3,
             _                     => null
         };
 
+        /// <summary>The control value naming a given side index.</summary>
+        public static BeatControl ControlFor(int sideIndex) => sideIndex switch
+        {
+            0 => BeatControl.WrestlerA,
+            1 => BeatControl.WrestlerB,
+            2 => BeatControl.SideC,
+            3 => BeatControl.SideD,
+            _ => throw new ArgumentOutOfRangeException(nameof(sideIndex),
+                     $"No control value for side {sideIndex}; a match has at most four sides.")
+        };
+
+        /// <summary>The side a beat's control refers to, or null for Even / Contested.</summary>
+        public MatchSide? ControlSide(MatchBeat beat) =>
+            SideIndex(beat.Control) is { } i && i < Sides.Count ? Sides[i] : null;
+
         /// <summary>Which side this wrestler is on, or null if they are not in the match.</summary>
-        public MatchSide? SideOf(Wrestler w) =>
-            SideA.Contains(w) ? SideA : SideB.Contains(w) ? SideB : null;
+        public MatchSide? SideOf(Wrestler w) => Sides.FirstOrDefault(s => s.Contains(w));
 
         /// <summary>The side opposing the one given.</summary>
         public MatchSide Opposing(MatchSide side) => side == SideA ? SideB : SideA;

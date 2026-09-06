@@ -82,6 +82,47 @@ namespace WrestlingSim.Enums
         /// </summary>
         AllFourBrawl,
 
+        // ── Multi-man (doc 18 §2.5) ──────────────────────────────────────────
+
+        /// <summary>
+        /// The third man is removed — through a table, over the barricade, into the steps.
+        ///
+        /// The format's load-bearing beat. With three in the match somebody is doing nothing,
+        /// and the entire craft is disposing of them plausibly and bringing them back at the
+        /// right moment. It buys a window in which the remaining two can work uninterrupted,
+        /// and a near fall inside that window is worth something a near fall outside it is not.
+        /// </summary>
+        DisposalSpot,
+
+        /// <summary>
+        /// A third party breaks up the fall. The multi-man equivalent of the tag save, and
+        /// the reason every near fall in the format is cheaper than a singles near fall:
+        /// nobody believes a cover until the third man is verifiably unable to reach it.
+        /// </summary>
+        PinBreak,
+
+        /// <summary>
+        /// A pin broken out of spite — the breaker could have taken the win and went after
+        /// their rival instead.
+        ///
+        /// The signature beat of a multi-man match with a live feud in it, and the one that
+        /// tells the crowd the grudge outranks the prize. Costs the spiter position, which
+        /// is the point: it is not a good decision, it is a character decision.
+        /// </summary>
+        SpiteBreak,
+
+        /// <summary>
+        /// A winnable position abandoned to go after a rival instead. The cheaper cousin of
+        /// the spite break, and what you book on the way to one.
+        /// </summary>
+        IgnoredOpportunity,
+
+        /// <summary>
+        /// Two rivals wipe each other out and neither can capitalise. The beat that sets up
+        /// the third man crawling over — the classic multi-man finish, one beat early.
+        /// </summary>
+        MutualDestruction,
+
         // Finishes
         FinishClean,
         FinishRollup,
@@ -92,12 +133,25 @@ namespace WrestlingSim.Enums
         FinishSuperFinisher
     }
 
+    /// <summary>
+    /// Whose beat this is. Named for sides, not for wrestlers — in a tag match it is whichever
+    /// of that side's members is legal.
+    ///
+    /// `SideC` and `SideD` are appended rather than replacing the A/B names, so the several
+    /// hundred existing structure definitions keep reading the way they were written. The
+    /// value is resolved in exactly one place, <see cref="MatchPlan.MatchPlan.SideIndex"/>;
+    /// there is no second copy, because the risk with adding members to an enum that is
+    /// compared with `==` rather than switched on is precisely that `!= WrestlerA` silently
+    /// means "side B" in a hundred places.
+    /// </summary>
     public enum BeatControl
     {
         WrestlerA,
         WrestlerB,
         Even,
-        Contested  // rapid back-and-forth
+        Contested,  // rapid back-and-forth
+        SideC,
+        SideD
     }
 
     public enum BeatIntensity

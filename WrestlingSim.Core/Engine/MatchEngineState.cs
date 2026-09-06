@@ -181,6 +181,36 @@ namespace WrestlingSim.Engine
         /// <summary>0-based position of the beat currently resolving.</summary>
         public int BeatIndex { get; private set; } = -1;
 
+        // ── Disposal (doc 18 §2.5) ───────────────────────────────────────────
+
+        /// <summary>
+        /// The beat index up to which somebody is out of the action, and who.
+        ///
+        /// A disposal spot buys a window. Inside it the remaining two can work
+        /// uninterrupted and a near fall means something; outside it, everyone knows the
+        /// third man is available to break the cover, so the same near fall is cheap.
+        /// That difference *is* the format, and it is why disposal → sequence → near fall
+        /// is the loop a good multi-man match runs over and over.
+        ///
+        /// The window is short on purpose. A move that puts somebody down for thirty
+        /// seconds does not justify a four-minute absence, and "where was he?" is the
+        /// format's characteristic failure.
+        /// </summary>
+        public int DisposedUntilBeat { get; private set; } = -1;
+
+        /// <summary>Which side is currently out of the action, if any.</summary>
+        public int? DisposedSide { get; private set; }
+
+        /// <summary>True while somebody is out and the others have the ring to themselves.</summary>
+        public bool SomebodyIsDisposed => BeatIndex <= DisposedUntilBeat;
+
+        /// <summary>Records a disposal lasting <paramref name="beats"/> beats from now.</summary>
+        public void Dispose(int sideIndex, int beats)
+        {
+            DisposedSide      = sideIndex;
+            DisposedUntilBeat = BeatIndex + beats;
+        }
+
         /// <summary>Total near falls executed so far; drives near-fall specific commentary.</summary>
         public int NearFallCount => TimesUsed(BeatType.NearFall);
 

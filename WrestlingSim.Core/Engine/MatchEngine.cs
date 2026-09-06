@@ -9,6 +9,9 @@ namespace WrestlingSim.Engine
     {
         private readonly Random _rand;
 
+        /// <summary>Grudge moments this execution produced; see <see cref="GrudgeMoment"/>.</summary>
+        private readonly List<GrudgeMoment> _grudges = new();
+
         // Scale constants for the saturating normalisation of each raw accumulator.
         // A raw score equal to the scale reads as ~0.63 of the component; twice the
         // scale reads as ~0.86. Nothing ever reaches 1.0, so piling on beats has a
@@ -123,6 +126,60 @@ namespace WrestlingSim.Engine
             return bored + apathy > 1e-9 ? bored / (bored + apathy) : 0.0;
         }
 
+        /// <summary>
+        /// What a near fall is worth, given how many ways the match can go and whether
+        /// anybody is currently out of the action.
+        ///
+        /// Doc 18 §2.5's central mechanical claim. With three sides every cover is
+        /// breakable, so a near fall is not a question about the person being pinned — it
+        /// is a question about whether somebody arrives, and the crowd knows the answer is
+        /// usually yes. Inside a disposal window it is the real thing; outside one it is a
+        /// spot with a count attached.
+        ///
+        /// **Public and static because it was otherwise untestable in practice**, which is
+        /// a lesson this codebase has now learned twice. Inline, the only way at it was to
+        /// compare two whole matches, and two matches that differ by a beat differ in a
+        /// dozen ways — the first version of the test compared a plan containing a disposal
+        /// against one containing a rest hold, so it measured the gap between two beats and
+        /// passed happily with this rule deleted. Same shape as `BoredShare` in A5: testing
+        /// a mechanism through the thing it feeds does not test the mechanism.
+        /// </summary>
+        /// <summary>
+        /// How much heat a grudge moment adds to the story behind it, given what it cost
+        /// the person it was done to.
+        ///
+        /// "You cost me the title" is one of wrestling's most reliable escalators, and it is
+        /// why a booker runs two rivals into a multi-man match: the story advances without
+        /// spending the singles match. But the grievance is proportional to the damage. Being
+        /// denied and then *pinned* is the full version; being denied and losing anyway is
+        /// most of it; being denied and winning regardless is a grudge with no wound under
+        /// it, and should read as the smallest of the three rather than as nothing — it still
+        /// happened, and both of them know it.
+        ///
+        /// Scaled by the match's own quality for the same reason the headline feud is: a
+        /// moment in a match nobody cared about is a moment nobody cared about.
+        /// </summary>
+        public static double BlameHeat(double starRating, bool aggrievedLost, bool aggrievedPinned) =>
+            starRating * BlameHeatPerStar * (aggrievedPinned ? 1.0 : aggrievedLost ? 0.6 : 0.3);
+
+        /// <summary>
+        /// Heat per star for a grudge moment, against the 2.0 a match between the rivals
+        /// themselves is worth. Deliberately well under half: being cost a match builds a
+        /// story, and it must not build it faster than actually wrestling each other, or the
+        /// cheap booking outperforms the real one.
+        /// </summary>
+        public const double BlameHeatPerStar = 0.8;
+
+        public static double MultiManNearFallFactor(bool multiMan, bool somebodyDisposed) =>
+            multiMan && !somebodyDisposed ? CrowdedOutNearFall : 1.0;
+
+        /// <summary>
+        /// What a near fall keeps when everybody is upright and available to break it. Not
+        /// zero — the move still happened and the room still reacts — but the count itself
+        /// carries no jeopardy.
+        /// </summary>
+        public const double CrowdedOutNearFall = 0.6;
+
         public static double InvestmentFactor(double investment) =>
             investment >= TypicalInvestment
                 ? 1.0 + (investment - TypicalInvestment) * InvestmentUpside
@@ -180,7 +237,22 @@ namespace WrestlingSim.Engine
             public bool IsSideA(Wrestler w) => Plan.SideA.Contains(w);
 
             /// <summary>The legal performer for a given side.</summary>
-            public Wrestler LegalOf(MatchSide side) => side == Plan.SideA ? LegalA : LegalB;
+            /// <summary>
+            /// Whoever is legal for a side right now.
+            ///
+            /// Sides 0 and 1 carry live tag state, so they read it. Any further side is
+            /// one wrestler — <see cref="MatchPlan.Validate"/> refuses a multi-man match
+            /// with partners — so the legal member is the only member.
+            ///
+            /// This used to be `side == Plan.SideA ? LegalA : LegalB`, which returned side
+            /// B's wrestler for side C: booking a three-way with C pinned reported B as the
+            /// loser. That is the failure mode of comparing an enum with `==` rather than
+            /// resolving it once, which is why the control mapping now lives in one place.
+            /// </summary>
+            public Wrestler LegalOf(MatchSide side) =>
+                side == Plan.SideA ? LegalA
+                : side == Plan.SideB ? LegalB
+                : side.Members[0];
 
             /// <summary>The legal performer on the side this wrestler is *not* on.</summary>
             public Wrestler Opponent(Wrestler w) => IsSideA(w) ? LegalB : LegalA;
@@ -519,6 +591,26 @@ namespace WrestlingSim.Engine
                     ApplyAllFourBrawl(result, ctx, iMod, dMod);
                     break;
 
+                case BeatType.DisposalSpot:
+                    ApplyDisposalSpot(result, beat, ctx, control, iMod, dMod);
+                    break;
+
+                case BeatType.PinBreak:
+                    ApplyPinBreak(result, beat, ctx, control, iMod, timesUsed);
+                    break;
+
+                case BeatType.SpiteBreak:
+                    ApplySpiteBreak(result, beat, ctx, control, iMod);
+                    break;
+
+                case BeatType.IgnoredOpportunity:
+                    ApplyIgnoredOpportunity(result, beat, ctx, control, iMod);
+                    break;
+
+                case BeatType.MutualDestruction:
+                    ApplyMutualDestruction(result, beat, ctx, control, iMod, dMod);
+                    break;
+
                 case BeatType.HighSpot:
                     ApplyHighSpot(result, beat, ctx, control, iMod);
                     break;
@@ -761,6 +853,193 @@ namespace WrestlingSim.Engine
             var reaction = new CrowdReaction();
             foreach (var s in shares) reaction.Add(s.Kind, s.Share);
             return reaction.Dominant;
+        }
+
+        // ── Multi-man (doc 18 §2.5) ──────────────────────────────────────────
+
+        /// <summary>The side a beat is aimed at, or the first side that is not the control.</summary>
+        private static MatchSide TargetOf(MatchBeat beat, Ctx ctx, Wrestler? control)
+        {
+            if (Models.MatchPlan.MatchPlan.SideIndex(beat.Against ?? BeatControl.Even) is { } i
+                && i < ctx.Plan.Sides.Count)
+                return ctx.Plan.Sides[i];
+
+            var self = control is null ? null : ctx.SideOf(control);
+            return ctx.Plan.Sides.FirstOrDefault(x => x != self) ?? ctx.Plan.SideB;
+        }
+
+        /// <summary>
+        /// The third man is put through something and the ring belongs to the other two.
+        ///
+        /// The window this buys is short on purpose. §2.5's characteristic failure is the
+        /// four-minute absence nobody explains, so the disposal lasts a beat or two by
+        /// duration and no longer — long enough for a sequence, not long enough to ask
+        /// where he went.
+        /// </summary>
+        private void ApplyDisposalSpot(BeatResult r, MatchBeat beat, Ctx ctx,
+            Wrestler? control, double iMod, double dMod)
+        {
+            control ??= ctx.LegalA;
+            var target = TargetOf(beat, ctx, control);
+            var victim = ctx.LegalOf(target);
+
+            int window = beat.Duration switch
+            {
+                BeatDuration.Brief => 1,
+                BeatDuration.Short => 2,
+                _                  => 3
+            };
+            ctx.State.Dispose(ctx.Plan.Sides.IndexOf(target), window);
+
+            // A spot, and priced like one: real noise, little advantage, little craft.
+            r.CrowdEnergyDelta = Rng(7, 14) * iMod
+                                 * PerformerProfile.Blend(ctx.For(victim).Connection, 0.55);
+            r.AdvantageDelta = ControlSign(ctx, control) * Rng(3, 9) * iMod;
+            r.TechnicalContribution = 2.0 * iMod;
+            r.StorytellingContribution = 3.0 * dMod;
+
+            r.Commentary.Add(Pick(
+                $"{control.RingName} sends {victim.RingName} through the timekeeper's area — and that is one of them dealt with!",
+                $"{victim.RingName} is dumped to the floor and stays there. {control.RingName} has bought some room.",
+                $"{control.RingName} puts {victim.RingName} down hard on the outside — for now, this is one on one."));
+        }
+
+        /// <summary>
+        /// Somebody breaks up the cover. The reason every near fall in this format is
+        /// cheaper than a singles near fall: nobody believes a count until the third man
+        /// is verifiably unable to reach it.
+        /// </summary>
+        private void ApplyPinBreak(BeatResult r, MatchBeat beat, Ctx ctx,
+            Wrestler? control, double iMod, int timesUsed)
+        {
+            control ??= ctx.LegalA;
+            var denied = ctx.LegalOf(TargetOf(beat, ctx, control));
+
+            r.CrowdEnergyDelta = Rng(8, 15) * iMod
+                                 * PerformerProfile.Blend(ctx.For(control).Connection, 0.55);
+            r.AdvantageDelta = ControlSign(ctx, control) * Rng(2, 7) * iMod;
+            r.TechnicalContribution = 1.5 * iMod;
+            r.StorytellingContribution = 5.0 * iMod;
+
+            r.Commentary.Add(timesUsed >= 3
+                ? Pick(
+                    $"{control.RingName} breaks it up AGAIN. Nobody is going to be allowed to win this cleanly.",
+                    $"Another cover, another save — {control.RingName} is not letting {denied.RingName} have it.")
+                : Pick(
+                    $"{control.RingName} dives in and breaks the count! {denied.RingName} had it won.",
+                    $"{denied.RingName} covers — and {control.RingName} is there to break it up at the last second!"));
+        }
+
+        /// <summary>
+        /// A pin broken out of spite: the breaker could have taken the win and went after
+        /// their rival instead.
+        ///
+        /// The payoff scales by how hot the story between them is, and by nothing else. Two
+        /// people with a live grudge wrecking each other's title shot is the best thing in a
+        /// multi-man match; two people with no history doing the same thing is noise, and
+        /// the engine should say so rather than pay for the beat's name.
+        ///
+        /// It also *costs* the spiter position, which is the point — it is not a good
+        /// decision, it is a character decision, and a booking that never pays for it is
+        /// not telling the story it thinks it is.
+        /// </summary>
+        private void ApplySpiteBreak(BeatResult r, MatchBeat beat, Ctx ctx,
+            Wrestler? control, double iMod)
+        {
+            control ??= ctx.LegalA;
+            var rival = ctx.LegalOf(TargetOf(beat, ctx, control));
+
+            var feud = ctx.Plan.FeudBetween(control, rival);
+            double grudge = feud?.IntensityMultiplier ?? 0.0;
+            r.FeudalResonanceActivated = feud is not null;
+            if (feud is not null)
+                _grudges.Add(new GrudgeMoment(control, rival, BeatType.SpiteBreak));
+
+            // No story, no beat. A spite break between strangers is a man throwing away a
+            // win for no reason, and it reads as one.
+            double weight = 0.25 + 0.75 * Math.Clamp(grudge, 0, 1.6) / 1.6;
+
+            r.CrowdEnergyDelta = Rng(9, 18) * iMod * weight
+                                 * PerformerProfile.Blend(ctx.For(control).Connection, 0.5);
+
+            // Against the spiter: they have given up the position to do it.
+            r.AdvantageDelta = -ControlSign(ctx, control) * Rng(6, 14) * iMod * weight;
+
+            r.TechnicalContribution = 1.0 * iMod;
+            r.StorytellingContribution = 9.0 * iMod * weight
+                                         * PerformerProfile.Blend(ctx.For(control).RingPsych, 0.45);
+
+            r.Commentary.Add(feud is not null
+                ? Pick(
+                    $"{control.RingName} breaks it up — and could have won it outright! That is not about winning, that is about denying {rival.RingName}!",
+                    $"THE SPITE! {control.RingName} had the match won and threw it away just to deny {rival.RingName}!",
+                    $"{control.RingName} drags {rival.RingName} off the cover. This is not about the match any more.")
+                : Pick(
+                    $"{control.RingName} breaks up {rival.RingName}'s cover — and gives up the position doing it. Hard to see what that bought.",
+                    $"{control.RingName} drags {rival.RingName} off the cover, and is now the one out of position."));
+        }
+
+        /// <summary>
+        /// A winnable position abandoned to chase a rival. The cheaper cousin of the spite
+        /// break, and what a booker runs on the way to one.
+        /// </summary>
+        private void ApplyIgnoredOpportunity(BeatResult r, MatchBeat beat, Ctx ctx,
+            Wrestler? control, double iMod)
+        {
+            control ??= ctx.LegalA;
+            var rival = ctx.LegalOf(TargetOf(beat, ctx, control));
+
+            var feud = ctx.Plan.FeudBetween(control, rival);
+            double grudge = feud?.IntensityMultiplier ?? 0.0;
+            r.FeudalResonanceActivated = feud is not null;
+            if (feud is not null)
+                _grudges.Add(new GrudgeMoment(control, rival, BeatType.IgnoredOpportunity));
+            double weight = 0.25 + 0.75 * Math.Clamp(grudge, 0, 1.6) / 1.6;
+
+            r.CrowdEnergyDelta = Rng(3, 9) * iMod * weight;
+            r.AdvantageDelta = -ControlSign(ctx, control) * Rng(3, 8) * iMod * weight;
+            r.TechnicalContribution = 0.5 * iMod;
+            r.StorytellingContribution = 6.0 * iMod * weight;
+
+            r.Commentary.Add(feud is not null
+                ? Pick(
+                    $"There was the cover — and {control.RingName} walks straight past it to get at {rival.RingName} instead!",
+                    $"{control.RingName} could have ended this, and would rather hurt {rival.RingName}.")
+                : Pick(
+                    $"{control.RingName} leaves the cover and goes after {rival.RingName} instead — a strange decision.",
+                    $"{control.RingName} passes up the chance, and it may cost the match."));
+        }
+
+        /// <summary>
+        /// Two rivals wipe each other out and neither can capitalise — one beat before the
+        /// third man crawls over, which is the format's classic finish.
+        /// </summary>
+        private void ApplyMutualDestruction(BeatResult r, MatchBeat beat, Ctx ctx,
+            Wrestler? control, double iMod, double dMod)
+        {
+            control ??= ctx.LegalA;
+            var rival = ctx.LegalOf(TargetOf(beat, ctx, control));
+
+            var feud = ctx.Plan.FeudBetween(control, rival);
+            double grudge = feud?.IntensityMultiplier ?? 0.0;
+            r.FeudalResonanceActivated = feud is not null;
+            if (feud is not null)
+                _grudges.Add(new GrudgeMoment(control, rival, BeatType.MutualDestruction));
+            double weight = 0.35 + 0.65 * Math.Clamp(grudge, 0, 1.6) / 1.6;
+
+            r.CrowdEnergyDelta = Rng(8, 16) * iMod * weight
+                                 * ctx.Pair(p => p.Connection);
+
+            // Nobody comes out of this on top — that is the whole beat.
+            r.AdvantageDelta = 0;
+
+            r.TechnicalContribution = 2.5 * iMod;
+            r.StorytellingContribution = 7.5 * dMod * weight;
+
+            r.Commentary.Add(Pick(
+                $"{control.RingName} and {rival.RingName} take each other out — and there is nobody left standing!",
+                $"They have wiped each other out! {control.RingName} and {rival.RingName} are both down and neither can make the cover!",
+                $"Both of them down. All that anger, and neither can capitalise on it."));
         }
 
         // ── Repetition / fatigue rules ───────────────────────────────────────
@@ -1107,6 +1386,19 @@ namespace WrestlingSim.Engine
 
             // Near falls land harder when crowd energy is already high
             double energyFactor = Math.Max(0.5, state.CrowdEnergy / 80.0);
+
+            // **And in a multi-man match, only when the third man cannot reach it.**
+            //
+            // This is doc 18 §2.5's central mechanical claim. With three in the match every
+            // cover is breakable, so a near fall is not a question about the man being
+            // pinned — it is a question about whether somebody arrives, and the crowd knows
+            // the answer is usually yes. A near fall inside a disposal window is the real
+            // thing; outside one it is a spot with a count attached.
+            //
+            // Which makes disposal → sequence → near fall the loop a good multi-man match
+            // runs over and over, and gives the format its own reason to exist rather than
+            // being a singles match with a spare body in it.
+            energyFactor *= MultiManNearFallFactor(ctx.Plan.IsMultiMan, state.SomebodyIsDisposed);
 
             // The drama is entirely about whether the crowd believes the other person can
             // survive — that is toughness and selling, on someone they care about.
@@ -2115,6 +2407,7 @@ namespace WrestlingSim.Engine
                 WinningSide        = winningSide.Members.ToList(),
                 LosingSide         = losingSide.Members.ToList(),
                 BeatResults        = beatResults,
+                GrudgeMoments      = _grudges.ToList(),
                 TechnicalScore     = state.TechnicalScore,
                 StorytellingScore  = state.StorytellingScore,
                 CrowdPeakEnergy    = state.CrowdPeakEnergy,

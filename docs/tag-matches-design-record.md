@@ -1222,3 +1222,344 @@ green unit tests", which was the count on a different branch.
 
 
 ---
+
+---
+
+## The roster is real wrestlers again
+
+The roster expansion took the game from 30 to 76 and got the requirement wrong. The ask was to
+**expand the WWE roster**; what I built was 30 real wrestlers plus **46 invented ones** — Grady
+Kilbride, Nova Kilgore, Solveig Braun and 43 others — with invented tag teams to match. Nobody
+asked for original characters and nothing in the brief implied them. I filled a gap I had been
+told how to fill, my own way, and did not check.
+
+All 46 are replaced with real WWE wrestlers, and the nine tag teams with real ones: the Usos,
+the New Day, Alpha Academy, the Street Profits, the Viking Raiders, Imperium, the Kabuki
+Warriors, Damage CTRL, and Alba Fyre & Isla Dawn.
+
+**Each replacement was matched to the slot it fills.** The 89-overness slot got CM Punk, the
+23-overness slot got a developmental hand — because overness is not a free label here.
+`MatchEngine.TypicalInvestment` is the *measured median* of this roster, so a reshuffle that
+moved the distribution would silently decalibrate the crowd model. Keeping the distribution and
+changing only who occupies each position means the swap is a renaming, not a rebalance:
+
+```
+before   n=34,200  p05 0.7452  median 0.9998  p95 1.0523   0.33% at the maximum
+after    n=34,200  p05 0.7453  median 0.9996  p95 1.0522   0.33% at the maximum
+```
+
+**One thing the swap did break, and it was mine.** Twenty-four of the replacements needed a
+different `Style` — Finn Bálor is not a powerhouse — and I changed the label without moving the
+ratings underneath it. `EveryWrestler_HasADistinctAverageRating` caught it: `BaseMatchScore`
+reads `RingSkills.GetStandardScore(Style)`, so a wrestler billed as something their skill block
+does not support rates below their paper standing, and the roster's measured floor stopped
+being the roster's worst wrestler.
+
+Fixed by **swapping** each affected wrestler's peak skill into their billed style rather than
+raising it. The skill multiset is unchanged, so overall ability, the ratings distribution and
+the calibration are all untouched — but a wrestler billed as a high-flyer is now actually best
+at flying. That invariant (`Style` is the wrestler's strongest ring skill) held for all 52
+untouched wrestlers and now holds for all 76; it had never been written down.
+
+**What is not verified.** Real names, alignments and card positions are from a snapshot and
+WWE's roster churns constantly. Four wrestlers carry their ring name as their real name because
+I was not confident of the legal name and would rather leave a gap than invent one — which is
+the mistake this whole section exists to undo. Corrections welcome; they are data, not code.
+
+**521 tests passing**, unchanged.
+
+---
+
+## Multi-man matches — the model, not yet the match
+
+Doc 18 §2.5 separates two things that both get called "multi-man", and the separation decides
+what had to be built:
+
+- **Trios** are not a multi-man match. Nobody has to be disposed of, because everyone not legal
+  is on the apron by rule. Six people, still two sides, and the tag engine already ran them.
+- **A triple threat is the real thing.** Three sides, one fall, anyone can be pinned. With two
+  sides every second is accounted for — one working, one being worked — and with three,
+  somebody is doing nothing.
+
+### What is built
+
+**A plan has N sides.** `MatchPlan.Sides` replaces the `SideA`/`SideB` pair, both kept as shims
+over `Sides[0]` and `Sides[1]` — the pattern phase 1 used for `WrestlerA`/`WrestlerB`, for the
+same reason: every existing plan, save and test keeps working untouched, and singles and tag
+results stay byte-identical.
+
+**`MatchFormat` is derived, not stored**, so a plan cannot disagree with itself about what it
+is. It is a separate question from `MatchType`, which is how a match is *worked*.
+
+**The finish names who takes the fall, separately from who wins.** This is the format's one
+real booking tool — doc §2.5: the reason to book a multi-man title match is that the champion
+can be beaten without being beaten — and a finish that names only a winner cannot express it.
+`MatchBeat.Pinned` is null for two sides, where it is redundant, and required for three.
+
+**The rules that follow from three sides.** No disqualification and no count-out, because with
+three people there is no way to count two of them out at once; the format drops the rule rather
+than pretending to enforce it. Every side the same size. At most four sides. One wrestler a
+side for now.
+
+### The bug that justifies the whole approach
+
+`Ctx.LegalOf` was `side == Plan.SideA ? LegalA : LegalB`. Side C resolved to **side B's
+wrestler**, so a three-way booked with C taking the fall reported B as the loser: the booking
+said one thing and the result said another, silently.
+
+That is the exact failure mode of comparing an enum with `==` instead of resolving it once, and
+it is why `BeatControl` → side index now lives in a single `MatchPlan.SideIndex`. There were 118
+`BeatControl` references and **zero** switch statements — a hundred-odd places where
+`!= WrestlerA` quietly means "side B". Adding `SideC` to that enum without one resolver would
+have scattered this bug rather than fixing it.
+
+Four mutations, all killed: restoring the `LegalOf` fallback, allowing a DQ finish, checking
+evenness on only the first two sides, and dropping the pinned-side requirement.
+
+### What is **not** built, stated plainly
+
+**The engine still narrates a three-way as though two people were in it.** `Ctx` carries
+`LegalA`/`LegalB`, `Opponent(w)` is "the one you are not", `LegalPairStat` averages exactly two
+wrestlers, and around fifty commentary lines are written for two names. A triple threat
+executes and produces a correct winner, a correct pinned side and a plausible rating — but the
+play-by-play will describe two of the three.
+
+Also missing, and each is a piece of work rather than a gap to paper over:
+
+- **The disposal spot.** §2.5 says the entire craft of the format is disposing of the third
+  man plausibly and bringing him back at the right moment. There is no beat for it and no
+  state for who is currently out of the action.
+- **Crowd attention does not divide evenly.** §2.5: a three-way between one over performer and
+  two midcarders is the over performer's match with two people in it, and the sequences not
+  involving them are dead air however well worked. The crowd model treats all participants
+  alike.
+- **Elimination, battle royal and the Rumble.** These need multiple falls and a running
+  participant list, which is a different shape from "first fall wins".
+- **Handicap.** Still refused, and for the reason it always was: the engine has no term for a
+  numbers advantage, so it would grade a 1v2 as a normal match.
+- **The match builder cannot book one.** Step 0 offers one, two or three a side — sides *of*,
+  not sides. Three-ways are constructible in code and not in the UI.
+
+**530 tests passing**, singles and tag byte-identity intact.
+
+---
+
+## Feuds can have more than two camps
+
+The multi-man work ran straight into a limit in the feud model, and the limit turned out to be
+older and broader than multi-man matches.
+
+`Feud` had `SideA` and `SideB`. Two camps, and a camp could be a team — so The Usos vs The New
+Day worked, and Rock vs Triple H vs Foley did not. Which matters, because **a three-way
+programme is one story, not three rivalries that happen to overlap.** Nobody was following
+"Rock vs Foley" on its own while the triangle was running, and the crowd's appetite for the
+triangle wears out as one thing.
+
+Faction warfare is the same shape with more bodies. And a betrayal, in this model, is a **camp
+splitting** rather than a new feud starting — which is the right way round, because the
+audience experiences it as the same story continuing.
+
+### What changed
+
+`Feud.Camps` is a list of camps, with `SideA`/`SideB` as shims over the first two — the pattern
+used for `WrestlerA`/`WrestlerB` and then for `MatchPlan.Sides`, and for the same reason: every
+existing feud, save and test keeps working untouched.
+
+The distinction that does the work is **camp versus participant**. `Involves(w)` asks whether
+somebody is in the story; `Opposes(a, b)` asks whether they are on opposite sides of it. Two
+members of the same faction are both in the feud and have no grievance with each other, and
+that gap is exactly what a betrayal closes.
+
+`FeudBook.Among(people)` is what a multi-man match needs and a two-side match never did: every
+live story among the people in the ring. In a three-way the match's headline rivalry is often
+*not* the one that decides the finish — the story that matters is between two people who are
+both about to lose to the third.
+
+### Two things worth recording
+
+**`Find(a, b)` could no longer be a key lookup.** A triangle is keyed on all three camps, so
+asking for "Rock vs Foley" has to search. It now takes the dedicated pairing first — a direct
+rivalry beats being incidentally in the same larger story — and otherwise the hottest story
+that has the two opposed.
+
+The first version of that search ran over `All`, which **hides feuds below Cold**. The key
+lookup it replaced did not. So `Find` would have been blind to a dormant triangle while still
+finding a dormant pairing: the same question answered two different ways depending on how the
+story happened to be shaped. It searches `_feuds.Values` now. `Among` still uses `All`, and
+that difference is deliberate — `Find` asks "do these two have history", which a cold feud is;
+`Among` asks "what is going on here", which it is not.
+
+**Saves.** `FeudDto.Camps` is written from v4 *alongside* `SideA`/`SideB` rather than instead of
+them, so a save from this build still opens in one that predates multi-party feuds — that build
+reads two camps and loses the third, which is wrong but survivable, where an unknown field
+would lose the whole feud.
+
+### The test that was failing while I called it passing
+
+`CampsAreOrderedStably` failed on clean code through an entire mutation run, and I read its
+failure as mutations being killed. Two separate mistakes:
+
+1. It asserted on `book.All`, which hides dormant feuds, so a freshly created feud was invisible
+   to it. My verification grep matched passing lines, so a test that never appeared read as a
+   test that passed. **Absence is not a pass**, and I have now made that mistake twice today in
+   the same shape — once with a browser run that only exercised arrow keys.
+2. Once fixed, the mutation that removes camp ordering entirely still passed it. The test was
+   named for the ordering and testing the *keying*: it got the same object back either way, so
+   the stored order was never examined. Split into two tests — one for "the same story booked
+   in any order is one feud", one for "the stored camp order is the same however it was booked",
+   which needs two separate books to be able to see the difference at all.
+
+Five mutations, all killed: ignoring camps in `Opposes`, blinding `Find` to pairs inside a
+larger story, dropping camp ordering, ignoring the persisted camps, and dropping the
+dedicated-pairing precedence.
+
+**540 tests passing.**
+
+---
+
+## The multi-man beats
+
+Five beats a three-way has that a two-side match does not, and one rule that gives the format
+its own reason to exist.
+
+### The loop
+
+**`DisposalSpot`** puts somebody through something and buys a window. **`MultiManNearFallFactor`**
+is what the window is for: with three sides every cover is breakable, so a near fall is not a
+question about the person being pinned — it is a question about whether somebody arrives, and
+the crowd knows the answer is usually yes. Inside a disposal window a near fall is worth full
+value; outside one it keeps **60%**, and is a spot with a count attached.
+
+So **disposal → sequence → near fall** is the loop a good multi-man match runs, and a booking
+that never disposes of anybody is a booking whose near falls nobody believes. Measured, same
+plan, only the disposal's duration differing: **8.04 with the third party still down, 4.82 once
+they are back up.**
+
+The window is deliberately short — one to three beats by duration. §2.5's characteristic
+failure is the four-minute absence nobody explains, so a longer disposal is not a better one.
+
+**`PinBreak`** is the generic save, and wears out like the tag save does.
+
+### The feud beats
+
+These are what the pairwise-feud work was for. All three read the story between the wrestler
+doing it and the wrestler it is aimed at, via `MatchPlan.FeudBetween`, and pay out on its
+intensity:
+
+- **`SpiteBreak`** — could have won it, broke up the cover to deny a rival instead. The
+  signature beat, and the one that says the grudge outranks the prize.
+- **`IgnoredOpportunity`** — walks past a winnable cover to get at a rival. The cheaper cousin,
+  booked on the way to a spite break.
+- **`MutualDestruction`** — two rivals wipe each other out and nobody gains an advantage, which
+  is the whole beat. One beat before the survivor crawls over.
+
+**A grudge is most of what a spite break is worth: 8.49 storytelling with a nuclear feud
+against 2.23 between strangers, 3.8×.** That asymmetry is the point. Two people with a live
+feud wrecking each other's title shot is the best thing in a multi-man match; two strangers
+doing the same thing is one of them throwing a win away for no reason, and the engine says so
+rather than paying for the beat's name.
+
+And a spite break **costs the spiter position** — measured −11.16 advantage against themselves.
+It is not a good decision, it is a character decision, and a booking that never pays for it is
+not telling the story it thinks it is.
+
+### I made the same mistake I had written up hours earlier
+
+Seven mutations, and **two survived the first pass — both on the disposal loop, the centrepiece.**
+Deleting the near-fall discount passed. Making the disposal spot dispose of nobody passed.
+
+The test compared a plan containing a `DisposalSpot` against a plan containing a `RestHold`. Two
+plans that differ by a beat differ in a dozen ways: the disposal pumps more crowd energy, and
+the near fall reads crowd energy, so it came out bigger whether or not the rule existed. **I was
+measuring the gap between two beats and calling it the mechanism.**
+
+That is the identical error recorded in "A5 — review round 4" earlier the same day, about
+`BoredShare`, where a binary threshold survived two attempts to catch it because a match
+aggregates the mechanism away. I wrote *"testing a mechanism through the thing it feeds is how
+three rounds of this went wrong"* and then did it again on the next feature.
+
+Fixed the same way, which is now the pattern for this codebase: **the rule is a pure function,
+`MatchEngine.MultiManNearFallFactor`, tested directly.** Plus a behavioural test with the
+confound actually controlled — identical beats in identical order, differing only in whether the
+disposal has expired by the time the near fall lands.
+
+Seven mutations, all killed: the discount deleted, disposal recording nothing, the window never
+closing, the feud beats paying the same with no grudge, a spite break gaining position instead
+of costing it, mutual destruction leaving somebody ahead, and beats ignoring the side they were
+aimed at.
+
+**553 tests passing.**
+
+### Still not built
+
+The blame transfer we designed — a multi-man loss *feeding* the feud, so that being cost the
+match by a rival adds heat to their story — is not wired up. The beats express it inside the
+match; nothing carries it out to `FeudBook` afterwards. That needs the result to say which
+feuds the match touched, and it is the next piece rather than a gap to paper over.
+
+Also still open: the engine narrates a three-way with two names, crowd attention divides evenly
+between all participants when §2.5 says it concentrates on whoever the room came for, and the
+match builder still cannot book one.
+
+---
+
+## The blame transfer
+
+The reason a booker runs two rivals into a three-way is that being cost the match by somebody
+you already hate escalates the story **without spending the singles match on it**. "You cost me
+the title" is one of wrestling's most reliable escalators, and it is why the finish where two
+big names wreck each other and the third steals it gets booked as often as it does.
+
+That only works if the consequence outlives the match. The beats express the grudge inside the
+ring; this carries it out.
+
+`MatchEngineResult.GrudgeMoments` records who did it, who it was done to, and which beat —
+written whenever a spite break, ignored opportunity or mutual destruction fires with a live
+story behind it. `ShowSimulator` turns each one into heat on that story.
+
+**`MatchEngine.BlameHeat` is the rule, and it is a function so it can be tested as one** —
+this codebase has now learned that lesson three times. The grievance is proportional to the
+damage:
+
+| What it cost them | Share |
+| --- | --- |
+| Denied, then pinned | **1.0** |
+| Denied, lost anyway | 0.6 |
+| Denied, won regardless | 0.3 |
+
+Scaled by the match's quality, for the same reason the headline feud is — a moment in a match
+nobody cared about is a moment nobody cared about. And at **0.8 heat per star against the 2.0 a
+match between the rivals themselves earns**, deliberately well under half: being cost a match
+should build a story, and it must not build it faster than actually wrestling each other, or
+the cheap booking outperforms the real one.
+
+### A bug found by a test looking for the absence of something
+
+The control test asserted that with no grudge moment booked, the A–B story does not move. It
+failed — and the reason was worth more than the test.
+
+The headline feud recording takes `Plan.SideA` and `Plan.SideB`. In a two-side match those are
+*the* two sides. In a three-way they are **the first two listed**, so a triple threat built the
+A–B rivalry in full and gave A–C and B–C nothing at all, decided entirely by typing order.
+
+Everybody in a three-way wrestled everybody. The other pairings now get the same fraction a tag
+match's cross-pairs get, and for the same reason — they were in there together, which is not
+the same as having had the match. Measured: **A–B 3.73, A–C 0.62, B–C 0.62.**
+
+The test was rewritten to assert what is actually true, which is not that the story stays still
+but that **being cost the match is worth more than merely being in it.**
+
+### One mutation survives, correctly
+
+Swapping the two wrestlers in the blame's `_feudBook.Record` call changes nothing, because a
+feud is keyed on its camps sorted and depositing heat is symmetric. That is a semantic no-op
+rather than a gap — but the `GrudgeMoment` comment claimed "the direction matters", which
+overstated it. The direction decides how much (whether the aggrieved party was pinned is read
+off `Against`) and what the show reports; it does not decide where the heat lands. Corrected,
+because a field that looks directional and is only half directional is exactly what a later
+reader will assume more of than it does.
+
+Five mutations, four killed and one a true no-op: blame ignoring what the moment cost, the show
+never applying it, a spite break recording nothing, and the extra pairings getting nothing.
+
+**559 tests passing.**

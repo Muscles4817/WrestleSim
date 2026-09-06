@@ -29,6 +29,19 @@ namespace WrestlingSim.Models.MatchPlan
 
         public List<BeatResult> BeatResults { get; init; } = new();
 
+        /// <summary>
+        /// Moments where somebody put a grudge ahead of winning — a cover broken out of
+        /// spite, a winnable position abandoned to chase a rival, two rivals wiping each
+        /// other out.
+        ///
+        /// Recorded so the *consequence* can outlive the match. Doc 18 §2.5: the reason a
+        /// booker runs two rivals into a multi-man match is that it advances their story
+        /// without spending the singles match, and "you cost me the title" is one of
+        /// wrestling's most reliable escalators. That only works if being cost the match
+        /// actually feeds the feud, which needs the match to say who did what to whom.
+        /// </summary>
+        public List<GrudgeMoment> GrudgeMoments { get; init; } = new();
+
         // Accumulated scores (raw, pre-normalisation)
         public double TechnicalScore     { get; init; }
         public double StorytellingScore  { get; init; }

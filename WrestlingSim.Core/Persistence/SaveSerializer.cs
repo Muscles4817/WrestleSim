@@ -118,6 +118,10 @@ namespace WrestlingSim.Persistence
             Feuds = career.FeudBook.AllIncludingDormant
                 .Select(f => new FeudDto
                 {
+                    Camps              = f.Camps.Select(c => c.Select(w => w.Id).ToList()).ToList(),
+                    // Still written so a save from this build opens in one that predates
+                    // multi-party feuds. Such a build loses the third camp; it does not lose
+                    // the feud.
                     SideA              = f.SideA.Select(w => w.Id).ToList(),
                     SideB              = f.SideB.Select(w => w.Id).ToList(),
                     Heat               = f.Heat,
@@ -364,16 +368,22 @@ namespace WrestlingSim.Persistence
 
             foreach (var f in dto.Feuds)
             {
-                // v3 writes sides; a v2 feud names one wrestler per side.
-                var sideAIds = f.SideA ?? (string.IsNullOrEmpty(f.WrestlerA) ? null : [f.WrestlerA]);
-                var sideBIds = f.SideB ?? (string.IsNullOrEmpty(f.WrestlerB) ? null : [f.WrestlerB]);
-                if (sideAIds is null || sideBIds is null) continue;
+                // v4 writes every camp; v3 writes two sides; a v2 feud names one wrestler
+                // per side. Read the richest form present.
+                List<List<string>>? campIds = f.Camps;
+                if (campIds is null)
+                {
+                    var sideAIds = f.SideA ?? (string.IsNullOrEmpty(f.WrestlerA) ? null : [f.WrestlerA]);
+                    var sideBIds = f.SideB ?? (string.IsNullOrEmpty(f.WrestlerB) ? null : [f.WrestlerB]);
+                    if (sideAIds is null || sideBIds is null) continue;
+                    campIds = [sideAIds, sideBIds];
+                }
 
-                var a = Bind(sideAIds, byId);
-                var b = Bind(sideBIds, byId);
-                if (a is null || b is null) continue;
+                var camps = campIds.Select(ids => Bind(ids, byId)).ToList();
+                if (camps.Count < 2 || camps.Any(c => c is null)) continue;
 
-                var feud = career.FeudBook.GetOrCreate(a, b);
+                var feud = career.FeudBook.GetOrCreate(
+                    camps.Select(c => (IReadOnlyList<Wrestler>)c!).ToList());
                 feud.RestoreHeat(f.Heat);
                 feud.MatchCount = f.MatchCount;
 
