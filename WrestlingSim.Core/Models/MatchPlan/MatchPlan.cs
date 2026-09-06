@@ -249,10 +249,20 @@ namespace WrestlingSim.Models.MatchPlan
 
                 // A champion who is not in the match cannot lose the belt in it, so this
                 // is a non-title match with a misleading label rather than a title match.
-                else if (title.Champion is { } champion && !AllParticipants.Contains(champion))
+                else if (title.Champions.FirstOrDefault(c => !AllParticipants.Contains(c)) is { } absent)
                     errors.Add(
-                        $"{title.Name} cannot be on the line here — {champion.RingName} holds it " +
+                        $"{title.Name} cannot be on the line here — {absent.RingName} holds it " +
                         "and is not in this match.");
+
+                // A tag belt is held and lost jointly, so it needs teams to contest it.
+                else if (title.IsTagTitle && (SideA.Size < title.SideSize || SideB.Size < title.SideSize))
+                    errors.Add(
+                        $"{title.Name} is a {title.SideSize}-person title and cannot be " +
+                        "defended in a singles match.");
+
+                else if (!title.IsTagTitle && IsTagMatch)
+                    errors.Add(
+                        $"{title.Name} is a singles title and cannot be defended in a tag match.");
             }
 
             // Feud-gated beats require an active feud

@@ -15,7 +15,29 @@ namespace WrestlingSim.Models.World
         /// <see cref="Wrestler.Id"/> — the object graph shares wrestler instances and
         /// serialising one by value here would break identity on load.
         /// </summary>
-        public required Wrestler Champion { get; init; }
+        /// <summary>
+        /// Everyone holding the belt for this reign. One person for a singles title; two
+        /// for a tag title, who hold it jointly and lose it jointly.
+        /// </summary>
+        public List<Wrestler> Champions { get; init; } = new();
+
+        /// <summary>
+        /// The champion. Shim over <see cref="Champions"/>, the same pattern
+        /// <see cref="Models.MatchPlan.MatchPlan"/> uses for its sides, so every existing
+        /// reader and object initialiser keeps working.
+        /// </summary>
+        public Wrestler Champion
+        {
+            get => Champions.Count > 0
+                ? Champions[0]
+                : throw new InvalidOperationException("This reign has no champion.");
+            init => Champions.Add(value);
+        }
+
+        /// <summary>"Ricky Morton" for a singles reign, "Ricky Morton &amp; Robert Gibson" for a tag one.</summary>
+        public string ChampionName => string.Join(" & ", Champions.Select(c => c.RingName));
+
+        public bool HeldBy(Wrestler w) => Champions.Contains(w);
 
         /// <summary>Which champion this is, counting from one. Never renumbered.</summary>
         public int ReignNumber { get; init; }

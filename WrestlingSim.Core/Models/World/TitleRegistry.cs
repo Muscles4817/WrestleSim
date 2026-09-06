@@ -158,7 +158,7 @@ namespace WrestlingSim.Models.World
 
         /// <summary>Belts this person currently holds. Usually none or one.</summary>
         public IReadOnlyList<Title> HeldBy(Wrestler w) =>
-            _titles.Where(t => !t.Retired && t.Champion == w).ToList();
+            _titles.Where(t => !t.Retired && t.IsHeldBy(w)).ToList();
 
         public bool IsChampion(Wrestler w) => HeldBy(w).Count > 0;
 

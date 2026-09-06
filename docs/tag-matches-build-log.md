@@ -432,3 +432,63 @@ drag term.
 ### Review — round 4
 
 *(pending)*
+
+---
+
+## Phase 5 — Consequences
+
+**Goal:** a tag match costs and pays something a singles match does not.
+
+### What changed
+
+| File | Change |
+|---|---|
+| `Engine/HeatEconomy.cs` | `ForSides` — the fall priced against the two *sides'* standing, then the pinner and the pinned take it in full while partners take a share. `SideStanding` reads a side top-weighted, mirroring the engine. `MatchStatusOutcome` gains `Partners`. |
+| `Models/MatchPlan/Feud.cs` | `SideA`/`SideB` with `WrestlerA`/`WrestlerB` as shims — the same pattern `MatchPlan` uses. `IsTeamFeud`, `SideAName`/`SideBName`. |
+| `Engine/FeudBook.cs` | Side-aware `Key`, `Find`, `GetOrCreate` and `Record`. Each side's names sort internally so billing order does not matter, then the two sides sort against each other so home advantage does not either. |
+| `Engine/ShowSimulator.cs` | Familiarity and feud heat keyed on sides; `ForSides` for tag results; cross-pair heat at 25%. |
+| `Models/World/TitleReign.cs` | `Champions` with `Champion` as a shim. `ChampionName`, `HeldBy`. |
+| `Models/World/Title.cs` | `SideSize`, `IsTagTitle`, `Champions`, `IsHeldBy`. |
+| `Engine/TitleEconomy.cs` | `ResolveTitleMatch` over sides; retention asks whether the *team* kept it; `PartnerBonuses` so both holders are paid. |
+| `Persistence/*` | Feud sides, reign co-champions and title `SideSize`, all reading v2 forms. |
+| `Tests/TagConsequenceTests.cs` | New, 13 cases. |
+
+### The asymmetry is the whole point
+
+`PartnerLossShare = 0.35`, `PartnerWinShare = 0.50`. That gap is what makes "have the other
+guy take the fall" a real booking lever rather than a free pass — the most common use a tag
+match is put to ([12](wrestling-reference/12-pushes-and-positioning.md) §6.1). Measured: a
+90-overness star loses meaningfully less when his partner eats the pin, and still loses
+something, so it remains a decision.
+
+The transfer pool is set by `SideStanding`, which is top-weighted for the same reason
+`Ctx.SideAvg` is — beating a team reads as beating the team, and a team is mostly its best
+man. A flat mean would have made adding a jobber to a main-eventer's side a way of quietly
+halving what beating them is worth.
+
+### A team rivalry is its own feud
+
+Keyed separately from the singles feuds inside it, because the crowd's appetite for two teams
+is genuinely not the crowd's appetite for any pair of men in them, and it has to wear out
+separately ([20](wrestling-reference/20-storylines-and-feuds.md) §9.1). A tag match records
+full heat against the team feud and 25% against each of the four cross-pairings — small on
+purpose, because four cross-pairs at a meaningful share would mean one tag match builds more
+singles heat than a singles match does. That is how a tag programme pays off in a singles
+blow-off.
+
+### A tag belt is held and lost jointly
+
+`SideSize` on `Title`, so a tag belt competes for the same finite pool of audience attention
+as every other title ([21](wrestling-reference/21-championships.md) §2.1) — adding one dilutes
+the singles belts exactly as another singles belt would, which is why it is a property of the
+title rather than a separate kind of thing. Retention asks whether the belt stayed on the side
+that came in with it, not who was legal; both holders get the status bonus.
+
+### Result
+
+**392 tests passing.** Singles equivalence holds — still byte-identical across the
+48,720-match harness.
+
+### Review — round 5
+
+*(pending)*

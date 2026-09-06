@@ -117,8 +117,8 @@ namespace WrestlingSim.Persistence
             Feuds = career.FeudBook.AllIncludingDormant
                 .Select(f => new FeudDto
                 {
-                    WrestlerA          = f.WrestlerA.Id,
-                    WrestlerB          = f.WrestlerB.Id,
+                    SideA              = f.SideA.Select(w => w.Id).ToList(),
+                    SideB              = f.SideB.Select(w => w.Id).ToList(),
                     Heat               = f.Heat,
                     MatchCount         = f.MatchCount,
                     RememberedMeetings = f.RememberedMeetings,
@@ -136,13 +136,14 @@ namespace WrestlingSim.Persistence
                 Tier        = t.Tier,
                 Division    = t.Division,
                 Established = Iso(t.Established),
+                SideSize    = t.SideSize,
                 Standing    = Math.Round(t.Standing, 3),
                 Retired     = t.Retired,
                 RetiredOn   = t.RetiredOn is { } retired ? Iso(retired) : null,
                 Lineage = t.Lineage.Select(r => new TitleReignDto
                 {
-                    // By id, never by value — the champion is a live roster instance.
-                    Champion     = r.Champion.Id,
+                    // By id, never by value — champions are live roster instances.
+                    Champions    = r.Champions.Select(c => c.Id).ToList(),
                     ReignNumber  = r.ReignNumber,
                     Won          = Iso(r.Won),
                     Lost         = r.Lost is { } lost ? Iso(lost) : null,
@@ -353,8 +354,14 @@ namespace WrestlingSim.Persistence
 
             foreach (var f in dto.Feuds)
             {
-                if (!byId.TryGetValue(f.WrestlerA, out var a)) continue;
-                if (!byId.TryGetValue(f.WrestlerB, out var b)) continue;
+                // v3 writes sides; a v2 feud names one wrestler per side.
+                var sideAIds = f.SideA ?? (string.IsNullOrEmpty(f.WrestlerA) ? null : [f.WrestlerA]);
+                var sideBIds = f.SideB ?? (string.IsNullOrEmpty(f.WrestlerB) ? null : [f.WrestlerB]);
+                if (sideAIds is null || sideBIds is null) continue;
+
+                var a = Bind(sideAIds, byId);
+                var b = Bind(sideBIds, byId);
+                if (a is null || b is null) continue;
 
                 var feud = career.FeudBook.GetOrCreate(a, b);
                 feud.RestoreHeat(f.Heat);
@@ -403,6 +410,9 @@ namespace WrestlingSim.Persistence
                     Name        = t.Name,
                     Tier        = t.Tier,
                     Division    = t.Division,
+                    // v2 saves have no SideSize; 0 means "not recorded" and every belt in
+                    // one of those is a singles belt by definition.
+                    SideSize    = t.SideSize <= 0 ? 1 : t.SideSize,
                     Established = ParseDate(t.Established),
                     Standing    = Math.Clamp(t.Standing, 0, 100),
                     Retired     = t.Retired,
@@ -417,11 +427,17 @@ namespace WrestlingSim.Persistence
                     // rule the rest of the save follows: never resurrect a half-built
                     // person. ReignNumber is stored, so the numbering left behind still
                     // reads correctly.
-                    if (!byId.TryGetValue(r.Champion, out var champion)) continue;
+                    // v3 writes Champions; a v2 reign names a single holder.
+                    var championIds = r.Champions
+                        ?? (string.IsNullOrEmpty(r.Champion) ? null : [r.Champion]);
+                    if (championIds is null) continue;
+
+                    var champions = Bind(championIds, byId);
+                    if (champions is null) continue;
 
                     title.Lineage.Add(new TitleReign
                     {
-                        Champion     = champion,
+                        Champions    = champions,
                         ReignNumber  = r.ReignNumber,
                         Won          = ParseDate(r.Won),
                         Lost         = ParseOptionalDate(r.Lost),

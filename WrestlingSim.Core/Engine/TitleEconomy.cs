@@ -59,6 +59,13 @@ namespace WrestlingSim.Engine
         /// <summary>Extra standing a title win or defence is worth to the person, if any.</summary>
         public StatusChange? StatusBonus { get; init; }
 
+        /// <summary>
+        /// The same bonus for the other holders of a tag belt. A tag title is won and lost
+        /// by the team, so the partner who was not in the ring for the fall is not a
+        /// bystander to the reign.
+        /// </summary>
+        public IReadOnlyList<StatusChange> PartnerBonuses { get; init; } = [];
+
         public bool IsMeaningful =>
             Event is not (TitleEvent.Retained or TitleEvent.NonTitleLoss)
             || Math.Abs(PrestigeDelta) >= 0.05;
@@ -246,25 +253,53 @@ namespace WrestlingSim.Engine
             FinishWeight finish,
             double starRating,
             DateOnly date,
+            string showName = "") =>
+            ResolveTitleMatch(title, [winner], [loser], winner, loser, finish, starRating, date, showName);
+
+        /// <summary>
+        /// A title match between two sides.
+        ///
+        /// A tag belt is held jointly and lost jointly — the whole team drops it when one
+        /// of them is pinned, which is the entire reason a tag title match has stakes for
+        /// the man who is not in the ring. The fall itself is still between two people, so
+        /// <paramref name="pinner"/> and <paramref name="pinned"/> are what the commentary
+        /// and the non-title rules read.
+        /// </summary>
+        public static TitleUpdate ResolveTitleMatch(
+            Title title,
+            IReadOnlyList<Wrestler> winningSide,
+            IReadOnlyList<Wrestler> losingSide,
+            Wrestler pinner,
+            Wrestler pinned,
+            FinishWeight finish,
+            double starRating,
+            DateOnly date,
             string showName = "")
         {
+            var winner = pinner;
+            var loser  = pinned;
             double standingBefore = title.Standing;
             double prestigeBefore = title.Prestige;
             var champion = title.Champion;
+
+            string winningSideName = string.Join(" & ", winningSide.Select(w => w.RingName));
 
             // ── Vacant belt: somebody has to win it ──────────────────────────
             if (champion == null)
             {
                 title.Standing = Clamp(standingBefore + FillDelta(prestigeBefore, winner, starRating, finish));
-                OpenReign(title, winner, date, showName);
+                OpenReign(title, winningSide, date, showName);
 
                 return Build(title, TitleEvent.Filled, null, winner,
                     standingBefore, prestigeBefore, 0,
-                    $"{winner.RingName} wins the vacant title.",
-                    WinBonus(title, winner));
+                    $"{winningSideName} win{(winningSide.Count > 1 ? "" : "s")} the vacant title.",
+                    WinBonus(title, winner),
+                    Partners(title, winningSide, winner, WinBonus));
             }
 
-            bool championWon = winner == champion;
+            // The champions retained if the belt stayed on the side that came in with it.
+            // For a tag title that is a question about the team, not about who was legal.
+            bool championWon = title.Champions.Any(winningSide.Contains);
 
             // ── Champion retained ───────────────────────────────────────────
             if (championWon || !ChangesHands(finish))
@@ -279,13 +314,15 @@ namespace WrestlingSim.Engine
                 reign.LastDefended = date;
 
                 var evt = championWon ? TitleEvent.Retained : TitleEvent.RetainedOnATechnicality;
+                var reign2 = title.CurrentReign!;
                 string reason = championWon
-                    ? $"{champion.RingName} defends against {challenger.RingName}."
+                    ? $"{reign2.ChampionName} defend{(reign2.Champions.Count > 1 ? "" : "s")} against {challenger.RingName}."
                     : $"{challenger.RingName} wins the match but not the title — it does not change hands like that.";
 
                 return Build(title, evt, champion, champion,
                     standingBefore, prestigeBefore, 0, reason,
-                    DefenceBonus(title, champion));
+                    DefenceBonus(title, champion),
+                    Partners(title, reign2.Champions, champion, DefenceBonus));
             }
 
             // ── New champion ────────────────────────────────────────────────
@@ -295,13 +332,17 @@ namespace WrestlingSim.Engine
             double delta = ChangeDelta(prestigeBefore, reignDays, winner, starRating, finish);
             title.Standing = Clamp(standingBefore + delta);
 
+            string outgoingName = outgoing.ChampionName;
+
             CloseReign(outgoing, date, showName);
-            OpenReign(title, winner, date, showName);
+            OpenReign(title, winningSide, date, showName);
 
             return Build(title, TitleEvent.Changed, champion, winner,
                 standingBefore, prestigeBefore, reignDays,
-                $"{winner.RingName} ends {champion.RingName}'s {reignDays}-day reign.",
-                WinBonus(title, winner));
+                $"{winningSideName} end{(winningSide.Count > 1 ? "" : "s")} {outgoingName}'s " +
+                $"{reignDays}-day reign.",
+                WinBonus(title, winner),
+                Partners(title, winningSide, winner, WinBonus));
         }
 
         /// <summary>
@@ -404,11 +445,12 @@ namespace WrestlingSim.Engine
 
         // ── Internals ────────────────────────────────────────────────────────
 
-        private static void OpenReign(Title title, Wrestler champion, DateOnly date, string showName)
+        private static void OpenReign(
+            Title title, IReadOnlyList<Wrestler> champions, DateOnly date, string showName)
         {
             title.Lineage.Add(new TitleReign
             {
-                Champion     = champion,
+                Champions    = champions.ToList(),
                 ReignNumber  = title.Lineage.Count + 1,
                 Won          = date,
                 WonAt        = showName,
@@ -424,10 +466,24 @@ namespace WrestlingSim.Engine
 
         private static double Clamp(double standing) => Math.Clamp(standing, 0, 100);
 
+        /// <summary>
+        /// The same status bonus for everyone on a side except the one who already got it
+        /// directly. A tag title is won by the team, so the partner is not a bystander.
+        /// </summary>
+        private static List<StatusChange> Partners(
+            Title title, IReadOnlyList<Wrestler> side, Wrestler already,
+            Func<Title, Wrestler, StatusChange?> bonus) =>
+            side.Where(w => w != already)
+                .Select(w => bonus(title, w))
+                .Where(c => c is not null)
+                .Select(c => c!)
+                .ToList();
+
         private static TitleUpdate Build(
             Title title, TitleEvent evt, Wrestler? outgoing, Wrestler? champion,
             double standingBefore, double prestigeBefore, int reignDays,
-            string reason, StatusChange? bonus) => new()
+            string reason, StatusChange? bonus,
+            List<StatusChange>? partnerBonuses = null) => new()
         {
             Title             = title,
             Event             = evt,
@@ -439,7 +495,8 @@ namespace WrestlingSim.Engine
             PrestigeAfter     = title.Prestige,
             OutgoingReignDays = reignDays,
             Reason            = reason,
-            StatusBonus       = bonus
+            StatusBonus       = bonus,
+            PartnerBonuses    = partnerBonuses ?? []
         };
     }
 }

@@ -38,6 +38,19 @@ namespace WrestlingSim.Models.World
         /// </summary>
         public Division Division { get; set; } = Division.Mens;
 
+        /// <summary>
+        /// How many people hold this belt. 1 for a singles title, 2 for a tag title.
+        ///
+        /// A tag belt competes for the same finite pool of audience attention as every
+        /// other title (docs/wrestling-reference/21-championships.md §2.1), so adding one
+        /// dilutes the singles belts exactly as adding another singles belt would. That is
+        /// deliberate and is why this is a property of the title rather than a separate
+        /// kind of thing.
+        /// </summary>
+        public int SideSize { get; set; } = 1;
+
+        public bool IsTagTitle => SideSize > 1;
+
         /// <summary>When the belt was introduced. Lineage is measured from here.</summary>
         public DateOnly Established { get; set; }
 
@@ -103,7 +116,15 @@ namespace WrestlingSim.Models.World
         public TitleReign? CurrentReign =>
             Lineage.Count > 0 && Lineage[^1].IsCurrent ? Lineage[^1] : null;
 
-        public Wrestler? Champion => CurrentReign?.Champion;
+        public Wrestler? Champion =>
+            CurrentReign is { Champions.Count: > 0 } reign ? reign.Champions[0] : null;
+
+        /// <summary>Everyone currently holding it. Two people for a tag belt.</summary>
+        public IReadOnlyList<Wrestler> Champions =>
+            CurrentReign?.Champions ?? (IReadOnlyList<Wrestler>)[];
+
+        /// <summary>True when this wrestler is one of the current holders.</summary>
+        public bool IsHeldBy(Wrestler w) => CurrentReign?.HeldBy(w) ?? false;
 
         public bool IsVacant => CurrentReign == null;
 

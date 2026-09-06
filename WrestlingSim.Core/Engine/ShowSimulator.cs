@@ -244,6 +244,14 @@ namespace WrestlingSim.Engine
 
         // ── Item execution ───────────────────────────────────────────────────
 
+        /// <summary>
+        /// How much of a tag match's heat each singles pairing inside it picks up. Small on
+        /// purpose: four men in a match generate four cross-pairings, and if each took a
+        /// meaningful share then one tag match would build more singles heat than a singles
+        /// match does.
+        /// </summary>
+        private const double CrossPairHeatShare = 0.25;
+
         private double RunMatch(
             BookedMatch match, CardItemResult itemResult, ShowResult showResult,
             int index, DateOnly showDate, string showName, double starMaking)
@@ -253,7 +261,14 @@ namespace WrestlingSim.Engine
             // Taken from the feud book rather than match.Plan.Feud, because a booker who
             // declines to attach a feud has still booked the same two men for the fifth
             // time and the audience does not care what the plan says.
-            var feud = _feudBook.GetOrCreate(match.Plan.WrestlerA, match.Plan.WrestlerB);
+            // Keyed on the two *sides*, not on the two starters. A crowd's appetite for
+            // The Usos against The New Day is its own thing, separate from its appetite
+            // for any one of those men against any other, and it has to wear out
+            // separately — docs/wrestling-reference/20-storylines-and-feuds.md §9.1.
+            var sideA = match.Plan.SideA.Members;
+            var sideB = match.Plan.SideB.Members;
+
+            var feud = _feudBook.GetOrCreate(sideA, sideB);
             double familiarity = feud.Familiarity(showDate);
 
             var engineResult = new MatchEngine(_seed.HasValue ? _seed + index : null)
@@ -271,8 +286,18 @@ namespace WrestlingSim.Engine
                 ? FinishWeight.Decisive
                 : HeatEconomy.WeightOf(finishBeat.Type);
 
-            var outcome = HeatEconomy.ForMatch(
-                engineResult.Winner, engineResult.Loser, engineResult.StarRating, weight, familiarity);
+            // In a tag match the fall is between two men, but the statement is between two
+            // teams: the pool is set by each side's standing, and then the man who scored
+            // and the man who was pinned take it in full while their partners take a share.
+            // That asymmetry is what makes "have the other guy take the fall" a real,
+            // costed booking lever — doc 12 §6.1.
+            var outcome = match.Plan.IsTagMatch
+                ? HeatEconomy.ForSides(
+                    engineResult.WinningSide, engineResult.Pinner,
+                    engineResult.LosingSide, engineResult.Pinned,
+                    engineResult.StarRating, weight, familiarity)
+                : HeatEconomy.ForMatch(
+                    engineResult.Winner, engineResult.Loser, engineResult.StarRating, weight, familiarity);
 
             foreach (var raw in outcome.All)
             {
@@ -292,14 +317,26 @@ namespace WrestlingSim.Engine
 
             // ── Feud ─────────────────────────────────────────────────────────
             // A match between rivals is itself a chapter in the feud.
+            double heat = engineResult.StarRating * 2.0;
+
             var update = _feudBook.Record(
-                match.Plan.WrestlerA,
-                match.Plan.WrestlerB,
-                heat: engineResult.StarRating * 2.0,
-                tags: new[] { FeudHistoryTag.PriorMatch });
+                sideA, sideB, heat, tags: new[] { FeudHistoryTag.PriorMatch });
 
             update.Feud.RecordMatch(showDate);
             showResult.FeudUpdates.Add(update);
+
+            // A tag programme also builds the singles rivalries inside it, at a fraction —
+            // which is how a team feud pays off in a singles blow-off. Only recorded for a
+            // genuine tag match; in singles the cross-pair *is* the feud above.
+            if (match.Plan.IsTagMatch)
+            {
+                foreach (var a in sideA)
+                foreach (var b in sideB)
+                {
+                    var cross = _feudBook.Record(a, b, heat * CrossPairHeatShare);
+                    cross.Feud.RecordMatch(showDate);
+                }
+            }
 
             // ── Teams ────────────────────────────────────────────────────────
             // Chemistry is built out of matches actually worked together, so it is
@@ -328,8 +365,10 @@ namespace WrestlingSim.Engine
             if (match.Plan.TitleAtStake is { } title && !title.Retired)
             {
                 updates.Add(TitleEconomy.ResolveTitleMatch(
-                    title, engineResult.Winner, engineResult.Loser, weight,
-                    engineResult.StarRating, date, showName));
+                    title,
+                    engineResult.WinningSide, engineResult.LosingSide,
+                    engineResult.Pinner, engineResult.Pinned,
+                    weight, engineResult.StarRating, date, showName));
             }
             else if (_titles != null)
             {
@@ -345,6 +384,13 @@ namespace WrestlingSim.Engine
                 {
                     HeatEconomy.Apply(bonus);
                     showResult.StatusChanges.Add(bonus);
+                }
+
+                // A tag belt is won by the team, so the partner gets it too.
+                foreach (var partnerBonus in update.PartnerBonuses)
+                {
+                    HeatEconomy.Apply(partnerBonus);
+                    showResult.StatusChanges.Add(partnerBonus);
                 }
 
                 if (update.IsMeaningful) showResult.TitleUpdates.Add(update);

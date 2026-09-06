@@ -85,6 +85,11 @@ namespace WrestlingSim.Persistence
         public string Name { get; set; } = "";
         public TitleTier Tier { get; set; }
         public Division Division { get; set; }
+
+        /// <summary>1 for a singles belt, 2 for a tag belt. Absent in v2 saves, where 0
+        /// means "not recorded" and loads as 1.</summary>
+        public int SideSize { get; set; }
+
         public string Established { get; set; } = "";
         public double Standing { get; set; }
         public bool Retired { get; set; }
@@ -95,6 +100,10 @@ namespace WrestlingSim.Persistence
     public class TitleReignDto
     {
         /// <summary>The champion's <see cref="Wrestler.Id"/>, never the wrestler itself.</summary>
+        /// <summary>Everyone who held the belt for this reign. Written from v3.</summary>
+        public List<string>? Champions { get; set; }
+
+        /// <summary>v2 form: a single holder. Read, never written.</summary>
         public string Champion { get; set; } = "";
 
         public int ReignNumber { get; set; }
@@ -193,6 +202,11 @@ namespace WrestlingSim.Persistence
 
     public class FeudDto
     {
+        /// <summary>Both sides of the rivalry. Written from v3; absent in v2 saves.</summary>
+        public List<string>? SideA { get; set; }
+        public List<string>? SideB { get; set; }
+
+        /// <summary>v2 form: one wrestler per side. Read, never written.</summary>
         public string WrestlerA { get; set; } = "";
         public string WrestlerB { get; set; } = "";
         public double Heat { get; set; }
