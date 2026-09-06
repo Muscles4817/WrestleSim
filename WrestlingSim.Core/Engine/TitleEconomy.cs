@@ -299,7 +299,17 @@ namespace WrestlingSim.Engine
 
             // The champions retained if the belt stayed on the side that came in with it.
             // For a tag title that is a question about the team, not about who was legal.
-            bool championWon = title.Champions.Any(winningSide.Contains);
+            //
+            // `Any` was wrong and froze the belt: book champions X and Y on opposite sides
+            // and whichever side won contained a champion, so it read as a retention every
+            // time — and named the man who had just been pinned as the defending champion.
+            // A defence is the champions holding it *together*; anything else is the belt
+            // changing hands, which is exactly what a partner swap is.
+            var championsPresent = title.Champions.Where(AllInvolved).ToList();
+            bool championWon =
+                championsPresent.Count > 0 && championsPresent.All(winningSide.Contains);
+
+            bool AllInvolved(Wrestler w) => winningSide.Contains(w) || losingSide.Contains(w);
 
             // ── Champion retained ───────────────────────────────────────────
             if (championWon || !ChangesHands(finish))

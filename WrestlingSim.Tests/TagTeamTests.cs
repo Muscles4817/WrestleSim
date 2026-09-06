@@ -266,6 +266,38 @@ namespace WrestlingSim.Tests
 
             output.WriteLine($"  {before:F3} → {team.Chemistry:F3} after 400 days idle");
             Assert.True(team.Chemistry < before);
+
+            // The assertion this test was missing, and which its own printed output used to
+            // contradict. Decay recomputed the whole idle stretch on every tick, so the
+            // world clock compounded it to 0.9985^(N(N+1)/2) — a half-life of about thirty
+            // days rather than the documented two years, and effectively zero within five
+            // months. The direct-call test above printed the intended curve while this one
+            // printed 0.000, and neither could fail.
+            double expected = before * Math.Pow(TagTeam.DailyRetention, 400 - TagTeam.GraceDays);
+
+            Assert.Equal(expected, team.Chemistry, 4);
+            Assert.True(team.Chemistry > before * 0.5,
+                $"After 400 idle days chemistry should still be most of what it was, not " +
+                $"{team.Chemistry:F4}.");
+        }
+
+        [Fact]
+        public void DecayIsIdempotentPerDay()
+        {
+            // The property that broke it: the clock ticks Decay once a day, but nothing
+            // stopped it charging the same days again on the next call.
+            var team = TeamOf(0, W("A"), W("B"));
+            for (int i = 0; i < 40; i++) team.RecordMatch(Day);
+
+            var oneShot = TeamOf(team.Chemistry, W("A"), W("B"));
+            oneShot.LastTeamed = Day;
+            oneShot.MatchesTogether = 40;
+            oneShot.Decay(Day.AddDays(365));
+
+            for (int i = 1; i <= 365; i++) team.Decay(Day.AddDays(i));
+
+            output.WriteLine($"  day by day {team.Chemistry:F4}, in one step {oneShot.Chemistry:F4}");
+            Assert.Equal(oneShot.Chemistry, team.Chemistry, 6);
         }
 
         [Fact]

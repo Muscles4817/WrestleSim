@@ -78,7 +78,13 @@ namespace WrestlingSim.Models.World
         public void RecordMatch(DateOnly? date)
         {
             MatchesTogether++;
-            if (date is { } d) LastTeamed = d;
+            if (date is { } d)
+            {
+                LastTeamed = d;
+                // Teaming again restarts the clock, so the next idle stretch is measured
+                // from this match rather than from wherever decay had got to.
+                DecayedTo  = null;
+            }
 
             double target = Math.Min(1.0, MatchesTogether / (double)MatchesToEstablish);
 
@@ -88,17 +94,36 @@ namespace WrestlingSim.Models.World
         }
 
         /// <summary>
+        /// The last day decay was charged for. Without this the world clock re-charged the
+        /// *whole* idle period every single day, compounding to 0.9985^(N(N+1)/2) rather
+        /// than 0.9985^N — a half-life of about thirty days instead of the intended two
+        /// years, and effectively zero within five months.
+        /// </summary>
+        public DateOnly? DecayedTo { get; set; }
+
+        /// <summary>
         /// Applies decay for time spent apart. Called by the world clock, not by the
         /// engine — chemistry is a property of the team's history, not of any one match.
+        ///
+        /// Idempotent per day: calling it twice for the same date charges once, so it does
+        /// not matter how many times a day the clock ticks it.
         /// </summary>
         public void Decay(DateOnly today)
         {
             if (LastTeamed is not { } last) return;
 
-            int idle = today.DayNumber - last.DayNumber - GraceDays;
-            if (idle <= 0) return;
+            // Charge only the days not already charged. The grace period is measured from
+            // the last match, so decay begins at last + GraceDays.
+            var from = DecayedTo ?? last.AddDays(GraceDays);
 
-            Chemistry = Math.Clamp(Chemistry * Math.Pow(DailyRetention, idle), 0, 1);
+            // Nothing charged yet, and deliberately no marker set: stamping DecayedTo while
+            // still inside the grace period would make the next call measure from today
+            // rather than from the end of the grace, charging the grace days themselves.
+            if (today <= from) return;
+
+            int days = today.DayNumber - from.DayNumber;
+            Chemistry = Math.Clamp(Chemistry * Math.Pow(DailyRetention, days), 0, 1);
+            DecayedTo = today;
         }
 
         public bool Contains(Wrestler w) => Members.Contains(w);

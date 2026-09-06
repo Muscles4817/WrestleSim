@@ -111,6 +111,7 @@ namespace WrestlingSim.Persistence
                 Disbanded       = t.Disbanded is { } d ? Iso(d) : null,
                 MatchesTogether = t.MatchesTogether,
                 LastTeamed      = t.LastTeamed is { } l ? Iso(l) : null,
+                DecayedTo       = t.DecayedTo is { } dt ? Iso(dt) : null,
                 Chemistry       = Math.Round(t.Chemistry, 4)
             }).ToList(),
 
@@ -346,6 +347,7 @@ namespace WrestlingSim.Persistence
                     Disbanded       = ParseOptionalDate(t.Disbanded),
                     MatchesTogether = t.MatchesTogether,
                     LastTeamed      = ParseOptionalDate(t.LastTeamed),
+                    DecayedTo       = ParseOptionalDate(t.DecayedTo),
                     Chemistry       = t.Chemistry
                 });
             }
@@ -589,7 +591,12 @@ namespace WrestlingSim.Persistence
                     },
                     MatchType = dto.MatchType,
                     // Re-bind to the live feud so a reloaded card reads current heat.
-                    Feud      = feudBook.Find(a, b),
+                    //
+                    // Keyed on the two SIDES. Looking it up by the two starters found
+                    // nothing for a tag match — the feud lives under the side key — so a
+                    // reloaded tag card silently lost its feud, and a card carrying a
+                    // feud-gated beat came back unrunnable.
+                    Feud      = feudBook.Find(sideA, sideB),
                     // Likewise the belt: the same Title instance the registry holds, so a
                     // reloaded card can still put it on the line.
                     TitleAtStake = dto.TitleId is null ? null : titles.Find(dto.TitleId),

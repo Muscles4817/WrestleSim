@@ -76,6 +76,11 @@ namespace WrestlingSim.Persistence
         public string? Disbanded { get; set; }
         public int MatchesTogether { get; set; }
         public string? LastTeamed { get; set; }
+
+        /// <summary>How far decay has already been charged. Without it a reloaded team
+        /// re-pays every idle day it had already paid for.</summary>
+        public string? DecayedTo { get; set; }
+
         public double Chemistry { get; set; }
     }
 
@@ -104,7 +109,7 @@ namespace WrestlingSim.Persistence
         public List<string>? Champions { get; set; }
 
         /// <summary>v2 form: a single holder. Read, never written.</summary>
-        public string Champion { get; set; } = "";
+        public string? Champion { get; set; }
 
         public int ReignNumber { get; set; }
         public string Won { get; set; } = "";
@@ -207,8 +212,8 @@ namespace WrestlingSim.Persistence
         public List<string>? SideB { get; set; }
 
         /// <summary>v2 form: one wrestler per side. Read, never written.</summary>
-        public string WrestlerA { get; set; } = "";
-        public string WrestlerB { get; set; } = "";
+        public string? WrestlerA { get; set; }
+        public string? WrestlerB { get; set; }
         public double Heat { get; set; }
         public int MatchCount { get; set; }
 

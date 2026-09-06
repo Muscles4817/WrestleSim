@@ -23,13 +23,17 @@ namespace WrestlingSim.UI
             // Read the pairing's freshness before this match is added to it — see
             // docs/wrestling-reference/20-storylines-and-feuds.md §9.1. The console sandbox
             // has no world clock, so no date is passed and nothing is ever forgotten.
-            // Keyed on the starters. Side-keyed feuds are phase 5; until then a tag match
-            // records against the two men who took the opening bell.
-            var pairing = feudBook.GetOrCreate(booked.Plan.WrestlerA, booked.Plan.WrestlerB);
+            // Keyed on the two sides, exactly as ShowSimulator does. Keying on the
+            // starters meant the same tag match deposited heat into a different feud
+            // depending on whether it was run here or on a show card.
+            var sideA = booked.Plan.SideA.Members;
+            var sideB = booked.Plan.SideB.Members;
+
+            var pairing = feudBook.GetOrCreate(sideA, sideB);
             var result = new MatchEngine().Execute(booked.Plan, pairing.Familiarity(null));
 
             var update = feudBook.Record(
-                booked.Plan.WrestlerA, booked.Plan.WrestlerB,
+                sideA, sideB,
                 heat: result.StarRating * 2.0,
                 tags: new[] { FeudHistoryTag.PriorMatch });
             update.Feud.RecordMatch(null);
@@ -273,6 +277,9 @@ namespace WrestlingSim.UI
                 int minutes = 2 + beats.Sum(x => x.DurationMinutes);
                 WriteLine($"  Estimated runtime: ~{minutes} min", ConsoleColor.DarkGray);
 
+                if (HotTagWarning(beats) is { } advice)
+                    WriteLine($"  ⚠  {advice}", ConsoleColor.DarkYellow);
+
                 Write("\n  [A]dd   [R]emove   [C]hange control   [I]ntensity   [G]o", ConsoleColor.Cyan);
                 Console.Write("\n\n  > ");
 
@@ -291,7 +298,13 @@ namespace WrestlingSim.UI
         {
             Rule("ADD A BEAT", 34);
 
-            var available = BeatLibrary.Available(feud).ToList();
+            // Only what this shape of match can work. The web builder gates these; the
+            // console did not, so a singles booking was offered nine tag-only templates and
+            // only found out at [G]o.
+            bool isTag = a.IsTag || b.IsTag;
+            var available = BeatLibrary.Available(feud)
+                .Where(t => isTag || !new MatchBeat { Type = t.Type }.IsTagBeat)
+                .ToList();
             var indexed   = new List<BeatTemplate>();
             string? lastCat = null;
             int n = 1;
@@ -388,6 +401,31 @@ namespace WrestlingSim.UI
             WriteLine("  [2] Tag team — two a side", ConsoleColor.White);
             Console.Write("  Select (Enter = singles): ");
             return (Console.ReadLine() ?? "").Trim() == "2";
+        }
+
+        /// <summary>
+        /// Warns when a hot tag has nothing still charged behind it. Mirrors the web
+        /// builder's check, including the part that matters: a plain tag on the same side
+        /// spends the charge, so peril booked before one buys the hot tag nothing.
+        /// </summary>
+        private static string? HotTagWarning(List<MatchBeat> beats)
+        {
+            foreach (var beat in beats.Where(x => x.Type == BeatType.HotTag))
+            {
+                int at = beats.IndexOf(beat);
+                int since = beats.Take(at).ToList()
+                    .FindLastIndex(x => x.IsTagChange && x.Control == beat.Control) + 1;
+
+                var charged = beats.Skip(since).Take(at - since).ToList();
+                bool isolated = charged.Any(x => x.Type == BeatType.Isolation && x.Control != beat.Control);
+                bool nearTag  = charged.Any(x => x.Type == BeatType.NearTag && x.Control != beat.Control);
+
+                if (!isolated && !nearTag)
+                    return "That hot tag has nothing behind it — it will land at about half.";
+                if (!isolated)
+                    return "That hot tag has denied tags but no Face in Peril behind it.";
+            }
+            return null;
         }
 
         private static BeatControl SelectControl(MatchSide? a = null, MatchSide? b = null)

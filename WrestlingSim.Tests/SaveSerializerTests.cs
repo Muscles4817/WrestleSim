@@ -363,6 +363,115 @@ namespace WrestlingSim.Tests
         }
 
         [Fact]
+        public void ARealisticV2Save_LoadsEveryPathPhase5Touched()
+        {
+            // The thin v2 fixture above has empty Wrestlers, Feuds and Titles arrays, so it
+            // exercised none of the v2 read paths phase 5 added — FeudDto.WrestlerA/B,
+            // TitleReignDto.Champion, and an absent Title.SideSize. Review flagged that
+            // nothing in the suite would have caught a regression in any of them.
+            const string v2Json = """
+            {
+              "Version": 2,
+              "CareerId": "legacy",
+              "PromotionName": "Legacy Wrestling",
+              "Tier": "National",
+              "CurrentDate": "2025-03-01",
+              "StartDate": "2025-01-06",
+              "Wrestlers": [
+                { "Id": "alpha-one", "Overness": 81.5, "Momentum": 4.25, "LastAppearance": "2025-02-22" },
+                { "Id": "beta-two",  "Overness": 58.0, "Momentum": -2.0, "LastAppearance": "2025-02-22" }
+              ],
+              "ShowDefinitions": [],
+              "Feuds": [
+                {
+                  "WrestlerA": "alpha-one",
+                  "WrestlerB": "beta-two",
+                  "Heat": 34.0,
+                  "MatchCount": 3,
+                  "RememberedMeetings": 3,
+                  "LastMatchDate": "2025-02-22",
+                  "Intensity": "Hot",
+                  "History": ["PriorMatch"]
+                }
+              ],
+              "Titles": [
+                {
+                  "Id": "world",
+                  "Name": "Legacy World Championship",
+                  "Tier": "World",
+                  "Division": "Mens",
+                  "Established": "2025-01-06",
+                  "Standing": 64.5,
+                  "Retired": false,
+                  "Lineage": [
+                    {
+                      "Champion": "beta-two", "ReignNumber": 1,
+                      "Won": "2025-01-06", "Lost": "2025-02-01",
+                      "WonAt": "Debut", "LostAt": "February Show", "Defences": 2
+                    },
+                    {
+                      "Champion": "alpha-one", "ReignNumber": 2,
+                      "Won": "2025-02-01", "LastDefended": "2025-02-22",
+                      "WonAt": "February Show", "Defences": 1
+                    }
+                  ]
+                }
+              ],
+              "Shows": []
+            }
+            """;
+
+            var career = SaveSerializer.FromJson(v2Json, Roster());
+
+            // Feud: read from the v2 single-wrestler fields into a side of one.
+            var feud = Assert.Single(career.FeudBook.AllIncludingDormant);
+            Assert.Equal("alpha-one", feud.WrestlerA.Id);
+            Assert.Equal("beta-two", feud.WrestlerB.Id);
+            Assert.False(feud.IsTeamFeud);
+            Assert.Equal(34.0, feud.Heat, 3);
+            Assert.Equal(3, feud.MatchCount);
+
+            // Title: SideSize absent in v2 must default to a singles belt, and both reigns
+            // must come back through the Champions list.
+            var title = Assert.Single(career.Titles.Active);
+            Assert.Equal(1, title.SideSize);
+            Assert.False(title.IsTagTitle);
+            Assert.Equal(2, title.Lineage.Count);
+            Assert.Equal("beta-two", title.Lineage[0].Champion.Id);
+            Assert.Equal("alpha-one", title.Lineage[1].Champion.Id);
+            Assert.Equal("Alpha One", title.CurrentReign!.ChampionName);
+            Assert.True(title.IsHeldBy(career.Roster.Single(w => w.Id == "alpha-one")));
+
+            // And the reign binds to the live roster instance, not a copy.
+            Assert.Same(career.Roster.Single(w => w.Id == "alpha-one"), title.Champion);
+
+            // No teams in a v2 save, and that is correct rather than lossy.
+            Assert.Empty(career.Teams);
+        }
+
+        [Fact]
+        public void AV3SaveDoesNotWriteTheV2FieldsItDocumentsAsUnwritten()
+        {
+            // They were being written as empty strings, because a non-nullable string
+            // property is never omitted by WhenWritingNull — contradicting both the XML docs
+            // and the stated reason for not writing half-truths.
+            var roster = Roster();
+            var career = NewCareer(roster);
+            career.FeudBook.Record(roster[0], roster[1], 12);
+
+            var title = career.Titles.Create("Test Belt", TitleTier.Tertiary, Division.Mens, career.CurrentDate);
+            title.Lineage.Add(new TitleReign { Champions = [roster[0]], ReignNumber = 1, Won = career.CurrentDate });
+
+            string json = SaveSerializer.ToJson(career);
+
+            Assert.DoesNotContain("\"WrestlerA\"", json);
+            Assert.DoesNotContain("\"WrestlerB\"", json);
+            Assert.DoesNotContain("\"Champion\":", json);
+            Assert.Contains("\"SideA\"", json);
+            Assert.Contains("\"Champions\"", json);
+        }
+
+        [Fact]
         public void ALoadedCardIsStillRunnable()
         {
             var roster = Roster();

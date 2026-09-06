@@ -245,12 +245,27 @@ namespace WrestlingSim.Engine
         // ── Item execution ───────────────────────────────────────────────────
 
         /// <summary>
-        /// How much of a tag match's heat each singles pairing inside it picks up. Small on
-        /// purpose: four men in a match generate four cross-pairings, and if each took a
-        /// meaningful share then one tag match would build more singles heat than a singles
-        /// match does.
+        /// How much of a tag match's heat each singles pairing inside it picks up.
+        ///
+        /// Revised after review, which found the original 0.25 doing the opposite of what
+        /// it was documented to do. Two things were wrong. The justification was
+        /// arithmetically self-defeating — four cross-pairs at a quarter each is a whole
+        /// singles match's worth of singles heat, landing exactly on the boundary it was
+        /// chosen to stay under. And the heat was discounted while the *staleness* was not:
+        /// every cross-pair also took a full RecordMatch, so after three tag matches each
+        /// singles pairing sat below the cold threshold — no feud benefit at all — while
+        /// carrying a 35% familiarity penalty. The singles blow-off a tag programme is
+        /// supposed to build arrived actively worse off than a fresh pairing.
+        ///
+        /// Now a sixth, and no staleness at all: seeing two men on opposite sides of a tag
+        /// match is not the audience having seen that singles match. It is what makes them
+        /// want it.
         /// </summary>
-        private const double CrossPairHeatShare = 0.25;
+        private const double CrossPairHeatShare = 1.0 / 6.0;
+
+        /// <summary>The chemistry of whichever plan side these people are, for the status economy.</summary>
+        private static double ChemistryOf(Models.MatchPlan.MatchPlan plan, IReadOnlyList<Wrestler> members) =>
+            members.Count > 0 && plan.SideA.Contains(members[0]) ? plan.SideA.Chemistry : plan.SideB.Chemistry;
 
         private double RunMatch(
             BookedMatch match, CardItemResult itemResult, ShowResult showResult,
@@ -295,7 +310,9 @@ namespace WrestlingSim.Engine
                 ? HeatEconomy.ForSides(
                     engineResult.WinningSide, engineResult.Pinner,
                     engineResult.LosingSide, engineResult.Pinned,
-                    engineResult.StarRating, weight, familiarity)
+                    engineResult.StarRating, weight, familiarity,
+                    winningChemistry: ChemistryOf(match.Plan, engineResult.WinningSide),
+                    losingChemistry:  ChemistryOf(match.Plan, engineResult.LosingSide))
                 : HeatEconomy.ForMatch(
                     engineResult.Winner, engineResult.Loser, engineResult.StarRating, weight, familiarity);
 
@@ -328,14 +345,16 @@ namespace WrestlingSim.Engine
             // A tag programme also builds the singles rivalries inside it, at a fraction —
             // which is how a team feud pays off in a singles blow-off. Only recorded for a
             // genuine tag match; in singles the cross-pair *is* the feud above.
+            //
+            // Deliberately no RecordMatch on the cross-pairs. Staleness measures how often
+            // the crowd has been asked to watch *this* match, and they have not watched it:
+            // two men on opposite sides of a tag match is the thing that makes people want
+            // the singles match, not a substitute for having seen it.
             if (match.Plan.IsTagMatch)
             {
                 foreach (var a in sideA)
                 foreach (var b in sideB)
-                {
-                    var cross = _feudBook.Record(a, b, heat * CrossPairHeatShare);
-                    cross.Feud.RecordMatch(showDate);
-                }
+                    _feudBook.Record(a, b, heat * CrossPairHeatShare);
             }
 
             // ── Teams ────────────────────────────────────────────────────────

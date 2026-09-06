@@ -93,13 +93,19 @@ else
         // — docs/wrestling-reference/20-storylines-and-feuds.md §9.1. Exhibition has no
         // world clock, so the date is null and nothing is ever forgotten here.
         var today = State.Career?.CurrentDate;
-        var pairing = State.FeudBook.GetOrCreate(booked.Plan.WrestlerA, booked.Plan.WrestlerB);
+        // Keyed on the two sides, exactly as ShowSimulator does. Keying on the starters
+        // meant the same tag match deposited heat into a different feud depending on
+        // whether it was run here or on a show card.
+        var sideA = booked.Plan.SideA.Members;
+        var sideB = booked.Plan.SideB.Members;
+
+        var pairing = State.FeudBook.GetOrCreate(sideA, sideB);
         double familiarity = pairing.Familiarity(today);
 
         result = new MatchEngine().Execute(booked.Plan, familiarity);
 
         var update = State.FeudBook.Record(
-            booked.Plan.WrestlerA, booked.Plan.WrestlerB,
+            sideA, sideB,
             heat: result.StarRating * 2.0,
             tags: new[] { FeudHistoryTag.PriorMatch });
 

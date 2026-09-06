@@ -81,9 +81,10 @@ namespace WrestlingSim.Tests
         public void ThePinnerGainsMoreThanHisPartner()
         {
             var pinner = W("Pinner", 70); var partner = W("Partner", 70);
+            var l1 = W("L1", 85); var l2 = W("L2", 85);
 
             var outcome = HeatEconomy.ForSides(
-                [pinner, partner], pinner, [W("L1", 85), W("L2", 85)], W("L1", 85),
+                [pinner, partner], pinner, [l1, l2], l1,
                 starRating: 4.0, finish: FinishWeight.Decisive);
 
             double pinnerGain  = outcome.All.Single(c => c.Wrestler == pinner).OvernessDelta;
@@ -103,9 +104,10 @@ namespace WrestlingSim.Tests
             var overMainEventer = HeatEconomy.ForMatch(
                 winner, W("Main Eventer", 95), 3.5, FinishWeight.Decisive);
 
+            var midA = W("Mid A", 55); var midB = W("Mid B", 55);
             var overTwoMidcarders = HeatEconomy.ForSides(
                 [winner, W("Partner", 60)], winner,
-                [W("Mid A", 55), W("Mid B", 55)], W("Mid A", 55),
+                [midA, midB], midA,
                 3.5, FinishWeight.Decisive);
 
             double vsStar = overMainEventer.Winner.OvernessDelta;
@@ -131,6 +133,58 @@ namespace WrestlingSim.Tests
 
             Assert.True(side > midpoint);
             Assert.True(side < star.EffectiveOverness);
+        }
+
+        [Fact]
+        public void ForSides_RefusesDegenerateInputs()
+        {
+            // Not defensive noise. Before these guards existed, an empty winning side read
+            // as a maximum upset and paid the pinner about five times a normal win, and a
+            // pinner who was not on either side had three people paid for one result. The
+            // guards caught two genuinely wrong calls in this very file the day they were
+            // added — tests that built a fresh instance for `pinned` instead of passing the
+            // one that was in the list.
+            var a1 = W("A1"); var a2 = W("A2"); var b1 = W("B1"); var b2 = W("B2");
+
+            Assert.Throws<ArgumentException>(() => HeatEconomy.ForSides(
+                [], a1, [b1, b2], b1, 3.0, FinishWeight.Decisive));
+
+            Assert.Throws<ArgumentException>(() => HeatEconomy.ForSides(
+                [a1, a2], W("Somebody Else"), [b1, b2], b1, 3.0, FinishWeight.Decisive));
+
+            Assert.Throws<ArgumentException>(() => HeatEconomy.ForSides(
+                [a1, a2], a1, [b1, b2], W("Also Not Here"), 3.0, FinishWeight.Decisive));
+
+            Assert.Throws<ArgumentException>(() => HeatEconomy.ForSides(
+                [a1, a2], a1, [a2, b2], a2, 3.0, FinishWeight.Decisive));
+        }
+
+        [Fact]
+        public void PartnerSharesAreTheSharesTheConstantsSay()
+        {
+            // They were not. The share was taken from the *dampened* core delta and then
+            // dampened again against the partner's own ceiling, so the partner was charged
+            // for the pinner's ceiling compression as well as their own. The nominal
+            // 50%/35% came out as 24%/30% at equal overness, and a rookie beside a
+            // 95-overness star received about a sixth of what he should.
+            var star   = W("Star", 95);
+            var rookie = W("Rookie", 10);
+            var l1 = W("L1", 70); var l2 = W("L2", 70);
+
+            var outcome = HeatEconomy.ForSides(
+                [star, rookie], star, [l1, l2], l1, 3.5, FinishWeight.Decisive);
+
+            double rookieGain = outcome.Partners!.Single(c => c.Wrestler == rookie).OvernessDelta;
+
+            output.WriteLine($"  star (pinner) {outcome.Winner.OvernessDelta:+0.0000}, " +
+                             $"rookie partner {rookieGain:+0.0000}");
+
+            // The rookie is nowhere near his ceiling, so his own dampening is close to
+            // no-op — his share should read as very nearly half the undampened swing.
+            double expected = outcome.RawWinnerOverness * HeatEconomy.PartnerWinShare;
+            Assert.True(rookieGain > expected * 0.9,
+                $"Rookie got {rookieGain:F4} against an expected ~{expected:F4} — the star's " +
+                "ceiling compression is still being charged to his partner.");
         }
 
         // ── Side-keyed feuds ─────────────────────────────────────────────────
@@ -336,6 +390,93 @@ namespace WrestlingSim.Tests
                 .Single(f => f.IsTeamFeud);
             Assert.Equal("A1 & A2", loadedFeud.SideAName);
             Assert.Equal(20, loadedFeud.Heat, 3);
+        }
+
+        [Fact]
+        public void ATagBeltChangesHands_WhenAChampionSwitchesSides()
+        {
+            // `championWon` was `Champions.Any(winningSide.Contains)`, so booking the two
+            // champions against each other froze the belt: whichever side won contained a
+            // champion, so it read as a retention every time — and named the man who had
+            // just been pinned as the defending champion.
+            var x = W("Champ X", 80); var y = W("Champ Y", 80);
+            var z = W("Z", 70); var w = W("W", 70);
+
+            var title = new Title { Name = "Tag Titles", SideSize = 2, Established = Day, Standing = 50 };
+            title.Lineage.Add(new TitleReign { Champions = [x, y], ReignNumber = 1, Won = Day.AddDays(-100) });
+
+            // X & Z beat Y & W. The champions are split, so this cannot be a defence.
+            var update = TitleEconomy.ResolveTitleMatch(
+                title, [x, z], [y, w], x, y,
+                FinishWeight.Decisive, 3.5, Day, "Saturday Night");
+
+            output.WriteLine($"  {update.Reason}");
+
+            Assert.Equal(TitleEvent.Changed, update.Event);
+            Assert.True(title.IsHeldBy(x));
+            Assert.True(title.IsHeldBy(z));
+            Assert.False(title.IsHeldBy(y));
+        }
+
+        [Fact]
+        public void ATagMatchDoesNotWearOutTheSinglesPairingsInsideIt()
+        {
+            // The cross-pair mechanism did the opposite of what it documented. Heat was
+            // discounted to a fraction but staleness was recorded in full, so after three
+            // tag matches each singles pairing sat below the cold threshold — no feud
+            // benefit at all — while carrying a familiarity penalty. The singles blow-off a
+            // tag programme is supposed to build arrived worse off than a fresh pairing.
+            var a1 = W("A1"); var a2 = W("A2"); var b1 = W("B1"); var b2 = W("B2");
+            var career = NewCareer([a1, a2, b1, b2]);
+
+            for (int week = 0; week < 3; week++)
+            {
+                var show = career.Schedule($"Week {week}", Day.AddDays(week * 7), ShowType.HouseShow);
+                show.Card.Add(new BookedMatch
+                {
+                    Plan = new MatchPlanModel
+                    {
+                        SideA = MatchSide.Of(a1, a2),
+                        SideB = MatchSide.Of(b1, b2),
+                        Beats = MatchStructureLibrary.Find("Formula Tag")!.Beats
+                                    .Select(b => b.Clone()).ToList()
+                    }
+                });
+                new ShowSimulator(career.FeudBook).Simulate(show.ToShow());
+            }
+
+            var team  = career.FeudBook.Find([a1, a2], [b1, b2])!;
+            var cross = career.FeudBook.Find(a1, b1)!;
+
+            output.WriteLine($"  team  heat {team.Heat:F1}  familiarity {team.Familiarity(Day.AddDays(21)):F3}");
+            output.WriteLine($"  cross heat {cross.Heat:F1}  familiarity {cross.Familiarity(Day.AddDays(21)):F3}");
+
+            Assert.True(team.Familiarity(Day.AddDays(21)) < 0.9,
+                "The team pairing has been run three times and should be wearing out.");
+
+            Assert.Equal(1.0, cross.Familiarity(Day.AddDays(21)), 3);
+            Assert.True(cross.Heat > 0,
+                "Seeing two men on opposite sides of a tag match is what makes people want " +
+                "the singles match — it must build it, not spend it.");
+        }
+
+        [Fact]
+        public void ATeamsChemistryReadsTheSameToTheStatusEconomyAsToTheEngine()
+        {
+            // SideStanding shipped with a flat drag while Ctx had gained a chemistry term,
+            // under a comment claiming the two mirrored each other. They did not: a drilled
+            // star-and-rookie side read 84.75 to the engine and 72.50 to the heat economy.
+            var star   = W("Star", 90);
+            var rookie = W("Rookie", 20);
+
+            double strangers = HeatEconomy.SideStanding([star, rookie]);
+            double drilled   = HeatEconomy.SideStanding([star, rookie], chemistry: 1.0);
+
+            output.WriteLine($"  thrown together {strangers:F2}, drilled {drilled:F2}");
+
+            Assert.True(drilled > strangers,
+                "An established team should read closer to its best man in the status " +
+                "economy for the same reason it does to the crowd.");
         }
 
         // ── Helpers ──────────────────────────────────────────────────────────

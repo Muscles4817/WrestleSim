@@ -154,8 +154,13 @@ namespace WrestlingSim.Engine
                 ? $"{sideA}␟{sideB}"
                 : $"{sideB}␟{sideA}";
 
+            // Length-prefixed rather than plain-joined: a wrestler whose RealName contains
+            // the separator would otherwise key identically to the team of the two people
+            // whose names sit either side of it, silently merging two rivalries into one.
             static string Side(IEnumerable<Wrestler> members) =>
-                string.Join("+", members.Select(w => w.RealName).OrderBy(n => n, StringComparer.Ordinal));
+                string.Concat(members.Select(w => w.RealName)
+                                     .OrderBy(n => n, StringComparer.Ordinal)
+                                     .Select(n => $"{n.Length}:{n}"));
         }
     }
 

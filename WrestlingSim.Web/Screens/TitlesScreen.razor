@@ -85,7 +85,7 @@ else
                 <div class="editor-row">
                     <div class="editor-row__n">@reign.ReignNumber</div>
                     <div>
-                        <div class="editor-row__name">@reign.Champion.RingName</div>
+                        <div class="editor-row__name">@reign.ChampionName</div>
                         <div class="editor-row__sub">
                             Champion since @reign.Won.ToString("d MMM yyyy") ·
                             @reign.LengthLabel(today) ·
@@ -116,7 +116,7 @@ else
                     <div class="editor-row">
                         <div class="editor-row__n">@past.ReignNumber</div>
                         <div>
-                            <div class="editor-row__name">@past.Champion.RingName</div>
+                            <div class="editor-row__name">@past.ChampionName</div>
                             <div class="editor-row__sub">
                                 @past.Won.ToString("d MMM yyyy") –
                                 @(past.Lost is { } lost ? lost.ToString("d MMM yyyy") : "present") ·
@@ -198,6 +198,13 @@ else
                     <option value="@Division.Womens">Women's</option>
                 </select>
             </div>
+            <div class="field">
+                <span class="field__label">Contested by</span>
+                <select class="select" @bind="newSideSize">
+                    <option value="1">One wrestler</option>
+                    <option value="2">A tag team</option>
+                </select>
+            </div>
         </div>
 
         <div class="notice notice--warn mt">
@@ -222,13 +229,14 @@ else
     private string newName = "";
     private TitleTier newTier = TitleTier.Tertiary;
     private Division newDivision = Division.Mens;
+    private int newSideSize = 1;
 
     private Task Vacate(Title title) =>
         State.VacateTitleAsync(title, "Stripped by the promotion");
 
     private async Task Create()
     {
-        await State.CreateTitleAsync(newName, newTier, newDivision);
+        await State.CreateTitleAsync(newName, newTier, newDivision, newSideSize);
         newName = "";
     }
 

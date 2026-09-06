@@ -104,12 +104,14 @@ namespace WrestlingSim.Models.World
         /// match — doc 21 §7: replacing a title trades accumulated history for a fresh
         /// start, and that is almost always a net loss.
         /// </summary>
-        public Title Create(string name, TitleTier tier, Division division, DateOnly on) =>
+        public Title Create(
+            string name, TitleTier tier, Division division, DateOnly on, int sideSize = 1) =>
             Add(new Title
             {
                 Name        = string.IsNullOrWhiteSpace(name) ? "New Championship" : name.Trim(),
                 Tier        = tier,
                 Division    = division,
+                SideSize    = Math.Max(1, sideSize),
                 Established = on,
                 Standing    = Title.NewTitleStanding
             });
@@ -174,8 +176,12 @@ namespace WrestlingSim.Models.World
         /// exactly the attention capacity — so the player's first title decision is
         /// whether a fourth is worth what it costs the other three.
         ///
-        /// All singles. The match engine is strictly one against one, so there is no tag
-        /// division for a tag title to define.
+        /// All singles, and deliberately so even though the engine now runs tag matches.
+        /// A tag belt claims the same finite attention as any other (§2.1), so shipping one
+        /// by default would spend the player's first real title decision for them — and
+        /// that decision, whether a fourth belt is worth what it costs the other three, is
+        /// the one this slate exists to pose. Tag titles are introduced the same way any
+        /// other belt is, from the Championships screen.
         /// </summary>
         public void SeedDefaults(string promotionName, DateOnly established)
         {

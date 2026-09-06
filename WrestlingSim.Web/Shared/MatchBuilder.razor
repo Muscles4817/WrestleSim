@@ -154,6 +154,46 @@
         </div>
     }
 
+    @if (isTag && a is not null && partnerA is not null)
+    {
+        <div class="panel">
+            <div class="panel__title">
+                Team A
+                @if (ExistingTeamA is { } known) { <span class="badge badge--gold">@known.Name</span> }
+            </div>
+            @if (ExistingTeamA is { } teamA)
+            {
+                <div class="notice">
+                    <strong>@teamA.Name</strong> — @teamA.ChemistryLabel.ToLowerInvariant(),
+                    @teamA.MatchesTogether match@(teamA.MatchesTogether == 1 ? "" : "es") together
+                    over @teamA.TenureLabel(Today).
+                    Chemistry makes their double teams land and lets the stronger of them carry
+                    the other.
+                </div>
+            }
+            else
+            {
+                <label class="check">
+                    <input type="checkbox" @bind="formTeamA" />
+                    <span>Make them a standing team</span>
+                </label>
+                @if (formTeamA)
+                {
+                    <div class="field">
+                        <span class="field__label">Team name</span>
+                        <input class="input" @bind="teamNameA" maxlength="48"
+                               placeholder="@($"{a.RingName} & {partnerA.RingName}")" />
+                    </div>
+                    <div class="notice">
+                        A team starts with no chemistry and builds it by working together.
+                        Two singles wrestlers thrown together are exactly that — and a team
+                        that stops teaming stops being one.
+                    </div>
+                }
+            }
+        </div>
+    }
+
     @if (isTag && b is not null)
     {
         <div class="panel">
@@ -176,6 +216,39 @@
                     </button>
                 }
             </div>
+        </div>
+    }
+
+    @if (isTag && b is not null && partnerB is not null)
+    {
+        <div class="panel">
+            <div class="panel__title">
+                Team B
+                @if (ExistingTeamB is { } knownB) { <span class="badge badge--gold">@knownB.Name</span> }
+            </div>
+            @if (ExistingTeamB is { } teamB)
+            {
+                <div class="notice">
+                    <strong>@teamB.Name</strong> — @teamB.ChemistryLabel.ToLowerInvariant(),
+                    @teamB.MatchesTogether match@(teamB.MatchesTogether == 1 ? "" : "es") together
+                    over @teamB.TenureLabel(Today).
+                </div>
+            }
+            else
+            {
+                <label class="check">
+                    <input type="checkbox" @bind="formTeamB" />
+                    <span>Make them a standing team</span>
+                </label>
+                @if (formTeamB)
+                {
+                    <div class="field">
+                        <span class="field__label">Team name</span>
+                        <input class="input" @bind="teamNameB" maxlength="48"
+                               placeholder="@($"{b.RingName} & {partnerB.RingName}")" />
+                    </div>
+                }
+            }
         </div>
     }
 }
@@ -609,7 +682,14 @@
     /// </summary>
     private List<Title> SelectableTitles() =>
         State.Titles.Active
-            .Where(t => t.IsVacant || t.Champion == a || t.Champion == b)
+            // A belt can only be contested by the shape of match it is contested by. Before
+            // this check every tag booking was offered all three vacant singles belts and
+            // only found out at the final click, three steps later, that none of them was
+            // legal.
+            .Where(t => t.SideSize == SideSize)
+            // And the holders have to be *in* it — all of them, not just whoever happens to
+            // be listed first or starting.
+            .Where(t => t.IsVacant || t.Champions.All(Chosen.Contains))
             .OrderByDescending(t => t.Prestige)
             .ToList();
 
@@ -673,8 +753,19 @@
     /// The pair's record, feud or not. A pairing the crowd is sick of is sick of it
     /// whether or not the booker attaches a story to tonight's match.
     /// </summary>
-    private Feud? PairingHistory =>
-        a is not null && b is not null ? State.FeudBook.Find(a, b) : null;
+    private Feud? PairingHistory
+    {
+        get
+        {
+            if (a is null || b is null) return null;
+
+            // The freshness panel has to read the feud the simulator will actually use, or
+            // it advises on a pairing that is not the one being booked.
+            var sideA = partnerA is null ? new[] { a } : [a, partnerA];
+            var sideB = partnerB is null ? new[] { b } : [b, partnerB];
+            return State.FeudBook.Find(sideA, sideB);
+        }
+    }
 
     /// <summary>
     /// The night this would be seen. The card being written, if there is one, because
@@ -718,7 +809,7 @@
     {
         if (step == 0)
         {
-            existingFeud = State.FeudBook.Find(a!, b!);
+            existingFeud = PairingHistory;
             feudChoice = existingFeud is not null && existingFeud.Intensity > FeudIntensity.None
                 ? FeudChoice.UseExisting
                 : FeudChoice.None;
@@ -789,7 +880,9 @@
 
             case FeudChoice.Declare:
                 // Declared feuds go into the book so later segments build on them.
-                var declared = State.FeudBook.GetOrCreate(a!, b!);
+                var declared = State.FeudBook.GetOrCreate(
+                    partnerA is null ? [a!] : [a!, partnerA],
+                    partnerB is null ? [b!] : [b!, partnerB]);
                 declared.SetMinimumIntensity(declaredIntensity);
                 foreach (var tag in declaredTags) declared.AddTag(tag);
                 feud = declared;
@@ -828,13 +921,54 @@
         foreach (var beat in beats.Where(x => x.Type == BeatType.HotTag))
         {
             int at = beats.IndexOf(beat);
-            bool isolated = beats.Take(at).Any(x =>
-                x.Type == BeatType.Isolation && x.Control != beat.Control);
+
+            // Only what is still charged. A plain tag on the same side spends the charge —
+            // MatchEngineState.Tag clears it — so peril booked before one of those buys
+            // this hot tag nothing, and the warning has to see that.
+            int since = beats.Take(at).ToList()
+                .FindLastIndex(x => x.IsTagChange && x.Control == beat.Control) + 1;
+
+            var charged = beats.Skip(since).Take(at - since).ToList();
+            bool isolated = charged.Any(x => x.Type == BeatType.Isolation && x.Control != beat.Control);
+            bool nearTag  = charged.Any(x => x.Type == BeatType.NearTag && x.Control != beat.Control);
+
+            if (!isolated && !nearTag)
+                return "This hot tag has no Face in Peril and no Near Tag still standing behind " +
+                       "it, so there is nothing for it to release. It will land at about half " +
+                       "of what it could.";
+
             if (!isolated)
-                return "This hot tag has no Face in Peril before it, so there is nothing for it " +
-                       "to release. It will land at about half of what it could.";
+                return "This hot tag has denied tags behind it but no Face in Peril. It will " +
+                       "land, but nowhere near what a proper heat would have bought.";
         }
         return null;
+    }
+
+    // ── Teams ────────────────────────────────────────────────────────────
+
+    private bool formTeamA, formTeamB;
+    private string teamNameA = "", teamNameB = "";
+
+    /// <summary>The standing team these two are, if the career knows them as one.</summary>
+    private TagTeam? TeamFor(MatchSide side) =>
+        side.IsTag ? State.Career?.TeamFor(side.Members) : null;
+
+    private TagTeam? ExistingTeamA => a is not null && partnerA is not null
+        ? State.Career?.TeamFor(new[] { a, partnerA }) : null;
+
+    private TagTeam? ExistingTeamB => b is not null && partnerB is not null
+        ? State.Career?.TeamFor(new[] { b, partnerB }) : null;
+
+    private TagTeam FormTeam(MatchSide side, string name)
+    {
+        var team = new TagTeam
+        {
+            Name    = string.IsNullOrWhiteSpace(name) ? side.Name : name.Trim(),
+            Members = side.Members.ToList(),
+            Formed  = Today
+        };
+        State.Career!.Teams.Add(team);
+        return team;
     }
 
     // ── Beat editing ─────────────────────────────────────────────────────
@@ -911,10 +1045,24 @@
 
     private async Task Finish()
     {
+        var sideA = partnerA is null ? MatchSide.Of(a!) : MatchSide.Of(a!, partnerA);
+        var sideB = partnerB is null ? MatchSide.Of(b!) : MatchSide.Of(b!, partnerB);
+
+        // Attach the standing team, if these two are one. Without this every side a player
+        // booked had Team == null, so chemistry was pinned at zero and the whole of phase 4
+        // was unreachable from the game.
+        sideA.Team = TeamFor(sideA);
+        sideB.Team = TeamFor(sideB);
+
+        // Forming a team is a real commitment — it is what starts chemistry accruing — so
+        // it happens here, once the booking is confirmed, rather than on a picker click.
+        if (formTeamA && sideA.Team is null) sideA.Team = FormTeam(sideA, teamNameA);
+        if (formTeamB && sideB.Team is null) sideB.Team = FormTeam(sideB, teamNameB);
+
         var plan = new MatchPlanModel
         {
-            SideA = partnerA is null ? MatchSide.Of(a!) : MatchSide.Of(a!, partnerA),
-            SideB = partnerB is null ? MatchSide.Of(b!) : MatchSide.Of(b!, partnerB),
+            SideA = sideA,
+            SideB = sideB,
             MatchType    = matchType,
             Feud         = feud,
             TitleAtStake = title,
