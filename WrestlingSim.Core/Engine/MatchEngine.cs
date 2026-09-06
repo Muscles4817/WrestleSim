@@ -30,24 +30,55 @@ namespace WrestlingSim.Engine
         // Band the weighted crowd reading is normalised against. Below the floor the
         // building is dead; at the reference ceiling it is as hot as a crowd ever gets.
         /// <summary>
-        /// The investment reading a normal match produces. Matches here score exactly as
-        /// they did before the reaction vector existed, so this feature moves the tails
-        /// rather than shifting the whole scale.
+        /// The investment reading a normal match produces — a match here scores exactly as
+        /// it did before the reaction vector existed.
+        ///
+        /// **Measured, not chosen.** This shipped at 0.50 with a comment claiming the same
+        /// thing, and review measured the actual median across every shipped-roster singles
+        /// pairing × every non-feud-gated structure (5,220 matches) at **0.7635**. The
+        /// consequence was not cosmetic: 64.6% of all matches saturated the old upper clamp
+        /// and got an identical flat uplift, so what was described as tail movement was, for
+        /// two-thirds of the roster, a blanket bonus.
+        ///
+        /// If the roster's connection distribution changes materially, re-measure this.
+        /// <c>ATypicalMatchIsUnmoved</c> pins it to the corpus rather than to a constant.
         /// </summary>
-        private const double TypicalInvestment = 0.50;
+        private const double TypicalInvestment = 0.7635;
 
         /// <summary>
-        /// How hard investment swings the crowd component either side of typical.
-        ///
-        /// The clamp is deliberately **asymmetric** — down to 0.65, up only to 1.06 — and
-        /// that asymmetry is the point rather than a tuning convenience. Doc 16 §2.1 is
-        /// about the cost of silence, not a bonus for engagement: an invested crowd is the
-        /// baseline a match is supposed to earn, and being ignored is the failure. A
-        /// symmetric version was tried and pushed 2.15% of all matches to a flat 5.00,
-        /// because the pairings that draw the most investment are already near the ceiling
-        /// and had nowhere to go.
+        /// What a room that never turned up costs, per unit of investment below typical.
+        /// At the floor (investment 0) a match keeps 69% of its crowd component.
         /// </summary>
-        private const double InvestmentSwing = 0.70;
+        private const double InvestmentDownside = 0.40;
+
+        /// <summary>
+        /// What a room that was present all night earns, per unit above typical. At the
+        /// ceiling (investment 1) a match gains 5.9%.
+        ///
+        /// The asymmetry is the design and not a tuning convenience: doc 16 §2.1 is about
+        /// the cost of silence, not a bonus for engagement. An invested crowd is the
+        /// baseline a match is supposed to earn; being ignored is the failure.
+        ///
+        /// It is expressed as two slopes rather than as a symmetric swing inside an
+        /// asymmetric clamp, which is how it shipped first. A clamp that two-thirds of the
+        /// corpus sits against is not an asymmetry, it is a constant — and it also made the
+        /// swing constant unfalsifiable in one direction while review found the other
+        /// direction had been fitted to clear an unrelated 2004-match recreation by
+        /// 0.0001★. Two slopes give every match a distinct multiplier and make both bounds
+        /// statements about design rather than about the test suite.
+        /// </summary>
+        private const double InvestmentUpside = 0.25;
+
+        /// <summary>
+        /// How much of its crowd component a match keeps, given how present the room was.
+        /// Never reaches zero: a match worked in front of a dead building is still worth its
+        /// technical and storytelling scores. What it loses is the third of the grade that
+        /// was supposed to be about the audience.
+        /// </summary>
+        private static double InvestmentFactor(double investment) =>
+            investment >= TypicalInvestment
+                ? 1.0 + (investment - TypicalInvestment) * InvestmentUpside
+                : 1.0 - (TypicalInvestment - investment) * InvestmentDownside;
 
         private const double CrowdFloor      = 28.0;
         private const double CrowdCeilingRef = 95.0;
@@ -557,63 +588,119 @@ namespace WrestlingSim.Engine
                 return declared;
             }
 
-            // Booking, not just casting. A crowd asked to watch the same thing over and
-            // over starts entertaining itself — the sarcastic chants and the counting-along
-            // of doc 16 §2, which it flags as a red alert. RepetitionFactor is already
-            // computed per beat; below about half its original value the beat is being
-            // repeated past the point anybody is still watching it.
-            if (r.RepetitionFactor < 0.5)
-            {
-                state.RecordReaction(ReactionKind.GoAwayHeat, weight);
-                return ReactionKind.GoAwayHeat;
-            }
-
-            // How much this room cares about the people in front of it.
+            // ── How present is the room? ─────────────────────────────────────
             //
-            // The window is set against the values Connection actually takes on the shipped
-            // roster, not its theoretical range: a nobody lands near 0.30, a midcard hand
-            // near 0.70, a genuine draw near 1.17. A first attempt used the theoretical
-            // 0.72–1.30 and read a *midcarder* as completely uninvested, which is plainly
-            // wrong — a midcard match still has a crowd.
+            // Two independent things make a crowd stop watching, and the first version of
+            // this only modelled one of them.
+            //
+            // **Who is out there.** The window is set against the values Connection
+            // actually takes on the shipped roster, not its theoretical range: a nobody
+            // lands near 0.30, a midcard hand near 0.70, a genuine draw near 1.17. A first
+            // attempt used the theoretical 0.72–1.30 and read a *midcarder* as completely
+            // uninvested, which is plainly wrong — a midcard match still has a crowd.
             double connection = control is not null
                 ? ctx.For(control).Connection
                 : ctx.Pair(p => p.Connection);
-            double invested = Math.Clamp((connection - 0.32) / 0.80, 0, 1);
+            double attention = Math.Clamp((connection - 0.32) / 0.80, 0, 1);
+
+            // **What the booking has asked them to sit through.** This is the half that
+            // makes A5 about booking rather than only about casting, and the first version
+            // did not have it: it gated go-away heat on `RepetitionFactor < 0.5`, which
+            // review measured firing on **0 of 33,060 beats** across every shipped
+            // structure and every roster pairing. It could not fire — `RepetitionFactor`
+            // bottoms out at 0.680 on shipped content, because no preset repeats a beat
+            // type often enough. A threshold nothing reaches is not a mechanism.
+            //
+            // So repetition is continuous instead. Every repeat of a beat type erodes the
+            // room's presence in proportion, which is doc 16 §2's actual claim: a crowd
+            // shown the same thing four times stops watching it, and that is true of a
+            // main-eventer's fourth near-fall as much as a jobber's first.
+            double invested = Math.Clamp(attention * r.RepetitionFactor, 0, 1);
+
+            // And *what kind* of absent. Doc 16 §2 separates silence ("Nothing") from
+            // go-away heat, which is loud and active — the sarcastic chants, the counting
+            // along. The difference is which of the two causes above is doing the work: a
+            // room worn out by repetition entertains itself; a room that never cared is
+            // simply quiet. The first version assigned these by the *sign of the beat*,
+            // which made the positive and negative branches state opposite things about
+            // the same disengaged crowd.
+            double bored  = 1.0 - r.RepetitionFactor;
+            double apathy = 1.0 - attention;
+            double boredShare = bored + apathy > 1e-9 ? bored / (bored + apathy) : 0.0;
+
+            double absent    = weight * (1.0 - invested);
+            double goingAway = absent * boredShare;
+            double silent    = absent - goingAway;
 
             if (r.CrowdEnergyDelta > 0.5)
             {
-                // Whose noise is it? A crowd that dislikes the man on top is booing him,
-                // and booing him is engagement.
-                double disposition = control is not null
-                    ? ctx.For(control).Disposition
-                    : ctx.Pair(p => p.Disposition);
-                double liked = Math.Clamp((disposition - 0.30) / 0.40, 0, 1);
+                // Whose noise is it? A crowd that hates the man on top is booing him, and
+                // booing him is engagement — doc 16 §2.1. Read off Favour, not popularity:
+                // see PerformerProfile.Favour for why that distinction is the whole point.
+                double favour = control is not null
+                    ? ctx.For(control).Favour
+                    : ctx.Pair(p => p.Favour);
 
-                // The share the room does not care about at all still goes nowhere.
                 double engaged = weight * invested;
-                state.RecordReaction(ReactionKind.Pop,  engaged * liked);
-                state.RecordReaction(ReactionKind.Heat, engaged * (1 - liked));
-                state.RecordReaction(ReactionKind.Silence, weight * (1 - invested));
+                double popped  = engaged * favour;
+                double heated  = engaged - popped;
 
-                return liked >= 0.5 ? ReactionKind.Pop : ReactionKind.Heat;
+                state.RecordReaction(ReactionKind.Pop,        popped);
+                state.RecordReaction(ReactionKind.Heat,       heated);
+                state.RecordReaction(ReactionKind.Silence,    silent);
+                state.RecordReaction(ReactionKind.GoAwayHeat, goingAway);
+
+                return Dominant(
+                    (ReactionKind.Pop, popped), (ReactionKind.Heat, heated),
+                    (ReactionKind.Silence, silent), (ReactionKind.GoAwayHeat, goingAway));
             }
 
             if (r.CrowdEnergyDelta < -0.5)
             {
                 // The distinction the scalar could never make. A room that cares is holding
                 // its breath; a room that does not has started entertaining itself.
-                state.RecordReaction(ReactionKind.Tension,    weight * invested);
-                state.RecordReaction(ReactionKind.GoAwayHeat, weight * (1 - invested));
+                double held = weight * invested;
+                state.RecordReaction(ReactionKind.Tension,    held);
+                state.RecordReaction(ReactionKind.Silence,    silent);
+                state.RecordReaction(ReactionKind.GoAwayHeat, goingAway);
 
-                return invested >= 0.5 ? ReactionKind.Tension : ReactionKind.GoAwayHeat;
+                return Dominant((ReactionKind.Tension, held),
+                                (ReactionKind.Silence, silent), (ReactionKind.GoAwayHeat, goingAway));
             }
 
             // Nothing happened either way — a rest hold, a feeling-out. Whether that is
-            // attentive or absent is again entirely a question of who is in the ring.
-            state.RecordReaction(ReactionKind.Tension, weight * invested);
-            state.RecordReaction(ReactionKind.Silence, weight * (1 - invested));
+            // attentive or absent is the same question as above.
+            {
+                double held = weight * invested;
+                state.RecordReaction(ReactionKind.Tension,    held);
+                state.RecordReaction(ReactionKind.Silence,    silent);
+                state.RecordReaction(ReactionKind.GoAwayHeat, goingAway);
 
-            return invested >= 0.5 ? ReactionKind.Tension : ReactionKind.Silence;
+                return Dominant((ReactionKind.Tension, held),
+                                (ReactionKind.Silence, silent), (ReactionKind.GoAwayHeat, goingAway));
+            }
+        }
+
+        /// <summary>
+        /// The component that actually took the largest share of this beat.
+        ///
+        /// This is the fix for a review finding worth recording, because it was a whole
+        /// class of wrong rather than an off-by-one. The old positive branch ended
+        /// `return liked &gt;= 0.5 ? Pop : Heat` — so it could **never** return Silence,
+        /// however absent the room, even on the beat where it had just recorded the entire
+        /// weight as silence. Two nobodies in a Spotfest produced seven beats every one of
+        /// which reported `Heat` — documented as engagement and a *good* outcome — in a
+        /// match whose own aggregate said the room never turned up. `BeatResult.
+        /// ResolvedReaction` is documented as "the reaction actually recorded", so any
+        /// per-beat consumer read the opposite of the truth in exactly the case A5 exists
+        /// to detect.
+        /// </summary>
+        private static ReactionKind Dominant(params (ReactionKind Kind, double Share)[] shares)
+        {
+            var best = shares[0];
+            foreach (var s in shares)
+                if (s.Share > best.Share) best = s;
+            return best.Kind;
         }
 
         // ── Repetition / fatigue rules ───────────────────────────────────────
@@ -1901,10 +1988,7 @@ namespace WrestlingSim.Engine
             // is very loud indeed — and it can be quiet and completely present, which is
             // what the near-tag and the count before a kick-out are for.
             //
-            // Investment scales the crowd component between InvestmentFloor and 1. It never
-            // reaches zero, because a match worked in front of a dead room is still worth
-            // its technical and storytelling scores; what it loses is the third of the
-            // grade that was supposed to be about the audience.
+            // See InvestmentFactor for the shape and for why it is two slopes.
             //
             // docs/wrestling-reference/16-crowd-psychology.md §2.1: promotions consistently
             // over-fear boos and under-fear silence. This is where the engine stops doing
@@ -1916,14 +2000,11 @@ namespace WrestlingSim.Engine
             // engine's discrimination. Six tests measuring quite different things all
             // failed at once, which is what double-counting looks like.
             //
-            // A typical match sits near TypicalInvestment and comes out at 1.0. What moves
-            // is the tails: a room that never turned up loses about a third of its crowd
-            // component, and one that was present all night gains about a quarter.
+            // A typical match sits at TypicalInvestment and comes out at exactly 1.0. What
+            // moves is the tails, and they move by different amounts in the two directions:
+            // see InvestmentDownside / InvestmentUpside.
             double investment = state.Reaction.Investment;
-            double crowdComponent = crowdNorm * 100 * crowdWeight
-                                    * Math.Clamp(
-                                        1.0 + (investment - TypicalInvestment) * InvestmentSwing,
-                                        0.65, 1.06);
+            double crowdComponent = crowdNorm * 100 * crowdWeight * InvestmentFactor(investment);
 
             // Finish quality nudges the final score (±10 points), so an unearned finish
             // costs around half a star.

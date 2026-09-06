@@ -57,11 +57,28 @@ namespace WrestlingSim.Models.MatchPlan
             }
         }
 
-        /// <summary>Whichever reaction the match produced most of.</summary>
+        /// <summary>Nothing has been recorded — this reaction describes no match.</summary>
+        public bool IsEmpty => Total <= 0;
+
+        /// <summary>Everything recorded, across all five components.</summary>
+        public double Total => Pop + Heat + Tension + Silence + GoAwayHeat;
+
+        /// <summary>
+        /// Whichever reaction the match produced most of.
+        ///
+        /// An unpopulated reaction reads as <see cref="ReactionKind.Silence"/> rather than
+        /// as <see cref="ReactionKind.Pop"/>. It used to be Pop, because the search began at
+        /// `pairs[0]` with a strict `&gt;` — so an all-zero profile claimed the loudest
+        /// possible reading, and `MatchEngineResult.Reaction` defaults to `new()`, meaning
+        /// any result not produced by the engine said so. Silence is the honest default:
+        /// nothing was recorded, so nothing happened.
+        /// </summary>
         public ReactionKind Dominant
         {
             get
             {
+                if (IsEmpty) return ReactionKind.Silence;
+
                 var pairs = new (ReactionKind Kind, double Value)[]
                 {
                     (ReactionKind.Pop, Pop),
@@ -78,9 +95,12 @@ namespace WrestlingSim.Models.MatchPlan
         }
 
         /// <summary>A plain-English reading, in the register the rest of the game uses.</summary>
-        public string Label => Investment switch
+        public string Label => IsEmpty ? "Nothing recorded" : Investment switch
         {
-            < 0.35 => Silence > GoAwayHeat
+            // `>=` deliberately: with nothing to separate them, "the room never turned up"
+            // is the quieter and more honest reading. The strict `>` sent a tie to the
+            // loudest failure mode in the vocabulary.
+            < 0.35 => Silence >= GoAwayHeat
                 ? "The room never turned up"
                 : "They stopped watching and started entertaining themselves",
             < 0.55 => "Patchy — the crowd came and went",

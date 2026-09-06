@@ -76,6 +76,25 @@ namespace WrestlingSim.Engine
         /// <summary>Raw 0–1 crowd disposition, kept for the beats that reason about it directly.</summary>
         public double Disposition { get; }
 
+        /// <summary>
+        /// 0–1: how much the room is *on this person's side*, as opposed to how much it
+        /// cares about them at all (<see cref="Connection"/>) or how popular they are
+        /// (<see cref="Disposition"/>).
+        ///
+        /// This exists because the reaction vector shipped without it and got the taxonomy
+        /// backwards. Reading "liked" off popularity alone means the engine's Heat is
+        /// really *unpopular* — so a huge heel recorded Pop and an unloved babyface
+        /// recorded Heat. Doc 16 §2 defines heat as "the audience hates this person and
+        /// wants them beaten", which is a statement about alignment, and it flags the two
+        /// readings that break a match — cheers for a heel, boos for a babyface — as the
+        /// ones that matter most. Neither is expressible from popularity alone.
+        ///
+        /// So: the gimmick's alignment sets the intent, and disposition can override it.
+        /// A heel the crowd adores crosses over into cheers; a babyface it has turned on
+        /// crosses the other way. That crossover is the point.
+        /// </summary>
+        public double Favour { get; }
+
         private readonly Wrestler _wrestler;
 
         public PerformerProfile(Wrestler w)
@@ -89,6 +108,19 @@ namespace WrestlingSim.Engine
             double chaNorm    = Math.Clamp(w.Charisma / 5.0, 0, 1);
 
             Disposition = (popNorm + appealNorm) / 2.0;
+
+            double intent = w.Gimmick?.NaturalAlignment switch
+            {
+                Alignment.Face => 0.85,
+                Alignment.Heel => 0.15,
+                _              => 0.50   // a tweener is whatever the room decides they are
+            };
+
+            // 1.2 is chosen so the crossover is reachable but not routine: a heel needs to
+            // be adored (disposition ≈ 0.84) before the room starts cheering them, and a
+            // babyface has to have lost it (≈ 0.26) before it turns. Both happen on the
+            // shipped roster; neither is common.
+            Favour = Math.Clamp(intent + (Disposition - 0.55) * 1.2, 0, 1);
 
             // Charisma is weighted heaviest because it is the sharpest discriminator on a
             // roster where everyone is reasonably popular.
