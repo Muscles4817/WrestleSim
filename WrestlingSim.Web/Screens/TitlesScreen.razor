@@ -162,7 +162,7 @@ else
                     <div>
                         <div class="editor-row__name">@title.Name</div>
                         <div class="editor-row__sub">
-                            @title.TierLabel · @title.ReignCount champion@(title.ReignCount == 1 ? "" : "s") ·
+                            @title.TierLabel · @title.ReignCount reign@(title.ReignCount == 1 ? "" : "s") ·
                             retired @(title.RetiredOn?.ToString("d MMM yyyy") ?? "—")
                         </div>
                     </div>

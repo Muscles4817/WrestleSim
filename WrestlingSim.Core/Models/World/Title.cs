@@ -128,7 +128,7 @@ namespace WrestlingSim.Models.World
 
         public bool IsVacant => CurrentReign == null;
 
-        /// <summary>How many people have held it. "The 42nd champion" (§7).</summary>
+        /// <summary>How many reigns the belt has had. "The 42nd champion" (§7).</summary>
         public int ReignCount => Lineage.Count;
 
         /// <summary>Defences under the current champion. Zero for a vacant title.</summary>

@@ -180,8 +180,15 @@ namespace WrestlingSim.Models.World
             // A belt nobody is defending is quietly losing value the whole time — doc 21
             // §4. Being ignored is the fastest killer, so it has to happen on the clock
             // rather than only when someone books a match.
+            // Chemistry passed through so the belt reads its champions the same way the
+            // crowd does — a drilled team reads closer to its best man, on both sides of
+            // the engine rather than only one.
             foreach (var title in Titles.Active)
-                TitleEconomy.ApplyDailyDrift(title, CurrentDate);
+                TitleEconomy.ApplyDailyDrift(
+                    title, CurrentDate,
+                    title.CurrentReign is { Champions.Count: > 1 } reign
+                        ? TeamFor(reign.Champions)?.Chemistry ?? 0.0
+                        : 0.0);
 
             // A team that stops teaming stops being a team. Same rule as everything else
             // in here — the thing you are not maintaining is quietly getting worse.

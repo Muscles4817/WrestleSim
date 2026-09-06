@@ -132,7 +132,7 @@ namespace WrestlingSim.Tests
         {
             // ApplyDailyDrift read reign.Champion.EffectiveOverness, so swapping the billing
             // order of the same two champions changed what the belt was worth over time.
-            double AfterAYear(Wrestler first, Wrestler second)
+            double AfterAMonth(Wrestler first, Wrestler second)
             {
                 var title = TagBelt("Tag Titles", Day, standing: 40);
                 title.Lineage.Add(new TitleReign
@@ -150,8 +150,8 @@ namespace WrestlingSim.Tests
             var star   = W("Star", 92);
             var rookie = W("Rookie", 30);
 
-            double starFirst   = AfterAYear(star, rookie);
-            double rookieFirst = AfterAYear(rookie, star);
+            double starFirst   = AfterAMonth(star, rookie);
+            double rookieFirst = AfterAMonth(rookie, star);
 
             output.WriteLine($"  star billed first {starFirst:F3}, rookie billed first {rookieFirst:F3}");
 
@@ -178,6 +178,109 @@ namespace WrestlingSim.Tests
 
             Assert.True(strong > weak,
                 "Who is carrying the belt has to matter to what it is worth.");
+        }
+
+        [Fact]
+        public void TheBeltReadsItsChampionsTowardTheirBestMan_NotAsTheirAverage()
+        {
+            // Review found the top-weighting claim unpinned: swapping SideStanding for a
+            // plain mean left the whole suite green, because the other two drift tests only
+            // require order-independence and monotonicity, which a mean satisfies too.
+            //
+            // A star-and-rookie pair must pull the belt harder than the midpoint of the two
+            // of them would, for the same reason the crowd reads a side that way — a team
+            // is mostly its best man.
+            double AfterAMonth(params Wrestler[] champions)
+            {
+                var title = TagBelt("Tag Titles", Day, standing: 40);
+                title.Lineage.Add(new TitleReign
+                {
+                    Champions = champions.ToList(), ReignNumber = 1, Won = Day, LastDefended = Day
+                });
+                for (int i = 1; i <= 30; i++) TitleEconomy.ApplyDailyDrift(title, Day.AddDays(i));
+                return title.Standing;
+            }
+
+            double mixed    = AfterAMonth(W("Star", 92), W("Rookie", 30));
+            double midpoint = AfterAMonth(W("Mid A", 61), W("Mid B", 61));
+
+            output.WriteLine($"  star + rookie {mixed:F3}, two 61s {midpoint:F3}");
+
+            Assert.True(mixed > midpoint,
+                $"A 92-and-30 pair drifted the belt to {mixed:F3}, at or below the {midpoint:F3} " +
+                "a flat mean of them would. The belt is averaging its champions, not reading " +
+                "them toward the man carrying it.");
+        }
+
+        [Fact]
+        public void ADrilledTeamsBeltDriftsHigherThanAScratchPairings()
+        {
+            // The chemistry argument was defaulted to zero, so the title economy read every
+            // team as two strangers while the crowd and the status economy read an
+            // established one as nearly one act. SideStanding's own documentation is a
+            // post-mortem of exactly that divergence happening once before.
+            double AfterAMonth(double chemistry)
+            {
+                var title = TagBelt("Tag Titles", Day, standing: 40);
+                title.Lineage.Add(new TitleReign
+                {
+                    Champions = [W("Star", 92), W("Rookie", 30)], ReignNumber = 1,
+                    Won = Day, LastDefended = Day
+                });
+                for (int i = 1; i <= 30; i++)
+                    TitleEconomy.ApplyDailyDrift(title, Day.AddDays(i), chemistry);
+                return title.Standing;
+            }
+
+            double strangers = AfterAMonth(0.0), drilled = AfterAMonth(1.0);
+            output.WriteLine($"  thrown together {strangers:F3}, drilled {drilled:F3}");
+
+            Assert.True(drilled > strangers,
+                "An established team should carry the belt the way it carries the room.");
+        }
+
+        [Fact]
+        public void VacatingAnAlreadyVacantBelt_DoesNotNameSomebodyWhoLostItLongAgo()
+        {
+            // The suffix searched the whole lineage for the last vacated reign, so a belt
+            // vacated a second time reported the *previous* holders as the people being
+            // stripped now.
+            var title = TagBelt("Tag Titles", Day);
+            title.Lineage.Add(new TitleReign
+            {
+                Champions = [W("Ricky"), W("Robert")], ReignNumber = 1, Won = Day.AddDays(-200)
+            });
+
+            TitleEconomy.Vacate(title, Day.AddDays(-100), "Robert is injured");
+            Assert.True(title.IsVacant);
+
+            var second = TitleEconomy.Vacate(title, Day, "Stripped by the promotion");
+
+            output.WriteLine($"  {second.Reason}");
+            Assert.DoesNotContain("Ricky", second.Reason);
+            Assert.Empty(second.OutgoingChampions);
+        }
+
+        [Fact]
+        public void VacatingASinglesBelt_ReadsExactlyAsItAlwaysDid()
+        {
+            // The suffix was appended unconditionally, so a singles vacancy read
+            // "Stripped by the promotion — stripped from Ricky Morton." where it used to
+            // read "Stripped by the promotion". That is a change to singles output, which
+            // this work is not allowed to make.
+            var title = new Title
+            {
+                Name = "World Championship", Tier = TitleTier.World,
+                Established = Day, Standing = 60
+            };
+            title.Lineage.Add(new TitleReign
+            {
+                Champions = [W("Champ")], ReignNumber = 1, Won = Day.AddDays(-100)
+            });
+
+            var update = TitleEconomy.Vacate(title, Day, "Stripped by the promotion");
+
+            Assert.Equal("Stripped by the promotion", update.Reason);
         }
 
         // ── Lineage ──────────────────────────────────────────────────────────
