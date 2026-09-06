@@ -13,6 +13,19 @@ recorded here rather than resolved silently, so the reasoning survives the sessi
 > `[Theory]` *attributes*; the suite actually runs 321 cases because `[Theory]` expands. The
 > plan has been corrected. All figures below are actual test cases.
 
+> **A note on "review" in this file.** Every review referenced below was carried out by an
+> independent agent working from a pinned clone, with its own harnesses, and none of them are
+> recorded in the repository or on the pull requests. So the quotes and measurements
+> attributed to a reviewer are not independently checkable by a later reader — they are my
+> account of what came back. Where a finding matters, the *measurement* has been reproduced
+> in the code or the tests, and that is the part to trust. Flagged because putting words in
+> an unrecorded reviewer's mouth is exactly the kind of unverifiable claim this file exists
+> to stop me making.
+>
+> This note used to sit two-thirds of the way down, immediately above the A5 section, while
+> saying "every review referenced **here**" — with seven review sections already above it. A
+> reader working forward met all seven before being told the reviewer was unrecorded. Moved.
+
 ---
 
 ## Phase 1 — Sides abstraction
@@ -1461,15 +1474,6 @@ corner" in an XML doc — internal, but it is the exact sentence rewritten in `F
 
 **471 tests passing.**
 
-> **A note on "review" in this file.** Every review referenced here was carried out by an
-> independent agent working from a pinned clone, with its own harnesses, and none of them are
-> recorded in the repository or on the pull requests. So the quotes and measurements
-> attributed to a reviewer are not independently checkable by a later reader — they are my
-> account of what came back. Where a finding matters, the *measurement* has been reproduced
-> in the code or the tests, and that is the part to trust. Flagged because putting words in
-> an unrecorded reviewer's mouth is exactly the kind of unverifiable claim this file exists
-> to stop me making.
-
 ## A5 — the crowd reaction vector
 
 The first item from the original gap analysis rather than the tag-match plan, and the one
@@ -1754,11 +1758,21 @@ upside effectively unconstrained: 0.10 and 0.15 both passed the entire suite, so
 value that *disables* the mechanism was caught. Tying them to end points at least makes them
 statements about the design.
 
-```
-n=34,200   p05 0.7458   median 1.0000   p95 1.0523   0.33% at the maximum
-dead 0.7021   typical 1.0000   full 1.0609
-investment moves the score in 96.6% of matches, by up to 3.99 points (0.199★)
-```
+> ~~`n=34,200  p05 0.7458  median 1.0000  p95 1.0523  0.33% at the maximum`~~
+> ~~`investment moves the score in 96.6% of matches, by up to 3.99 points (0.199★)`~~
+>
+> **Superseded, struck here rather than only caveated elsewhere.** These came off the
+> randomised corpus and are one sample, not a measurement — see "Every corpus number in this
+> file was measured on a different corpus each time" below. The reproducible figures are
+> `p05 0.7452  median 0.9998  p95 1.0523  0.33%` and `96.7% of matches, up to 4.04 points
+> (0.202★)`.
+>
+> The line that did *not* move is worth keeping unstruck, because it never came from the
+> corpus at all — it is computed from the constants:
+>
+> ```
+> dead 0.7021   typical 1.0000   full 1.0609
+> ```
 
 `TheInvestmentCurve` also stopped restating the literal `0.7635` and now reads
 `MatchEngine.TypicalInvestment` — it had been a change detector duplicating the constant it
@@ -1806,15 +1820,27 @@ crossover fires on **8 of 37**.
 ### And a claim doc 31 makes that the data half-denies
 
 *"§2's two important crossovers — cheers for a heel, boos for a babyface — are both
-reachable."* Measured: heel→cheered, 8 of 37. Babyface→booed, **0 of 35**, and unreachable —
-`Favour < 0.5` needs disposition below 0.26 and the lowest face on the roster is 0.385.
+reachable."* Measured: heel→cheered, 8 of 37. Babyface→booed, **0 of 35**.
 
-Worse, the only route to it is an *unpopular* babyface, which is uncomfortably close to the
-defect this replaced. A babyface the crowd has **turned on despite a push** is a different
-thing, and the engine has no signal for it: I checked whether appeal-versus-overness could
-serve, and on the shipped roster those two never diverge by more than 0.08. So it is not
-currently measurable and the doc now says so, rather than claiming a reading nothing can
-produce.
+> **Both numbers in the original version of this paragraph were wrong, and both in the
+> flattering direction — this is round 3 finding it.** I wrote that the crossover "needs
+> disposition below 0.26 and the lowest face on the roster is 0.385", making it unreachable
+> by a comfortable 0.125. The threshold is **0.270**, and the lowest face is **Maeve Torrance
+> at 0.285** — 0.385 is Katana Chance, the *fourth*-lowest. The real margin is **0.015**, with
+> three faces inside 0.035 of it. "Unreachable" was doing a lot of work for a gap of fifteen
+> thousandths; the honest statement is that it is reachable and unreached.
+>
+> I also wrote that overness and appeal "never diverge by more than 0.08" on the shipped
+> roster, and that sentence was the entire justification for calling a rejected-push signal
+> unmeasurable. They diverge by up to **0.18** — Zelina Vega, overness 0.580 against appeal
+> 0.760 — and **15 of 76** exceed 0.08. The ingredient I said did not exist is there.
+
+So: the only route the model currently offers is an *unpopular* babyface, which is
+uncomfortably close to the defect this replaced. A babyface the crowd has **turned on despite
+a push** is a different thing and the engine still has no signal for it — but the reason is
+that nothing reads the appeal/overness gap, not that the gap is too small to read. That is a
+missing feature, which is a much more interesting thing to write down than a dead end, and it
+is what doc 31 now says.
 
 ### The smaller corrections
 
@@ -1872,9 +1898,21 @@ entire lives.
 
 ### What that does and does not invalidate
 
-It does not invalidate the tests. Arguably the opposite: a threshold that has held across a
-new random sample on every run since it was written is better evidence than one that has held
-on a single pinned corpus. They were accidentally doing property testing.
+It does not invalidate the tests, and my first draft of this section said something stronger
+— that a threshold holding across a new random sample every run is *better* evidence than one
+holding on a pinned corpus, and that these had been "accidentally doing property testing".
+
+That is flattering and it does not survive the numbers. Across the runs observed, resampling
+moved p05 by 0.0006, the median by ≤0.0003, the moved-share by 0.2pp and the largest movement
+by 0.11 points. The assertions those figures face are `median within ±0.03`, `moved > 50%`
+against an actual 96.7%, `biggest > 2.0` against 4.04, and `at the ceiling < 5%` against
+0.33%. The slack is one to two orders of magnitude larger than the noise in every case — the
+random sample never went anywhere near a threshold. Property testing explores; this wandered.
+
+So the accurate version is narrower: the randomisation cost nothing, and bought nothing
+either. `ATypicalMatchIsUnmoved` in particular is a *calibration* check rather than a
+property, and randomising its seed made its printed output unquotable without making its
+assertion any stronger.
 
 It does not touch the byte-identity work either. That harness uses literal seeds, as does
 every other seeded test in the suite — these five sites were the only randomised ones, and I
@@ -1913,13 +1951,141 @@ that no longer exists.
 | | Was quoted | Reproducible |
 | --- | --- | --- |
 | Matches investment moves | 96.6% | **96.7%** |
-| Largest movement | 4.02 pts (0.201★) | **4.04 pts (0.202★)** |
+| Largest movement | 3.99 pts (0.199★) | **4.04 pts (0.202★)** |
 | p05 / median / p95 | 0.7458 / 1.0000 / 1.0523 | **0.7452 / 0.9998 / 1.0523** |
 | At the maximum factor | 0.33% | **0.33%** |
-| Matches with a sub-floor beat | 225 | **214** |
 | Multiplier: dead / typical / full | 0.7021 / 1.0000 / 1.0609 | **unchanged** — computed from constants, never sampled |
 
 The last row is the one that matters for reading the rest: the numbers that were stable are
 the ones derived from the constants, and the numbers that moved are the ones drawn from the
 corpus. That is exactly the split you would predict, which is mild evidence the diagnosis is
 right rather than a second bug wearing its clothes.
+
+---
+
+## A5 — review round 3
+
+**Not safe to merge**, with two code blockers, five newly-found surviving mutations and five
+corrections to the record. The pattern held for the third round running: the engine survived
+everything thrown at it, and the prose around it did not.
+
+Round 3 also confirmed, independently and more strongly than I had claimed, three things I
+had asserted: the merge with main is *exactly* inert (all six breakdown terms, all five
+reaction components and `FinalScore` byte-identical across 34,200 singles matches and the tag
+structures, not merely "within sampling noise"); `StableSeed` collides within 4 of the
+birthday-paradox expectation on 1.78M matrix cells with all 256 low bytes covered; and the
+64.6%/0.7635 historical figures reproduce on the commit they were measured on.
+
+### The two mechanisms nothing was checking
+
+Both are the same shape as the two blockers round 2 found, which is the part worth noticing:
+a documented mechanism whose **end points** are guarded and whose **magnitude** is not.
+
+**`boredShare` — why a room is absent, not just how absent.** Replacing the entire
+computation with the constant `0.5` passed all 489 tests. Only `0.0` and `1.0` died, and one
+of those died on a tie-break rather than on the mechanism. So the split between silence and
+go-away heat — the thing this feature exists to make — was pinned at its ends and free
+everywhere between.
+
+`TwoAbsentRooms_AreAbsentInDifferentWays` books two rooms that are each substantially absent
+for opposite reasons and asserts the absence is recorded differently:
+
+```
+worn out    absent  6.4, 79% of it go-away heat
+never cared absent 21.4,  0% of it go-away heat
+```
+
+**The neutral branch.** Flipping a beat where nothing happens from Tension to Silence changed
+1.84% of all beats and passed everything.
+
+The first version of this test did not catch it either, and that is the more useful half of
+the story. It asserted on `ResolvedReaction` — but the label comes from a separate `Dominant(...)`
+argument list, so moving the *recorded* component left the *reported* one still saying
+Tension. A test written specifically for this mutation walked straight past it. What a beat
+is labelled and what it puts in the vector are two claims, and the rewritten test asserts
+both: each leg independently kills its own half.
+
+### `InvestmentUpside` was still unconstrained, and the comment saying otherwise was mine
+
+Round 2's finding was that the constant was fitted to the suite. My fix derived it from an end
+point and I wrote that this "at least makes them statements about the design". Round 3
+measured what that actually constrained: **0.02 and 0.20 both passed the full suite**, an
+admitted band of roughly 0.002 to 0.21 around a shipped 0.13. The fix widened the tested range
+rather than narrowing it, because deriving a number from an end point does not test the end
+point — the end point is a comment.
+
+The guard was `1 - dead > (full - 1) * 3`. A one-sided bound on a ratio is not a bound on the
+thing in the denominator. It is now two-sided:
+
+```csharp
+double asymmetry = (1.0 - dead) / (full - 1.0);   // 4.89× as shipped
+Assert.True(asymmetry > 4.0 && asymmetry < 6.0);
+```
+
+which admits `InvestmentUpside ∈ [0.106, 0.159]` and kills both 0.20 and 0.05. Stated in the
+test as what it is: doc 16 §2.1 argues for the direction and for it being large, and
+*roughly five times* is my editorial call, written down so the next person can disagree with
+a number rather than with a vibe.
+
+Round 3 also pointed out that `Assert.Equal(1.0, typical, 3)` on the line above is now a
+tautology — `InvestmentFactor(TypicalInvestment) ≡ 1.0` by construction for any constants —
+and that removing the duplicated literal, which I recorded as pure gain, also removed the only
+thing in that test pinning `TypicalInvestment`. It does not need to be pinned there; the
+corpus test does it. But an assertion quietly becoming unfalsifiable is worth saying out loud,
+and the test now says it.
+
+### A tie went to the loudest reading, in the code whose comment says it does not
+
+`CrowdReaction.Dominant` documents "Silence is the honest default", and the `IsEmpty` guard
+was written for exactly that reason. Round 3 found `>` → `>=` survived. Writing the test to
+kill it turned up something better: **on a genuine tie the shipped code returned `Pop`.**
+
+Forty parts cheering and forty parts silence was reported as a pop. The `IsEmpty` guard fixed
+the all-zero case and left every other tie resolving to whatever was listed first, which was
+still the most flattering component in the vocabulary — the exact defect the guard was added
+to remove, one case over.
+
+The list is now ordered nothing → they left → held breath → booing → cheering, searched with
+a strict `>`, so every tie goes to the quieter reading. Exact ties essentially do not occur in
+a real match, so this changes no rating; "Silence is the honest default" is either the rule or
+it is not.
+
+### Gimmick appeal was decorative
+
+`Disposition = (popNorm + appealNorm) / 2` → `popNorm` passed all 489 tests: the appeal
+ratings on every gimmick in the game reached the crowd model through nothing that was
+checked. `TwoEquallyBigHeels_DrawDifferentNoise_IfOneHasAGimmickPeopleLike` books the same
+overness with appeal 0.15 and 0.95 and measures the pop/heat split: **69.0% heat versus
+39.4%.**
+
+This connects to the false claim corrected above. I had written that overness and appeal
+"never diverge by more than 0.08", which — had it been true — would have made this mutation
+nearly harmless. They diverge by up to 0.18 on 15 of 76. The bad measurement and the missing
+test were about the same quantity, and each was hiding the other.
+
+### The record
+
+Five corrections, all mine, all in the flattering direction:
+
+| Claim | Actual |
+| --- | --- |
+| "needs disposition below 0.26, lowest face is 0.385" | threshold **0.270**, lowest face **0.285**; 0.385 is the fourth-lowest |
+| "appeal and overness never diverge by more than 0.08" | up to **0.18**, on **15 of 76** |
+| "superseded claims are recorded, struck, in the build log" | there were **zero** strikethroughs in the file |
+| correction table's "was quoted" column: 4.02 pts, 225 sub-floor | the file quoted **3.99 pts**; **225 appears nowhere** |
+| doc 31 updated to match | it was **not** — it still carried the crossover claim, the pre-round-2 69%/5.9% constants ten lines above the corrected 70.2%/6.1%, and the superseded corpus figures |
+
+All five are fixed: doc 31 now carries the measured crossover counts and the margin of 0.015,
+the superseded block is struck in place, and the "was quoted" column says what was actually
+quoted.
+
+One more, from the merge commit: it says the build-log conflict was resolved with "main's
+section first so the running test counts ascend". They do not — the file runs 467 → 471 → 471
+→ **429** → 436 → 487 → 489, dropping 42 at the A5 heading, because the A5 section was written
+before four other PRs merged. Nothing was lost from either side of the conflict (round 3 diffed
+line sets against both parents: zero lines missing from either), but the reason I gave for the
+ordering was not a reason. Left as it is, since re-ordering a chronological log to make a
+counter monotonic would be worse, and recorded here instead.
+
+**498 tests passing.** Seven mutations killed that previously survived, including both halves
+of the neutral branch independently.

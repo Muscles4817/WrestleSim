@@ -327,17 +327,43 @@ namespace WrestlingSim.Tests
 
             output.WriteLine($"  dead {dead:F4}   typical {typical:F4}   full {full:F4}");
 
+            // Continuity at the join, not a constraint on TypicalInvestment. Worth being
+            // explicit that this assertion cannot fail for *any* T, D or U: the two slopes
+            // are written to meet at 1.0 by construction, so it checks the piecewise
+            // function is continuous and nothing else. Review pointed out that removing
+            // the old literal from this line — which was a duplicate change detector on
+            // the constant — also removed the only thing here that pinned T. It does not
+            // need to: `ATypicalMatchIsUnmoved` pins T against the corpus, which is where
+            // that claim belongs. This line should not be read as a second opinion.
             Assert.Equal(1.0, typical, 3);
+
             Assert.True(dead < 0.75, $"A room that never turned up should cost real value, got {dead:F3}");
             Assert.True(dead > 0.55, "…but never the whole crowd component.");
             Assert.True(full > 1.0 && full < 1.10,
                 $"Being present all night is the baseline, not a bonanza, got {full:F3}");
 
-            // Doc 16 §2.1: promotions over-fear boos and under-fear silence. So the
-            // downside has to be materially steeper than the upside, and this is where
-            // that is actually checked rather than asserted in a comment.
-            Assert.True(1.0 - dead > (full - 1.0) * 3,
-                "Silence should cost far more than engagement pays.");
+            // **Doc 16 §2.1 as an arithmetic claim: silence costs roughly five times what
+            // enthusiasm pays.** Both bounds, not one.
+            //
+            // The previous version of this test asserted only `> 3`, and review measured
+            // what that actually constrained: `InvestmentUpside` could be set anywhere
+            // from 0.002 to 0.21 — two orders of magnitude around a shipped 0.13 — with
+            // the entire suite green. A one-sided bound on a ratio is not a bound on the
+            // thing in the denominator. The comment above it claimed the asymmetry was
+            // "the design and not a tuning convenience"; nothing tested that it was any
+            // particular asymmetry.
+            //
+            // Stating the band honestly: 4–6 admits InvestmentUpside ∈ [0.106, 0.159] at
+            // the current downside, so 0.20 and 0.05 both fail and the shipped 0.13 sits
+            // near the middle. That is a genuine editorial decision about how much worse
+            // silence is than indifference is good — doc 16 §2.1 argues for the direction
+            // and for it being large; five-ish is mine. If a later reading of §2 says
+            // three or eight, change this and the constant together, and say why.
+            double asymmetry = (1.0 - dead) / (full - 1.0);
+            output.WriteLine($"  silence costs {asymmetry:F2}× what enthusiasm pays");
+            Assert.True(asymmetry > 4.0 && asymmetry < 6.0,
+                $"Silence should cost four to six times what enthusiasm pays, got {asymmetry:F2}× — " +
+                "either InvestmentUpside or InvestmentDownside has moved away from doc 16 §2.1.");
 
             // Monotone, with no flat region — the old version clamped, and review measured
             // 64.6% of all shipped-roster matches sitting against the upper bound and
@@ -726,5 +752,241 @@ namespace WrestlingSim.Tests
         // `Enum.IsDefined(ResolvedReaction)` — both unfalsifiable by construction. A new
         // test had been added *alongside* it. `ABeatThatMovesNobody…` above is the real
         // guard for the same property, and it dies when the floor is removed.
+        // ── The mechanisms review found unguarded ────────────────────────────
+
+        /// <summary>
+        /// **Why a room is absent, not just how absent it is.**
+        ///
+        /// `boredShare` splits the missing half of a beat between go-away heat and silence
+        /// on the ratio of two causes: a room worn out by repetition entertains itself, a
+        /// room that never cared is simply quiet. Review replaced that whole computation
+        /// with the constant 0.5 and the entire suite stayed green — only the end points
+        /// were guarded (0.0 died on "go-away heat exists", 1.0 died on a tie-break), so
+        /// the *magnitude* of a documented mechanism was checked by nothing.
+        ///
+        /// Two rooms, each substantially absent, for opposite reasons. What has to differ
+        /// is which way the absence is recorded.
+        /// </summary>
+        [Fact]
+        public void TwoAbsentRooms_AreAbsentInDifferentWays()
+        {
+            // Worn out: people the crowd knows well, shown the same thing six times.
+            var wornOut = new MatchEngine(Seed).Execute(new MatchPlanModel
+            {
+                WrestlerA = W("Star A", overness: 92, charisma: 4.8, skill: 4.2),
+                WrestlerB = W("Star B", overness: 90, charisma: 4.6, skill: 4.2),
+                Beats = Repeated(BeatType.HeatSegment, 6)
+            });
+
+            // Never cared: nobody has any idea who these two are, and the booking is fine.
+            var neverCared = new MatchEngine(Seed).Execute(new MatchPlanModel
+            {
+                WrestlerA = W("Nobody A", overness: 12, charisma: 0.6, skill: 2.0),
+                WrestlerB = W("Nobody B", overness: 12, charisma: 0.6, skill: 2.0),
+                Beats = Varied()
+            });
+
+            double WornShare(MatchEngineResult r) =>
+                r.Reaction.Disengagement <= 0 ? 0 : r.Reaction.GoAwayHeat / r.Reaction.Disengagement;
+
+            double worn = WornShare(wornOut), cold = WornShare(neverCared);
+            output.WriteLine($"  worn out    absent {wornOut.Reaction.Disengagement:F1}, " +
+                             $"{worn:P0} of it go-away heat");
+            output.WriteLine($"  never cared absent {neverCared.Reaction.Disengagement:F1}, " +
+                             $"{cold:P0} of it go-away heat");
+
+            // Both rooms are genuinely absent — otherwise this compares nothing.
+            Assert.True(wornOut.Reaction.Disengagement > 5,
+                "The worn-out room should have real disengagement to split.");
+            Assert.True(neverCared.Reaction.Disengagement > 5,
+                "The cold room should have real disengagement to split.");
+
+            Assert.True(worn > 0.5,
+                $"A crowd bored by repetition entertains itself, so most of its absence should " +
+                $"be go-away heat — got {worn:P0}.");
+            Assert.True(cold < 0.25,
+                $"A crowd that never cared is quiet, not loud — go-away heat should be a small " +
+                $"share of its absence, got {cold:P0}.");
+            Assert.True(worn - cold > 0.4,
+                $"The two kinds of absent should be told apart clearly, not by a hair: " +
+                $"{worn:P0} vs {cold:P0}.");
+        }
+
+        /// <summary>
+        /// **A beat where nothing happens is a held breath, not an empty building** — for a
+        /// room that is there. This is the distinction A5 exists for, and review found it
+        /// unguarded: flipping the neutral branch from Tension to Silence changed 3,979 of
+        /// 216,600 beats and passed all 489 tests, because the median tolerance absorbed it.
+        ///
+        /// Two legs, because the first version of this test had one and it was the wrong
+        /// one. It asserted on `ResolvedReaction`, which is computed from a separate
+        /// `Dominant(...)` argument list — so moving the *recorded* component from Tension
+        /// to Silence left the reported label saying Tension, and the mutation walked
+        /// straight through a test written specifically to catch it. What a beat is
+        /// labelled and what it put in the vector are two claims and both need asserting.
+        /// </summary>
+        [Fact]
+        public void ABeatWhereNothingHappens_ReadsAsHeldBreath_ForARoomThatIsThere()
+        {
+            var a = W("Star A", overness: 94, charisma: 4.9, skill: 4.5);
+            var b = W("Star B", overness: 92, charisma: 4.7, skill: 4.5);
+
+            // SlowOpening is the neutral beat: its crowd delta is Rng(-2, 4), so it lands
+            // inside the ±0.5 dead band often. Sweep seeds to find those beats rather than
+            // pinning one lucky seed. The finish is the only other beat and its delta is
+            // positive, so nothing else in this plan can contribute Tension.
+            int neutral = 0, labelledTension = 0, recordedTension = 0;
+            for (int seed = 0; seed < 400 && neutral < 25; seed++)
+            {
+                var r = new MatchEngine(seed).Execute(new MatchPlanModel
+                {
+                    WrestlerA = a, WrestlerB = b,
+                    Beats =
+                    [
+                        new MatchBeat { Type = BeatType.SlowOpening,  Control = BeatControl.Even },
+                        new MatchBeat { Type = BeatType.FinishClean,  Control = BeatControl.WrestlerA }
+                    ]
+                });
+
+                var beat = r.BeatResults.FirstOrDefault(x => Math.Abs(x.CrowdEnergyDelta) <= 0.5);
+                if (beat is null) continue;
+
+                neutral++;
+                if (beat.ResolvedReaction == ReactionKind.Tension) labelledTension++;
+                if (r.Reaction.Tension > 0) recordedTension++;
+            }
+
+            output.WriteLine($"  {neutral} neutral beats across the seed sweep");
+            output.WriteLine($"  labelled Tension: {labelledTension}/{neutral}");
+            output.WriteLine($"  recorded Tension in the vector: {recordedTension}/{neutral}");
+
+            Assert.True(neutral >= 5,
+                $"Only {neutral} neutral beats — this test is not reaching the branch it is about.");
+
+            // Leg 1: the beat is *labelled* a held breath.
+            Assert.Equal(neutral, labelledTension);
+
+            // Leg 2: and the vector actually got Tension, not Silence. Nothing else in this
+            // two-beat plan records Tension, so this is zero if the neutral branch stops
+            // doing it.
+            Assert.Equal(neutral, recordedTension);
+        }
+
+        /// <summary>
+        /// The label boundaries, checked where they actually sit rather than where the
+        /// shipped roster happens to land. Review moved the bottom boundary from 0.35 to
+        /// 0.45 — relabelling an entire band — and nothing failed, because the only test
+        /// on labels asserts three rooms get three *distinct* notes and the midcard room
+        /// sits at 0.46, a hair above the moved line.
+        /// </summary>
+        [Theory]
+        [InlineData(0.20, "The room never turned up")]
+        [InlineData(0.34, "The room never turned up")]
+        [InlineData(0.36, "Patchy — the crowd came and went")]
+        [InlineData(0.40, "Patchy — the crowd came and went")]
+        [InlineData(0.54, "Patchy — the crowd came and went")]
+        public void TheLabelBoundaries_AreWhereTheyAreDocumented(double investment, string expected)
+        {
+            // Investment is Engagement / (Engagement + Disengagement), so a target reading
+            // is built directly rather than searched for in the roster.
+            var reaction = new CrowdReaction();
+            reaction.Add(ReactionKind.Pop, investment * 100);
+            reaction.Add(ReactionKind.Silence, (1 - investment) * 100);
+
+            output.WriteLine($"  investment {reaction.Investment:F3} → \"{reaction.Label}\"");
+            Assert.Equal(expected, reaction.Label);
+        }
+
+        /// <summary>
+        /// "Silence is the honest default" — the documented tie-break, which review found
+        /// reversible with `&gt;` → `&gt;=` and no test noticing. The `IsEmpty` guard covers
+        /// the all-zero case; this covers the tie that is not empty.
+        /// </summary>
+        [Fact]
+        public void WithNothingToSeparateThem_TheQuieterReadingWins()
+        {
+            var tied = new CrowdReaction();
+            tied.Add(ReactionKind.Pop, 40);
+            tied.Add(ReactionKind.Silence, 40);
+
+            output.WriteLine($"  {tied}  →  {tied.Dominant}");
+            Assert.Equal(ReactionKind.Silence, tied.Dominant);
+
+            // And the same tie inside Label's bottom band, which has its own `>=`.
+            var quiet = new CrowdReaction();
+            quiet.Add(ReactionKind.Pop, 20);
+            quiet.Add(ReactionKind.Silence, 40);
+            quiet.Add(ReactionKind.GoAwayHeat, 40);
+            Assert.Equal("The room never turned up", quiet.Label);
+        }
+
+        /// <summary>
+        /// **A gimmick the audience likes is not the same thing as a big name.**
+        ///
+        /// `Disposition` averages normalised overness with the gimmick's average appeal
+        /// rating, and it is what drives `Favour` and therefore the pop/heat split. Review
+        /// deleted the appeal half — `(popNorm + appealNorm) / 2` → `popNorm` — and all 489
+        /// tests passed, which means the appeal ratings on every gimmick in the game were
+        /// decorative as far as the crowd was concerned.
+        ///
+        /// It also showed why: the build log claimed overness and appeal "never diverge by
+        /// more than 0.08" on the shipped roster. They reach 0.18, on 15 of 76.
+        /// </summary>
+        [Fact]
+        public void TwoEquallyBigHeels_DrawDifferentNoise_IfOneHasAGimmickPeopleLike()
+        {
+            Wrestler Heel(string name, double appeal)
+            {
+                var w = TestRoster.Make(name, overness: 80, charisma: 4.0, skill: 4.0);
+                w.Gimmick!.NaturalAlignment = Alignment.Heel;
+                w.Gimmick.AppealRatings =
+                [
+                    new FanGroupAppeal { Group = "Casual",   AppealScore = appeal },
+                    new FanGroupAppeal { Group = "Hardcore", AppealScore = appeal }
+                ];
+                return w;
+            }
+
+            var foil = W("Babyface", overness: 80, charisma: 4.0, skill: 4.0);
+
+            var hated  = Run(Heel("Hated Heel", 0.15), foil, "TV Formula");
+            var adored = Run(Heel("Cool Heel", 0.95), foil, "TV Formula");
+
+            double HeatShare(MatchEngineResult r) =>
+                r.Reaction.Heat / Math.Max(1e-9, r.Reaction.Pop + r.Reaction.Heat);
+
+            output.WriteLine($"  low-appeal heel  {hated.Reaction}");
+            output.WriteLine($"  high-appeal heel {adored.Reaction}");
+            output.WriteLine($"  heat share {HeatShare(hated):P1} vs {HeatShare(adored):P1}");
+
+            Assert.True(HeatShare(hated) > HeatShare(adored) + 0.02,
+                "The same overness with a gimmick people enjoy should draw proportionally more " +
+                $"cheering and less booing — got {HeatShare(hated):P1} vs {HeatShare(adored):P1}. " +
+                "If these are equal, appeal ratings are not reaching the crowd model.");
+        }
+
+        // ── Builders ─────────────────────────────────────────────────────────
+
+        private static List<MatchBeat> Repeated(BeatType type, int count)
+        {
+            var beats = new List<MatchBeat>
+            {
+                new() { Type = BeatType.HotOpening, Control = BeatControl.Even }
+            };
+            for (int i = 0; i < count; i++)
+                beats.Add(new MatchBeat { Type = type, Control = BeatControl.WrestlerB });
+            beats.Add(new MatchBeat { Type = BeatType.FinishClean, Control = BeatControl.WrestlerA });
+            return beats;
+        }
+
+        private static List<MatchBeat> Varied() =>
+        [
+            new MatchBeat { Type = BeatType.HotOpening,  Control = BeatControl.Even },
+            new MatchBeat { Type = BeatType.HeatSegment, Control = BeatControl.WrestlerB },
+            new MatchBeat { Type = BeatType.NearFall,    Control = BeatControl.WrestlerB },
+            new MatchBeat { Type = BeatType.Comeback,    Control = BeatControl.WrestlerA },
+            new MatchBeat { Type = BeatType.FinishClean, Control = BeatControl.WrestlerA }
+        ];
+
     }
 }

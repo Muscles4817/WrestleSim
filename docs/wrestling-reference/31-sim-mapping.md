@@ -112,19 +112,35 @@ What it covers:
   audience holding its breath and one that has stopped caring — were a single negative
   number. The denied tag reads as tension; an overworked heat reads as go-away heat.
 - **Silence is the failure state**, per §2.1. The crowd component is scaled by `Investment`
-  on an asymmetric curve — a dead room keeps 69% of it, a room present all night gains 5.9%.
-  An invested crowd is the baseline a match is supposed to earn; being ignored is what costs.
+  on an asymmetric curve — a dead room keeps 70.2% of it, a room present all night gains
+  6.1%. An invested crowd is the baseline a match is supposed to earn; being ignored is what
+  costs.
 - **Booking, not just casting.** Repetition feeds investment continuously, so a beat the
   crowd has already seen three times costs their attention however over the wrestlers are.
 - **Heat means alignment, not unpopularity.** A heel draws heat and a babyface draws pop at
-  the same overness, and §2's two important crossovers — cheers for a heel, boos for a
-  babyface — are both reachable.
+  the same overness. Of §2's two important crossovers, one is live and one is not: **8 of 37
+  shipped heels** read as cheered, and **0 of 35 babyfaces** read as booed. The babyface
+  crossover needs `Disposition` below **0.270** and the lowest face on the roster is **0.285**
+  (Maeve Torrance) — so it is reachable in the model by a margin of 0.015, and unreached by
+  anybody actually shipped. Three faces sit within 0.035 of it.
+
+  It is also the *wrong* route to it. What the model can express is an unpopular babyface,
+  which is close to the defect this replaced; what §2 means is a babyface the crowd has
+  **turned on despite a push**, and there is no signal for that yet. Overness-versus-appeal
+  is the obvious candidate and does diverge — up to **0.18**, on **15 of 76** — so the
+  ingredient exists even though nothing reads it. Not measurable today; not unmeasurable in
+  principle.
 
 Measured on the **shipped 76-wrestler roster** (n = 34,200 — every non-feud-gated singles
-structure × every ordered pair): investment moves the score in **96.6%** of matches, by up to
-**3.99 points (0.199★)**. The median match comes out at exactly ×1.000, a dead room keeps
-70.2% of its crowd component and a room present all night gains 6.1%, and only 0.33% sit at
-the maximum. The effect really is in the tails.
+structure × every ordered pair): investment moves the score in **96.7%** of matches, by up to
+**4.04 points (0.202★)**. The median match comes out at ×0.9998, a dead room keeps 70.2% of
+its crowd component and a room present all night gains 6.1%, and only 0.33% sit at the
+maximum. The effect really is in the tails.
+
+> These figures replace an earlier set (96.6%, 3.99 points, "exactly ×1.000") which was not
+> reproducible: the corpus test seeded each cell with `HashCode.Combine`, which .NET randomises
+> per process, so every run measured a different sample. The numbers above are from the fixed
+> corpus and reproduce exactly. See the build log for the whole of it.
 
 Still open from the original entry: `nuclear heat` as distinct from ordinary heat, and
 reaction as an input to the *business* result rather than only the quality rating (C5).

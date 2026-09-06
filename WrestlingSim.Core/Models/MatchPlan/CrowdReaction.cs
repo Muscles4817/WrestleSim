@@ -72,6 +72,16 @@ namespace WrestlingSim.Models.MatchPlan
         /// possible reading, and `MatchEngineResult.Reaction` defaults to `new()`, meaning
         /// any result not produced by the engine said so. Silence is the honest default:
         /// nothing was recorded, so nothing happened.
+        ///
+        /// **Ties resolve the same way, which they did not until a test asked.** The
+        /// `IsEmpty` guard fixed the all-zero case and left every other tie resolving to
+        /// whichever component happened to be listed first — which was still Pop. A room
+        /// recorded as forty parts cheering and forty parts silence was reported as a pop.
+        /// So the list is ordered from the most pessimistic reading to the most flattering
+        /// and searched with a strict `&gt;`: a tie goes to the quieter of the two, all the
+        /// way up. Exact ties are vanishingly rare in a real match, so this is about the
+        /// property being true rather than about any match's rating — but "Silence is the
+        /// honest default" is either the rule or it is not.
         /// </summary>
         public ReactionKind Dominant
         {
@@ -79,13 +89,16 @@ namespace WrestlingSim.Models.MatchPlan
             {
                 if (IsEmpty) return ReactionKind.Silence;
 
+                // Ordered quietest-and-worst first, so a strict `>` sends every tie to the
+                // less flattering reading: nothing < they left < held breath < booing <
+                // cheering.
                 var pairs = new (ReactionKind Kind, double Value)[]
                 {
-                    (ReactionKind.Pop, Pop),
-                    (ReactionKind.Heat, Heat),
-                    (ReactionKind.Tension, Tension),
                     (ReactionKind.Silence, Silence),
-                    (ReactionKind.GoAwayHeat, GoAwayHeat)
+                    (ReactionKind.GoAwayHeat, GoAwayHeat),
+                    (ReactionKind.Tension, Tension),
+                    (ReactionKind.Heat, Heat),
+                    (ReactionKind.Pop, Pop)
                 };
 
                 var best = pairs[0];
