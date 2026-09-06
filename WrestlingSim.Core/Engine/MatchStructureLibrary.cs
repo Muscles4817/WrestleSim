@@ -179,7 +179,7 @@ namespace WrestlingSim.Engine
                     Beat("Near Tag",                  BeatControl.WrestlerB),
                     Beat("Hot Tag",                   BeatControl.WrestlerA),
                     Beat("Double Team",               BeatControl.WrestlerA),
-                    Beat("All Four In",               BeatControl.Even),
+                    Beat("Everybody In",              BeatControl.Even),
                     Beat("Shock Kickout",             BeatControl.WrestlerB),
                     Beat("Save",                      BeatControl.WrestlerA),
                     Beat("Clean Victory",             BeatControl.WrestlerA),
@@ -222,6 +222,59 @@ namespace WrestlingSim.Engine
                     Beat("Blind Tag",         BeatControl.WrestlerA),
                     Beat("Counter Roll-Up",   BeatControl.WrestlerA),
                     Beat("Roll-Up Steal",     BeatControl.WrestlerA),
+                ]
+            },
+
+            // ── Trios ────────────────────────────────────────────────────────
+            //
+            // Three a side is still two sides, so the face-in-peril structure applies
+            // unchanged — docs/wrestling-reference/18-match-craft.md §2.5. What a third man
+            // buys is a longer heat that stays legal: with two partners to cut off, the
+            // isolation can run longer before it reads as padding, and there are two
+            // corners to deny before the tag finally comes.
+
+            new MatchStructure
+            {
+                Name        = "Lucha Trios",
+                Description = "The Arena México default. Constant motion, quick tags and tandem " +
+                              "offence from both sides, then a dive sequence and a fall out of nowhere.",
+                Tags        = ["Trios", "Fast", "Lucha"],
+                SideSize    = 3,
+                Beats       =
+                [
+                    Beat("Hot Start",                 BeatControl.Even),
+                    Beat("Shine",                     BeatControl.WrestlerA),
+                    Beat("Double Team",               BeatControl.WrestlerB),
+                    Beat("Quick Tag",                 BeatControl.WrestlerA),
+                    Beat("Aerial Assault",            BeatControl.WrestlerA),
+                    Beat("Everybody In",              BeatControl.Even),
+                    Beat("Jaw-Dropper",               BeatControl.WrestlerA),
+                    Beat("Shock Kickout",             BeatControl.WrestlerB),
+                    Beat("Clean Victory",             BeatControl.WrestlerA),
+                ]
+            },
+
+            new MatchStructure
+            {
+                Name        = "Six-Man War",
+                Description = "The full formula with a third man on each side. A longer heat than a " +
+                              "tag can carry — two corners to keep him from, two tags to deny.",
+                Tags        = ["Trios", "Classic", "Crowd"],
+                SideSize    = 3,
+                Beats       =
+                [
+                    Beat("Standard Collar-and-Elbow", BeatControl.Even),
+                    Beat("Shine",                     BeatControl.WrestlerA),
+                    Beat("Cut-Off",                   BeatControl.WrestlerB),
+                    Beat("Face in Peril",             BeatControl.WrestlerB),
+                    Beat("Near Tag",                  BeatControl.WrestlerB),
+                    Beat("Face in Peril",             BeatControl.WrestlerB),
+                    Beat("Near Tag",                  BeatControl.WrestlerB),
+                    Beat("Hot Tag",                   BeatControl.WrestlerA),
+                    Beat("Double Team",               BeatControl.WrestlerA),
+                    Beat("Everybody In",              BeatControl.Even),
+                    Beat("Save",                      BeatControl.WrestlerB),
+                    Beat("Clean Victory",             BeatControl.WrestlerA),
                 ]
             },
         };

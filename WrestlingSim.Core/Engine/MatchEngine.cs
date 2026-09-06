@@ -1314,9 +1314,7 @@ namespace WrestlingSim.Engine
 
             ctx.State.RecordNearTag(ctx.IsSideA(other));
 
-            string partner = deniedSide.Members.Count > 1
-                ? deniedSide.PartnersOf(other).First().RingName
-                : "the corner";
+            string partner = NameCorner(deniedSide, other);
 
             r.Commentary.Add(Pick(
                 $"{other.RingName} reaches — and {control.RingName} drags him back! {partner} is beside himself on the apron!",
@@ -1543,6 +1541,7 @@ namespace WrestlingSim.Engine
                 ? side.PartnersOf(control).First().RingName
                 : other.RingName;
 
+
             r.Commentary.Add(Pick(
                 $"Disaster! {control.RingName} takes out {partner} by mistake — and the two of them are jawing at each other!",
                 $"{control.RingName} and {partner} collide! There is trouble in that corner.",
@@ -1601,8 +1600,10 @@ namespace WrestlingSim.Engine
             r.TechnicalContribution    = 2.5 * iMod * dMod * ctx.Pair(p => p.Workrate);
             r.StorytellingContribution = 4.0 * iMod * dMod;
 
+            int inTheRing = ctx.Plan.SideA.Size + ctx.Plan.SideB.Size;
+
             r.Commentary.Add(Pick(
-                $"All four of them are in the ring now and the referee has completely lost control!",
+                $"All {Spell(inTheRing)} of them are in the ring now and the referee has completely lost control!",
                 $"It has broken down! {ctx.Plan.SideA.Name} and {ctx.Plan.SideB.Name} are swinging at each other everywhere!",
                 $"Bodies everywhere — the referee is just counting and hoping at this point!"
             ));
@@ -1901,6 +1902,26 @@ namespace WrestlingSim.Engine
         /// </summary>
         private double AvgRingSkill(Ctx ctx) =>
             ctx.LegalPairStat(w => w.RingSkills.GetOverallSkill());
+
+        /// <summary>
+        /// How the commentary refers to a side's corner. One partner is a name; two or more
+        /// is "his corner", because naming one of them and ignoring the other reads as an
+        /// error rather than as shorthand.
+        /// </summary>
+        private static string NameCorner(MatchSide side, Wrestler w) => side.Members.Count switch
+        {
+            <= 1 => "the corner",
+            2    => side.PartnersOf(w).First().RingName,
+            _    => "his corner"
+        };
+
+        /// <summary>Small numbers read better as words in commentary.</summary>
+        private static string Spell(int n) => n switch
+        {
+            2 => "two", 3 => "three", 4 => "four", 5 => "five",
+            6 => "six", 7 => "seven", 8 => "eight",
+            _ => n.ToString()
+        };
 
         private double Rng(double min, double max) =>
             min + _rand.NextDouble() * (max - min);

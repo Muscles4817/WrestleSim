@@ -665,3 +665,41 @@ nothing. That is consistent with doc 21 §4.1 and defensible — the champion di
 it is now a deliberate decision rather than an accident of there being no tag matches.
 
 **418 tests passing.**
+
+---
+
+## Follow-up — trios
+
+Three a side. The striking thing is how little of this was engine work: **a 3v3 plan validated
+and executed correctly before a line of trios code was written**, because three a side is
+still two sides and the sides abstraction never had a cap in it. A probe on the phase 5 tree:
+
+```
+PROBE validate errors: none
+PROBE ran: ★★★ (2.97 / 5.00), pinner=A3, side=3
+```
+
+The tag rotation was already `(current + 1) % memberCount`, `IncomingIndex` already let a
+booker name which of two partners comes in, `SideAvg` and `TopWeighted` were already
+count-agnostic, `ForSides` already distributed to N partners, `FeudBook.Key` already keyed N
+members, `Title.SideSize` already generalised, and save v3 already stored side member lists.
+
+So this is not "add trios". It is **finding everything that had quietly assumed a side has at
+most two people** — which is the same shape of job as the tag-titles follow-up, and was found
+the same way.
+
+| What assumed two | Fix |
+|---|---|
+| `ApplyAllFourBrawl`'s commentary said "All four of them are in the ring" — wrong the moment six are. | Counts the people actually in there. The `BeatType` member keeps the name `AllFourBrawl`, because that string is what gets written into save files and renaming it would orphan every card already on disk; the display name and the commentary are what changed. |
+| `ApplyNearTag` named `PartnersOf(other).First()` — silently one of two, which reads as a mistake rather than as shorthand. | `NameCorner` — a name when there is one partner, "his corner" when there are more. |
+| The web builder had a singles/tag **boolean**, two hardcoded partner panels and two hardcoded team panels. | A side-size selector and a generated slot loop. Adding a fourth man later is now a number, not more markup. |
+| The console flow asked `AskTag()` and picked partners with three positional exclusions. | `AskSideSize()` and `PickSide`, which picks a whole side of any size and excludes everybody already booked. |
+| No structures to book. | `Lucha Trios` (the Arena México default — fast, tandem, a fall out of nowhere) and `Six-Man War` (the full formula, which a third man makes *longer* rather than different: two corners to keep him from, two tags to deny). |
+
+Doc 18 §2.5 was written first, and it is what settles the design question this raises. A long
+heat is good and the hope spots are what make it bearable, so a third man is not a reason to
+change the formula — it is a reason the formula can run longer. `Six-Man War` books two
+isolations and two denied tags where `Southern Tag` books two and two, and rates above the
+lucha sprint for the same reason the Southern Tag rates above the tag sprint.
+
+**432 tests passing** (14 new). Singles equivalence still byte-identical.

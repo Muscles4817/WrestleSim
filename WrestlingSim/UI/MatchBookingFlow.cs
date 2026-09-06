@@ -49,36 +49,24 @@ namespace WrestlingSim.UI
         /// </summary>
         public static BookedMatch? BuildMatch(List<Wrestler> wrestlers, FeudBook feudBook)
         {
-            bool isTag = AskTag();
+            int sideSize = AskSideSize();
 
-            var a = SelectWrestler(isTag ? "TEAM A — WHO STARTS" : "WRESTLER A", wrestlers);
-            if (a == null) return null;
+            var chosen = new List<Wrestler>();
 
-            Wrestler? partnerA = null;
-            if (isTag)
-            {
-                partnerA = SelectWrestler("TEAM A — PARTNER", wrestlers, exclude: a);
-                if (partnerA == null) return null;
-            }
+            var membersA = PickSide("SIDE A", sideSize, wrestlers, chosen);
+            if (membersA == null) return null;
 
-            var b = SelectWrestler(isTag ? "TEAM B — WHO STARTS" : "WRESTLER B", wrestlers,
-                                   exclude: a, exclude2: partnerA);
-            if (b == null) return null;
+            var membersB = PickSide("SIDE B", sideSize, wrestlers, chosen);
+            if (membersB == null) return null;
 
-            Wrestler? partnerB = null;
-            if (isTag)
-            {
-                partnerB = SelectWrestler("TEAM B — PARTNER", wrestlers,
-                                          exclude: a, exclude2: partnerA, exclude3: b);
-                if (partnerB == null) return null;
-            }
-
-            var sideA = partnerA is null ? MatchSide.Of(a) : MatchSide.Of(a, partnerA);
-            var sideB = partnerB is null ? MatchSide.Of(b) : MatchSide.Of(b, partnerB);
+            var sideA = MatchSide.Of(membersA.ToArray());
+            var sideB = MatchSide.Of(membersB.ToArray());
+            var a = sideA.Starter;
+            var b = sideB.Starter;
 
             var matchType = SelectMatchType();
             var feud      = ResolveFeud(a, b, feudBook);
-            var (beats, structureName) = SelectStructure(feud, isTag ? 2 : 1);
+            var (beats, structureName) = SelectStructure(feud, sideSize);
 
             while (true)
             {
@@ -107,10 +95,10 @@ namespace WrestlingSim.UI
         // ── Wrestler selection ───────────────────────────────────────────────
 
         private static Wrestler? SelectWrestler(
-            string label, List<Wrestler> wrestlers,
-            Wrestler? exclude = null, Wrestler? exclude2 = null, Wrestler? exclude3 = null)
+            string label, List<Wrestler> wrestlers, IEnumerable<Wrestler>? exclude = null)
         {
-            var pool = wrestlers.Where(w => w != exclude && w != exclude2 && w != exclude3).ToList();
+            var barred = exclude?.ToHashSet() ?? new HashSet<Wrestler>();
+            var pool = wrestlers.Where(w => !barred.Contains(w)).ToList();
 
             Rule(label, 40);
             for (int i = 0; i < pool.Count; i++)
@@ -393,14 +381,46 @@ namespace WrestlingSim.UI
         /// Singles or tag, asked first because it decides who gets picked and which
         /// structures are on offer.
         /// </summary>
-        private static bool AskTag()
+        private static int AskSideSize()
         {
             Console.WriteLine();
             Rule("MATCH SHAPE", 30);
             WriteLine("  [1] Singles", ConsoleColor.White);
             WriteLine("  [2] Tag team — two a side", ConsoleColor.White);
+            WriteLine("  [3] Trios — three a side", ConsoleColor.White);
             Console.Write("  Select (Enter = singles): ");
-            return (Console.ReadLine() ?? "").Trim() == "2";
+
+            return (Console.ReadLine() ?? "").Trim() switch
+            {
+                "2" => 2,
+                "3" => 3,
+                _   => 1
+            };
+        }
+
+        /// <summary>
+        /// Picks a whole side, one man at a time, excluding anybody already booked. The
+        /// first man picked is the one who starts; the rest begin on the apron.
+        /// </summary>
+        private static List<Wrestler>? PickSide(
+            string label, int size, List<Wrestler> wrestlers, List<Wrestler> alreadyChosen)
+        {
+            var members = new List<Wrestler>();
+
+            for (int i = 0; i < size; i++)
+            {
+                string prompt = size == 1
+                    ? label
+                    : i == 0 ? $"{label} — WHO STARTS" : $"{label} — PARTNER {i}";
+
+                var pick = SelectWrestler(prompt, wrestlers, exclude: alreadyChosen.Concat(members));
+                if (pick == null) return null;
+
+                members.Add(pick);
+            }
+
+            alreadyChosen.AddRange(members);
+            return members;
         }
 
         /// <summary>
