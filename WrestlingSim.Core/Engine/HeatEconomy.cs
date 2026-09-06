@@ -214,10 +214,41 @@ namespace WrestlingSim.Engine
             return core with { Partners = partners };
         }
 
+        /// <summary>
+        /// How much a result says, given how many ways the match could have gone.
+        ///
+        /// Doc 18 §2.5 makes two claims that are really one: a multi-man title match lets
+        /// *"the champion lose the match without losing cleanly"* and lets *"a challenger win
+        /// without beating the champion"*, and it is *"a poor place to elevate somebody"*.
+        /// Both fall out of the same fact — with three in the ring, pinning somebody does not
+        /// establish that you can beat them. They were fighting two people, and one of them
+        /// was probably lying on the floor at the time.
+        ///
+        /// So the status swing is discounted, and the winner's gain and the loser's loss are
+        /// discounted *together*. Protection is the point and protection is the cost: the
+        /// same fact that saves the champion is the one that means the challenger has not
+        /// really arrived.
+        ///
+        /// Kept separate from <see cref="FinishWeight"/> deliberately. That describes *how*
+        /// the match ended — a roll-up, a run-in — and this describes *how many ways it could
+        /// have*. They are independent: a clean pin in a four-way is decisive in the first
+        /// sense and inconclusive in the second, and collapsing them into one enum would make
+        /// a three-way clean finish indistinguishable from a singles roll-up, which it is not.
+        /// </summary>
+        public static double Conclusiveness(int sideCount) =>
+            sideCount <= 2 ? 1.0 : Math.Pow(ConclusivenessPerExtraSide, sideCount - 2);
+
+        /// <summary>
+        /// What each side beyond the second costs the result's authority. A three-way says
+        /// about two-thirds of what a singles match says; a four-way, under half.
+        /// </summary>
+        public const double ConclusivenessPerExtraSide = 0.65;
+
         public static MatchStatusOutcome ForMatch(
             Wrestler winner, Wrestler loser, double starRating, FinishWeight finish,
             double familiarity = 1.0,
-            double? winnerStanding = null, double? loserStanding = null)
+            double? winnerStanding = null, double? loserStanding = null,
+            int sideCount = 2)
         {
             // Normally each man's own standing. A tag match passes its sides' standing
             // instead, because that is what the audience is weighing.
@@ -253,7 +284,8 @@ namespace WrestlingSim.Engine
             double winnerMomentumScale = Math.Clamp(0.35 + gap * 1.40, 0.12, 1.40);
             double loserMomentumScale  = Math.Clamp(0.45 - gap * 0.80, 0.10, 1.20);
 
-            double common = prize * quality * decisiveness * Math.Clamp(familiarity, 0.0, 1.5);
+            double common = prize * quality * decisiveness * Math.Clamp(familiarity, 0.0, 1.5)
+                            * Conclusiveness(sideCount);
 
             double winnerOverness = OvernessScale * common * winnerOvernessScale;
             double loserOverness  = OvernessScale * common * loserOvernessScale;
