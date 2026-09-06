@@ -1543,16 +1543,28 @@ the direction you would expect:
 
 * "a 64px summary" — 64px is the CSS `min-height`. ~~The rendered row is **75px** at 390px,
   and 113px when it wraps at 320px.~~ **Both figures were the best case quoted as the typical
-  one, and round 2 caught it.** Re-measured on a 13-beat sheet: at 390px the rows are 75px or
-  94px depending on whether `.beat-row__sub` wraps in the `1fr` column, and **9 of 13 wrap** —
-  so 94px is the row you actually see and 75px is the exception. At 320px they run 94–137px,
-  making the worst case **137px**, not 113px.
+  one.** Re-measured on a 13-beat sheet: at 390px rows are 75–94px with **9 of 13 at 94**, so
+  94px is the row you see and 75px is the exception; at 320px they run **94–137px**. Round 3
+  measured taller rows still on other presets — 117px at 390px and **160px** at 320px, where
+  it is the beat *name* that wraps rather than the sub-line — so the honest statement is a
+  range whose top I have not personally reproduced, not a single number.
 * "thirteen beats occupy about the space three used to" — about *seven* old rows, not three.
-  ~~The page total for the beat step went 3,561px → 2,250px, a real 37% reduction.~~ **Also
-  wrong, and wrong when written**: the same round that quoted 2,250px had already doubled
-  `.beat-gap` from 22px to 44px for the touch target, adding roughly 250px to the page it was
-  describing. Measured now: **2,320px** at 390px (rows alone 1,146px, the row block 1,409px).
-  Still a large reduction, and 37% was not the size of it.
+  ~~The page total for the beat step went 3,561px → 2,250px, a real 37% reduction.~~ Wrong,
+  and wrong when written: the same round that quoted 2,250px had already doubled `.beat-gap`
+  from 22px to 44px for the touch target.
+
+  ~~Measured now: **2,320px** at 390px.~~ **Wrong again, and this is the interesting one.**
+  Round 3 measured 2,678px and I measured 2,320px on what I thought was the same thing. The
+  difference is entirely `.beat-gap`, which is 18px normally and **44px under
+  `@media (hover: none)`** — I had been measuring a desktop browser narrowed to 390px, which
+  is not a phone, in a build log about phone UX. Across fourteen gaps that is ~360px.
+
+  Re-measured with touch emulation on: **2,632px** at 390px and **2,940px** at 320px (rows
+  alone 1,146px and 1,434px). Every phone figure in this file that I took by narrowing a
+  desktop window is suspect for the same reason; these two are not.
+
+  The reduction is still large. 37% was not its size, and I have now had three goes at this
+  one number.
 
 Step 0, after, at 390×844: singles **1,229px**, tag **1,781px**, trios **2,052px** — so the
 tag booking that was 16,269px is a genuine **9.1×** reduction, and trios goes from 22,815px to
@@ -1952,3 +1964,89 @@ the surviving text rewritten, since it described the sort order that had just ch
 
 **488 tests passing**, up from 479. Nine of them are this round's, and each was written
 against a specific mutation review used to demonstrate a gap.
+
+---
+
+## The UX pass — review round 3
+
+Third round, and the third time a round's own fixes introduced defects in the category they
+were fixing. Two blockers, both new, both mine.
+
+### The cursor fix booked the wrong wrestler
+
+Round 2 replaced `rows.IndexOf(row)` with a counter incremented as rows are emitted. The
+counter was declared **outside** both loops, so all seventy-six `@onfocus` lambdas closed over
+one variable and read the value it held after rendering finished — the last row.
+
+Round 2's version, for all its faults, declared `index` *inside* the inner loop and captured
+correctly. So the fix for a cursor bug was a cursor bug:
+
+```
+open              focus=—           highlight=row0  (Roman Reigns)
+2 × ArrowDown     focus=—           highlight=row2  (Becky Lynch)
+6 × Tab           focus=row0        highlight=row75 (Von Wagner)
+Enter booked  →   Von Wagner, Enhancement · 23
+```
+
+Six real Tab presses. And my browser verification of that commit reported `desync=0
+offscreen=0` over fourteen arrow presses — true, and useless, because **arrow keys are the one
+input path the bug does not touch.** I checked the path the previous bug used instead of the
+paths the new code created. `var index = ++emitted;` is a per-iteration local; verified with
+Tab this time: cursor and focus agree and Enter books the focused row.
+
+### "Cannot desync again" was false, and I wrote it in three places
+
+The claim went in the code comment, the commit message and the build log. It was wrong: the
+render index came from the grouped order, but `OnKey`'s Enter still resolved `rows[cursor]`
+against the *flat* ranking. The desync had moved from (scroll vs highlight) to (highlight vs
+Enter), which is worse — the highlighted row scrolls into view correctly and Enter books
+something else, with no visual cue at all. Review proved it by inventing a plausible future
+ranking (`SortKey` plain tier keyed on name length) and booking Von Wagner while Asuka was
+highlighted.
+
+So the two fixes were not belt and braces: the second depended on the first, and I described
+them as independent.
+
+`Rows()` now returns the **grouped order** — it groups and flattens once, and the razor's
+`GroupBy` regroups an already-grouped list, which preserves it. There is one order in the
+component instead of two kept in step, which is the difference between an invariant and a
+convention.
+
+### The scroll lock outlived the component
+
+Round 2 added `lockScroll` to the beat sheet and routed `Next()` and `Back()` through one
+`CloseBeatSheet()`, and I wrote that "the next close path somebody adds cannot forget the
+release". `Finish()` — a hundred lines below, already in the file — forgot it. It is the only
+exit from the last step, and the last step *is* the beats step, so confirming a booking with
+the sheet open tore the component down leaving `body { overflow: hidden }` set and the whole
+app unscrollable until a reload. F1 verbatim, re-created by F1's fix.
+
+`Finish()` now releases it, and `MatchBuilder` implements `IAsyncDisposable` for any route
+that is none of the three. Verified: sheet open at the beats step, confirm behind the scrim →
+`overflow ""`, `sheets 0`, page scrolls.
+
+### Four more mutations
+
+Review's MX5–MX8 all survived 488 tests. Each now fails one:
+
+| Mutation | What it meant |
+| --- | --- |
+| `ThenByDescending` → `ThenBy` | the least over name offered first inside every band |
+| `bookedAs` checked after the feud block | a booked name returning as `Story`, losing its marker and its "tap to swap" |
+| drop the "not seen in N weeks" clause | the only cue that somebody has been off television |
+| `Plain` sub-range step 1 → 10 | an Enhancement plain row scoring 60 and tying with `WornOut` — "a worn-out pairing sinks below everything" quietly stops being true |
+
+The last is the one worth having: `Plain` subdivides by adding to its own band value and
+nothing kept that arithmetic inside the band. Every other test missed it because their plain
+names are all main-eventers, which score 20 either way.
+
+**492 tests passing**, up from 488.
+
+### Still open, and named rather than fixed
+
+- `Clear` is 40px against the 44px standard this round set (`.btn--sm` pins `min-height: 38px`).
+- `Rows()` runs the full ranking on every keydown — the per-render duplicate went, a
+  per-keystroke one remains. 76 `Describe` calls and a sort per arrow press.
+- The beat sheet still has no Escape and no focus trap; only the picker handles keys.
+- `Remove(MatchBeat)` still has zero callers and the live path bypasses `CanRemove`.
+- Round 3 measured the subscription leak at 2 → 10 over eight opens; I recorded 2 → 9.

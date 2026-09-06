@@ -1,5 +1,6 @@
 @inject GameState State
 @inject IJSRuntime JS
+@implements IAsyncDisposable
 
 @* Only the steps this booking actually has, numbered by where they sit in that list —
    so a match with no belt on the line does not show a skipped "3" and then jump to 4. *@
@@ -761,6 +762,17 @@
     /// <summary>The beat sheet's step. Was the literal 5 in the markup and nowhere else.</summary>
     private const int BeatsStep = 5;
 
+    /// <summary>
+    /// Belt and braces on the scroll lock, and this time it is actually both: `Next()`,
+    /// `Back()` and `Finish()` are the three ways off this screen, and a navigation that
+    /// bypasses all three still cannot leave the page stuck.
+    ///
+    /// Unlike `RosterPicker` this component is a plain `ComponentBase` with no
+    /// `GameState.Changed` subscription, so there is no sync `Dispose()` to chain to — the
+    /// only thing to release here is the lock.
+    /// </summary>
+    public async ValueTask DisposeAsync() => await CloseBeatSheet();
+
     private List<(int Index, string Label)> ActiveSteps() =>
         StepLabels.Where(x => x.Index == step || StepApplies(x.Index)).ToList();
 
@@ -1410,6 +1422,15 @@
 
     private async Task Finish()
     {
+        // Releasing the scroll lock before the component goes away. `Finish()` is the one
+        // exit from the last step that does not go through `Next()` or `Back()`, and the
+        // last step *is* the beats step — so confirming a booking with the beat sheet open
+        // tore this component down with `body { overflow: hidden }` still set and left the
+        // whole app unscrollable until a reload. Which is F1 again, re-created by the fix
+        // for it: the comment claiming every close path routes through `CloseBeatSheet()`
+        // was falsified by a path a hundred lines below it in this same file.
+        await CloseBeatSheet();
+
         var sideA = MatchSide.Of(MembersA.ToArray());
         var sideB = MatchSide.Of(MembersB.ToArray());
 

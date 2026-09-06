@@ -52,6 +52,7 @@
         // again just to say how many names it produced.
         var rows  = Rows();
         var bands = rows.GroupBy(r => BookingSuggestions.Heading(r.Band, r.Wrestler)).ToList();
+        int emitted = -1;
     }
 
     <div class="sheet__filters">
@@ -77,14 +78,22 @@
                away from the highlight: arrow keys scrolled to one name and Enter booked
                another, off screen. Counting the rows as they are emitted cannot desync,
                whatever a future ranking does. *@
-            int index = -1;
             @foreach (var band in bands)
             {
                 <div class="group-label">@band.Key</div>
                 @foreach (var row in band)
                 {
                     var w = row.Wrestler;
-                    index++;
+
+                    // `index` must be a *per-iteration* local. The previous version
+                    // incremented one method-scope variable declared outside both loops, and
+                    // every row's `@onfocus` lambda closed over that one variable — so all
+                    // 76 handlers read the value it held after rendering finished, which is
+                    // the last row. Six Tab presses put focus on row 1 and the gold highlight
+                    // on row 75, and Enter booked an enhancement talent seventy-five rows
+                    // away. That is the exact invariant the comment below says this exists to
+                    // protect, broken by the fix for the previous version of it.
+                    var index = ++emitted;
                     @* The cursor follows focus rather than the mouse. It used to be an
                        integer that `@onmouseover` also wrote, so the gold highlight and the
                        DOM focus ring were two independent things: Tab to one row, hover
@@ -221,7 +230,8 @@
     /// </summary>
     private async Task OnKey(KeyboardEventArgs e)
     {
-        var rows = Rows().ToList();
+        // The same order the list renders in — see Rows().
+        var rows = Rows();
         swallow = e.Key is "ArrowDown" or "ArrowUp";
 
         switch (e.Key)
@@ -250,7 +260,27 @@
 
     private DateOnly? Today => State.Career?.CurrentDate;
 
+    /// <summary>
+    /// The pool, ranked, **in the order the list is rendered**.
+    ///
+    /// The rows are grouped by band heading for display, so the grouped order is the order a
+    /// user sees — and it is now the only order this component has. Two rounds of review
+    /// went on this: first the cursor indexed the flat ranking while the DOM came from a
+    /// `GroupBy`, and when that was fixed by counting rows as they were emitted, `OnKey`'s
+    /// Enter was still resolving `rows[cursor]` against the flat list. The desync moved from
+    /// (scroll vs highlight) to (highlight vs Enter), which is worse — the highlighted row
+    /// scrolls into view correctly and Enter books something else, with no visual cue at all.
+    ///
+    /// Flattening the grouping here removes the second order rather than keeping the two in
+    /// step, so there is nothing left to desync. The razor still groups, but grouping an
+    /// already-grouped list preserves it.
+    /// </summary>
     private IReadOnlyList<BookingSuggestions.Suggestion> Rows() =>
+        Ranked().GroupBy(r => BookingSuggestions.Heading(r.Band, r.Wrestler))
+                .SelectMany(g => g)
+                .ToList();
+
+    private IReadOnlyList<BookingSuggestions.Suggestion> Ranked() =>
         BookingSuggestions.Rank(
             State.Roster
                  .Where(w => includeCrossover || !State.IsCrossover(w))

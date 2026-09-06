@@ -121,6 +121,108 @@ namespace WrestlingSim.Tests
         }
 
         /// <summary>
+        /// **A plain row can never sink to where a worn-out pairing sits**, whatever card
+        /// position it has.
+        ///
+        /// `Plain` subdivides by card position by adding to the band's own value, and nothing
+        /// stopped that arithmetic walking out of its band: review widened the step from 1 to
+        /// 10 and an Enhancement plain row scored 60, tying with `WornOut`, so "a pairing the
+        /// crowd is sick of sinks below everything" quietly stopped being true. Every other
+        /// test missed it because their plain names are all main-eventers, which score 20.
+        /// </summary>
+        [Fact]
+        public void TheLowestPlainRowStillOutranksAWornOutPairing()
+        {
+            var jobber = W("Jobber", 20);          // Enhancement — the bottom of the Plain band
+            var tired  = W("Tired", 90);
+            var facing = W("Facing", 80);
+
+            var feuds = new FeudBook();
+            var stale = feuds.GetOrCreate(tired, facing);
+            stale.SetMinimumIntensity(FeudIntensity.Hot);
+            for (int i = 0; i < 6; i++) stale.RecordMatch(Today);
+
+            var ranked = Rank([tired, jobber], against: [facing], feuds: feuds);
+
+            Assert.Equal("Jobber", ranked[0].Wrestler.RingName);
+            Assert.Equal(Band.WornOut, ranked[^1].Band);
+        }
+
+        /// <summary>
+        /// Within a band, the bigger name first. Obvious enough that nothing asserted it:
+        /// review flipped `ThenByDescending` to `ThenBy` and the whole suite stayed green,
+        /// which would have offered the least over name first inside every band and every
+        /// card-position tier.
+        /// </summary>
+        [Fact]
+        public void InsideABand_TheBiggerNameComesFirst()
+        {
+            var big    = W("Big", 92);
+            var small  = W("Small", 89);          // same tier as Big, so only overness separates
+            var facing = W("Facing", 80);
+
+            var feuds = new FeudBook();
+            feuds.GetOrCreate(big, facing).SetMinimumIntensity(FeudIntensity.Hot);
+            feuds.GetOrCreate(small, facing).SetMinimumIntensity(FeudIntensity.Hot);
+
+            var story = Rank([small, big], against: [facing], feuds: feuds);
+            Assert.All(story, r => Assert.Equal(Band.Story, r.Band));
+            Assert.Equal(new[] { "Big", "Small" }, story.Select(r => r.Wrestler.RingName));
+
+            // And the same inside one card-position tier of the plain band.
+            var plain = Rank([small, big]);
+            Assert.Equal(big.CardPosition, small.CardPosition);
+            Assert.Equal(new[] { "Big", "Small" }, plain.Select(r => r.Wrestler.RingName));
+        }
+
+        /// <summary>
+        /// Being already booked beats having a story. Review moved the `bookedAs` check below
+        /// the feud block and a name already in the match came back as `Story` — top of the
+        /// list, "hot feud with X", and with `BookedAs` null it lost both the used marker and
+        /// the "tap to swap" cue. That is the "top row of every picker is somebody already
+        /// booked" failure this ordering was written to fix.
+        /// </summary>
+        [Fact]
+        public void SomebodyAlreadyBooked_IsMarkedAsSuch_EvenWithALiveFeud()
+        {
+            var rival  = W("Rival", 70);
+            var facing = W("Facing", 80);
+
+            var feuds = new FeudBook();
+            feuds.GetOrCreate(rival, facing).SetMinimumIntensity(FeudIntensity.Hot);
+
+            var only = Rank([rival], against: [facing], feuds: feuds,
+                            bookedAs: w => w == rival ? "Corner A" : null).Single();
+
+            Assert.Equal(Band.Booked, only.Band);
+            Assert.Equal("Corner A", only.BookedAs);
+            Assert.Contains("tap to swap", only.Reason);
+        }
+
+        /// <summary>
+        /// A name with no story still has to say something. `Plain()`'s content was untested
+        /// end to end — review deleted the "not seen in N weeks" clause, the only cue that
+        /// somebody has been off television, and nothing failed.
+        /// </summary>
+        [Fact]
+        public void ANameNobodyHasSeenInMonths_SaysSo()
+        {
+            var absent = W("Absent", 60);
+            var around = W("Around", 60);
+            absent.LastAppearance = Today.AddDays(-70);
+            around.LastAppearance = Today.AddDays(-3);
+
+            var ranked = Rank([absent, around]);
+            string Reason(Wrestler w) => ranked.Single(r => r.Wrestler == w).Reason;
+
+            output.WriteLine($"  absent: {Reason(absent)}");
+            output.WriteLine($"  around: {Reason(around)}");
+
+            Assert.Contains("not seen in 10 weeks", Reason(absent));
+            Assert.DoesNotContain("not seen", Reason(around));
+        }
+
+        /// <summary>
         /// A standing partner already booked on the *other* side is not a suggestion, it is
         /// a mistake. The guard existed before the sort moved into Core and was dropped in
         /// the move, so the picker offered a team's two members against each other at the
