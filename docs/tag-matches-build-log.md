@@ -1824,3 +1824,29 @@ clicking. All three now fail a test instead. That is the actual value of the mov
 this PR shipped and fixed cannot come back silently.
 
 **479 tests**, up from 471. Eight of them are this PR's, which is eight more than it had.
+
+### And a browser check on the half the tests do not reach
+
+Unit tests on `BookingSuggestions` prove the ranking is right. They prove nothing about whether
+the component still renders it, and a behaviour-preserving refactor that silently stops
+rendering is exactly the failure a green suite would wave through — which is the same lesson
+this PR already learned once, the hard way, at four bugs.
+
+So: the pre-extraction commit and the current head, built and served side by side, the same
+picker opened in each at 390×844, every rendered row dumped with its band heading, reason
+string and popularity figure.
+
+```
+parent 8895d44 : ROWS 81   FILL 4 picks -> 4 of 4 slots filled   CONSOLE_ERRORS 0
+head            : ROWS 81   FILL 4 picks -> 4 of 4 slots filled   CONSOLE_ERRORS 0
+diff            : identical
+```
+
+Eighty-one rows, byte-identical, headings included. The extraction changes no output.
+
+**What that does not cover, said plainly.** A fresh career has no feuds, no standing teams and
+no previous card, so the run exercised the `Plain` band and nothing else — the four bands
+worth having are precisely the ones a new save cannot produce. Their coverage is the unit
+tests and the five mutations, not this. What this rules out is the refactor having broken the
+wiring between the two, which is the specific risk of moving code out of a component and
+testing only the half that left.
