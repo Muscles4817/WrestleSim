@@ -312,28 +312,98 @@ implementation is additive (`1.0 + iso + near`) and drops the isolated man's sel
 additive form is easier to reason about and to cap, which is why it was written that way, but
 the plan was not updated to match.
 
-### A tension between the two phase 1 rulings
+### Adjudication — phase 2 questions
 
-Rewriting the carry test surfaced something neither earlier agent anticipated. Measured on an
-identical plan against identical opponents, varying only side A:
+Three questions went to a third agent. All three rulings went against the author, and the
+third overturned the author's own analysis with a measurement the author had not thought to
+take.
 
-| side A | crowd average | rating |
+#### Q1 — How to punish overworking the heat? **Ruled: punish the *run*, not the count.**
+
+The author's instinct was to steepen `RepetitionDecay(Isolation)`. Refuted empirically: at 0.68
+the rating still climbs monotonically to eight isolations, and it still climbs at 0.30, because
+`Math.Pow(d, n-1)` is strictly positive and can slow a climb but never invert one. The crowd
+axis was untouched by that argument entirely — `Isolation` has a *positive* crowd delta, so in
+this engine a fifteen-minute heat segment made the building **louder**.
+
+The deeper correction is about what the reference actually says.
+[18](wrestling-reference/18-match-craft.md) §2.3 does not say a long heat is bad; it says the
+opposite twice — "*the longer and more frustrating the heat, the bigger the comeback pops*" —
+and names the condition: "*the hope spots are essential*". §3.1 says 15–25 minutes adds a
+second heat/comeback cycle. So the thing to punish is not the fourth isolation, it is the
+fourth *consecutive* isolation with nothing to hold on to. The library's own Southern Tag
+already agrees: it never books two isolations back to back.
+
+Implemented as `MatchEngineState.IsolationRun`, a second counter beside the charge. The charge
+measures what was spent buying the payoff and resets on a tag; the run measures how long the
+room has been asked to wait and resets on a tag **or a near tag** — a denied tag is a hope
+spot, so it now does two jobs. Past `IsolationPatience` (3, the same constant the charge caps
+at, so the two can never drift), the beat drains crowd energy at an accelerating rate and
+contributes no storytelling. `AdvantageDelta` and `TechnicalContribution` are deliberately
+untouched: an overlong heat is badly *paced*, not badly *wrestled*, and that distinction is
+why the crowd axis is the right place for it. The commentary branches too, so the player can
+hear it — duelling chants, the crowd talking amongst itself, a beach ball.
+
+| plan (12 beats, constant length) | before | after |
 |---|---|---|
-| star + star | 67.94 | 3.924★ |
-| star + jobber | **55.52** | **3.030★** |
-| jobber + jobber | 33.71 | 2.249★ |
-| midpoint of the two pure rows | 50.83 | 3.086★ |
+| 3 isolations | 2.486★ | 2.487★ |
+| 8 isolations in a row | **3.099★** | **2.429★** |
+| `I I I N I I I N` (two cycles) | — | 3.204★ |
+| crowd average, 3 → 8 isolations | rose | **40.94 → 35.43** |
 
-Ruling B (top-weighted side reads) works where it applies: the crowd reads 55.52, well above
-the 50.83 midpoint — the star carries the room. But the **overall rating lands slightly below
-the midpoint**, because Ruling A (craft fields read only whoever is legal) means the jobber's
-work is graded at full weight for the half of the match he is in, and in Formula Tag he takes
-the hot tag and works the finish.
+The 1–3 range is unchanged. A long heat punctuated by hope spots stays viable; an unbroken one
+is punished. The ruling explicitly declined to apply the same shape to `NearTag`, which
+self-limits — it over-rewards by +0.078★ two beats past its cap and then turns over on its
+own, against +0.61★ and no turning point for the isolation.
 
-So the "conservation law" Ruling B was made to eliminate is still present in the final rating,
-arriving through Ruling A instead. The test now asserts the crowd claim, which is what the
-design delivers, and writes the rating tension to test output rather than asserting something
-that is not true. **Referred to adjudication.**
+#### Q2 — Should `Shine` and `Cutoff` be tag-only? **Ruled: no — fix the text, and only `Shine` needs it.**
+
+Settled by the repo's own standing rule, written down in the phase 1 adjudication: *you warn
+about a booking the engine handles, you block one the engine mis-handles*. A singles shine is
+modelled correctly — `SideAvg` short-circuits to the sole member and every term is coherent.
+It just **said** the wrong thing: "*Solo A are firing on all cylinders early — quick tags…*",
+reachable from the booking UI today. That is a text defect, not a modelling one.
+
+`Cutoff` needed nothing at all — every one of its four lines uses only the two wrestlers'
+names and reads correctly in a singles match, and it fills a real singles gap as the only
+one-beat takeover that *costs* crowd energy. Gating it would have deleted a working beat.
+
+`ApplyShine` now branches on `side.IsTag`, with four options either way so the RNG is drawn
+exactly once and tag output is unchanged. The `BeatType` header comment, which claimed every
+tag beat needs somebody on the apron, is corrected — as is the `BeatLibrary` copy the player
+actually reads, which described a "face team".
+
+#### Q3 — Does the star carry the craft, or only the crowd? **Ruled: the author's premise was false.**
+
+The author reported a tension between the two phase 1 rulings: top-weighted side reads make
+the star carry the room, but legal-only craft reads meant the overall rating landed *below*
+the midpoint, so the conservation law looked like it had survived.
+
+It had not. The measurement held the **worst available booking** of the mixed side fixed.
+`Formula Tag` starts `Members[0]`, so `Rating(Star(), Jobber())` books the *jobber* to take the
+hot tag, work the double team and score the fall. Averaged over both member orders:
+
+| | star+star | jobber in | star in | job+job | midpoint | **averaged** |
+|---|---|---|---|---|---|---|
+| Formula Tag | 3.924 | 3.030 | 3.577 | 2.249 | 3.086 | **3.304** |
+| Southern Tag | 4.150 | 3.449 | 3.830 | 2.714 | 3.432 | **3.639** |
+| Tag Sprint | 3.140 | 2.589 | 2.739 | 1.689 | 2.415 | **2.664** |
+
+The mixed side rates **+0.22★ above the midpoint** across the booking space. And the
+falsification the original test never had: at `DragWeight = 1.0` the conservation law
+reproduces to three decimals (3.081 vs a 3.086 midpoint) and vanishes at 0.5. Ruling B works
+on the rating, not only on the crowd.
+
+The ruling also declined the author's proposed fix — blending craft reads toward the side's
+top-weighted value — as an *active regression*. The 0.55★ gap between putting the star in on
+the hot tag and putting the jobber in is the most legible booking lever the tag engine has, it
+falls straight out of `ApplyHotTag` scaling the pop by the incoming man's connection, and
+blending would flatten exactly that. The star carries **by being legal for the beats that
+matter**, which makes carrying a decision the player makes rather than a stat they possess.
+
+`AStarCarriesAWeakPartner_...` now averages both orders, asserts above the midpoint with
+headroom (and fails at `DragWeight = 1.0`, which is what makes it a test), and separately
+asserts the hot-tag lever. **The open question recorded here previously is withdrawn.**
 
 ---
 

@@ -172,19 +172,119 @@ namespace WrestlingSim.Tests
                 "And it should tell more story than another beatdown segment does.");
         }
 
-        [Fact]
-        public void AFourthAndFifthIsolation_BuyNothingMore()
+        /// <summary>
+        /// A plan of a fixed length, so extra isolations displace filler rather than
+        /// lengthening the match. Without this any "more isolations" test measures fade.
+        /// </summary>
+        private (double stars, double pop, double crowd) AtFixedLength(string pattern, int totalBeats = 12)
         {
-            // The charge saturates at three. Beyond that the crowd is bored rather than
-            // desperate, and the extra beats cost late-match fade — so the payoff gets
-            // slightly *smaller*, which is the correct punishment for overworking the heat.
-            var three = Charged(3, 0);
-            var five  = Charged(5, 0);
+            double stars = 0, pop = 0, crowd = 0;
+            const int runs = 150;
 
-            output.WriteLine($"  3 isolations pop {three.pop:F2} | 5 isolations pop {five.pop:F2}");
+            for (int i = 0; i < runs; i++)
+            {
+                var beats = new List<MatchBeat> { B(BeatType.StandardOpening, BeatControl.Even) };
+                beats.Add(new MatchBeat { Type = BeatType.Cutoff, Control = BeatControl.WrestlerB, Duration = BeatDuration.Short });
 
-            Assert.True(five.pop <= three.pop,
-                "A fifth isolation must not buy a louder hot tag than the third did.");
+                foreach (char c in pattern)
+                    beats.Add(c switch
+                    {
+                        'I' => new MatchBeat { Type = BeatType.Isolation, Control = BeatControl.WrestlerB, Duration = BeatDuration.Medium },
+                        'N' => new MatchBeat { Type = BeatType.NearTag, Control = BeatControl.WrestlerB, Intensity = BeatIntensity.High, Duration = BeatDuration.Brief },
+                        _   => new MatchBeat { Type = BeatType.RestHold, Control = BeatControl.WrestlerB, Duration = BeatDuration.Short }
+                    });
+
+                // Pad to a constant length so every variant is the same match length.
+                while (beats.Count < totalBeats - 2)
+                    beats.Add(new MatchBeat { Type = BeatType.RestHold, Control = BeatControl.WrestlerB, Duration = BeatDuration.Short });
+
+                beats.Add(new MatchBeat { Type = BeatType.HotTag, Control = BeatControl.WrestlerA, Intensity = BeatIntensity.High, Duration = BeatDuration.Short });
+                beats.Add(B(BeatType.FinishClean, BeatControl.WrestlerA));
+
+                var r = new MatchEngine(i * 7919).Execute(new MatchPlanModel
+                {
+                    SideA = Team("Face One", "Face Two"),
+                    SideB = Team("Heel One", "Heel Two"),
+                    Beats = beats
+                });
+                stars += r.StarRating;
+                pop   += r.BeatResults.First(b => b.BeatType == BeatType.HotTag).CrowdEnergyDelta;
+                crowd += r.CrowdAverageEnergy;
+            }
+            return (stars / runs, pop / runs, crowd / runs);
+        }
+
+        [Fact]
+        public void OverworkingTheHeat_IsPunished_AtConstantMatchLength()
+        {
+            // REWRITTEN after adjudication. The previous version asserted the hot-tag pop
+            // and compared plans of different lengths, so it measured fade, not saturation
+            // — and the rating in fact climbed monotonically to eight isolations, which the
+            // build log had claimed was punished. It was not.
+            //
+            // The rule is not about the count. Doc 18 §2.3 says a long heat is *good* and
+            // that the hope spots are what make it bearable, and §3.1 says a big match
+            // adds a second heat cycle. So what costs the room is a RUN of isolations with
+            // nothing to hold on to, and the near tag is what resets it.
+            var three = AtFixedLength("III");
+            var eight = AtFixedLength("IIIIIIII");
+
+            output.WriteLine($"  3 isolations {three.stars:F3}★, 8 in a row {eight.stars:F3}★");
+
+            // Before the fix this was 3.099 against 2.486 — five extra beats of beating
+            // made the match *better*, and the optimum was "as many isolations as the beat
+            // budget allows". It is now the other way round.
+            //
+            // The margin is deliberately modest rather than dramatic: TechnicalContribution
+            // is untouched by the patience rule, because an overlong heat segment is badly
+            // *paced*, not badly *wrestled*. Five more isolations really are five more
+            // pieces of competent ring work; what they cost is the room, and the room is
+            // roughly a third of the score. The ordering is the assertion.
+            Assert.True(eight.stars < three.stars,
+                $"Eight isolations in a row rated {eight.stars:F3} against {three.stars:F3} for three. " +
+                "A crowd asked to wait that long with no hope spot should be lost, not more engaged.");
+
+            // And on the axis the punishment actually lands on. Not the hot-tag pop —
+            // that is identical by design, because the charge saturates at three and the
+            // beat sits at the same position in a fixed-length plan. What an overworked
+            // heat costs is the room it was worked in front of.
+            output.WriteLine($"  crowd average {three.crowd:F2} → {eight.crowd:F2}");
+            Assert.True(eight.crowd < three.crowd - 2.0,
+                $"Eight isolations in a row left the crowd at {eight.crowd:F2} against " +
+                $"{three.crowd:F2} for three. Before this rule existed, a longer beating made " +
+                "the building louder.");
+        }
+
+        [Fact]
+        public void ALongHeatPunctuatedByHopeSpots_IsNotPunished()
+        {
+            // The other half of the same rule, and the reason it is keyed on the run rather
+            // than the count: two full heat cycles is what a big match looks like, and must
+            // not be graded as padding.
+            var punctuated = AtFixedLength("IIINIIIN");
+            var runOfEight = AtFixedLength("IIIIIIII");
+            var canonical  = AtFixedLength("ININ");
+
+            output.WriteLine($"  I I I N I I I N {punctuated.stars:F3}★");
+            output.WriteLine($"  I N I N          {canonical.stars:F3}★");
+            output.WriteLine($"  I I I I I I I I {runOfEight.stars:F3}★");
+
+            Assert.True(punctuated.stars > runOfEight.stars + 0.2,
+                "A long heat broken up by denied tags must beat the same length of unbroken beating.");
+        }
+
+        [Fact]
+        public void ADeniedTag_ResetsTheRoomsPatience()
+        {
+            // Directly: the same number of isolations, differing only in whether a hope
+            // spot sits in the middle of them.
+            var unbroken = AtFixedLength("IIII");
+            var broken   = AtFixedLength("IINII");
+
+            output.WriteLine($"  I I I I {unbroken.stars:F3}★   vs   I I N I I {broken.stars:F3}★");
+
+            Assert.True(broken.stars > unbroken.stars,
+                "A denied tag has to buy the room back, or a long heat can never be booked well.");
         }
 
         // ── Legality ─────────────────────────────────────────────────────────
@@ -606,43 +706,51 @@ namespace WrestlingSim.Tests
 
             var twoStars   = Rating(Star(), Star());
             var twoJobbers = Rating(Jobber(), Jobber());
-            var mixed      = Rating(Star(), Jobber());
 
-            output.WriteLine($"  two stars   {twoStars.stars:F3}★  crowd {twoStars.crowd:F2}");
-            output.WriteLine($"  mixed       {mixed.stars:F3}★  crowd {mixed.crowd:F2}");
-            output.WriteLine($"  two jobbers {twoJobbers.stars:F3}★  crowd {twoJobbers.crowd:F2}");
-            output.WriteLine($"  star midpoint {(twoStars.stars + twoJobbers.stars) / 2:F3}, " +
-                             $"crowd midpoint {(twoStars.crowd + twoJobbers.crowd) / 2:F2}");
+            // Both member orders, averaged. CORRECTED after adjudication: the first version
+            // of this measured only `Star(), Jobber()`, which in Formula Tag books the
+            // *jobber* to take the hot tag, work the double team and score the fall — the
+            // single worst booking of that side. Holding that fixed made the aggregation
+            // look like a conservation law when it is not. Averaging over who starts covers
+            // the booking space instead of one bad corner of it.
+            var mixedJobberIn = Rating(Star(), Jobber());
+            var mixedStarIn   = Rating(Jobber(), Star());
+            var mixed = ((mixedJobberIn.stars + mixedStarIn.stars) / 2.0,
+                         (mixedJobberIn.crowd + mixedStarIn.crowd) / 2.0);
 
-            // The crowd component is where the side read lives, and it carries clearly:
-            // the mixed side reads well above the midpoint of the two pure ones.
-            Assert.True(mixed.crowd > (twoStars.crowd + twoJobbers.crowd) / 2.0,
-                $"A star with a jobber drew {mixed.crowd:F2}, at or below the " +
-                $"{(twoStars.crowd + twoJobbers.crowd) / 2.0:F2} midpoint. The side is being " +
-                "averaged, not carried.");
+            double starMidpoint  = (twoStars.stars + twoJobbers.stars) / 2.0;
+            double crowdMidpoint = (twoStars.crowd + twoJobbers.crowd) / 2.0;
 
-            Assert.True(mixed.crowd < twoStars.crowd,
+            output.WriteLine($"  two stars      {twoStars.stars:F3}★  crowd {twoStars.crowd:F2}");
+            output.WriteLine($"  mixed (jobber in) {mixedJobberIn.stars:F3}★");
+            output.WriteLine($"  mixed (star in)   {mixedStarIn.stars:F3}★");
+            output.WriteLine($"  mixed, averaged {mixed.Item1:F3}★  crowd {mixed.Item2:F2}");
+            output.WriteLine($"  two jobbers    {twoJobbers.stars:F3}★  crowd {twoJobbers.crowd:F2}");
+            output.WriteLine($"  midpoints: {starMidpoint:F3}★, crowd {crowdMidpoint:F2}");
+
+            // The rating, over the booking space. This is the assertion the test was
+            // missing: it FAILS at DragWeight = 1.0 (a flat mean lands exactly on the
+            // midpoint, which is the conservation law Ruling B was made to remove) and
+            // passes with real headroom at 0.5.
+            Assert.True(mixed.Item1 > starMidpoint + 0.10,
+                $"A star with a jobber averaged {mixed.Item1:F3} against a {starMidpoint:F3} " +
+                "midpoint. A flat mean lands exactly on it — the side is being averaged, " +
+                "not carried.");
+
+            // And on the crowd axis, where the side read lives most directly.
+            Assert.True(mixed.Item2 > crowdMidpoint,
+                "The room should read the team as closer to the man it came to see.");
+
+            Assert.True(mixed.Item1 < twoStars.stars,
                 "But a weak partner still has to cost something, or there is no reason to " +
                 "care who you put with your star.");
 
-            // The overall rating is deliberately NOT asserted to carry, and that is worth
-            // being explicit about rather than quietly asserting the weaker claim.
-            //
-            // Two adjudicated rulings meet here and pull against each other. Crowd fields
-            // read the whole side top-weighted, so the star carries the room. Craft fields
-            // read only whoever is legal, so while the jobber is in the ring his work is
-            // graded at full weight — and in the Formula Tag structure he takes the hot tag
-            // and works the finish. Net, the rating lands near the midpoint.
-            //
-            // That is the honest current behaviour: the star carries what the audience
-            // feels, not what the match is worth as a piece of work. Whether he should also
-            // carry the craft — a veteran calling a match in the ring genuinely does make a
-            // green partner look better — is a real open question, recorded in the build
-            // log rather than settled by an assertion here.
-            output.WriteLine(
-                $"  NOTE overall rating {mixed.stars:F3} vs midpoint " +
-                $"{(twoStars.stars + twoJobbers.stars) / 2:F3} — carrying shows in the crowd, " +
-                "not (yet) in the craft. See docs/tag-matches-build-log.md.");
+            // The lever the earlier version of this test obscured entirely: same two men,
+            // same plan, same seeds — only who comes in on the hot tag. The pop belongs to
+            // the man coming in, so this is a real booking decision rather than a stat.
+            Assert.True(mixedStarIn.stars > mixedJobberIn.stars + 0.30,
+                $"Putting the star in on the hot tag ({mixedStarIn.stars:F3}) should clearly " +
+                $"beat putting the jobber in ({mixedJobberIn.stars:F3}).");
         }
 
         [Fact]

@@ -13,6 +13,17 @@ namespace WrestlingSim.Engine
         // A raw score equal to the scale reads as ~0.63 of the component; twice the
         // scale reads as ~0.86. Nothing ever reaches 1.0, so piling on beats has a
         // hard asymptote instead of a cliff at a clamp.
+        /// <summary>
+        /// How many isolation beats the hot tag's charge counts — and, the same number for
+        /// the same reason, how many a crowd will sit through in a row before it stops
+        /// waiting and starts entertaining itself.
+        ///
+        /// One constant rather than two so the payoff and the patience can never drift
+        /// apart: the crowd's limit and the booking's value have to be the same limit, or
+        /// the player is being asked to optimise against two different rules.
+        /// </summary>
+        private const int IsolationPatience = 3;
+
         private const double TechScale  = 48.0;
         private const double StoryScale = 62.0;
 
@@ -1131,8 +1142,9 @@ namespace WrestlingSim.Engine
             var pControl = ctx.For(control);
             var side     = ctx.SideOf(control);
 
-            // A shine is the team looking sharp together, so it reads off the pair rather
-            // than off whoever happens to be legal.
+            // Reads off the whole side rather than off whoever is legal — a shine is the
+            // team looking sharp together. For a side of one that is exactly that man,
+            // which is why this beat is bookable in a singles match too.
             double teamwork = ctx.SideAvg(side, p => (p.Athleticism + p.Workrate) / 2.0);
 
             r.CrowdEnergyDelta = Rng(6, 12) * iMod * dMod
@@ -1144,12 +1156,19 @@ namespace WrestlingSim.Engine
             r.StorytellingContribution = 4.0 * iMod * dMod
                                          * PerformerProfile.Blend(pControl.RingPsych, 0.45);
 
-            r.Commentary.Add(Pick(
-                $"{side.Name} are firing on all cylinders early — quick tags, and {other.RingName} cannot get a foothold.",
-                $"A brilliant opening stretch from {side.Name}! They are running rings around {other.RingName}.",
-                $"{side.Name} in complete control, and the crowd is loving every second of it.",
-                $"Textbook teamwork from {side.Name} — in and out of the corner before the referee can blink."
-            ));
+            // Four options either way, so the RNG is drawn exactly once whichever branch
+            // runs and a tag match's output is unchanged by the singles lines existing.
+            r.Commentary.Add(side.IsTag
+                ? Pick(
+                    $"{side.Name} are firing on all cylinders early — quick tags, and {other.RingName} cannot get a foothold.",
+                    $"A brilliant opening stretch from {side.Name}! They are running rings around {other.RingName}.",
+                    $"{side.Name} in complete control, and the crowd is loving every second of it.",
+                    $"Textbook teamwork from {side.Name} — in and out of the corner before the referee can blink.")
+                : Pick(
+                    $"{control.RingName} is firing on all cylinders early, and {other.RingName} cannot get a foothold.",
+                    $"A brilliant opening stretch from {control.RingName}! They are running rings around {other.RingName}.",
+                    $"{control.RingName} in complete control, and the crowd is loving every second of it.",
+                    $"Every time {other.RingName} tries to settle, {control.RingName} has an answer for them."));
         }
 
         /// <summary>
@@ -1216,7 +1235,20 @@ namespace WrestlingSim.Engine
                     : pIsolated.Connection,
                 0.40);
 
-            r.CrowdEnergyDelta = Rng(2, 7) * tensionFactor * iMod * dMod * sympathy * cornerPull;
+            // How far past the room's patience this beat is. The run — not the count —
+            // because a long heat punctuated by hope spots is what a big match looks like
+            // (docs/wrestling-reference/18-match-craft.md §3.1), while four in a row with
+            // no near tag is a crowd being asked to wait with nothing to hold on to.
+            bool isolatedIsSideA = ctx.IsSideA(other);
+            int overPatience = ctx.State.IsolationRun(isolatedIsSideA) + 1 - IsolationPatience;
+
+            // Past that point the beat stops adding to the room and starts draining it,
+            // and the drain accelerates. Doc 16 §2: a crowd that has given up does not go
+            // politely quiet, it finds something else to do.
+            r.CrowdEnergyDelta = overPatience <= 0
+                ? Rng(2, 7) * tensionFactor * iMod * dMod * sympathy * cornerPull
+                : -Rng(3, 8) * overPatience * iMod;
+
             r.AdvantageDelta   = ControlSign(ctx, control) * Rng(10, 22) * iMod * dMod;
 
             WrestlingStyle beatStyle = beat.StyleHint ?? control.Style;
@@ -1224,19 +1256,32 @@ namespace WrestlingSim.Engine
                                       * iMod * dMod * pControl.WorkrateFor(beatStyle)
                                       * PerformerProfile.Blend(pIsolated.Selling, 0.60);
 
-            // Being kept from your corner is the story. Selling it is most of the job.
-            r.StorytellingContribution = 7.5 * iMod * dMod
-                                         * PerformerProfile.Blend(pIsolated.Selling, 0.65)
-                                         * PerformerProfile.Blend(pControl.RingPsych, 0.40);
+            // Being kept from your corner is the story — right up until the room stops
+            // believing there is a story left. Past the patience point there is no story
+            // being told, only a match being padded.
+            //
+            // TechnicalContribution above is deliberately NOT punished: an overlong heat
+            // segment is badly *paced*, not badly *wrestled*, and the distinction is why
+            // the crowd axis is the right place for this.
+            r.StorytellingContribution = overPatience <= 0
+                ? 7.5 * iMod * dMod
+                    * PerformerProfile.Blend(pIsolated.Selling, 0.65)
+                    * PerformerProfile.Blend(pControl.RingPsych, 0.40)
+                : 0.0;
 
-            ctx.State.RecordIsolation(ctx.IsSideA(other));
+            ctx.State.RecordIsolation(isolatedIsSideA);
 
-            r.Commentary.Add(Pick(
-                $"{control.RingName} keeps {other.RingName} grounded in the wrong corner — miles from help.",
-                $"{other.RingName} is cut off and being taken apart. That corner might as well be a mile away.",
-                $"Every time {other.RingName} gets to his feet, {control.RingName} drags him back. Textbook isolation.",
-                $"{control.RingName} is working {other.RingName} over methodically, and the crowd is getting restless."
-            ));
+            r.Commentary.Add(overPatience <= 0
+                ? Pick(
+                    $"{control.RingName} keeps {other.RingName} grounded in the wrong corner — miles from help.",
+                    $"{other.RingName} is cut off and being taken apart. That corner might as well be a mile away.",
+                    $"Every time {other.RingName} gets to his feet, {control.RingName} drags him back. Textbook isolation.",
+                    $"{control.RingName} is working {other.RingName} over methodically, and the crowd is getting restless.")
+                : Pick(
+                    $"{control.RingName} is still grinding away on {other.RingName}, and you can hear duelling chants starting up in the lower bowl.",
+                    $"This has gone on a long time now. The crowd has started talking amongst themselves.",
+                    $"Another rest hold on {other.RingName}. Somebody in the front row has produced a beach ball.",
+                    $"{control.RingName} keeps working, but the room has stopped waiting for the tag and started entertaining itself."));
         }
 
         /// <summary>
@@ -1359,7 +1404,7 @@ namespace WrestlingSim.Engine
         /// </summary>
         private static double HotTagCharge(int isolations, int nearTags)
         {
-            double isolationTerm = 0.55 * Math.Min(isolations, 3) / 3.0;
+            double isolationTerm = 0.55 * Math.Min(isolations, IsolationPatience) / (double)IsolationPatience;
 
             // Worth more per beat than another isolation. A denied tag costs the room real
             // energy in the moment, so if it did not pay back more than the isolation it

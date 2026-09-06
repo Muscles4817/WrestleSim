@@ -106,20 +106,46 @@ namespace WrestlingSim.Engine
         private readonly int[] _isolations = new int[2];
         private readonly int[] _nearTags   = new int[2];
 
+        // How many isolation beats in a row this side has taken with no hope spot in
+        // between. Deliberately separate from the charge above, because the two measure
+        // different things: the charge is what was spent buying the payoff and resets on a
+        // tag; the run is how long the room has been asked to wait and resets on a *near
+        // tag* as well. docs/wrestling-reference/18-match-craft.md §2.3 is explicit that a
+        // long heat is good and that the hope spots are what make it bearable — so what
+        // costs the crowd is a run of isolations, never the count of them.
+        private readonly int[] _isolationRun = new int[2];
+
         /// <summary>Isolation beats this side has suffered since its last tag.</summary>
         public int IsolationsSuffered(bool sideA) => _isolations[sideA ? 0 : 1];
 
         /// <summary>Tags this side has been denied since its last successful one.</summary>
         public int NearTagsDenied(bool sideA) => _nearTags[sideA ? 0 : 1];
 
-        public void RecordIsolation(bool isolatedSideA) => _isolations[isolatedSideA ? 0 : 1]++;
+        /// <summary>Consecutive isolations this side has taken without a hope spot.</summary>
+        public int IsolationRun(bool sideA) => _isolationRun[sideA ? 0 : 1];
 
-        public void RecordNearTag(bool reachingSideA) => _nearTags[reachingSideA ? 0 : 1]++;
+        public void RecordIsolation(bool isolatedSideA)
+        {
+            _isolations[isolatedSideA ? 0 : 1]++;
+            _isolationRun[isolatedSideA ? 0 : 1]++;
+        }
+
+        /// <summary>
+        /// A denied tag does two jobs: it charges the payoff, and it buys the room back.
+        /// Reaching for the corner and being dragged away is the hope spot — it is what
+        /// stops a long heat becoming a crowd that has given up.
+        /// </summary>
+        public void RecordNearTag(bool reachingSideA)
+        {
+            _nearTags[reachingSideA ? 0 : 1]++;
+            _isolationRun[reachingSideA ? 0 : 1] = 0;
+        }
 
         private void ClearTagCharge(bool sideA)
         {
-            _isolations[sideA ? 0 : 1] = 0;
-            _nearTags[sideA ? 0 : 1]   = 0;
+            _isolations[sideA ? 0 : 1]   = 0;
+            _nearTags[sideA ? 0 : 1]     = 0;
+            _isolationRun[sideA ? 0 : 1] = 0;
         }
 
         // ── Repetition tracking ──────────────────────────────────────────────

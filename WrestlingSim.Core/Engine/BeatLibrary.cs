@@ -454,13 +454,13 @@ namespace WrestlingSim.Engine
             new BeatTemplate
             {
                 Name             = "Shine",
-                Description      = "The face team on top early — quick tags, clean offence, the opponents cannot get settled.",
+                Description      = "The face side on top early — clean offence, and the opponents cannot get settled. Works in a singles match too.",
                 Category         = CatTag,
                 Type             = BeatType.Shine,
                 DefaultIntensity = BeatIntensity.Medium,
                 DefaultDuration  = BeatDuration.Medium,
-                BookerTip        = "Book before the heat. A crowd that never saw the team look good has no reason to want them saved.",
-                Tags             = ["Tag", "Fast"]
+                BookerTip        = "Book before the heat. A crowd that never saw them look good has no reason to want them saved.",
+                Tags             = ["Tag", "Singles", "Fast"]
             },
             new BeatTemplate
             {
@@ -471,7 +471,7 @@ namespace WrestlingSim.Engine
                 DefaultIntensity = BeatIntensity.Medium,
                 DefaultDuration  = BeatDuration.Short,
                 BookerTip        = "Control is the side taking over. Quietens the room on purpose — that is what makes the hot tag loud.",
-                Tags             = ["Tag", "Heel"]
+                Tags             = ["Tag", "Singles", "Heel"]
             },
             new BeatTemplate
             {

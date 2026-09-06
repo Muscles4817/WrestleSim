@@ -27,8 +27,11 @@ namespace WrestlingSim.Enums
         NearFall,
 
         // ── Tag ──────────────────────────────────────────────────────────────
-        // The tag formula, in the order it is usually worked. Every one of these
-        // needs a side with somebody on the apron; see MatchPlan.Validate.
+        // The tag formula, in the order it is usually worked. All but Shine and Cutoff
+        // need a side with somebody on the apron — see MatchBeat.IsTagBeat and
+        // MatchPlan.Validate. A shine and a cut-off are match-craft terms that describe
+        // the singles face-in-peril structure just as well
+        // (docs/wrestling-reference/18-match-craft.md §2.3), so they are bookable in both.
 
         /// <summary>The face team's opening control stretch, before the heat.</summary>
         Shine,
