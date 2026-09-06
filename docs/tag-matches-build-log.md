@@ -1304,6 +1304,15 @@ look like. Recorded because the honest reading of "23 tiers" is denser, not wide
 
 ---
 
+> **A note on "review" in this file.** Every review referenced here was carried out by an
+> independent agent working from a pinned clone, with its own harnesses, and none of them are
+> recorded in the repository or on the pull requests. So the quotes and measurements
+> attributed to a reviewer are not independently checkable by a later reader — they are my
+> account of what came back. Where a finding matters, the *measurement* has been reproduced
+> in the code or the tests, and that is the part to trust. Flagged because putting words in
+> an unrecorded reviewer's mouth is exactly the kind of unverifiable claim this file exists
+> to stop me making.
+
 ## A5 — the crowd reaction vector
 
 The first item from the original gap analysis rather than the tag-match plan, and the one
@@ -1412,20 +1421,14 @@ Withdrawn in all three places, with the retraction left visible where the claim 
   and 1.00 removes the silence penalty entirely.
 
 **Re-derived.** `TypicalInvestment` is now the measured median (0.7635), and the clamp is
-gone: the curve is two slopes, `InvestmentDownside = 0.40` below typical and
-`InvestmentUpside = 0.25` above. A dead room keeps 69.5% of its crowd component; a room
-present all night gains 5.9%. The asymmetry doc 16 §2.1 argues for is now expressed in the
-slopes rather than in a clamp that flattened two-thirds of the corpus, and every match gets a
-distinct multiplier.
-
-```
-n=5,220   p05 0.7451   median 0.9948   p95 1.0540   1.15% at the maximum
-investment moves the score in 98.5% of matches, by up to 4.72 points (0.236★)
-```
+gone: the curve is two slopes, both derived from an end point rather than picked. A dead room
+keeps 70% of its crowd component; a room present all night gains 6%. The asymmetry doc 16
+§2.1 argues for is now expressed in the slopes rather than in a clamp that flattened
+two-thirds of the corpus, and every match gets a distinct multiplier.
 
 `ATypicalMatchIsUnmoved_AndThatIsMeasuredNotAsserted` pins the median to the *corpus*, not to
 the constant, so it fails if either drifts away from the other. That is the test the old
-claim should have had.
+claim should have had — and see round 2 below, where it did its job on me twice.
 
 **And the two recreation tests were re-baselined deliberately**, which is the point the
 review made that I want to keep visible: a bar cleared by 0.0001 is not a test, and a
@@ -1554,3 +1557,126 @@ not feedback.
   persists it today.
 
 **436 tests passing.**
+
+---
+
+## A5 — review round 2
+
+**Not safe to merge**, and the reason is the one worth writing down: the fix for round 1's
+blocker #2 *committed round 1's blocker #2*, and the fix for blocker #4 left the same hole in
+a different wall.
+
+### `TypicalInvestment` was the median of a classifier that no longer existed
+
+Round 1's finding was "a constant documented as a measurement it is not". I replaced 0.50
+with **0.7635**, called it "measured, not chosen", and wrote a doc comment saying review had
+measured it across 5,220 matches.
+
+Review measured what I had actually done:
+
+```
+d7cc06f (the round-1 classifier)   corpus median 0.7625   ← where 0.7635 came from
+c20157e (the classifier I shipped) corpus median 0.7513
+```
+
+**The same commit that adopted 0.7635 also replaced the classifier** — `invested` became
+`attention × RepetitionFactor` — which moved the median. So the number described a corpus
+that no longer existed by the time it was written down. And my own test printed the evidence:
+**median factor 0.9949, not 1.0000.** "Measured, not chosen" would print 1.0000. I read that
+line, put it in the build log, and did not notice what it was telling me.
+
+Then the roster merged and it got worse in the useful way: on the shipped 76 the median
+investment is **0.5319**, not 0.75, because a roster with a real lower card is a less invested
+room than a roster of thirty stars. `ATypicalMatchIsUnmoved` went red on the merge — which is
+the system working, and is exactly what that test was written for.
+
+Re-measured against the shipped classifier and the shipped roster (n = 34,200), and both
+slopes re-derived from their **end points** rather than picked — `InvestmentDownside = 0.30 /
+typical`, `InvestmentUpside = 0.06 / (1 − typical)` — because review found the previous 0.25
+upside effectively unconstrained: 0.10 and 0.15 both passed the entire suite, so only the
+value that *disables* the mechanism was caught. Tying them to end points at least makes them
+statements about the design.
+
+```
+n=34,200   p05 0.7458   median 1.0000   p95 1.0523   0.33% at the maximum
+dead 0.7021   typical 1.0000   full 1.0609
+investment moves the score in 96.6% of matches, by up to 3.99 points (0.199★)
+```
+
+`TheInvestmentCurve` also stopped restating the literal `0.7635` and now reads
+`MatchEngine.TypicalInvestment` — it had been a change detector duplicating the constant it
+guarded, which is the "pins it to itself" pattern I claimed to have removed.
+
+### The breakdown was testable and untested
+
+Round 1's blocker #4 was *"delete the whole investment→rating multiplier and 429 tests pass"*.
+I answered it by exposing `MatchEngineResult.Breakdown` and asserting an identity on it.
+
+Review changed **one word** in the final sum — `crowdComponent` → `crowdBeforeInvestment`,
+leaving `Breakdown` untouched — and **all 479 tests passed**. That removes the entire
+investment→rating effect from every rating the game produces, while the breakdown carries on
+reporting a number that is now fiction. My assertion checked the reporting object against
+*itself*; nothing checked that the crowd term it reports is the one the rating used, and
+nothing anywhere asserted the six terms sum to the score.
+
+One line fixes it, and it is the line the whole exercise was for:
+
+```csharp
+Assert.Equal(bd.Technical + bd.Storytelling + bd.Crowd
+             + bd.FinishNudge + bd.VarietyNudge + bd.CoherenceNudge, r.FinalScore, 9);
+```
+
+A second survivor, same shape: `RecordReaction(declared, weight)` → `RecordReaction(declared,
+1.0)` also passed everything. The *kind* of the two override beats was tested and their
+*magnitude* was not — and those two beats, the denied tag and the overworked isolation, are
+the ones A5 exists to represent. Now pinned by proportionality: two runs differing only in the
+near tag's intensity, asserting the tension gap equals the weight gap. (My first attempt at
+that test asserted total tension *equals* the near tag's weight, which is wrong — the neutral
+branch records tension too. The test failed and told me so.)
+
+### 15 of 35 babyfaces could never record a single unit of heat
+
+`Favour = Clamp(intent + (Disposition − 0.55) × 1.2, 0, 1)` binds at 1.0 for any face above
+0.675 disposition, and `heated = engaged × (1 − favour)`. So fifteen shipped babyfaces were
+categorically incapable of drawing heat under any booking, and seven heels of drawing pop.
+That is round 1's degenerate-clamp finding — *"64.6% saturated the upper clamp and received an
+identical multiplier"* — in a different place, introduced by the commit that fixed it.
+
+Replaced with a logistic curve, which saturates asymptotically and so has no plateau to land
+on. On the shipped roster: **0 of 35 faces and 0 of 37 heels pinned**, and the cool-heel
+crossover fires on **8 of 37**.
+
+### And a claim doc 31 makes that the data half-denies
+
+*"§2's two important crossovers — cheers for a heel, boos for a babyface — are both
+reachable."* Measured: heel→cheered, 8 of 37. Babyface→booed, **0 of 35**, and unreachable —
+`Favour < 0.5` needs disposition below 0.26 and the lowest face on the roster is 0.385.
+
+Worse, the only route to it is an *unpopular* babyface, which is uncomfortably close to the
+defect this replaced. A babyface the crowd has **turned on despite a push** is a different
+thing, and the engine has no signal for it: I checked whether appeal-versus-overness could
+serve, and on the shipped roster those two never diverge by more than 0.08. So it is not
+currently measurable and the doc now says so, rather than claiming a reading nothing can
+produce.
+
+### The smaller corrections
+
+| | |
+|---|---|
+| "up to 4.72 points (0.236★)" | My own test printed **4.87** on the commit that wrote the line. Now measured on the shipped roster: 3.99. |
+| "Three of the old tests were vacuous and are replaced rather than patched" | False for one — `EveryBeatRecordsSomething…` was byte-identical to round 1, with a new test *added alongside* it. Deleted, since `ABeatThatMovesNobody…` is the real guard and dies when the floor is removed. |
+| `TheCrowdNoteReadsLikeSomebodyDescribingTheRoom` asserted only `!IsNullOrWhiteSpace`, which `Label` cannot return | Now asserts three different rooms get three different notes. |
+| `TypicalMatchesAreNotShiftedByTheFeature` — name contradicted by its own data (that pairing moves −1.44 points) | Renamed `AMidcardPairing_ReadsAsAMiddlingRoom`, which is what it actually asserts. The rating claim belongs to the corpus test. |
+| The dominant-tally figures in the round-1 section | Off by single counts against the code they shipped with. |
+
+### What review tried to break and could not
+
+Worth recording as well, because it is most of the feature: all seven mutations in the round-1
+table die exactly where claimed; `WM34OriginalPlan()` is a byte-faithful extraction;
+`RepetitionFactor` bottoms at exactly 0.680 and the old rule fired on exactly 0 of exactly
+33,060 beats; the reaction split is weight-conserving to 5.7e-14 across 33k beats with no NaN
+and no divide-by-zero; `Breakdown` sums to `FinalScore` exactly with nothing double-counted;
+the recreation margins are all ≥0.34★; `InvestmentDownside` is genuinely bounded on both
+sides; and `ADeniedTag` is genuinely strengthened.
+
+**487 tests passing**, with both surviving mutations now failing the intended test.

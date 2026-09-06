@@ -120,9 +120,11 @@ What it covers:
   the same overness, and §2's two important crossovers — cheers for a heel, boos for a
   babyface — are both reachable.
 
-Measured: investment moves the score in **98.5%** of shipped-roster singles matches, by up to
-**4.72 points (0.236★)**. The median match comes out at ×0.995, so the effect really is in
-the tails.
+Measured on the **shipped 76-wrestler roster** (n = 34,200 — every non-feud-gated singles
+structure × every ordered pair): investment moves the score in **96.6%** of matches, by up to
+**3.99 points (0.199★)**. The median match comes out at exactly ×1.000, a dead room keeps
+70.2% of its crowd component and a room present all night gains 6.1%, and only 0.33% sit at
+the maximum. The effect really is in the tails.
 
 Still open from the original entry: `nuclear heat` as distinct from ordinary heat, and
 reaction as an input to the *business* result rather than only the quality rating (C5).

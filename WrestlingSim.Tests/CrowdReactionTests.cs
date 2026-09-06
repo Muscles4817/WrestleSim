@@ -322,7 +322,7 @@ namespace WrestlingSim.Tests
         public void TheInvestmentCurve_IsCentredOnTypicalAndAsymmetric()
         {
             double dead    = MatchEngine.InvestmentFactor(0.0);
-            double typical = MatchEngine.InvestmentFactor(0.7635);
+            double typical = MatchEngine.InvestmentFactor(MatchEngine.TypicalInvestment);
             double full    = MatchEngine.InvestmentFactor(1.0);
 
             output.WriteLine($"  dead {dead:F4}   typical {typical:F4}   full {full:F4}");
@@ -387,6 +387,24 @@ namespace WrestlingSim.Tests
                              bd.Crowd, 9);
                 Assert.Equal(MatchEngine.InvestmentFactor(r.Reaction.Investment),
                              bd.InvestmentFactor, 9);
+
+                // And — the part that was missing, and it was the whole point — that the
+                // crowd term the breakdown reports is the one the *rating* actually used.
+                //
+                // Review mutated the final sum to use `crowdBeforeInvestment` while leaving
+                // `Breakdown` untouched: that removes the entire investment→rating effect
+                // from every rating the game produces, and **all 479 tests passed**, because
+                // everything above only checks the reporting object against itself. That is
+                // round 1's blocker — "delete the multiplier, 429 tests pass" — wearing a
+                // different costume, in the commit whose stated purpose was to make the
+                // composite testable.
+                //
+                // Nothing else in the suite asserts the six terms sum to the score. Now this
+                // does. (The 0–100 clamp never binds on this corpus; if it ever does, this
+                // is the right place to find out.)
+                Assert.Equal(bd.Technical + bd.Storytelling + bd.Crowd
+                             + bd.FinishNudge + bd.VarietyNudge + bd.CoherenceNudge,
+                             r.FinalScore, 9);
 
                 checkedMatches++;
                 if (bd.CrowdBeforeInvestment > 0.01 && Math.Abs(bd.InvestmentPoints) > 0.01) moved++;
@@ -453,6 +471,74 @@ namespace WrestlingSim.Tests
                 "that is a constant, not a tail effect.");
 
             Assert.True(p05 < 0.93, $"The bottom of the distribution barely moves ({p05:F3}).");
+        }
+
+        /// <summary>
+        /// A declared override takes the beat's *whole* weight, and the weight is the beat's
+        /// crowd swing.
+        ///
+        /// Review mutated `RecordReaction(declared, weight)` to `RecordReaction(declared,
+        /// 1.0)` and all 479 tests passed: only the *kind* of the two override beats was
+        /// tested, never their magnitude — and those two beats, the denied tag and the
+        /// overworked isolation, are the ones A5 exists to represent. It also breaks the
+        /// weight-conservation the rest of the feature relies on.
+        /// </summary>
+        [Fact]
+        public void ADeclaredOverride_CarriesTheBeatsFullWeight()
+        {
+            var plan = new MatchPlanModel
+            {
+                SideA = MatchSide.Of(W("F1", 88, 4.4), W("F2", 86, 4.2)),
+                SideB = MatchSide.Of(W("H1", 87, 4.3), W("H2", 85, 4.1)),
+                Beats =
+                [
+                    new MatchBeat { Type = BeatType.StandardOpening, Control = BeatControl.Even },
+                    new MatchBeat { Type = BeatType.Cutoff,    Control = BeatControl.WrestlerB },
+                    new MatchBeat { Type = BeatType.Isolation,  Control = BeatControl.WrestlerB },
+                    new MatchBeat { Type = BeatType.NearTag,    Control = BeatControl.WrestlerB,
+                                    Intensity = BeatIntensity.Extreme },
+                    new MatchBeat { Type = BeatType.HotTag,     Control = BeatControl.WrestlerA },
+                    new MatchBeat { Type = BeatType.FinishClean, Control = BeatControl.WrestlerA },
+                ]
+            };
+
+            // Two runs differing only in how hard the near tag hits. The override's share of
+            // tension has to move by exactly the change in that beat's weight — a flat 1.0
+            // would not move at all. (Asserting the near tag's weight *equals* total tension
+            // would be wrong: the neutral branch records tension too, which is the point of
+            // separating "holding its breath" from "gone".)
+            MatchEngineResult Run(BeatIntensity intensity)
+            {
+                var beats = plan.Beats.Select(x => x.Clone()).ToList();
+                beats.First(x => x.Type == BeatType.NearTag).Intensity = intensity;
+                return new MatchEngine(Seed).Execute(new MatchPlanModel
+                {
+                    SideA = plan.SideA, SideB = plan.SideB, Beats = beats
+                });
+            }
+
+            var soft = Run(BeatIntensity.Low);
+            var hard = Run(BeatIntensity.Extreme);
+
+            double SoftWeight(MatchEngineResult r) =>
+                Math.Max(1.5, Math.Abs(r.BeatResults.First(b => b.BeatType == BeatType.NearTag)
+                                        .CrowdEnergyDelta));
+
+            double weightGap  = SoftWeight(hard) - SoftWeight(soft);
+            double tensionGap = hard.Reaction.Tension - soft.Reaction.Tension;
+
+            output.WriteLine($"  near tag at Low swung {SoftWeight(soft):F2}, at Extreme {SoftWeight(hard):F2}");
+            output.WriteLine($"  tension {soft.Reaction.Tension:F2} → {hard.Reaction.Tension:F2}");
+
+            Assert.True(weightGap > 2.0,
+                $"setup: the two intensities should differ by more than a flat unit, got {weightGap:F2}");
+            Assert.Equal(weightGap, tensionGap, 6);
+
+            // And the whole match still conserves: every beat contributes exactly
+            // max(1.5, |delta|), overrides included.
+            foreach (var r in new[] { soft, hard })
+                Assert.Equal(r.BeatResults.Sum(b => Math.Max(1.5, Math.Abs(b.CrowdEnergyDelta))),
+                             r.Reaction.Total, 6);
         }
 
         /// <summary>
@@ -536,8 +622,17 @@ namespace WrestlingSim.Tests
             }
         }
 
+        /// <summary>
+        /// Renamed, because the old name — `TypicalMatchesAreNotShiftedByTheFeature` — is a
+        /// claim its own data denies: review measured this pairing's crowd term moving by
+        /// −1.44 points (−0.072★). What the test actually asserts, and all it ever
+        /// asserted, is that a midcard pairing reads as a middling room. The claim about
+        /// ratings being unshifted belongs to
+        /// <see cref="ATypicalMatchIsUnmoved_AndThatIsMeasuredNotAsserted"/>, which measures
+        /// the whole corpus rather than one pair.
+        /// </summary>
         [Fact]
-        public void TypicalMatchesAreNotShiftedByTheFeature()
+        public void AMidcardPairing_ReadsAsAMiddlingRoom()
         {
             // The multiplier is centred rather than applied as a penalty. An earlier version
             // scaled the crowd component straight down by investment, which charged low
@@ -554,17 +649,26 @@ namespace WrestlingSim.Tests
             Assert.InRange(midcard.Reaction.Investment, 0.35, 0.65);
         }
 
+        /// <summary>
+        /// The note has to *describe* the room, which means different rooms get different
+        /// notes. This used to assert only `!IsNullOrWhiteSpace`, which `Label` cannot
+        /// return — so it read three matches and checked nothing about any of them.
+        /// </summary>
         [Fact]
         public void TheCrowdNoteReadsLikeSomebodyDescribingTheRoom()
         {
+            var notes = new List<string>();
             foreach (var (label, over, cha) in new[]
                      { ("nobodies", 15.0, 0.8), ("midcard", 60.0, 3.0), ("stars", 94.0, 4.9) })
             {
                 var r = Run(W("A", overness: over, charisma: cha),
                             W("B", overness: over, charisma: cha), "Big Match Epic");
                 output.WriteLine($"  {label,-9} {r.Reaction.Investment:F2}  \"{r.CrowdNote}\"");
-                Assert.False(string.IsNullOrWhiteSpace(r.CrowdNote));
+                notes.Add(r.CrowdNote);
             }
+
+            Assert.Equal(3, notes.Distinct().Count());
+            Assert.All(notes, n => Assert.False(string.IsNullOrWhiteSpace(n)));
         }
 
         /// <summary>
@@ -616,20 +720,11 @@ namespace WrestlingSim.Tests
             Assert.Equal(withInertBeats, floored);
         }
 
-        [Fact]
-        public void EveryBeatRecordsSomething_SoASilentMatchDoesNotReadAsPerfectlyInvested()
-        {
-            // The weight has a floor for exactly this reason. Without it a beat that moved
-            // the room by nothing would record no reaction at all, and a match of pure
-            // nothing would come out with an undefined-but-flattering profile.
-            var result = Run(W("A", overness: 15, charisma: 0.8),
-                             W("B", overness: 15, charisma: 0.8), "TV Formula");
-
-            double total = result.Reaction.Engagement + result.Reaction.Disengagement;
-            output.WriteLine($"  total recorded {total:F1} across {result.BeatResults.Count} beats");
-
-            Assert.True(total > 0);
-            Assert.All(result.BeatResults, b => Assert.True(Enum.IsDefined(b.ResolvedReaction)));
-        }
+        // EveryBeatRecordsSomething_SoASilentMatchDoesNotReadAsPerfectlyInvested is gone.
+        // The build log claimed it had been "replaced rather than patched"; review found it
+        // byte-identical to round 1 and still asserting `total > 0` and
+        // `Enum.IsDefined(ResolvedReaction)` — both unfalsifiable by construction. A new
+        // test had been added *alongside* it. `ABeatThatMovesNobody…` above is the real
+        // guard for the same property, and it dies when the floor is removed.
     }
 }

@@ -33,23 +33,41 @@ namespace WrestlingSim.Engine
         /// The investment reading a normal match produces — a match here scores exactly as
         /// it did before the reaction vector existed.
         ///
-        /// **Measured, not chosen.** This shipped at 0.50 with a comment claiming the same
-        /// thing, and review measured the actual median across every shipped-roster singles
-        /// pairing × every non-feud-gated structure (5,220 matches) at **0.7635**. The
-        /// consequence was not cosmetic: 64.6% of all matches saturated the old upper clamp
-        /// and got an identical flat uplift, so what was described as tail movement was, for
-        /// two-thirds of the roster, a blanket bonus.
+        /// **Measured, and measured twice, because the first measurement was of the wrong
+        /// thing.**
         ///
-        /// If the roster's connection distribution changes materially, re-measure this.
-        /// <c>ATypicalMatchIsUnmoved</c> pins it to the corpus rather than to a constant.
+        /// It shipped at 0.50 with a comment claiming it was the typical reading; the actual
+        /// median was nowhere near, and 64.6% of matches saturated the old upper clamp and
+        /// got an identical flat uplift. Round 1 replaced it with 0.7635 — which round 2
+        /// then measured as the median of the **pre-rewrite classifier**. The same commit
+        /// that adopted it also replaced `invested` with `attention × RepetitionFactor`, so
+        /// the number described a corpus that no longer existed. My own test printed the
+        /// evidence — median factor 0.9949 rather than 1.0000 — and I did not read it. That
+        /// is the second time in this feature that a constant has been documented as a
+        /// measurement it is not.
+        ///
+        /// This one is the median of the **shipped** classifier over the **shipped** roster:
+        /// 76 wrestlers × every non-feud-gated singles structure, n = 34,200. It moved from
+        /// 0.76 to 0.53 because the roster grew downward — a 76-person roster with a real
+        /// lower card is a less invested room than a 30-person roster of stars, which is
+        /// correct and is the whole reason this is centred rather than absolute.
+        ///
+        /// **It will drift again.** A roster change moves it, and that is not a bug to
+        /// engineer around — <c>ATypicalMatchIsUnmoved</c> measures the corpus and fails
+        /// when the two part company, which is exactly how round 2 caught this. Re-measure
+        /// when it fires; do not widen the test.
         /// </summary>
-        private const double TypicalInvestment = 0.7635;
+        public const double TypicalInvestment = 0.5319;
 
         /// <summary>
         /// What a room that never turned up costs, per unit of investment below typical.
-        /// At the floor (investment 0) a match keeps 69% of its crowd component.
+        /// At the floor (investment 0) a match keeps 70% of its crowd component.
+        ///
+        /// Derived from that end point rather than picked: 0.30 / TypicalInvestment. It moves
+        /// when the median does, because what is being held fixed is the *shape* — a dead
+        /// room keeps roughly seventy per cent — not the slope.
         /// </summary>
-        private const double InvestmentDownside = 0.40;
+        private const double InvestmentDownside = 0.56;
 
         /// <summary>
         /// What a room that was present all night earns, per unit above typical. At the
@@ -59,6 +77,12 @@ namespace WrestlingSim.Engine
         /// the cost of silence, not a bonus for engagement. An invested crowd is the
         /// baseline a match is supposed to earn; being ignored is the failure.
         ///
+        /// Also derived from its end point — 0.06 / (1 − TypicalInvestment) — for the same
+        /// reason. Review measured the previous 0.25 as effectively unconstrained: 0.10 and
+        /// 0.15 both passed the entire suite, so only the value that *disables* the
+        /// mechanism was caught. Tying both slopes to end points at least makes them
+        /// statements about the design rather than free parameters.
+        ///
         /// It is expressed as two slopes rather than as a symmetric swing inside an
         /// asymmetric clamp, which is how it shipped first. A clamp that two-thirds of the
         /// corpus sits against is not an asymmetry, it is a constant — and it also made the
@@ -67,7 +91,7 @@ namespace WrestlingSim.Engine
         /// 0.0001★. Two slopes give every match a distinct multiplier and make both bounds
         /// statements about design rather than about the test suite.
         /// </summary>
-        private const double InvestmentUpside = 0.25;
+        private const double InvestmentUpside = 0.13;
 
         /// <summary>
         /// How much of its crowd component a match keeps, given how present the room was.

@@ -116,11 +116,19 @@ namespace WrestlingSim.Engine
                 _              => 0.50   // a tweener is whatever the room decides they are
             };
 
-            // 1.2 is chosen so the crossover is reachable but not routine: a heel needs to
-            // be adored (disposition ≈ 0.84) before the room starts cheering them, and a
-            // babyface has to have lost it (≈ 0.26) before it turns. Both happen on the
-            // shipped roster; neither is common.
-            Favour = Math.Clamp(intent + (Disposition - 0.55) * 1.2, 0, 1);
+            // Logistic rather than a clamped line, because the clamped line had a plateau
+            // and people landed on it. Review measured **15 of 35 shipped babyfaces at
+            // exactly Favour = 1.000**, which does not mean "very much cheered" — it means
+            // `heated = engaged × (1 − favour) = 0`, so those fifteen could never record a
+            // single unit of heat under any booking. Seven heels sat at exactly 0.000 and
+            // could never record pop. That is the same degenerate-clamp shape review caught
+            // in round 1 on the investment multiplier, in a different place.
+            //
+            // The curve saturates asymptotically instead, so nobody is ever categorically
+            // incapable of the other reading. 4.0 sets how firmly the gimmick's alignment
+            // states its intent; 5.0 sets how far the crowd can overrule it.
+            double lean = (intent - 0.5) * 4.0 + (Disposition - 0.55) * 5.0;
+            Favour = 1.0 / (1.0 + Math.Exp(-lean));
 
             // Charisma is weighted heaviest because it is the sharpest discriminator on a
             // roster where everyone is reasonably popular.
