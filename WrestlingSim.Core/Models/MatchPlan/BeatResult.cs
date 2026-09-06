@@ -11,6 +11,21 @@ namespace WrestlingSim.Models.MatchPlan
 
         // Raw deltas applied this beat
         public double CrowdEnergyDelta { get; set; }
+
+        /// <summary>
+        /// What kind of noise this beat drew, when the handler knows better than the
+        /// engine's default reading of the delta's sign.
+        ///
+        /// Most beats leave this null and are classified from context — a positive delta
+        /// from somebody the crowd likes is a pop, one from somebody they want beaten is
+        /// heat. The beats that set it explicitly are the ones where the sign lies: a
+        /// denied tag takes energy *out* of the room and that is the audience holding its
+        /// breath, not leaving.
+        /// </summary>
+        public ReactionKind? Reaction { get; set; }
+
+        /// <summary>The reaction actually recorded, once the engine has classified it.</summary>
+        public ReactionKind ResolvedReaction { get; set; }
         public double AdvantageDelta { get; set; }
         public double TechnicalContribution { get; set; }
         public double StorytellingContribution { get; set; }

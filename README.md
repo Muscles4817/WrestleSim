@@ -505,7 +505,7 @@ by the declared match type (Standard shown):
 |---|---|---|
 | Technical | 35% | Ring skills for the style being worked, the opponent's selling, ring psychology |
 | Storytelling | 30% | Connection, psychology, feud intensity, beat sequencing |
-| Crowd | 35% | Crowd energy arc, capped by how much this audience cares about these two |
+| Crowd | 35% | Crowd energy arc, capped by how much this audience cares about these two, then scaled by how present the room actually was |
 
 Three adjustments then apply:
 
@@ -543,6 +543,23 @@ The bolded stats were read zero times by the match engine before this model exis
   from two poorly-conditioned wrestlers lowers it further.
 - Gains compress as the crowd approaches its ceiling — the last 20 points of a reaction are
   much harder to buy than the first 20.
+
+**What kind of reaction, not just how much.** Energy is one number and it cannot tell a room
+holding its breath from a room that has stopped caring — so alongside it the engine keeps a
+profile: **pop, heat, tension, silence and go-away heat.**
+
+- **Boos are engagement.** A crowd booing somebody it wants beaten is present, and the
+  face-in-peril structure runs on exactly that. Heat counts towards investment; go-away heat
+  does not.
+- **The two quiet rooms are separated.** A denied tag reads as tension — the held breath. An
+  overworked heat sequence reads as go-away heat. Both take energy out of the building and
+  they mean opposite things.
+- **Silence is the failure state.** The crowd component is multiplied by how present the room
+  was: a dead building keeps 70% of it, a room there all night gains 6%. The asymmetry is the
+  point — being ignored costs far more than being loved pays.
+- **Booking, not just casting.** Showing the crowd the same beat four times costs their
+  attention however over the wrestlers are, and what it costs is recorded as go-away heat
+  rather than as silence.
 - Decays 3% naturally between every beat.
 - Comebacks from deep momentum deficits earn a larger pop (`earnedBonus` scales with deficit).
 
