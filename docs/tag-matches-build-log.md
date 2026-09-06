@@ -890,13 +890,25 @@ measuring variety — it is also the brake on padding**, and exempting anything 
 a `Southern Tag` raised its rating monotonically:
 
 ```
-Southern Tag 2v2, Technical      +0      +4      +8     +16
-  with Tag in the denominator  4.3232  4.4400  4.4719  4.4573    (padding punished)
-  with Tag exempted            4.3232  4.5241  4.6367  4.7168    (+0.394★ for booking nothing)
+Southern Tag 2v2, appending N Quick Tags before the finish (400 seeds a cell)
+
+                             +0      +4      +8     +16     +24     +32
+Standard,  Tag counted    4.5042  4.5053  4.4621  4.3634  4.2578  4.1620   turns down, keeps falling
+Technical, Tag counted    4.2699  4.3885  4.4234  4.4274  4.3901  4.3436   peaks at +16, then falls
+Technical, Tag exempted   4.3232  4.5241  4.6367  4.7168      —       —    climbs, monotonically
 ```
 
+Read that honestly, because the first version of this table annotated the counted row
+*"padding punished"* and its own figures do not show punishment at +4 or +8 — round 4 caught
+that, which is the same failure this file keeps recording. What the counted row shows is a
+curve that **turns**: a couple of extra tags are worth a little (more beats, more crowd), and
+past that the variety penalty overtakes them and keeps overtaking them. The exempted row
+never turns, because nothing is left to overtake it. It is the *absence of a turning point*
+that is the exploit, not the sign at +4.
+
 `BeatType.Tag` is on-type for `Technical`, so the exploit was largest exactly where a player
-would declare it — and `Validate` permits it at two a side as well, since a `Quick Tag` with
+would declare it — and Technical is also where the counted curve turns latest, which is worth
+knowing on its own — and `Validate` permits it at two a side as well, since a `Quick Tag` with
 no `IncomingIndex` alternates 0→1→0→1 forever. A hand-built plan of opening + 40 tags +
 finish went from the −5 clamp to a nudge of exactly zero, because `VarietyBeatCount` fell to
 2 and the "too short to judge" guard silently became "not judged at all".

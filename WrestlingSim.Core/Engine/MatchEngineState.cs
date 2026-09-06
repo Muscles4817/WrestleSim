@@ -171,7 +171,6 @@ namespace WrestlingSim.Engine
         /// <summary>How many distinct beat types the match has used. Rewards varied booking.</summary>
         public int DistinctBeatTypes => _typeCounts.Count;
 
-
         /// <summary>0-based position of the beat currently resolving.</summary>
         public int BeatIndex { get; private set; } = -1;
 
