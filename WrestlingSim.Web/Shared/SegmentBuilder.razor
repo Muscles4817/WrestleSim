@@ -8,6 +8,12 @@
             <span>@label</span>
         </div>
     }
+    @* On a phone the pills collapse to bare numerals, so this line carries where you are.
+       Without it — which is how this shipped for a round — the change made two of the three
+       step bars strictly worse than before it. *@
+    <div class="steps__where small muted">
+        @(step + 1) of @StepLabels.Length · @StepLabels[step].Label
+    </div>
 </div>
 
 @* ── 1. Template ──────────────────────────────────────────────────────── *@

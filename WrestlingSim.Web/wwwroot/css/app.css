@@ -799,10 +799,16 @@ table.data tr:last-child td { border-bottom: 0; }
     text-align: left;
     font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
   }
-  /* Scoped. Unscoped, this prefixed every .editor-row on every phone — so the
-     dashboard's championship list read "BEAT ★", the calendar read "BEAT ▦", the save
-     slots read "BEAT ★" and a title lineage read "BEAT 1", "BEAT 2". `.editor-row` is
-     the app's universal list row and only the beat editor is about beats. */
+  /* Unscoped, this prefixed every .editor-row on every phone — so the dashboard's
+     championship list read "BEAT ★", the calendar read "BEAT ▦", the save slots read
+     "BEAT ★", a title lineage read "BEAT 1", "BEAT 2", and the segment builder's action
+     rows read "BEAT" too. `.editor-row` is the app's universal list row and only the beat
+     editor was ever about beats.
+
+     The beat editor has since moved to `.beat-row` entirely, so no element carries this
+     modifier any more. Kept scoped rather than deleted: `.editor-row` still has eight
+     consumers and the day somebody adds a ninth that *is* about beats, this is where the
+     prefix should come from. */
   .editor-row--beat .editor-row__n::before { content: "Beat "; }
   .editor-row__tools {
     display: grid; grid-template-columns: repeat(3, 1fr);
@@ -1024,6 +1030,8 @@ table.data tr:last-child td { border-bottom: 0; }
   display: flex; align-items: center; gap: var(--gap);
   padding: 12px var(--pad); border-bottom: 1px solid var(--line);
 }
+/* The close control is the one thing in a modal that must never be a near-miss. */
+.sheet__head .btn--icon { min-width: var(--tap); min-height: var(--tap); }
 .sheet__title { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
 .sheet__filters { padding: 10px var(--pad); border-bottom: 1px solid var(--line-soft); }
 .sheet__body { overflow-y: auto; -webkit-overflow-scrolling: touch; }
@@ -1113,13 +1121,14 @@ table.data tr:last-child td { border-bottom: 0; }
    you go looking for it. */
 .beat-gap {
   display: block; width: 100%; height: 18px; margin: 2px 0;
+  /* Touch gets a real target — see the (hover: none) block below. */
   background: none; border: 0; color: var(--faint);
   font-size: 12px; line-height: 1; cursor: pointer; opacity: 0;
   transition: opacity .12s;
 }
 .beat-gap:focus-visible { opacity: 1; outline: none; box-shadow: var(--ring); }
 @media (hover: hover) and (pointer: fine) { .beat-gap:hover { opacity: 1; } }
-@media (hover: none) { .beat-gap { opacity: .5; height: 22px; } }
+@media (hover: none) { .beat-gap { opacity: .5; height: var(--tap); margin: 0; } }
 
 .sheet--short { top: auto; height: min(80vh, 620px); bottom: max(0px, env(safe-area-inset-bottom)); }
 .sheet__body--pad { padding: var(--pad); }

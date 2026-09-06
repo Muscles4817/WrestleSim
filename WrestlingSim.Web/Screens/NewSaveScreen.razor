@@ -12,6 +12,11 @@
             <span>@label</span>
         </div>
     }
+    @* And the line that says where you are, since the pills no longer do. Wrapping the
+       label without adding this made the screen strictly worse for a round. *@
+    <div class="steps__where small muted">
+        @(step + 1) of @StepLabels.Length · @StepLabels[step].Label
+    </div>
 </div>
 
 @if (step == 0)

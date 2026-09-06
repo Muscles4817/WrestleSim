@@ -1474,7 +1474,13 @@ mattered:
 > you've used it. In a tag match step 1 alone is roughly **116 pick cards ≈ 12,000px ≈ 17
 > phone screens**. No amount of chip-filtering fixes a page that long.
 
-At three a side on the seventy-name roster now in flight it is nearer thirty thousand pixels.
+Measured rather than repeated, because review checked and I had not: **114 cards, 16,269px,
+19.3 screens** at 390×844 on the thirty-name roster the review was written against. The card
+count was essentially right and the height was *understated*. Singles was 8,964px; trios,
+22,815px across 158 cards. On the seventy-six-person roster that shipped in the meantime it is
+proportionally worse again — I did not measure that, and the PR body's "nearer thirty
+thousand" was an extrapolation stated as a fact, on a roster that at the time did not exist
+anywhere but an unmerged branch.
 And the reason none of the obvious improvements — keyboard, recency, relevance — had ever been
 made is that every one of them would have had to be made in five places: four inline lists in
 the match builder with four subtly different exclusion predicates, plus the segment builder's
@@ -1527,22 +1533,36 @@ with thirteen chips, and no console errors.
 ### The beat editor
 
 Below 640px each beat row became a stacked card carrying three full-width native `<select>`s
-and three icon buttons — about 200px a beat, so a seven-beat Technical Showcase was ~1,400px
-before you added anything, and each of the three commonest edits opened a full-screen wheel
-picker on iOS. The row is now a 64px summary (`1 · Face in Peril · Side B · High · Long · 4
-min`) and the edits live in a sheet with chip rows. Thirteen beats now occupy about the space
-three used to.
+and three icon buttons — **209px a beat measured**, so a seven-beat Technical Showcase was
+~1,499px before you added anything, and each of the three commonest edits opened a
+full-screen wheel picker on iOS. The row is now a summary (`1 · Face in Peril · Side B ·
+High · Long · 4 min`) and the edits live in a sheet with chip rows.
+
+Two corrections to what I first wrote here, both measured by review and both flattering in
+the direction you would expect:
+
+* "a 64px summary" — 64px is the CSS `min-height`. The rendered row is **75px** at 390px,
+  and 113px when it wraps at 320px.
+* "thirteen beats occupy about the space three used to" — thirteen new rows are **1,370px**,
+  which is about *seven* old rows, not three. The page total for the beat step went 3,561px →
+  2,250px, a real 37% reduction, and that is the number worth quoting.
+
+Step 0, after, at 390×844: singles **1,229px**, tag **1,781px**, trios **2,052px** — so the
+tag booking that was 16,269px is a genuine **9.1×** reduction, and trios goes from 22,815px to
+one and a half more screens than singles.
 
 Four related things went with it: the library no longer slams shut on every add (building a
 nine-beat match was seven rounds of add → close → scroll → reopen → scroll); there is an
 insert point between rows, so moving a beat from position 8 to 2 is not six taps of `↑`;
 gated beats are hidden behind a count rather than rendered greyed (in a singles match the
-whole Tag category — eleven of forty-four — was permanently disabled scroll-tax); and the
+whole Tag category was permanently disabled scroll-tax — eleven templates, of which nine are
+actually gated, since Shine and Cut-Off work in a singles match; the UI counts the gated ones
+and says so); and the
 validation errors moved **above** the sheet, where on a phone they had been rendering past
 both the sheet and the library and so were off-screen while you were doing the thing that
 triggered them.
 
-### `BEAT ★` on five screens, on every phone
+### `BEAT ★` on five screens — six, in fact — on every phone
 
 ```css
 @media (max-width: 640px) { .editor-row__n::before { content: "Beat "; } }
@@ -1550,8 +1570,9 @@ triggered them.
 
 Unscoped. `.editor-row` is the app's universal list row, so on every phone the dashboard's
 championship list read **"BEAT ★"**, the calendar read **"BEAT ▦"**, the landing screen's save
-slots read **"BEAT ★"**, and a title's lineage read **"BEAT 1"**, **"BEAT 2"**. Shipping.
-Scoped to `.editor-row--beat`.
+slots read **"BEAT ★"**, and a title's lineage read **"BEAT 1"**, **"BEAT 2"**. Review found a
+sixth surface I had missed — the segment builder's action rows — and twelve files use
+`.editor-row__n` in total. Shipping. Scoped to `.editor-row--beat`.
 
 The review's deeper point — that one class carries two incompatible meanings, "an item you can
 reorder and delete" and "a historical fact", pixel-identically — is real and is **not** fixed
@@ -1577,11 +1598,16 @@ shows `Pop 78 / Cha 3.4` and expects you to know one is out of 100 and the other
 
 ### Amber stopped meaning anything
 
-Twenty-six `notice--warn` against ten `--info`, eight `--error` and five `--tip`. Warn was
-doing four different jobs: *this will cost you*, *this is unusual but fine*, *this pairing is
-worn out*, *this belt is vacant*. Split into `--cost` (a price, with the number in the strong)
-and `--advice` (a booking opinion — where `FreshnessAdvice` and `BookerTip` live, and they
-should read as counsel), leaving `--warn` for things that are about to go wrong.
+**Thirty** `notice--warn` against thirteen `--info`, eight `--error` and five `--tip` — I
+wrote "twenty-six against ten" and review counted. Warn was doing four different jobs: *this
+will cost you*, *this is unusual but fine*, *this pairing is worn out*, *this belt is vacant*.
+Split into `--cost` (a price, with the number in the strong) and `--advice` (a booking
+opinion — where `FreshnessAdvice` and `BookerTip` live, and they should read as counsel),
+leaving `--warn` for things that are about to go wrong.
+
+Only six notices were actually reclassified, so warn is still about 43% of them. This is a
+start on the problem, not a fix for it, and the first version of this section implied
+otherwise.
 
 ### The rest
 
@@ -1609,4 +1635,133 @@ No mechanic was removed. The crossover cost, the chemistry label, the hot-tag wa
 attention pool and the freshness reading are all still there — each of them nearer the
 decision it is about.
 
-**461 tests passing**, and the flow driven end to end in a real browser at phone width.
+**471 tests passing** — and worth stating plainly: **this PR adds none of them.** The base was
+already at 461 before it and there is no test for `RosterPicker`, for `Wrestler.CharismaLabel`,
+or for any of the slot logic. The browser run is the only thing standing behind the new
+selection flow, and a browser run is not a regression test. My commit message also said "435
+green unit tests", which was the count on a different branch.
+
+
+---
+
+## The UX pass — review round 1
+
+**Do not merge as-is.** The architecture was found right and most of it verified working —
+the reviewer filled and swapped every slot in singles, tag and trios, ran matches and shows
+end to end, and found no data corruption and no console errors anywhere. What blocked it was
+one state-corruption bug, two mobile regressions on screens this PR touched but did not
+finish, and a keyboard story the README now documents and that did not work.
+
+### The sheet could outlive step 0 and write a feud into the wrong match
+
+`RosterPicker` rendered **outside** the `@if (step == 0)` block, nothing cleared `openSlot` on
+navigation, and the dialog has no focus trap. So with the keyboard alone:
+
+1. Book Roman Reigns vs Cody Rhodes — a Hot feud, two matches.
+2. Open Corner B's picker. Tab reaches `Next →` **behind the scrim**; it is not inert.
+3. Enter. The wizard advances with the roster sheet still on screen. Repeat to the Feud step.
+4. Pick Gunther from the still-open sheet.
+
+> "Roman Reigns and **Gunther** have history you have booked… Use the booked feud · Hot · 30
+> heat · 2 matches"
+
+Roman and Gunther have never met. `Next()` caches `existingFeud` at step 0 only, so a
+post-`Next()` swap through the leaked sheet bypasses all of it — and confirming would write
+heat into the wrong rivalry, unlock feud-gated beats nobody earned, and let a blow-off settle
+someone else's story. Mouse users cannot reach it; keyboard users can, in three keystrokes.
+
+Fixed by putting the picker inside the step guard *and* clearing `openSlot` in `Next()`/
+`Back()`. Both, because a leaked sheet is a leaked write path.
+
+### The keyboard story the README documents did not work
+
+Three separate things, all measured:
+
+* **Enter booked the row you were not looking at.** `.is-cursor` was painted from an integer
+  that `@onmouseover` also wrote, while DOM focus was a second, independent highlight.
+  Tab-focused "Roman Reigns", pressed Enter, booked "Becky Lynch". On a laptop the mouse
+  resting anywhere over the list silently overrode arrow-key navigation. The cursor follows
+  **focus** now, and hover does not move it.
+* **Arrows scrolled the page behind the modal**, 0 → 531px, while the cursor walked off the
+  bottom of a list whose own `scrollTop` never moved. `preventDefault` on the arrows, and the
+  cursor row is scrolled into view.
+* **Escape did nothing until you Tabbed in** — four Tabs through background controls, because
+  the sheet is last in DOM order. Focus now moves into the sheet on open.
+
+And the page behind the sheet scrolled at all: a wheel over the 67px of scrim above it took
+the page 0 → 522px. Body scroll is locked while a sheet is open, released on every exit
+including disposal — a sheet torn down by a navigation must not leave the page permanently
+unscrollable, which is precisely how the first bug got out.
+
+### I made two of three step bars worse
+
+The mobile rule that collapses the step pills to numerals used to keep the *current* one
+labelled. I changed it to hide that too, added a `1 of 5 · Wrestlers` line to carry it — and
+added that line **only to `MatchBuilder`**. Then, separately, I wrapped `NewSaveScreen`'s
+label in a `<span>` so the hide rule would catch it there too, in the name of consistency.
+
+| screen | before | after this PR |
+|---|---|---|
+| NewSaveScreen | `1 Promotion` / `2 Shows` / `3 Review` | `1` / `2` / `3` |
+| SegmentBuilder | `1 Type` / `2` / `3` | `1` / `2` / `3` |
+| MatchBuilder | `1 Wrestlers` / `2` … | `1` / `2` … + `1 of 5 · Wrestlers` |
+
+The PR body listed "six bare numerals as the mobile progress bar" as a fixed problem, and
+resolved the inconsistency by making two of three screens strictly worse. Both now have the
+line.
+
+### A capability removed, under a heading saying none was
+
+`RosterPicker`'s own doc comment said `Current` was there "so the sheet can show it and offer
+to clear it". No clear control was ever rendered, and the old partner pickers toggled off on a
+second tap. Review re-tapped an occupant forty times: always a no-op. There is a Clear button
+now.
+
+Also: the crossover cost showed in the picker (`crossover −3.6`) and vanished the moment you
+chose — the one number that decision is about, gone at the point of committing to it. It is on
+the filled slot now.
+
+### Two of the four advertised sort tiers did not fire
+
+* **"Suggested"** (a standing partner) was gated on `Against.Count > 0`, and for a side-A slot
+  `Against` is side B — empty for the whole of the normal fill order. So the tier never
+  appeared where it is most useful: picking A's partner with A already chosen. Now gated on
+  the booked names.
+* **"The crowd has seen this"** was nested inside `if (feud.Intensity > None)`, so a worn-out
+  pairing with no live story got no warning — contradicting `MatchBuilder`'s own comment, and
+  newly reachable since A3, because a neglected feud now decays to `None` with its match count
+  intact. That is exactly the pairing that most needs the warning. Now checked first, and
+  outside the intensity.
+
+### The numbers I got wrong, all in the flattering direction
+
+| claim | measured |
+|---|---|
+| "~116 pick cards, ~12,000px, 17 screens" | 114 cards, **16,269px, 19.3 screens** — understated |
+| "nearer thirty thousand on the seventy-name roster now in flight" | Extrapolation stated as fact, on a roster that then existed only on an unmerged branch |
+| "the row is now a 64px summary" | 64px is the `min-height`; rendered **75px** |
+| "thirteen beats occupy about the space three used to" | About **seven**. The page went 3,561 → 2,250px, a real 37% |
+| "26 of 49 notices were `--warn`" | **30 of 56**, and only six were reclassified — warn is still ~43% |
+| "eleven of forty-four" Tag beats gated in singles | Eleven in the category, **nine** gated |
+| "`BEAT ★` on exactly five screens" | Six surfaces; twelve files use the class |
+| "461 tests passing" | True — **and the base was also 461.** This PR adds none |
+| "435 green unit tests" (commit message) | The count on a different branch |
+| "One roster picker, used everywhere a name is chosen" | `SegmentBuilder` still has its own. Five places became two |
+| "No mechanic was removed" | Slot clearing was, and the crossover cost stopped being visible |
+
+The nineteen font sizes, ten between 10 and 14.5px, fourteen letter-spacings and the ten
+implementations of the small-uppercase label all checked out exactly, which is the part of the
+review I was least confident about and the only set of numbers I got entirely right.
+
+### What review tried to break and could not
+
+Forty randomised pick/swap operations across six trios slots — never a duplicate, never a lost
+slot, never a stuck lineup. `SelectableTitles()` byte-identical and its side-size filter live.
+The championship step genuinely skipping (`1 of 5`, not `1 of 6`). The blocker text correct
+and updating at every stage. Team formation creating, persisting and re-reading. Four shows
+run end to end with correct results, star ratings, overness and momentum deltas, feud
+escalation, and a play-by-play matching the beat sheet exactly. `CanRemove` still protecting
+the sole opening and the sole finish. The relevance sort producing real bands in a real career.
+Zero console errors at 390px and 320px, no horizontal overflow at either.
+
+**471 tests passing**, and all four blockers re-verified in the browser after fixing.

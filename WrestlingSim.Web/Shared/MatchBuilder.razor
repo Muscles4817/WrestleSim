@@ -195,6 +195,10 @@
             <span class="slot__meta">
                 @w.CardPosition.Label() · @w.OvernessDisplay
                 <Trend Momentum="@w.Momentum" ShowLabel="false" />
+                @if (State.IsCrossover(w))
+                {
+                    <span class="badge badge--heel">crossover −@BrandIntegrity.CostOf(w).ToString("F1")</span>
+                }
             </span>
         }
         else
@@ -214,7 +218,7 @@
                 <span class="label">@BeatTypeName(edit.Type)</span>
                 <span class="badge">@edit.DurationMinutes min</span>
             </div>
-            <button class="btn btn--ghost btn--sm" @onclick="() => editing = null" aria-label="Close">✕</button>
+            <button class="btn btn--icon btn--ghost" @onclick="() => editing = null" aria-label="Close">✕</button>
         </div>
         <div class="sheet__body sheet__body--pad">
             @if (BeatLibrary.All.FirstOrDefault(t => t.Type == edit.Type)?.BookerTip is { } tip
@@ -267,14 +271,22 @@
     <div class="sheet__scrim" @onclick="() => editing = null"></div>
 }
 
-@* The picker itself, rendered once for whichever slot is open. *@
-@if (openSlot is { } slot)
+@* The picker itself, rendered once for whichever slot is open.
+   Inside the step-0 guard, deliberately. It used to render outside it, and nothing cleared
+   `openSlot` on navigation — so a keyboard user could Tab to `Next →` *behind the scrim*
+   (there is no focus trap), advance to the Feud step with the roster sheet still on screen,
+   and swap a corner from it. `Next()` caches `existingFeud` at step 0 only, so the builder
+   then offered "Roman Reigns and Gunther have history you have booked — Hot, 30 heat, 2
+   matches", which is Cody Rhodes's feud, and confirming it would have written heat into the
+   wrong rivalry and unlocked feud-gated beats nobody earned. *@
+@if (step == 0 && openSlot is { } slot)
 {
     <RosterPicker Title="@SlotTitle(slot)"
                   Current="@SlotHolder(slot)"
                   UsedAs="@BookedAs"
                   Against="@OpposingSide(slot)"
                   Picked="@(w => FillSlot(slot, w))"
+                  Cleared="@(() => { Assign(slot, null); openSlot = null; })"
                   Cancelled="@(() => openSlot = null)" />
 }
 
@@ -1077,8 +1089,11 @@
     // The championship step is empty for most matches — SelectableTitles() correctly
     // returns nothing unless a champion is in it — and a step whose entire content is one
     // "no titles apply" notice and a button you must tap past is not a step, it is a toll.
-    // Same for the feud step when the pairing has no history and there is nothing to
-    // declare. Both are skipped rather than shown empty.
+    //
+    // Only the title step is skipped. The feud step is *not*, despite what the first version
+    // of this comment said, because declaring a feud by hand is always available and so the
+    // step is never truly empty — but it is close to empty in an exhibition, and that is a
+    // fair thing to revisit.
 
     private const int TitleStep = 2;
     private const int FeudStep  = 3;
@@ -1093,6 +1108,10 @@
 
     private void Next()
     {
+        // Navigating away closes the picker. The render guard above makes this belt and
+        // braces, and it should be both: a leaked sheet is a leaked *write path*.
+        openSlot = null;
+
         if (step == 0)
         {
             existingFeud = PairingHistory;
@@ -1117,6 +1136,8 @@
 
     private async Task Back()
     {
+        openSlot = null;
+
         if (step == 0)
         {
             await OnCancel.InvokeAsync();
@@ -1261,6 +1282,8 @@
         !(beat.IsOpening && beats.Count(x => x.IsOpening) <= 1)
         && !(beat.IsFinish && beats.Count(x => x.IsFinish) <= 1);
 
+    // Kept because the beat sheet's Remove button calls beats.Remove directly and this is
+    // the older path; if a third caller ever appears, use this one.
     private void Remove(MatchBeat beat)
     {
         if (CanRemove(beat)) beats.Remove(beat);
