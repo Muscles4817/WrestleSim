@@ -1564,6 +1564,10 @@
         if (!IsTeamMatch && new MatchBeat { Type = t.Type }.IsTagBeat)
             return "needs a partner";
 
+        // And nothing in the multi-man set works without a third party to use it on.
+        if (!IsMultiMan && new MatchBeat { Type = t.Type }.IsMultiManBeat)
+            return "needs a third party";
+
         // The hot tag is bookable cold — it just lands at barely half. That is a booking
         // decision the player is allowed to make badly, so this warns rather than gates.
         return null;
