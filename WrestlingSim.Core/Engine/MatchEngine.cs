@@ -1314,12 +1314,10 @@ namespace WrestlingSim.Engine
 
             ctx.State.RecordNearTag(ctx.IsSideA(other));
 
-            string partner = deniedSide.Members.Count > 1
-                ? deniedSide.PartnersOf(other).First().RingName
-                : "the corner";
+            string partner = NameCorner(deniedSide, other);
 
             r.Commentary.Add(Pick(
-                $"{other.RingName} reaches — and {control.RingName} drags him back! {partner} is beside himself on the apron!",
+                $"{other.RingName} reaches — and {control.RingName} drags him back! You can see {partner} pleading on the apron!",
                 $"SO CLOSE! {other.RingName} was inches from {partner} and {control.RingName} pulled him away!",
                 $"The referee is distracted, {other.RingName} makes the tag — and it does not count! The crowd is furious!",
                 $"{other.RingName} lunges for {partner}... and comes up empty. You can hear the air go out of this building."
@@ -1540,7 +1538,7 @@ namespace WrestlingSim.Engine
                                          * PerformerProfile.Blend(pControl.RingPsych, 0.40);
 
             string partner = side.Members.Count > 1
-                ? side.PartnersOf(control).First().RingName
+                ? SpotPartner(side, control, ctx.State.BeatIndex).RingName
                 : other.RingName;
 
             r.Commentary.Add(Pick(
@@ -1562,10 +1560,8 @@ namespace WrestlingSim.Engine
             control ??= ctx.LegalA;
             other = ctx.Opponent(control);
 
-            var side = ctx.SideOf(control);
-            var saver = side.Members.Count > 1
-                ? side.PartnersOf(control).First()
-                : control;
+            var side  = ctx.SideOf(control);
+            var saver = SpotPartner(side, control, ctx.State.BeatIndex);
 
             r.CrowdEnergyDelta = Rng(8, 15) * iMod
                                  * PerformerProfile.Blend(ctx.For(saver).Connection, 0.55);
@@ -1596,13 +1592,17 @@ namespace WrestlingSim.Engine
             r.AdvantageDelta   = 0;
 
             // The one beat where the whole side is genuinely working: validation requires
-            // both sides to be teams and the beat's premise is that all four are in, so
-            // the "man on the apron is not performing" rule has nothing to exclude.
+            // both sides to be teams and the beat's premise is that everybody is in, so
+            // the "man on the apron is not performing" rule has nothing to exclude. Reads
+            // whole sides rather than legal performers for exactly that reason, which is
+            // also the one place a third man contributes craft without being tagged in.
             r.TechnicalContribution    = 2.5 * iMod * dMod * ctx.Pair(p => p.Workrate);
             r.StorytellingContribution = 4.0 * iMod * dMod;
 
+            int inTheRing = ctx.Plan.SideA.Size + ctx.Plan.SideB.Size;
+
             r.Commentary.Add(Pick(
-                $"All four of them are in the ring now and the referee has completely lost control!",
+                $"All {Spell(inTheRing)} of them are in the ring now and the referee has completely lost control!",
                 $"It has broken down! {ctx.Plan.SideA.Name} and {ctx.Plan.SideB.Name} are swinging at each other everywhere!",
                 $"Bodies everywhere — the referee is just counting and hoping at this point!"
             ));
@@ -1901,6 +1901,52 @@ namespace WrestlingSim.Engine
         /// </summary>
         private double AvgRingSkill(Ctx ctx) =>
             ctx.LegalPairStat(w => w.RingSkills.GetOverallSkill());
+
+        /// <summary>
+        /// How the commentary refers to a side's corner. One partner is a name; two or more
+        /// is "the corner", because naming one of them and ignoring the other reads as an
+        /// error rather than as shorthand.
+        ///
+        /// This returned "his corner" first time round, which put a lowercase word at the
+        /// start of a sentence in one of the near-tag templates ("...drags him back! his
+        /// corner is beside himself...") and gendered a phrase that has to work for a
+        /// women's trios too. The templates now place it mid-sentence, so a plain noun
+        /// phrase drops into every one of them.
+        /// </summary>
+        private static string NameCorner(MatchSide side, Wrestler w) => side.Members.Count switch
+        {
+            2 => side.PartnersOf(w).First().RingName,
+            _ => "the corner"
+        };
+
+        /// <summary>
+        /// Which partner is the actor in a spot that needs one — a collision, a save.
+        ///
+        /// Unlike <see cref="NameCorner"/> these beats have somebody specific doing
+        /// something, so "the corner" is not an option: a person has to be named. On a
+        /// two-man side there is only one candidate. On a trio, taking `.First()` meant the
+        /// same partner made every save and every mistake all match, which is the third-man
+        /// problem again in miniature.
+        ///
+        /// Rotated on the beat index rather than drawn from the RNG deliberately: an extra
+        /// draw would shift every subsequent number in the match and break the byte-identity
+        /// the singles and two-a-side suites check for. This is deterministic and costs
+        /// nothing.
+        /// </summary>
+        private static Wrestler SpotPartner(MatchSide side, Wrestler w, int beatIndex)
+        {
+            var partners = side.PartnersOf(w).ToList();
+            if (partners.Count == 0) return w;
+            return partners[Math.Abs(beatIndex) % partners.Count];
+        }
+
+        /// <summary>Small numbers read better as words in commentary.</summary>
+        private static string Spell(int n) => n switch
+        {
+            2 => "two", 3 => "three", 4 => "four", 5 => "five",
+            6 => "six", 7 => "seven", 8 => "eight",
+            _ => n.ToString()
+        };
 
         private double Rng(double min, double max) =>
             min + _rand.NextDouble() * (max - min);

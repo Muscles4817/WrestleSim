@@ -72,7 +72,14 @@ namespace WrestlingSim.Enums
         /// <summary>The partner breaks up the pin. Extends a near-fall; wears out fast.</summary>
         SaveBreakup,
 
-        /// <summary>Everyone in, referee loses control. Resets the room before the finish.</summary>
+        /// <summary>
+        /// Everyone in, referee loses control. Resets the room before the finish.
+        ///
+        /// The name says four because that is what a tag match has. It is kept as the
+        /// identifier even for trios, where six are in, because the enum member name is
+        /// what gets written into save files — renaming it would orphan every card already
+        /// on disk. The display name and the commentary count the people actually in there.
+        /// </summary>
         AllFourBrawl,
 
         // Finishes
