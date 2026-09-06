@@ -42,9 +42,13 @@ namespace WrestlingSim.Tests
                     Against = BeatControl.SideC };
 
         /// <summary>
-        /// **A beat aimed at the third side is about the third side.** This is the bug: with
-        /// `Opponent(w)` returning whichever side was listed second, a disposal booked on
-        /// Charlie described Bravo going through the table and never mentioned Charlie.
+        /// **A beat aimed at the third side is about the third side.**
+        ///
+        /// Scope, honestly: `ApplyDisposalSpot` reads `beat.Against` itself and never asks
+        /// `Opponent`, so this pins the disposal handler and *not* the general path. It
+        /// passes with the two-side `Opponent` restored. Review caught the doc comment here
+        /// claiming otherwise; the general path is covered by
+        /// `AnOrdinaryBeatKicksOutTheSideItWasAimedAt`, which does fail without the fix.
         /// </summary>
         [Fact]
         public void ABeatAimedAtTheThirdSide_NamesTheThirdSide()
@@ -64,7 +68,10 @@ namespace WrestlingSim.Tests
             Assert.DoesNotContain("Bravo", line);
         }
 
-        /// <summary>And the same beat aimed at the other side names that one instead.</summary>
+        /// <summary>
+        /// And the same beat aimed at the other side names that one instead. Same scope as
+        /// above: the disposal handler, not `Opponent`.
+        /// </summary>
         [Theory]
         [InlineData(BeatControl.WrestlerB, "Bravo", "Charlie")]
         [InlineData(BeatControl.SideC,     "Charlie", "Bravo")]
@@ -102,11 +109,16 @@ namespace WrestlingSim.Tests
         }
 
         /// <summary>
-        /// Nobody in the match should be absent from the whole play-by-play. A participant
-        /// who is never mentioned is one the audience did not see.
+        /// Nobody in the match should be absent from the play-by-play *before the finish*. A
+        /// participant first named in the last line was invisible for the match.
+        ///
+        /// Scope: this is an end-to-end sanity property, not a test of any one mechanism —
+        /// review confirmed it passes with the whole engine change reverted, because Charlie
+        /// is named by the finish's `Against`, which predates this work. Excluding the finish
+        /// is what makes it say something the booking does not say for it.
         /// </summary>
         [Fact]
-        public void NobodyGoesUnmentionedForTheWholeMatch()
+        public void NobodyGoesUnmentionedBeforeTheFinish()
         {
             var r = Run(
             [
@@ -117,9 +129,13 @@ namespace WrestlingSim.Tests
                 Finish()
             ]);
 
-            string all = string.Join(" ", r.BeatResults.SelectMany(b => b.Commentary));
-            foreach (var line in r.BeatResults.SelectMany(b => b.Commentary))
-                output.WriteLine($"  {line}");
+            var beforeTheFinish = r.BeatResults
+                .Where(b => b.BeatType != BeatType.FinishClean)
+                .SelectMany(b => b.Commentary)
+                .ToList();
+
+            string all = string.Join(" ", beforeTheFinish);
+            foreach (var line in beforeTheFinish) output.WriteLine($"  {line}");
 
             foreach (var name in new[] { "Alpha", "Bravo", "Charlie" })
                 Assert.Contains(name, all);
@@ -213,24 +229,59 @@ namespace WrestlingSim.Tests
         /// A near fall is the plainest beat that names its opponent, so it is the one to ask.
         /// </summary>
         [Theory]
-        [InlineData(BeatControl.WrestlerB, "Bravo", "Charlie")]
-        [InlineData(BeatControl.SideC,     "Charlie", "Bravo")]
+        [InlineData(BeatType.NearFall,    BeatControl.WrestlerB, "Bravo",   "Charlie")]
+        [InlineData(BeatType.NearFall,    BeatControl.SideC,     "Charlie", "Bravo")]
+        [InlineData(BeatType.HeatSegment, BeatControl.WrestlerB, "Bravo",   "Charlie")]
+        [InlineData(BeatType.HeatSegment, BeatControl.SideC,     "Charlie", "Bravo")]
+        [InlineData(BeatType.Comeback,    BeatControl.WrestlerB, "Bravo",   "Charlie")]
+        [InlineData(BeatType.Comeback,    BeatControl.SideC,     "Charlie", "Bravo")]
         public void AnOrdinaryBeatKicksOutTheSideItWasAimedAt(
-            BeatControl against, string named, string notNamed)
+            BeatType type, BeatControl against, string named, string notNamed)
         {
             var r = Run(
             [
                 Beat(BeatType.HotOpening, BeatControl.Even),
-                Beat(BeatType.NearFall, BeatControl.WrestlerA, against),
+                Beat(type, BeatControl.WrestlerA, against),
                 Finish()
             ]);
 
             string line = string.Join(" ", r.BeatResults
-                .Single(x => x.BeatType == BeatType.NearFall).Commentary);
-            output.WriteLine($"  aimed at {against}: {line}");
+                .Single(x => x.BeatType == type).Commentary);
+            output.WriteLine($"  {type} aimed at {against}: {line}");
 
             Assert.Contains(named, line);
             Assert.DoesNotContain(notNamed, line);
+        }
+
+        /// <summary>
+        /// **The first beat of the match can be booked to a side without the engine falling
+        /// over.** Found by review, and it was a crash rather than a wrong name.
+        ///
+        /// `State.BeatIndex` starts at -1 and only becomes a beat number when `RegisterBeat`
+        /// runs. `Opponent`'s undirected fallback rotates with `BeatIndex % upright.Count`,
+        /// and C# gives -1 % 2 == -1, so `upright[-1]` threw `ArgumentOutOfRangeException`.
+        ///
+        /// Reachable from the builder as an ordinary booking: it offers "who is on top" on
+        /// every beat but `Against` only on the finish, so *every* non-finish beat a player
+        /// books is undirected — including the opening. Every other test in this class opens
+        /// on `Even`, which is why the suite was green over a crash.
+        ///
+        /// It has to be an opening: `Validate` requires the plan to start with one, so the
+        /// opening is the only beat that can ever be the first, and all three of them are
+        /// bookable to a side.
+        /// </summary>
+        [Theory]
+        [InlineData(BeatType.HotOpening)]
+        [InlineData(BeatType.StandardOpening)]
+        [InlineData(BeatType.SlowOpening)]
+        public void TheFirstBeatCanBeBookedToASide(BeatType opening)
+        {
+            var r = Run([Beat(opening, BeatControl.WrestlerA), Finish()]);
+
+            string line = r.BeatResults.First().Commentary.First();
+            output.WriteLine($"  {opening} first, no Against: {line}");
+
+            Assert.NotEmpty(r.BeatResults.First().Commentary);
         }
 
         /// <summary>
@@ -240,16 +291,25 @@ namespace WrestlingSim.Tests
         /// Choosing somebody who was just put through a table and is still down produces the
         /// format's characteristic failure in reverse: not "where did they go?" but "how are
         /// they in this?"
+        ///
+        /// Theory rather than Fact because of what review found: the original only disposed of
+        /// Charlie and asserted Bravo was targeted, which is exactly what the *old* two-side
+        /// `Opponent` produced for every beat regardless. It could not tell the mechanism from
+        /// the bug. Disposing of Bravo is the case that can: the old code names the wrestler
+        /// lying on the floor.
         /// </summary>
-        [Fact]
-        public void AnUndirectedBeat_DoesNotTargetSomebodyLyingOnTheFloor()
+        [Theory]
+        [InlineData(BeatControl.SideC,     "Charlie", "Bravo")]
+        [InlineData(BeatControl.WrestlerB, "Bravo",   "Charlie")]
+        public void AnUndirectedBeat_DoesNotTargetSomebodyLyingOnTheFloor(
+            BeatControl disposed, string onTheFloor, string stillUpright)
         {
             var r = Run(
             [
                 Beat(BeatType.HotOpening, BeatControl.Even),
-                Beat(BeatType.DisposalSpot, BeatControl.WrestlerA, BeatControl.SideC),
+                Beat(BeatType.DisposalSpot, BeatControl.WrestlerA, disposed),
 
-                // No Against on either: the engine picks, and Charlie is on the floor.
+                // No Against on either: the engine picks, and one of them is on the floor.
                 Beat(BeatType.NearFall, BeatControl.WrestlerA),
                 Beat(BeatType.NearFall, BeatControl.WrestlerA),
                 Finish()
@@ -260,11 +320,10 @@ namespace WrestlingSim.Tests
                 .SelectMany(x => x.Commentary)
                 .ToList();
 
-            foreach (var line in duringWindow) output.WriteLine($"  {line}");
+            foreach (var line in duringWindow) output.WriteLine($"  {onTheFloor} is down: {line}");
 
-            Assert.All(duringWindow, line =>
-                Assert.DoesNotContain("Charlie", line));
-            Assert.Contains(duringWindow, line => line.Contains("Bravo"));
+            Assert.All(duringWindow, line => Assert.DoesNotContain(onTheFloor, line));
+            Assert.Contains(duringWindow, line => line.Contains(stillUpright));
         }
 
         /// <summary>

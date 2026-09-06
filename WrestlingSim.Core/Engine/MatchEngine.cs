@@ -359,8 +359,11 @@ namespace WrestlingSim.Engine
                                    || Plan.Sides.IndexOf(side) != State.DisposedSide)
                     .ToList();
 
+                // Math.Max because BeatIndex is -1 before RegisterBeat has run, and C# gives
+                // -1 % 2 == -1 rather than 1. Callers are meant to be inside a registered
+                // beat; an index out of range is a crash, which is worse than a wrong name.
                 return LegalOf(upright.Count > 0
-                    ? upright[State.BeatIndex % upright.Count]
+                    ? upright[Math.Max(0, State.BeatIndex) % upright.Count]
                     : Plan.Sides.First(side => side != mine));
             }
 
@@ -655,20 +658,23 @@ namespace WrestlingSim.Engine
                 Control  = beat.Control
             };
 
-            // Wrestler references for this beat
-            ctx.CurrentBeat   = beat;
-            Wrestler? control = ctx.ControlLegal(beat);
-            Wrestler other    = control != null ? ctx.Opponent(control) : ctx.LegalB;
-
             double iMod = beat.IntensityModifier;
             double dMod = beat.DurationModifier;
 
-            // ── Repetition and fatigue ───────────────────────────────────────
+            // ── Repetition and fatigue ───────────────────────────────
             // The crowd's appetite for a beat type falls off each time it is repeated,
             // and both wrestlers slow down as a long match wears on.
             int timesUsed = state.RegisterBeat(beat.Type);
             double repetition = Math.Pow(RepetitionDecay(beat.Type), timesUsed - 1);
             double fade = FadeFactor(ctx);
+
+            // Wrestler references for this beat — resolved *after* RegisterBeat, because
+            // every handler recomputes `other` from the context, and dispatch reading a
+            // different beat number than its handlers is how the same beat got two answers.
+            // BeatIndex is -1 until RegisterBeat makes it a beat number at all.
+            ctx.CurrentBeat   = beat;
+            Wrestler? control = ctx.ControlLegal(beat);
+            Wrestler other    = control != null ? ctx.Opponent(control) : ctx.LegalB;
 
             // Technical work accumulates more legitimately than crowd reaction does —
             // limb work repeated is a story, a third identical brawl is not.

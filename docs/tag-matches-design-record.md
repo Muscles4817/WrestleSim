@@ -1832,6 +1832,56 @@ Five mutations, all killed: `Opponent` ignoring `Against`; `ControlLegal` knowin
 billing rendering only the first two; `CurrentBeat` never set; an undirected beat targeting the
 disposed side.
 
+> **Correction, from review.** Two of those five were killed by weaker tests than I thought, and
+> a sixth thing was not tested at all. See "What review found" below. The count was right; what
+> it was counting was not.
+
+### What review found
+
+**A crash, and an ordinary booking reaches it.** `State.BeatIndex` starts at `-1` and only
+becomes a beat number when `RegisterBeat` runs — which `ExecuteBeat` called *after* resolving
+`other`. So on the first beat of a match the rotation computed `upright[-1 % 2]`, and C# gives
+`-1 % 2 == -1` rather than `1`. `ArgumentOutOfRangeException`.
+
+Reachable as a completely ordinary booking, because of an asymmetry in the builder: it offers
+"who is on top" on **every** beat but `Against` only on the finish, so every non-finish beat a
+player books is undirected — the opening included, and booking the opening to a side is a normal
+thing to do. Every test in `ThreeWayCommentaryTests` opened on `Even`, which is why 600 tests
+were green over a crash. `TheFirstBeatCanBeBookedToASide` covers all three openings now.
+
+Two fixes rather than one, because they answer different questions. The resolution moved to
+after `RegisterBeat`, so dispatch and the sixteen handlers read the same beat number instead of
+numbers one apart — that is the actual bug, and it also silently shifted the disposal window by
+one beat at the dispatch call. And the modulo is `Math.Max(0, …)` regardless, because a future
+caller outside a registered beat should get a wrong name at worst, never an exception.
+
+**Four tests named a mechanism they did not touch.** Reverting the whole engine change at once
+left 9 of 14 passing. The interesting ones:
+
+- `ABeatAimedAtTheThirdSide_NamesTheThirdSide` and `TheTargetFollowsTheBooking` — their doc
+  comments said "this is the bug: `Opponent(w)` returning whichever side was listed second", and
+  they pass with exactly that restored, because `ApplyDisposalSpot` reads `beat.Against` itself
+  and never asks `Opponent`. They pin the disposal handler, which is worth pinning. The comments
+  now say so instead of claiming the general path.
+- `AnUndirectedBeat_DoesNotTargetSomebodyLyingOnTheFloor` disposed of Charlie and asserted Bravo
+  was targeted — which is precisely what the old two-side `Opponent` returned for every beat
+  regardless. It could not distinguish the mechanism from the bug it was written against. It is
+  a `Theory` now, and the disposed-Bravo case is the one that catches it: the old code names the
+  wrestler lying on the floor.
+- `NobodyGoesUnmentionedForTheWholeMatch` passed because Charlie is named by the finish's
+  `Against`, which predates this work. Excluding the finish is what makes it say something the
+  booking does not say for it; it is `…BeforeTheFinish` now, and documented as an end-to-end
+  property rather than a test of anything.
+
+`AnOrdinaryBeatKicksOutTheSideItWasAimedAt` was carrying the whole new `Opponent` body on one
+case; it runs over three beat types now.
+
+That is the same failure a third time in one day, and it is worth naming precisely rather than
+resolving to be more careful: **a test written from a bug report tends to assert the symptom the
+report described, and the symptom is often something the buggy code also produces.** The check
+that catches it is not re-reading the test, it is reverting the fix and watching which tests
+notice.
+
 ### A test that asserted nothing
 
 `TwoSidedCommentaryIsUnchanged` was written, run, passed, and deleted, because what it asserted
@@ -1847,10 +1897,21 @@ Browser-verified rather than only asserted: **"Roman Reigns vs Rhea Ripley vs Be
 the disposal spot names Becky, the spite break names Rhea and Roman, Becky steals the fall, zero
 console errors.
 
-**600 tests passing.**
+**608 tests passing** — 600 before review, and the eight it took to make the mechanism
+actually load-bearing.
 
 ### Still not built
 
 Elimination, battle royals and the Rumble still need multiple falls. The pair-specific feud
 lines are correct but never mention that a third party is watching them cost each other the
 match, which is the beat a viewer would call.
+
+Two things review named that are logged rather than fixed here:
+
+- **The builder only offers `Against` on the finish.** So the `Against` branch of `Opponent` —
+  the one this section is about — is unreachable from the UI for every beat but the last, and
+  the rotation fallback is what players actually get. The engine is ahead of the builder again,
+  which is the thing `CLAUDE.md` says not to do.
+- **`AllLegal` walks every side without regard to `State.DisposedSide`.** A `CrowdBrawl` or
+  `FeudalEscalation` booked during a disposal window bills somebody who is supposed to be on the
+  floor. Wrong in the same way the rotation was, one level up.
