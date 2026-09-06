@@ -578,6 +578,14 @@ namespace WrestlingSim.Engine
             var feud = plan.Feud;
             if (feud == null) return 1.0;
 
+            // The blow-off pays off on the finish, because the finish is the payoff. Doc 20
+            // §6: a blow-off has to resolve and has to be proportional to what was built —
+            // so a Nuclear feud settled here lands at 1.45, and a blow-off declared on a
+            // story the audience was never told mattered lands at 0.72, which is *worse*
+            // than not declaring one. Same shape as the unearned-finish rule in ApplyFinish
+            // and the unearned hot tag: a payoff is worth what was spent buying it.
+            if (plan.IsBlowOff && beat.IsFinish) return feud.BlowOffPayoff;
+
             if (resonanceActive)
                 return feud.IntensityMultiplier;
 

@@ -106,6 +106,71 @@ namespace WrestlingSim.Tests
         }
 
         [Fact]
+        public void RoundTripKeepsDecayAndResolutionState()
+        {
+            var roster = Roster();
+            var career = NewCareer(roster);
+            var day = career.CurrentDate;
+
+            career.FeudBook.Record(roster[0], roster[1], heat: 70, date: day);
+            var before = career.FeudBook.Find(roster[0], roster[1])!;
+            for (int i = 0; i < 6; i++) before.RecordUnresolved();
+            before.BlowOff(day.AddDays(10));
+            before.AddHeat(40);                       // a new chapter
+            before.ApplyDailyDecay(day.AddDays(90));
+
+            var loaded = RoundTrip(career);
+            var after = loaded.FeudBook.Find(
+                loaded.FindWrestler("alpha-one")!, loaded.FindWrestler("beta-two")!)!;
+
+            Assert.Equal(before.Heat, after.Heat, 3);
+            Assert.Equal(before.Distrust, after.Distrust, 3);
+            Assert.Equal(before.MatchesSinceHot, after.MatchesSinceHot);
+            Assert.Equal(before.ChaptersSettled, after.ChaptersSettled);
+            Assert.Equal(before.Concluded, after.Concluded);
+            Assert.Equal(before.ConcludedOn, after.ConcludedOn);
+
+            // The clock has to survive too, or a reload hands every feud in the save a
+            // fresh grace period and the decay rule quietly stops applying to old games.
+            double beforeNext = before.Heat;
+            before.ApplyDailyDecay(day.AddDays(120));
+            after.ApplyDailyDecay(day.AddDays(120));
+            Assert.True(before.Heat < beforeNext, "setup: should still be decaying");
+            Assert.Equal(before.Heat, after.Heat, 6);
+        }
+
+        [Fact]
+        public void ABlowOffOnACardSurvivesAReload()
+        {
+            var roster = Roster();
+            var career = NewCareer(roster);
+            var feud = career.FeudBook.GetOrCreate(roster[0], roster[1]);
+            feud.SetMinimumIntensity(FeudIntensity.Nuclear);
+
+            var show = career.Schedule("Blow-off Night", career.CurrentDate, ShowType.Television);
+            show.Card.Add(new BookedMatch
+            {
+                StructureName = "TV Formula",
+                Plan = new MatchPlan
+                {
+                    WrestlerA = roster[0], WrestlerB = roster[1],
+                    Feud = feud, IsBlowOff = true,
+                    Beats = MatchStructureLibrary.Find("TV Formula")!
+                                .Beats.Select(x => x.Clone()).ToList()
+                }
+            });
+
+            var loaded = RoundTrip(career);
+            var match = loaded.Shows.First().Card.OfType<BookedMatch>().Single();
+
+            // Without this a saved card came back as another chapter rather than the
+            // ending the player booked, and settled nothing when it ran.
+            Assert.True(match.Plan.IsBlowOff);
+            Assert.NotNull(match.Plan.Feud);
+            Assert.Empty(match.Plan.Validate());
+        }
+
+        [Fact]
         public void LoadedWrestlersAreTheSameInstancesTheRosterHolds()
         {
             var roster = Roster();

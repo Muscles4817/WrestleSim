@@ -124,6 +124,13 @@ namespace WrestlingSim.Persistence
                     MatchCount         = f.MatchCount,
                     RememberedMeetings = f.RememberedMeetings,
                     LastMatchDate      = f.LastMatchDate is { } met ? Iso(met) : null,
+                    LastAdvanced       = f.LastAdvanced is { } adv ? Iso(adv) : null,
+                    DecayedTo          = f.DecayedTo is { } dec ? Iso(dec) : null,
+                    Concluded          = f.Concluded,
+                    ConcludedOn        = f.ConcludedOn is { } con ? Iso(con) : null,
+                    MatchesSinceHot    = f.MatchesSinceHot,
+                    ChaptersSettled    = f.ChaptersSettled,
+                    Distrust           = Math.Round(f.Distrust, 4),
                     History            = new List<FeudHistoryTag>(f.History)
                 })
                 .ToList(),
@@ -230,6 +237,7 @@ namespace WrestlingSim.Persistence
                 MatchType      = m.Plan.MatchType,
                 StructureName  = m.StructureName,
                 TitleId        = m.Plan.TitleAtStake?.Id,
+                IsBlowOff      = m.Plan.IsBlowOff,
                 Beats = m.Plan.Beats.Select(b => new BeatDto
                 {
                     Type          = b.Type,
@@ -376,6 +384,18 @@ namespace WrestlingSim.Persistence
                 feud.RestoreMeetings(
                     f.RememberedMeetings > 0 ? f.RememberedMeetings : f.MatchCount,
                     ParseOptionalDate(f.LastMatchDate));
+
+                // A pre-A3 save has no LastAdvanced. Falling back to LastMatchDate is the
+                // conservative reading — the alternative is null, which means "never
+                // advanced" and therefore *never decays*, quietly exempting every feud in
+                // an old save from the rule this release adds.
+                feud.RestoreDecay(
+                    ParseOptionalDate(f.LastAdvanced) ?? ParseOptionalDate(f.LastMatchDate),
+                    ParseOptionalDate(f.DecayedTo));
+                feud.RestoreResolution(
+                    f.Concluded, ParseOptionalDate(f.ConcludedOn),
+                    f.MatchesSinceHot, f.Distrust, f.ChaptersSettled);
+
                 foreach (var tag in f.History) feud.AddTag(tag);
             }
 
@@ -600,6 +620,7 @@ namespace WrestlingSim.Persistence
                     // Likewise the belt: the same Title instance the registry holds, so a
                     // reloaded card can still put it on the line.
                     TitleAtStake = dto.TitleId is null ? null : titles.Find(dto.TitleId),
+                    IsBlowOff    = dto.IsBlowOff,
                     Beats = dto.Beats.Select(x => new MatchBeat
                     {
                         Type      = x.Type,

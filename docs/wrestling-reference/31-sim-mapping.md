@@ -64,13 +64,32 @@ The engine scores match *quality* but the result currently has no status consequ
 This single addition makes booking decisions matter beyond the star rating, which is the
 most significant thing missing from the sim right now.
 
-#### A3. Feud heat decay and blow-off as a terminal event
-**Reference:** [20](20-storylines-and-feuds.md) §9, [04](04-booking-philosophy.md) §1.1
+#### A3. Feud heat decay and blow-off as a terminal event — **implemented**
+**Reference:** [20](20-storylines-and-feuds.md) §9, §6, [04](04-booking-philosophy.md) §1.1
 - Feud heat should **decay** when the feud isn't advanced (currently it only accumulates)
 - A **blow-off** should pay out accumulated heat as a large one-time result and *end* the
   feud
 - Continuing past the blow-off should be penalised
 - Never blowing off should eventually convert heat into audience distrust
+
+Shipped as `Feud.ApplyDailyDecay` (charged by `Career.AdvanceOneDay`, 14 days of grace then
+0.955/day), `MatchPlan.IsBlowOff` (a booker declaration, priced by `Feud.PayoffFor` at
+×1.45 Nuclear down to ×0.72 for one nobody was told mattered), and `Feud.Distrust` —
+accrued by `RecordUnresolved` past the third match, and by `RecordBrokenPromise` at double
+rate when a declared blow-off is booked to a disqualification or a count-out and therefore
+does not *resolve* (§6.1's first requirement).
+
+What it is worth, measured on a `Big Match Epic` between two eighty-overness workers, 300
+seeds a cell: having a Nuclear feud at all is +0.19★ over none; settling it is a further
++0.05★; ten matches that settle nothing is −0.05★. The rating movement is deliberately a
+quarter of what the feud itself is worth rather than a headline — the teeth of this change
+are that heat now has to be *maintained*, and that distrust is durable and survives the
+blow-off that earns some of it back.
+
+One thing A3's brief asked for and this does not do: a blow-off does not pay out as a large
+one-time **business** result, because there is no business axis to pay into yet. §7 of doc
+18 ("rate well vs draw well as two separate outputs") is the prerequisite, and it is not
+built. What ships is the quality and story half.
 
 #### A4. Match-count decay per pairing
 **Reference:** [20](20-storylines-and-feuds.md) §9.1, [29](29-benchmarks-and-numbers.md) §10.1
@@ -220,7 +239,7 @@ A pragmatic sequence that keeps the game playable at every step:
 **Phase 1 — make results matter** (all Tier A, contained to the existing engine)
 1. A1 Overness/Momentum split
 2. A2 Heat transfer on results
-3. A3 Feud decay + terminal blow-off
+3. ~~A3 Feud decay + terminal blow-off~~ — done
 4. A4 Match-count decay per pairing
 
 *After this phase, booking decisions have consequences beyond a star rating.*

@@ -38,6 +38,32 @@ namespace WrestlingSim.UI
                 tags: new[] { FeudHistoryTag.PriorMatch });
             update.Feud.RecordMatch(null);
 
+            // Same rule the show simulator applies: a match either settles the story or
+            // joins the pile of ones that did not.
+            if (booked.Plan.IsBlowOff && booked.Plan.Feud is { } declared)
+            {
+                var finish = booked.Plan.Beats.LastOrDefault(x => x.IsFinish);
+                bool settled = finish is null
+                            || HeatEconomy.WeightOf(finish.Type) != FinishWeight.Protected;
+
+                if (settled)
+                {
+                    declared.BlowOff(null);
+                    WriteLine($"\n  {declared.SideAName} vs {declared.SideBName} is settled. " +
+                              "That story is over.", ConsoleColor.Cyan);
+                }
+                else
+                {
+                    declared.RecordBrokenPromise();
+                    WriteLine($"\n  That blow-off settled nothing — they were promised an ending " +
+                              "and did not get one.", ConsoleColor.Yellow);
+                }
+            }
+            else
+            {
+                update.Feud.RecordUnresolved();
+            }
+
             DisplayResults(result, result.Pinner, result.Pinned);
             SegmentBookingFlow.DisplayFeudUpdates(new[] { update });
             Pause("Press any key to return to the main menu...");
@@ -78,6 +104,7 @@ namespace WrestlingSim.UI
 
             var matchType = SelectMatchType();
             var feud      = ResolveFeud(a, b, feudBook);
+            bool blowOff  = AskBlowOff(feud);
             var (beats, structureName) = SelectStructure(feud, isTag ? 2 : 1);
 
             while (true)
@@ -90,6 +117,7 @@ namespace WrestlingSim.UI
                     SideB     = sideB,
                     MatchType = matchType,
                     Feud      = feud,
+                    IsBlowOff = blowOff,
                     Beats     = beats
                 };
 
@@ -208,6 +236,41 @@ namespace WrestlingSim.UI
             foreach (var tag in history) feud.AddTag(tag);
 
             return feud;
+        }
+
+        /// <summary>
+        /// Whether the booker is calling this the end of the story. Priced up front rather
+        /// than left as a surprise: doc 20 §6 says a blow-off has to be proportional to what
+        /// was built, so the multiplier is quoted before the choice is made, and a blow-off
+        /// on a story the audience was never told mattered is quoted as the penalty it is.
+        /// </summary>
+        private static bool AskBlowOff(Feud? feud)
+        {
+            if (feud is null) return false;
+
+            if (feud.Concluded)
+            {
+                WriteLine($"\n  That feud has already been blown off — the story is over.",
+                          ConsoleColor.DarkGray);
+                return false;
+            }
+
+            Rule("BLOW-OFF", 34);
+            WriteLine($"\n  Settling this one now is worth ×{feud.BlowOffPayoff:F2} on the finish.",
+                      feud.WorthBlowingOff ? ConsoleColor.Green : ConsoleColor.Yellow);
+
+            if (!feud.WorthBlowingOff)
+                WriteLine("  A blow-off is worth what was built. This one is not built yet, and\n" +
+                          "  settling it lands worse than not settling it.", ConsoleColor.Yellow);
+            else if (feud.MatchesSinceHot > Feud.PatienceMatches)
+                WriteLine($"  {feud.MatchesSinceHot} matches and nothing settled — this pairing is\n" +
+                          $"  drawing {feud.Credibility * 100:F0}% of what it should.", ConsoleColor.Yellow);
+
+            WriteLine("  The feud ends here: heat to zero, and these two start again from nothing.",
+                      ConsoleColor.DarkGray);
+            Console.WriteLine();
+
+            return YesNo("Is this the blow-off?");
         }
 
         // ── Structure selection ──────────────────────────────────────────────

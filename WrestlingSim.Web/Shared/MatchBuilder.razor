@@ -439,6 +439,56 @@
                 </div>
             </div>
         }
+
+        @* The blow-off declaration. Only offered where it means something — you cannot
+           settle a story that has no feud attached, and you cannot settle one twice. *@
+        @if (feudChoice != FeudChoice.None && !AlreadyConcluded)
+        {
+            <div class="panel panel--flat mt">
+                <button class="pick @(isBlowOff ? "is-selected" : "")"
+                        @onclick="() => isBlowOff = !isBlowOff">
+                    <span class="pick__body">
+                        <span class="pick__name">
+                            This is the blow-off
+                            <span class="badge @(BlowOffWorthIt ? "badge--gold" : "badge--heel")">
+                                ×@BlowOffPayoff.ToString("F2") on the finish@(BlowOffWorthIt ? "" : " — unearned")
+                            </span>
+                        </span>
+                        <span class="pick__desc">
+                            The story ends here. The feud is settled, its heat goes to zero, and
+                            this pairing starts again from nothing. It has to <em>end</em>, though —
+                            a blow-off booked to a disqualification or a count-out settles nothing
+                            and costs more than not declaring one.
+                        </span>
+                    </span>
+                </button>
+
+                @if (!BlowOffWorthIt)
+                {
+                    <div class="notice notice--warn mt">
+                        This feud is @PendingIntensity. A blow-off is worth what was built —
+                        settling a story the audience was never told mattered lands
+                        <strong>worse</strong> than not declaring one at all. Build it to Hot first.
+                    </div>
+                }
+                else if (existingFeud is { } tired && tired.MatchesSinceHot > Feud.PatienceMatches)
+                {
+                    <div class="notice notice--warn mt">
+                        @tired.MatchesSinceHot matches and nothing settled. The crowd has started
+                        to assume this one is not going anywhere either, and this pairing is
+                        drawing @((int)Math.Round(tired.Credibility * 100))% of what it should.
+                        Settling it earns some of that back.
+                    </div>
+                }
+            </div>
+        }
+        else if (AlreadyConcluded)
+        {
+            <div class="notice notice--info mt">
+                This feud has already been blown off. That story is over — these two need a new
+                reason to fight before there is anything to settle.
+            </div>
+        }
     </div>
 }
 
@@ -790,6 +840,23 @@
     private FeudIntensity declaredIntensity = FeudIntensity.Building;
     private readonly List<FeudHistoryTag> declaredTags = new();
 
+    /// <summary>The booker declaring that this match ends the story. See MatchPlan.IsBlowOff.</summary>
+    private bool isBlowOff;
+
+    /// <summary>
+    /// The intensity the blow-off would actually be priced at — the booked feud's when
+    /// using one, the declared level when declaring one. Priced before the feud exists,
+    /// which is why <see cref="Feud.PayoffFor"/> is a static.
+    /// </summary>
+    private FeudIntensity PendingIntensity => feudChoice == FeudChoice.UseExisting
+        ? existingFeud?.Intensity ?? FeudIntensity.None
+        : declaredIntensity;
+
+    private double BlowOffPayoff => Feud.PayoffFor(PendingIntensity);
+    private bool BlowOffWorthIt => PendingIntensity >= FeudIntensity.Hot;
+    private bool AlreadyConcluded =>
+        feudChoice == FeudChoice.UseExisting && existingFeud is { Concluded: true };
+
     private string structureName = "";
     private List<MatchBeat> beats = new();
     private bool showAddBeat;
@@ -1065,6 +1132,7 @@
             SideA = sideA,
             SideB = sideB,
             MatchType    = matchType,
+            IsBlowOff    = isBlowOff && feudChoice != FeudChoice.None,
             Feud         = feud,
             TitleAtStake = title,
             Beats        = beats

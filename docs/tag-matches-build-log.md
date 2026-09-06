@@ -665,3 +665,114 @@ nothing. That is consistent with doc 21 §4.1 and defensible — the champion di
 it is now a deliberate decision rather than an accident of there being no tag matches.
 
 **418 tests passing.**
+
+---
+
+## A3 — feud decay and the terminal blow-off
+
+Doc 31 lists A3 in phase 1, "make results matter". It is the oldest unbuilt item on the
+list and the reason is visible in the code it replaces: `Feud.Heat` only ever went *up*.
+Every segment ever booked was still paying off months later, a feud left off television for
+a year was as hot as the night it started, and there was no cost whatever to starting five
+programmes and finishing none. Doc 20 §9 spends a section on exactly that booking.
+
+Three rules, each answering one line of the A3 brief.
+
+### Neglect costs
+
+`Feud.ApplyDailyDecay`, charged by `Career.AdvanceOneDay` alongside the momentum, title and
+chemistry decay that were already there. Fourteen days of grace, then 0.955 a day. §9 lists
+"a feud left off TV for three weeks loses its heat" among the things that kill one, and
+three weeks off television now costs about a third of it; two months costs 88%.
+
+Written with `DecayedTo` from the start, because `TagTeam.Decay` shipped without it in phase
+4 and compounded quadratically — `0.9985^(N(N+1)/2)` instead of `0.9985^N`, a thirty-day
+half-life on a curve written for two years. `TheGracePeriod_IsRealAndIsNotCharged` and
+`DecayIsIdempotentPerDay` both fail if the marker is removed, if it is stamped inside the
+grace period (the second half of that bug), or if the grace is dropped. I checked by making
+each of those three changes and watching the right test go red.
+
+### Not paying off costs, durably
+
+`RecordUnresolved` runs after every match that was not declared a blow-off. Three matches
+are free — doc 20 §9.1's "three matches is the natural life of a feud" — and the fourth
+starts accruing `Distrust`, which suppresses `StartingEnergyBonus` through `Credibility`.
+This is §9's interference loop: every match ends in a run-in, nothing resolves, and the
+crowd learns not to invest. The lesson is durable: `BlowOff` refunds some of it, and a new
+chapter inherits the rest.
+
+Two rules came out of testing rather than out of the brief, both because the first draft was
+wrong:
+
+* **A settled feud can be started again.** `FeudBook.GetOrCreate` returns the same object
+  for a pairing forever, so `Concluded` as written meant two people who ever finished a
+  programme could *never* feud again. The rematch years later is one of the oldest things in
+  wrestling. New heat on a settled feud now opens a new chapter and resets the patience
+  clock — but not the distrust.
+* **A feud that cools below Hot resets the patience clock.** Otherwise a programme that
+  quietly died of neglect came back a year later already one match from the limit.
+
+### Paying off pays — and has to actually pay off
+
+`MatchPlan.IsBlowOff` is a booker declaration rather than something derived from the beats,
+because that is what it is in real booking: nothing about a match's shape makes it a
+blow-off. It multiplies the *finish* beat — the payoff is the payoff, not a blanket bonus,
+and `DeclaringABlowOff_MovesTheMatch_AndOnlyTheFinish` asserts every earlier beat is
+identical to nine decimal places.
+
+Priced by what was built, §6's second requirement: ×1.45 Nuclear, ×1.28 Hot, ×1.05 Building,
+**×0.72** for a story the audience was never told mattered — worse than not declaring one,
+the same shape as the unearned finish in `ApplyFinish` and the unearned hot tag.
+
+And §6.1's *first* requirement, which the first draft ignored: a blow-off has to **resolve**.
+Booked to a disqualification, a count-out or a run-in it settles nothing, the feud stays
+open with its heat intact, and it costs 0.30 distrust — nearly double what an ordinary
+unresolved match costs. That is what makes declaring a blow-off a decision with a downside
+rather than a free multiplier, and it is checked end to end through `ShowSimulator` rather
+than only on the model.
+
+### What it is actually worth
+
+`Big Match Epic`, two 80-overness workers, 300 seeds a cell:
+
+```
+no feud                          3.7364
+Cold      chapter 3.7621   blow-off 3.7250   Δ −0.0371
+Building  chapter 3.7945   blow-off 3.8008   Δ +0.0063
+Hot       chapter 3.8628   blow-off 3.8949   Δ +0.0321
+Nuclear   chapter 3.9232   blow-off 3.9711   Δ +0.0479
+Nuclear, clean 3.9232  vs 10 unresolved 3.8749   Δ −0.0483
+```
+
+Stating this plainly rather than letting the multiplier imply more than it does: **the star
+rating moves by about 0.05**. That is a quarter of what having a Nuclear feud is worth at
+all (+0.19★ over none), which is proportionate — but it is not, on its own, a headline
+feature, and a ×1.45 on one beat of nine was never going to be. The teeth of A3 are
+elsewhere: heat now has to be maintained, distrust is durable, and a blow-off that does not
+resolve is punished.
+
+**What A3 asked for and this does not deliver:** "a blow-off should pay out accumulated heat
+as a large one-time result". There is no business axis to pay into — doc 18 §7's
+quality-versus-draw split is the prerequisite and it is not built. The quality and story
+halves ship; the business half is blocked on work nobody has started.
+
+### Persistence
+
+`LastAdvanced`, `DecayedTo`, `Concluded`, `ConcludedOn`, `MatchesSinceHot`, `Distrust` and
+`ChaptersSettled` on the feud; `IsBlowOff` on the card item. A pre-A3 save has no
+`LastAdvanced`, and the fallback is `LastMatchDate` rather than null **deliberately**: null
+means "never advanced" and therefore never decays, which would quietly exempt every feud in
+an existing save from the rule this release adds. Two round-trip tests, one of which checks
+the decay *clock* survives — not just the numbers — because a reload that hands every feud a
+fresh grace period is the same bug wearing a different hat.
+
+### Reachable in the game
+
+The blow-off is a real choice in both front ends: a toggle in the web builder's feud step
+that quotes the multiplier before the choice is made and warns when it would be unearned or
+when the pairing has been run into the ground, and a priced prompt in the console flow.
+Booking a blow-off with no feud, or a second one on a settled story, fails validation with
+an error that says which.
+
+**436 tests passing** (18 new). Every one of the seven new mechanisms was checked by
+inverting it and confirming the intended test went red.

@@ -191,17 +191,22 @@ namespace WrestlingSim.Models.MatchPlan
         /// Adds heat and re-derives Intensity. Returns true if the feud moved up a tier,
         /// so callers can report the escalation to the player.
         /// </summary>
-        /// <summary>Marks the feud as advanced today, restarting the decay clock.</summary>
-        public void Advance(DateOnly? date)
-        {
-            if (date is not { } d) return;
-            LastAdvanced = d;
-            DecayedTo    = null;
-        }
-
         public bool AddHeat(double amount)
         {
             if (amount <= 0) return false;
+
+            // New heat on a settled feud starts a new chapter. Without this a blow-off was
+            // permanent in the wrong sense: `GetOrCreate` returns the same object for a
+            // pairing forever, so two people who ever finished a programme could never
+            // feud again — and the rematch years later is one of the oldest things in
+            // wrestling. Distrust deliberately does *not* clear: what the booker taught the
+            // crowd about whether their stories finish outlives the story.
+            if (Concluded)
+            {
+                Concluded       = false;
+                MatchesSinceHot = 0;
+                ChaptersSettled++;
+            }
 
             var before = Intensity;
             Heat += amount;
@@ -259,6 +264,20 @@ namespace WrestlingSim.Models.MatchPlan
 
         // ── Decay ────────────────────────────────────────────────────────────
 
+        /// <summary>
+        /// Marks the feud as advanced today, restarting the decay clock. Called whenever
+        /// anything happens between these two on screen — a segment, a match, a run-in.
+        /// Deliberately separate from <see cref="AddHeat"/>: a beatdown that adds no heat
+        /// because the feud is already Nuclear is still television, and still keeps the
+        /// story in front of the audience.
+        /// </summary>
+        public void Advance(DateOnly? date)
+        {
+            if (date is not { } d) return;
+            LastAdvanced = d;
+            DecayedTo    = null;
+        }
+
         /// <summary>Days a feud can go unadvanced before it starts bleeding heat.</summary>
         public const int HeatGraceDays = 14;
 
@@ -295,6 +314,13 @@ namespace WrestlingSim.Models.MatchPlan
             Heat = Math.Max(0, Heat * Math.Pow(HeatDailyRetention, days));
             Intensity = IntensityFor(Heat);
             DecayedTo = today;
+
+            // A feud that has cooled below Hot is not being told any more, so the clock
+            // measuring "how long have you been refusing to pay this off" stops and resets.
+            // Distrust already accrued stays — the crowd learned something — but a
+            // programme that quietly died should not have its next chapter start one match
+            // away from the patience limit.
+            if (Intensity < FeudIntensity.Hot) MatchesSinceHot = 0;
         }
 
         // ── The blow-off ─────────────────────────────────────────────────────
@@ -302,7 +328,11 @@ namespace WrestlingSim.Models.MatchPlan
         /// <summary>True once this feud has been paid off and ended.</summary>
         public bool Concluded { get; private set; }
 
+        /// <summary>When the most recent chapter was settled.</summary>
         public DateOnly? ConcludedOn { get; private set; }
+
+        /// <summary>How many chapters of this rivalry have been paid off and reopened.</summary>
+        public int ChaptersSettled { get; private set; }
 
         /// <summary>
         /// Matches worked since this feud became worth blowing off. Doc 20 §9.1: three
@@ -332,7 +362,13 @@ namespace WrestlingSim.Models.MatchPlan
         /// the escalation. A blow-off declared on a feud nobody has been following is the
         /// unearned resolution §9 warns about, and is worth less than not declaring one.
         /// </summary>
-        public double BlowOffPayoff => Intensity switch
+        public double BlowOffPayoff => PayoffFor(Intensity);
+
+        /// <summary>
+        /// The same curve as a plain function, so the booking screens can price a blow-off
+        /// on a feud the player is declaring by hand and has not created yet.
+        /// </summary>
+        public static double PayoffFor(FeudIntensity intensity) => intensity switch
         {
             FeudIntensity.Nuclear  => 1.45,
             FeudIntensity.Hot      => 1.28,
@@ -344,6 +380,30 @@ namespace WrestlingSim.Models.MatchPlan
         public bool WorthBlowingOff => Intensity >= FeudIntensity.Hot;
 
         /// <summary>
+        /// A blow-off that did not resolve anything.
+        ///
+        /// Doc 20 §6.1 puts **resolve — someone definitively wins** first in the list of
+        /// what a blow-off has to do, and §9 names the interference loop — every match ends
+        /// in a run-in, nothing is settled — as one of the things that kills a feud. So a
+        /// blow-off booked to a disqualification, a count-out or a run-in does not settle
+        /// the story, and it costs more than an ordinary unresolved match: the crowd was
+        /// told this was the end and it was not.
+        ///
+        /// This is what makes declaring a blow-off a decision rather than a free bonus.
+        /// </summary>
+        public const double BrokenPromiseDistrust = 0.30;
+
+        /// <summary>
+        /// The promise was made and not kept. The feud stays open, and the pairing pays
+        /// double what an ordinary unresolved match costs.
+        /// </summary>
+        public void RecordBrokenPromise()
+        {
+            MatchesSinceHot++;
+            Distrust = Math.Clamp(Distrust + BrokenPromiseDistrust, 0, 1);
+        }
+
+        /// <summary>
         /// Pays the feud off and ends it. The debt is settled — doc 20 §3.1.
         /// </summary>
         public void BlowOff(DateOnly? date)
@@ -352,6 +412,7 @@ namespace WrestlingSim.Models.MatchPlan
             ConcludedOn = date;
             Heat        = 0;
             Intensity   = FeudIntensity.None;
+            DecayedTo   = null;
             Distrust    = Math.Max(0, Distrust - 0.35);  // resolving earns some belief back
         }
 
@@ -373,6 +434,29 @@ namespace WrestlingSim.Models.MatchPlan
         /// crowd about whether their stories finish. 1.0 is untainted.
         /// </summary>
         public double Credibility => 1.0 - Distrust * 0.45;
+
+        /// <summary>
+        /// Restores the decay clock from a save. For loading only, in the same spirit as
+        /// <see cref="RestoreHeat"/> — <see cref="Advance"/> would stamp today's date and
+        /// hand every loaded feud a free reset.
+        /// </summary>
+        public void RestoreDecay(DateOnly? lastAdvanced, DateOnly? decayedTo)
+        {
+            LastAdvanced = lastAdvanced;
+            DecayedTo    = decayedTo;
+        }
+
+        /// <summary>Restores resolution state from a save. Loading only.</summary>
+        public void RestoreResolution(bool concluded, DateOnly? concludedOn,
+                                      int matchesSinceHot, double distrust,
+                                      int chaptersSettled = 0)
+        {
+            Concluded       = concluded;
+            ConcludedOn     = concludedOn;
+            MatchesSinceHot = Math.Max(0, matchesSinceHot);
+            Distrust        = Math.Clamp(distrust, 0, 1);
+            ChaptersSettled = Math.Max(0, chaptersSettled);
+        }
 
         /// <summary>Stamps a history tag onto the feud. Duplicates are ignored.</summary>
         public bool AddTag(FeudHistoryTag tag)
