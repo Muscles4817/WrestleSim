@@ -67,9 +67,18 @@ public class MatchPlan
 }
 ```
 
-`Validate()` gains: both sides non-empty, sides the same size (until handicap is a deliberate
-feature), and **no wrestler on both sides** — the last one matters because `Ctx.For(w)`
-currently resolves a profile by reference equality and would silently return the wrong one.
+`Validate()` gains: both sides non-empty, **no wrestler on both sides** (this one matters
+because `Ctx.For(w)` resolved a profile by reference equality and would silently return the
+wrong one), and — the rule that actually protects the tag formula — **every beat must be
+workable by the side it is booked for**. A hot tag needs someone to tag; an isolation needs a
+corner to be kept away from.
+
+Sides must also be the same size, but not as a rule about taste. *Adjudicated during the
+build*: the engine has no term for numbers at all — a 1v4 grades identically to a 1v1, and
+side weighting makes the side with the extra man score slightly **worse**. A handicap match
+would not be graded generously or harshly, it would be graded as something else. The exit
+condition for that rule is a numbers term in the engine, not a decision that handicap is
+allowed. See the build log.
 
 ### What does *not* change
 
@@ -131,9 +140,29 @@ beat swap the legal man on their side. `MatchBeat` gains optional `SideAPerforme
 `SideBPerformer` overrides (null = whoever is currently legal) so a booker who wants a
 specific man in peril can say so, without forcing that choice on every beat.
 
-`Ctx` changes from two profiles to a `Dictionary<Wrestler, PerformerProfile>` plus
-`Side(BeatControl)` and `Legal(BeatControl)` accessors. `Ctx.Pair(f)` — used by beats nobody
-controls — becomes an average over the two *legal* performers, which keeps singles identical.
+`Ctx` changes from two profiles to a `Dictionary<Wrestler, PerformerProfile>` plus legal-
+performer accessors.
+
+Aggregation turned out to be the subtlest question in the whole build, and the plan's original
+answer here — "average over the two legal performers" — was wrong. *Adjudicated during the
+build*, the rule is now stated on **the field being assigned**, so it can be applied
+mechanically:
+
+- `CrowdEnergyDelta`, `CrowdCeiling` and opening-bell energy read **every member of both
+  sides**. The audience is looking at everyone it can see, including the man on the apron.
+- `TechnicalContribution`, `StorytellingContribution`, `AdvantageDelta` and `FinishQuality`
+  read **only the performers legal for that beat**. The man on the apron is not working.
+- Where one intermediate feeds both, compute it twice.
+- One documented exception: `FadeFactor` takes the whole side even though it scales craft
+  output, because tagging out is precisely how a team resists fatigue.
+
+And the *function* matters as much as the membership. A flat mean makes a star-and-jobber team
+grade as exactly the average of the star's match and the jobber's match — the star losing
+precisely what the jobber gains. That is a conservation law, not a wrestling model, and it
+contradicts [12](wrestling-reference/12-pushes-and-positioning.md) §3.2 and
+[17](wrestling-reference/17-heat-and-getting-over.md) §2.8, which both say association
+transfers heat *to* the weaker party. A side is therefore read **top-weighted** toward its
+strongest member (`Ctx.DragWeight`), so the star carries.
 
 ### New structures
 

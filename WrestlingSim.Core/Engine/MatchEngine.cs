@@ -83,21 +83,74 @@ namespace WrestlingSim.Engine
                 _                     => null
             };
 
-            /// <summary>Average of a profile factor across one side's members.</summary>
-            public double SideAvg(MatchSide side, Func<PerformerProfile, double> f) =>
-                side.Members.Average(m => f(For(m)));
+            public MatchSide SideOf(Wrestler w) => IsSideA(w) ? Plan.SideA : Plan.SideB;
+
+            // ── Aggregation ──────────────────────────────────────────────────
+            //
+            // Which aggregator a beat handler uses is decided by the *field it is
+            // assigning*, not by taste:
+            //
+            //   CrowdEnergyDelta, and the opening-bell crowd numbers
+            //       → whole side. The audience is looking at everyone it can see,
+            //         including the man standing on the apron.
+            //
+            //   TechnicalContribution, StorytellingContribution, AdvantageDelta,
+            //   FinishQuality
+            //       → the legal performers only. The man on the apron is not working.
+            //
+            // Where one intermediate feeds both, compute it twice. FadeFactor is the one
+            // documented exception: it scales craft output but reads the whole side,
+            // because tagging out is precisely how a team resists fatigue.
 
             /// <summary>
-            /// Average of both sides on a factor — for beats nobody controls. Each side is
-            /// averaged first so a two-man side counts once, not twice: a tag team is one
-            /// side of the match, however many people are in it.
+            /// How much a side's weakest member drags its reading toward the average.
+            /// 0 = the side reads as its best member, 1 = a flat mean.
+            ///
+            /// A flat mean is wrong, and wrong in a specific way: it makes a star-and-jobber
+            /// team grade as exactly the average of the star's match and the jobber's match,
+            /// so the star loses precisely what the jobber gains. That is a conservation law,
+            /// not a wrestling model, and it contradicts the reference directly — a top star
+            /// working with a weaker man is "the single most effective star-making tool that
+            /// exists" (docs/wrestling-reference/12-pushes-and-positioning.md §3.2), and
+            /// proximity transfers heat *to* the weaker party
+            /// (docs/wrestling-reference/17-heat-and-getting-over.md §2.8).
+            ///
+            /// At 0.5 the star carries: a partner nobody knows dilutes the team's reading
+            /// without halving it. Phase 4's team chemistry lowers this for an established
+            /// team, which reads to a crowd as one act rather than two people.
             /// </summary>
+            public const double DragWeight = 0.5;
+
+            /// <summary>
+            /// A profile factor for one whole side, weighted toward its strongest member.
+            /// For a side of one this is exactly that member's value.
+            /// </summary>
+            public double SideAvg(MatchSide side, Func<PerformerProfile, double> f) =>
+                TopWeighted(side.Members.Select(m => f(For(m))));
+
+            /// <summary>Both sides on a factor, each side read as a side first.</summary>
             public double Pair(Func<PerformerProfile, double> f) =>
                 (SideAvg(Plan.SideA, f) + SideAvg(Plan.SideB, f)) / 2.0;
 
-            /// <summary>Average of a raw wrestler stat across both sides, side-averaged first.</summary>
+            /// <summary>A raw wrestler stat across both sides, each side read as a side first.</summary>
             public double PairStat(Func<Wrestler, double> f) =>
-                (Plan.SideA.Members.Average(f) + Plan.SideB.Members.Average(f)) / 2.0;
+                (TopWeighted(Plan.SideA.Members.Select(f))
+                 + TopWeighted(Plan.SideB.Members.Select(f))) / 2.0;
+
+            /// <summary>The two performers actually working, for fields that describe work.</summary>
+            public double LegalPair(Func<PerformerProfile, double> f) => (f(A) + f(B)) / 2.0;
+
+            /// <summary>A raw stat across the two performers actually working.</summary>
+            public double LegalPairStat(Func<Wrestler, double> f) => (f(LegalA) + f(LegalB)) / 2.0;
+
+            private static double TopWeighted(IEnumerable<double> values)
+            {
+                var list = values as IList<double> ?? values.ToList();
+                if (list.Count == 1) return list[0];
+
+                double best = list.Max();
+                return best + (list.Average() - best) * DragWeight;
+            }
         }
 
         // ── Public entry point ───────────────────────────────────────────────
@@ -159,9 +212,11 @@ namespace WrestlingSim.Engine
 
             double avgPop = ctx.PairStat(w => w.EffectiveOverness);
 
-            // Crowd disposition modifier: rewards having BOTH wrestlers over, not just one.
-            // Using Min rather than average means one nobody eliminates the bonus —
-            // the crowd doesn't start hot just because one star is in the match.
+            // Crowd disposition modifier: rewards having BOTH SIDES over, not just one.
+            // Min rather than average across the two sides, so a card-filler opposite a
+            // star does not let the room start hot — the crowd has to care about both
+            // corners. Within a side the reading is top-weighted (see Ctx.DragWeight), so
+            // one nobody on a two-man team dilutes that side rather than erasing it.
             double bothOverBonus = Math.Min(
                 ctx.SideAvg(plan.SideA, p => p.Disposition),
                 ctx.SideAvg(plan.SideB, p => p.Disposition)) * 8.0; // up to +8
@@ -291,6 +346,47 @@ namespace WrestlingSim.Engine
                     ApplyNearFall(result, beat, ctx, control, other, iMod, feudMult, timesUsed);
                     break;
 
+                case BeatType.Shine:
+                    ApplyShine(result, beat, ctx, control, other, iMod, dMod);
+                    break;
+
+                case BeatType.Cutoff:
+                    ApplyCutoff(result, beat, ctx, control, other, iMod, dMod);
+                    break;
+
+                case BeatType.Isolation:
+                    ApplyIsolation(result, beat, ctx, control, other, iMod, dMod);
+                    break;
+
+                case BeatType.NearTag:
+                    ApplyNearTag(result, ctx, control, other, iMod, feudMult);
+                    break;
+
+                case BeatType.HotTag:
+                    ApplyHotTag(result, beat, ctx, control, other, iMod);
+                    break;
+
+                case BeatType.Tag:
+                case BeatType.BlindTag:
+                    ApplyTag(result, beat, ctx, control, other, iMod);
+                    break;
+
+                case BeatType.DoubleTeam:
+                    ApplyDoubleTeam(result, beat, ctx, control, other, iMod, dMod);
+                    break;
+
+                case BeatType.Miscommunication:
+                    ApplyMiscommunication(result, ctx, control, other, iMod);
+                    break;
+
+                case BeatType.SaveBreakup:
+                    ApplySaveBreakup(result, ctx, control, other, iMod, timesUsed);
+                    break;
+
+                case BeatType.AllFourBrawl:
+                    ApplyAllFourBrawl(result, ctx, iMod, dMod);
+                    break;
+
                 case BeatType.HighSpot:
                     ApplyHighSpot(result, beat, ctx, control, iMod);
                     break;
@@ -389,6 +485,25 @@ namespace WrestlingSim.Engine
             BeatType.NearFall             => 0.85,
             BeatType.HighSpot             => 0.78,
 
+            // The isolation is meant to be repeated — that is how the charge is built —
+            // so it decays gently. Everything else in the tag formula is a moment.
+            BeatType.Isolation            => 0.86,
+            BeatType.NearTag              => 0.80,
+            BeatType.Shine                => 0.70,
+            BeatType.DoubleTeam           => 0.74,
+
+            // A second hot tag in one match is a different match. A second miscommunication
+            // is a comedy spot. A third save is the referee being ignored.
+            BeatType.HotTag               => 0.45,
+            BeatType.Miscommunication     => 0.50,
+            BeatType.SaveBreakup          => 0.55,
+            BeatType.AllFourBrawl         => 0.60,
+
+            // A tag itself is not a moment and does not wear out.
+            BeatType.Tag                  => 1.00,
+            BeatType.BlindTag             => 0.75,
+            BeatType.Cutoff               => 0.72,
+
             // Feud beats are singular events; repeating them cheapens them fast.
             BeatType.FeudalEscalation     => 0.60,
             BeatType.RevengeSpot          => 0.65,
@@ -407,6 +522,9 @@ namespace WrestlingSim.Engine
             int beyond = Math.Max(0, ctx.State.BeatIndex - 4);
             if (beyond == 0) return 1.0;
 
+            // Deliberately the whole side rather than the legal performers, even though
+            // this scales craft output: tagging out is literally how a team resists
+            // fatigue, so a fresh partner should hold the match up late.
             double conditioning = ctx.Pair(p => p.Conditioning);
             double perBeat = Math.Clamp(0.855 + 0.115 * conditioning, 0.82, 0.99);
             return Math.Pow(perBeat, beyond);
@@ -464,17 +582,17 @@ namespace WrestlingSim.Engine
         private void ApplyHotOpening(BeatResult r, Ctx ctx, double iMod, double dMod)
         {
             var plan = ctx.Plan;
-            double avgRing     = AvgRingSkill(ctx);
-            double avgCharisma = ctx.PairStat(w => w.Charisma);
+            double avgRing     = AvgRingSkill(ctx);          // → Technical: legal men
+            double avgCharisma = ctx.PairStat(w => w.Charisma); // → crowd: whole side
 
             double connection = ctx.Pair(p => p.Connection);
 
             // A hot opening is a sprint — it only reads as frantic if they can move.
-            double pace = PerformerProfile.Blend(ctx.Pair(p => p.Athleticism), 0.50);
+            double pace = PerformerProfile.Blend(ctx.LegalPair(p => p.Athleticism), 0.50); // → Technical
 
             r.CrowdEnergyDelta      = Rng(8, 14) * iMod * (0.7 + avgCharisma / 5.0 * 0.6) * connection * pace;
             r.AdvantageDelta         = Rng(-5, 5);
-            r.TechnicalContribution = 4.0 * (avgRing / 5.0) * iMod * ctx.Pair(p => p.Workrate) * pace;
+            r.TechnicalContribution = 4.0 * (avgRing / 5.0) * iMod * ctx.LegalPair(p => p.Workrate) * pace;
             r.StorytellingContribution = 2.5 * iMod * PerformerProfile.Blend(connection, 0.6);
 
             r.Commentary.Add(Pick(
@@ -496,7 +614,7 @@ namespace WrestlingSim.Engine
         private void ApplySlowOpening(BeatResult r, Ctx ctx, double iMod, double dMod)
         {
             var plan = ctx.Plan;
-            double avgTech = ctx.PairStat(w => w.RingSkills.Technical);
+            double avgTech = ctx.LegalPairStat(w => w.RingSkills.Technical); // → Technical
 
             // A slow start only works if the crowd trusts these two to go somewhere with it.
             double patience = PerformerProfile.Blend(ctx.Pair(p => p.Connection), 0.7);
@@ -504,9 +622,9 @@ namespace WrestlingSim.Engine
             r.CrowdEnergyDelta      = Rng(-2, 4) * iMod * patience;
             r.AdvantageDelta         = Rng(-3, 3);
             r.TechnicalContribution = 5.5 * (avgTech / 5.0) * dMod
-                                      * ctx.Pair(p => p.WorkrateFor(WrestlingStyle.Technical))
-                                      * PerformerProfile.Blend(ctx.Pair(p => p.RingPsych), 0.7);
-            r.StorytellingContribution = 3.0 * dMod * PerformerProfile.Blend(ctx.Pair(p => p.RingPsych), 0.6);
+                                      * ctx.LegalPair(p => p.WorkrateFor(WrestlingStyle.Technical))
+                                      * PerformerProfile.Blend(ctx.LegalPair(p => p.RingPsych), 0.7);
+            r.StorytellingContribution = 3.0 * dMod * PerformerProfile.Blend(ctx.LegalPair(p => p.RingPsych), 0.6);
 
             r.Commentary.Add(Pick(
                 $"{ctx.LegalA.RingName} and {ctx.LegalB.RingName} circle each other, measuring the distance carefully.",
@@ -531,8 +649,8 @@ namespace WrestlingSim.Engine
 
             r.CrowdEnergyDelta      = Rng(3, 8) * iMod * ctx.Pair(p => p.Connection);
             r.AdvantageDelta         = Rng(-4, 4);
-            r.TechnicalContribution = 4.5 * (avgRing / 5.0) * dMod * ctx.Pair(p => p.Workrate);
-            r.StorytellingContribution = 2.0 * dMod * PerformerProfile.Blend(ctx.Pair(p => p.RingPsych), 0.5);
+            r.TechnicalContribution = 4.5 * (avgRing / 5.0) * dMod * ctx.LegalPair(p => p.Workrate);
+            r.StorytellingContribution = 2.0 * dMod * PerformerProfile.Blend(ctx.LegalPair(p => p.RingPsych), 0.5);
 
             r.Commentary.Add(Pick(
                 $"{ctx.LegalA.RingName} and {ctx.LegalB.RingName} lock up.",
@@ -697,7 +815,7 @@ namespace WrestlingSim.Engine
                               * Rng(2, 5) * PerformerProfile.Blend(pOther.Resilience, 0.5);
 
             // Psychology / selling drive near-fall quality
-            double avgPsych = ctx.PairStat(w => w.Mental.Psychology);
+            double avgPsych = ctx.LegalPairStat(w => w.Mental.Psychology); // → Storytelling
             r.TechnicalContribution    = 2.5 * (avgPsych / 100.0) * iMod
                                          * PerformerProfile.Blend(pOther.Selling, 0.6);
             r.StorytellingContribution = 5.5 * iMod * feudMult * credibility;
@@ -786,13 +904,13 @@ namespace WrestlingSim.Engine
             // When control is Even/Contested, use the average of both.
             double brawlerSkill = control != null
                 ? control.RingSkills.Brawler
-                : ctx.PairStat(w => w.RingSkills.Brawler);
+                : ctx.LegalPairStat(w => w.RingSkills.Brawler); // → Technical
             double brawlFactor = 0.5 + brawlerSkill / 5.0 * 0.8; // 0.66–1.30
 
             double connection = control != null ? ctx.For(control).Connection : ctx.Pair(p => p.Connection);
             double workrate   = control != null
                 ? ctx.For(control).WorkrateFor(WrestlingStyle.Brawler)
-                : ctx.Pair(p => p.WorkrateFor(WrestlingStyle.Brawler));
+                : ctx.LegalPair(p => p.WorkrateFor(WrestlingStyle.Brawler)); // → Technical
 
             r.CrowdEnergyDelta      = Rng(6, 12) * iMod * dMod * brawlFactor
                                       * PerformerProfile.Blend(connection, 0.6);
@@ -859,13 +977,16 @@ namespace WrestlingSim.Engine
 
             // Use feudMult directly (not offset). At Nuclear (×1.5) this peaks higher than
             // RevengeSpot, which is correct — FeudalEscalation should be the match's biggest moment.
-            double connection = ctx.Pair(p => p.Connection);
+            // Feeds a crowd field and a craft field, so it is read twice: the room sees
+            // everyone in the feud, but only the people working carry the story.
+            double roomConnection  = ctx.Pair(p => p.Connection);
+            double workedConnection = ctx.LegalPair(p => p.Connection);
 
-            r.CrowdEnergyDelta = Rng(14, 24) * iMod * feudMult * connection;
+            r.CrowdEnergyDelta = Rng(14, 24) * iMod * feudMult * roomConnection;
             r.AdvantageDelta    = Rng(-5, 5); // contested — both wrestlers go at it
             r.TechnicalContribution    = 2.0 * iMod;
             r.StorytellingContribution = 14.0 * iMod * feudMult
-                                         * PerformerProfile.Blend(connection, 0.5);
+                                         * PerformerProfile.Blend(workedConnection, 0.5);
 
             r.Commentary.Add(Pick(
                 $"This feud reaches a boiling point! {ctx.LegalA.RingName} and {ctx.LegalB.RingName} can no longer contain their hatred!",
@@ -918,12 +1039,13 @@ namespace WrestlingSim.Engine
 
         private void ApplyThirdPartyPullIn(BeatResult r, Ctx ctx, double iMod, double feudMult)
         {
-            double connection = ctx.Pair(p => p.Connection);
+            double roomConnection   = ctx.Pair(p => p.Connection);
+            double workedConnection = ctx.LegalPair(p => p.Connection);
 
-            r.CrowdEnergyDelta = Rng(10, 16) * iMod * feudMult * PerformerProfile.Blend(connection, 0.7);
+            r.CrowdEnergyDelta = Rng(10, 16) * iMod * feudMult * PerformerProfile.Blend(roomConnection, 0.7);
             r.AdvantageDelta    = Rng(-10, 10);
             r.TechnicalContribution    = 1.0;
-            r.StorytellingContribution = 9.0 * iMod * feudMult * PerformerProfile.Blend(connection, 0.5);
+            r.StorytellingContribution = 9.0 * iMod * feudMult * PerformerProfile.Blend(workedConnection, 0.5);
 
             r.Commentary.Add(Pick(
                 "Someone connected to this feud has made their presence known!",
@@ -962,6 +1084,428 @@ namespace WrestlingSim.Engine
                 "The arena is on its feet. Whatever comes next, this just became something else entirely.",
                 "The crowd has just witnessed something they won't forget for a long time.",
                 $"{control.RingName} choosing honour over an easy win — or is it pure pride? Either way, this crowd respects it."
+            ));
+        }
+
+        // ── The tag formula ──────────────────────────────────────────────────
+        //
+        // Nine handlers, one rule between them: the hot tag is worth what the isolation
+        // paid for. Everything else here either builds that charge or spends it.
+        //
+        // docs/wrestling-reference/18-match-craft.md §3 and
+        // docs/wrestling-reference/16-crowd-psychology.md §2.
+
+        /// <summary>
+        /// The shine: the face team on top before the heat, establishing them as worth
+        /// caring about. A crowd that never saw the team look good has no reason to want
+        /// them saved later.
+        /// </summary>
+        private void ApplyShine(BeatResult r, MatchBeat beat, Ctx ctx,
+            Wrestler? control, Wrestler other, double iMod, double dMod)
+        {
+            control ??= ctx.LegalA;
+            other = ctx.Opponent(control);
+
+            var pControl = ctx.For(control);
+            var side     = ctx.SideOf(control);
+
+            // A shine is the team looking sharp together, so it reads off the pair rather
+            // than off whoever happens to be legal.
+            double teamwork = ctx.SideAvg(side, p => (p.Athleticism + p.Workrate) / 2.0);
+
+            r.CrowdEnergyDelta = Rng(6, 12) * iMod * dMod
+                                 * ctx.SideAvg(side, p => p.Connection);
+
+            r.AdvantageDelta = ControlSign(ctx, control) * Rng(10, 20) * iMod * dMod;
+
+            r.TechnicalContribution = 5.5 * (AvgRingSkill(ctx) / 5.0) * iMod * dMod * teamwork;
+            r.StorytellingContribution = 4.0 * iMod * dMod
+                                         * PerformerProfile.Blend(pControl.RingPsych, 0.45);
+
+            r.Commentary.Add(Pick(
+                $"{side.Name} are firing on all cylinders early — quick tags, and {other.RingName} cannot get a foothold.",
+                $"A brilliant opening stretch from {side.Name}! They are running rings around {other.RingName}.",
+                $"{side.Name} in complete control, and the crowd is loving every second of it.",
+                $"Textbook teamwork from {side.Name} — in and out of the corner before the referee can blink."
+            ));
+        }
+
+        /// <summary>
+        /// The cut-off: the heels take over and the heat begins. Usually off a distraction,
+        /// which is why it does not need to be clean to work.
+        /// </summary>
+        private void ApplyCutoff(BeatResult r, MatchBeat beat, Ctx ctx,
+            Wrestler? control, Wrestler other, double iMod, double dMod)
+        {
+            control ??= ctx.LegalA;
+            other = ctx.Opponent(control);
+
+            var pControl = ctx.For(control);
+            var pOther   = ctx.For(other);
+
+            // The room quietens because the team it was enjoying just stopped being on top.
+            // A cut-off the crowd cares about costs more energy, not less — that is the
+            // point of it.
+            r.CrowdEnergyDelta = -Rng(2, 6) * iMod * PerformerProfile.Blend(pOther.Connection, 0.6);
+
+            r.AdvantageDelta = ControlSign(ctx, control) * Rng(20, 34) * iMod * dMod;
+
+            r.TechnicalContribution = 3.5 * iMod * pControl.Workrate;
+            r.StorytellingContribution = 6.0 * iMod
+                                         * PerformerProfile.Blend(pControl.RingPsych, 0.55)
+                                         * PerformerProfile.Blend(pOther.Selling, 0.45);
+
+            r.Commentary.Add(Pick(
+                $"{control.RingName} cuts {other.RingName} off at the knees — and just like that, the complexion of this match has changed.",
+                $"One moment of distraction and {control.RingName} takes over. {other.RingName} is a long way from his corner.",
+                $"There it is — {control.RingName} shuts the door, and {other.RingName} is in trouble.",
+                $"{control.RingName} catches {other.RingName} coming in and the heat is on."
+            ));
+        }
+
+        /// <summary>
+        /// The face in peril. A heat segment with a corner to be kept away from — which is
+        /// the whole difference between a tag match and a singles match with four names.
+        ///
+        /// Charges the hot tag. Control is the side doing the isolating; the man being
+        /// worked over is their opponent's legal performer.
+        /// </summary>
+        private void ApplyIsolation(BeatResult r, MatchBeat beat, Ctx ctx,
+            Wrestler? control, Wrestler other, double iMod, double dMod)
+        {
+            control ??= ctx.LegalA;
+            other = ctx.Opponent(control);
+
+            var pControl    = ctx.For(control);
+            var pIsolated   = ctx.For(other);
+            var isolatedSide = ctx.SideOf(other);
+
+            // Same cool-heel rule the singles heat segment uses: a crowd that likes the
+            // man on top is not generating "save him" tension.
+            double tensionFactor = 1.0 - pControl.Disposition * 0.6;
+
+            // But the tension is about the corner, not just the victim. The crowd is
+            // watching a man who cannot reach help — so how much they want the *partner*
+            // in matters as much as how much they like the man taking the beating.
+            double sympathy = PerformerProfile.Blend(pIsolated.Connection, 0.60);
+            double cornerPull = PerformerProfile.Blend(
+                isolatedSide.Members.Count > 1
+                    ? isolatedSide.PartnersOf(other).Average(m => ctx.For(m).Connection)
+                    : pIsolated.Connection,
+                0.40);
+
+            r.CrowdEnergyDelta = Rng(2, 7) * tensionFactor * iMod * dMod * sympathy * cornerPull;
+            r.AdvantageDelta   = ControlSign(ctx, control) * Rng(10, 22) * iMod * dMod;
+
+            WrestlingStyle beatStyle = beat.StyleHint ?? control.Style;
+            r.TechnicalContribution = 6.0 * (control.RingSkills.GetStyleProficiency(beatStyle) / 5.0)
+                                      * iMod * dMod * pControl.WorkrateFor(beatStyle)
+                                      * PerformerProfile.Blend(pIsolated.Selling, 0.60);
+
+            // Being kept from your corner is the story. Selling it is most of the job.
+            r.StorytellingContribution = 7.5 * iMod * dMod
+                                         * PerformerProfile.Blend(pIsolated.Selling, 0.65)
+                                         * PerformerProfile.Blend(pControl.RingPsych, 0.40);
+
+            ctx.State.RecordIsolation(ctx.IsSideA(other));
+
+            r.Commentary.Add(Pick(
+                $"{control.RingName} keeps {other.RingName} grounded in the wrong corner — miles from help.",
+                $"{other.RingName} is cut off and being taken apart. That corner might as well be a mile away.",
+                $"Every time {other.RingName} gets to his feet, {control.RingName} drags him back. Textbook isolation.",
+                $"{control.RingName} is working {other.RingName} over methodically, and the crowd is getting restless."
+            ));
+        }
+
+        /// <summary>
+        /// The tag reached for and denied.
+        ///
+        /// This is the one beat in the engine that is *supposed* to take energy out of the
+        /// building. The room going quiet and frustrated is stored energy, not lost energy
+        /// — it comes back at the hot tag, and it comes back bigger than another isolation
+        /// would have made it (docs/wrestling-reference/16-crowd-psychology.md §2).
+        /// </summary>
+        private void ApplyNearTag(BeatResult r, Ctx ctx,
+            Wrestler? control, Wrestler other, double iMod, double feudMult)
+        {
+            control ??= ctx.LegalA;
+            other = ctx.Opponent(control);
+
+            var pDenied  = ctx.For(other);
+            var deniedSide = ctx.SideOf(other);
+
+            // The groan is proportional to how much they wanted it.
+            double investment = PerformerProfile.Blend(pDenied.Connection, 0.70);
+
+            r.CrowdEnergyDelta = -Rng(3, 8) * iMod * investment;
+            r.AdvantageDelta   = ControlSign(ctx, control) * Rng(4, 10) * iMod;
+
+            r.TechnicalContribution    = 1.5 * iMod;
+            r.StorytellingContribution = 9.0 * iMod * feudMult
+                                         * PerformerProfile.Blend(pDenied.Selling, 0.55)
+                                         * investment;
+
+            ctx.State.RecordNearTag(ctx.IsSideA(other));
+
+            string partner = deniedSide.Members.Count > 1
+                ? deniedSide.PartnersOf(other).First().RingName
+                : "the corner";
+
+            r.Commentary.Add(Pick(
+                $"{other.RingName} reaches — and {control.RingName} drags him back! {partner} is beside himself on the apron!",
+                $"SO CLOSE! {other.RingName} was inches from {partner} and {control.RingName} pulled him away!",
+                $"The referee is distracted, {other.RingName} makes the tag — and it does not count! The crowd is furious!",
+                $"{other.RingName} lunges for {partner}... and comes up empty. You can hear the air go out of this building."
+            ));
+        }
+
+        /// <summary>
+        /// The hot tag — the loudest planned moment in professional wrestling, and worth
+        /// almost nothing if nothing was spent buying it.
+        ///
+        /// Built as a direct sibling of the unearned-finish rule in <see cref="ApplyFinish"/>:
+        /// a payoff the booking did not earn takes a hard multiplier. Here the charge comes
+        /// from isolation beats and denied tags since this side last got someone fresh in.
+        /// </summary>
+        private void ApplyHotTag(BeatResult r, MatchBeat beat, Ctx ctx,
+            Wrestler? control, Wrestler other, double iMod)
+        {
+            control ??= ctx.LegalA;
+            other = ctx.Opponent(control);
+
+            var state = ctx.State;
+            bool sideA = ctx.IsSideA(control);
+            var side   = ctx.SideOf(control);
+
+            int isolations = state.IsolationsSuffered(sideA);
+            int nearTags   = state.NearTagsDenied(sideA);
+
+            // The man who has been taking the beating, before the tag brings in his partner.
+            var beaten = control;
+
+            double charge = HotTagCharge(isolations, nearTags);
+
+            // Bring the fresh man in. Everything after this beat is worked by him.
+            int incomingIndex = state.Tag(sideA, side.Members.Count, beat.IncomingIndex);
+            var fresh = side.Members[incomingIndex];
+            var pFresh = ctx.For(fresh);
+
+            // The pop belongs to the man coming in, and to how badly the crowd wanted him.
+            // Deliberately the largest single crowd delta the engine can produce. A
+            // comeback is Rng(12,20); this has to dwarf it, because the format spends
+            // several minutes of deliberately quiet television buying it. Undersized, the
+            // isolation reads as a cost with no payoff and the tag formula grades below a
+            // sprint that never put anyone in peril.
+            r.CrowdEnergyDelta = Rng(26, 40) * iMod * charge
+                                 * PerformerProfile.Blend(pFresh.Connection, 0.70)
+                                 * PerformerProfile.Blend(pFresh.Athleticism, 0.40);
+
+            // A hot tag wipes out the heat that came before it, the same way a comeback does.
+            double deficit = sideA ? Math.Max(0, -state.Advantage) : Math.Max(0, state.Advantage);
+            r.AdvantageDelta = (sideA ? 1 : -1) * (Rng(28, 46) * iMod + deficit * 0.65);
+
+            r.TechnicalContribution = 5.0 * (AvgRingSkill(ctx) / 5.0) * iMod * pFresh.Workrate
+                                      * PerformerProfile.Blend(pFresh.Athleticism, 0.45);
+            r.StorytellingContribution = 11.0 * iMod * charge
+                                         * PerformerProfile.Blend(pFresh.Connection, 0.55);
+
+            r.Commentary.Add(charge >= 1.3
+                ? Pick(
+                    $"HOT TAG! {fresh.RingName} is in and this place has come UNGLUED!",
+                    $"{beaten.RingName} makes it — {fresh.RingName} comes in like a house on fire and the roof comes off!",
+                    $"THERE IT IS! After all that punishment, {beaten.RingName} finally reaches {fresh.RingName} — and the building erupts!")
+                : charge >= 0.85
+                    ? Pick(
+                        $"{beaten.RingName} gets the tag! {fresh.RingName} is in, and the crowd is up.",
+                        $"The tag is made — {fresh.RingName} comes in fresh and goes straight after {other.RingName}.")
+                    : Pick(
+                        $"{beaten.RingName} tags {fresh.RingName} in. The crowd is not quite sure why that was the moment.",
+                        $"{fresh.RingName} comes in. He had not been out there long enough for anyone to miss him."));
+
+            if (isolations == 0)
+                r.Commentary.Add(
+                    "Nobody was ever in trouble, so there is nothing for that tag to release.");
+        }
+
+        /// <summary>
+        /// How much the isolation bought. 1.0 is the neutral reading; a fully-built tag is
+        /// worth roughly twice that, and one nobody paid for is worth about half.
+        ///
+        /// The isolation term saturates at three beats and the near-tag term at two: a
+        /// fourth isolation is a crowd getting bored rather than a crowd getting desperate,
+        /// which is the same diminishing-returns shape the rest of the engine uses.
+        /// </summary>
+        private static double HotTagCharge(int isolations, int nearTags)
+        {
+            if (isolations == 0)
+                // The unearned-payoff penalty, deliberately the same 0.55 the engine
+                // charges for a finish that momentum did not support.
+                return 0.55;
+
+            double isolationTerm = 0.55 * Math.Min(isolations, 3) / 3.0;
+
+            // Worth more per beat than another isolation. A denied tag costs the room real
+            // energy in the moment, so if it did not pay back more than the isolation it
+            // replaced, booking one would be a straight loss and nobody would ever do it.
+            double nearTagTerm   = 0.45 * Math.Min(nearTags, 2) / 2.0;
+            return 1.0 + isolationTerm + nearTagTerm;
+        }
+
+        /// <summary>A routine or blind tag. Changes who is legal without being a moment.</summary>
+        private void ApplyTag(BeatResult r, MatchBeat beat, Ctx ctx,
+            Wrestler? control, Wrestler other, double iMod)
+        {
+            control ??= ctx.LegalA;
+            other = ctx.Opponent(control);
+
+            bool sideA = ctx.IsSideA(control);
+            var side   = ctx.SideOf(control);
+            bool blind = beat.Type == BeatType.BlindTag;
+
+            int incomingIndex = ctx.State.Tag(sideA, side.Members.Count, beat.IncomingIndex);
+            var fresh = side.Members[incomingIndex];
+
+            r.CrowdEnergyDelta = blind
+                ? Rng(2, 6) * iMod * PerformerProfile.Blend(ctx.For(fresh).Connection, 0.5)
+                : Rng(0, 2) * iMod;
+
+            r.AdvantageDelta = (sideA ? 1 : -1) * Rng(4, 12) * iMod;
+            r.TechnicalContribution = 1.5 * iMod * ctx.For(fresh).Workrate;
+            r.StorytellingContribution = blind ? 4.0 * iMod : 1.5 * iMod;
+
+            r.Commentary.Add(blind
+                ? Pick(
+                    $"A blind tag! {fresh.RingName} came in without {other.RingName} seeing a thing!",
+                    $"{fresh.RingName} tags himself in behind {other.RingName}'s back — nobody saw that but the referee!")
+                : Pick(
+                    $"{fresh.RingName} tags in.",
+                    $"A quick tag brings {fresh.RingName} into the match."));
+        }
+
+        /// <summary>
+        /// Team offence. The one beat that reads off how well the pair work *together*
+        /// rather than off either of them individually — which is what phase 4's team
+        /// chemistry will attach to.
+        /// </summary>
+        private void ApplyDoubleTeam(BeatResult r, MatchBeat beat, Ctx ctx,
+            Wrestler? control, Wrestler other, double iMod, double dMod)
+        {
+            control ??= ctx.LegalA;
+            other = ctx.Opponent(control);
+
+            var side   = ctx.SideOf(control);
+            var pOther = ctx.For(other);
+
+            // Averaged across the team, not taken from the legal man: a double team is only
+            // as good as the worse half of it.
+            double combined = ctx.SideAvg(side, p => (p.Workrate + p.Athleticism) / 2.0);
+            double weakestLink = side.Members.Min(m => ctx.For(m).Workrate);
+
+            r.CrowdEnergyDelta = Rng(7, 14) * iMod * dMod * ctx.SideAvg(side, p => p.Connection);
+            r.AdvantageDelta   = ControlSign(ctx, control) * Rng(14, 26) * iMod * dMod;
+
+            r.TechnicalContribution = 7.0 * (AvgRingSkill(ctx) / 5.0) * iMod * dMod
+                                      * combined
+                                      * PerformerProfile.Blend(weakestLink, 0.35)
+                                      * PerformerProfile.Blend(pOther.Selling, 0.45);
+            r.StorytellingContribution = 3.5 * iMod * dMod;
+
+            r.Commentary.Add(Pick(
+                $"Beautiful double-team move from {side.Name} — they have done that a thousand times.",
+                $"{side.Name} hit it in perfect stereo! {other.RingName} never had a chance.",
+                $"Textbook tandem offence from {side.Name}. That is what a team looks like.",
+                $"{side.Name} take turns on {other.RingName} — quick tags, seamless work."
+            ));
+        }
+
+        /// <summary>
+        /// The partners collide.
+        ///
+        /// Control is the side that makes the mistake, and the advantage moves *against*
+        /// them — the only beat in the engine where that is true, which is why it is worth
+        /// saying out loud rather than leaving to a sign convention.
+        /// </summary>
+        private void ApplyMiscommunication(BeatResult r, Ctx ctx,
+            Wrestler? control, Wrestler other, double iMod)
+        {
+            control ??= ctx.LegalA;
+            other = ctx.Opponent(control);
+
+            var side = ctx.SideOf(control);
+            var pControl = ctx.For(control);
+
+            r.CrowdEnergyDelta = Rng(3, 8) * iMod;
+
+            // Against the side that blundered.
+            r.AdvantageDelta = -ControlSign(ctx, control) * Rng(12, 24) * iMod;
+
+            r.TechnicalContribution = 1.0 * iMod;
+            r.StorytellingContribution = 6.5 * iMod
+                                         * PerformerProfile.Blend(pControl.RingPsych, 0.40);
+
+            string partner = side.Members.Count > 1
+                ? side.PartnersOf(control).First().RingName
+                : other.RingName;
+
+            r.Commentary.Add(Pick(
+                $"Disaster! {control.RingName} takes out {partner} by mistake — and the two of them are jawing at each other!",
+                $"{control.RingName} and {partner} collide! There is trouble in that corner.",
+                $"Miscommunication! {partner} is furious with {control.RingName}, and {other.RingName} is more than happy to watch.",
+                $"That is not how they drew it up — {control.RingName} just wiped out his own partner."
+            ));
+        }
+
+        /// <summary>
+        /// The partner breaks up the pin. Extends a near-fall sequence, and wears out
+        /// faster than almost anything else in the engine — by the third one the referee
+        /// is being openly ignored.
+        /// </summary>
+        private void ApplySaveBreakup(BeatResult r, Ctx ctx,
+            Wrestler? control, Wrestler other, double iMod, int timesUsed)
+        {
+            control ??= ctx.LegalA;
+            other = ctx.Opponent(control);
+
+            var side = ctx.SideOf(control);
+            var saver = side.Members.Count > 1
+                ? side.PartnersOf(control).First()
+                : control;
+
+            r.CrowdEnergyDelta = Rng(8, 15) * iMod
+                                 * PerformerProfile.Blend(ctx.For(saver).Connection, 0.55);
+
+            // A save stops the fall but does not put anyone on top.
+            r.AdvantageDelta = ControlSign(ctx, control) * Rng(2, 8) * iMod;
+
+            r.TechnicalContribution = 1.5 * iMod;
+            r.StorytellingContribution = 5.5 * iMod;
+
+            r.Commentary.Add(timesUsed >= 3
+                ? Pick(
+                    $"{saver.RingName} in AGAIN to break it up. The referee has lost control of this.",
+                    $"Another save from {saver.RingName} — at this point nobody is even pretending there are rules.")
+                : Pick(
+                    $"{saver.RingName} dives in to break up the count at the last possible moment!",
+                    $"THE SAVE! {saver.RingName} gets there just in time — {other.RingName} cannot believe it!",
+                    $"{other.RingName} had it won — but {saver.RingName} was there to break it up!"));
+        }
+
+        /// <summary>
+        /// Everyone in, referee has lost it. Resets the room before the finish rather than
+        /// advancing anybody's position, so it swings no advantage at all.
+        /// </summary>
+        private void ApplyAllFourBrawl(BeatResult r, Ctx ctx, double iMod, double dMod)
+        {
+            r.CrowdEnergyDelta = Rng(6, 13) * iMod * dMod * ctx.Pair(p => p.Connection);
+            r.AdvantageDelta   = 0;
+
+            r.TechnicalContribution    = 2.5 * iMod * dMod * ctx.LegalPair(p => p.Workrate);
+            r.StorytellingContribution = 4.0 * iMod * dMod;
+
+            r.Commentary.Add(Pick(
+                $"All four of them are in the ring now and the referee has completely lost control!",
+                $"It has broken down! {ctx.Plan.SideA.Name} and {ctx.Plan.SideB.Name} are swinging at each other everywhere!",
+                $"Bodies everywhere — the referee is just counting and hoping at this point!"
             ));
         }
 
@@ -1242,8 +1786,12 @@ namespace WrestlingSim.Engine
 
         // ── Helpers ──────────────────────────────────────────────────────────
 
+        /// <summary>
+        /// Ring skill of the two performers actually working. Only ever feeds Technical,
+        /// so it reads the legal men rather than the whole side.
+        /// </summary>
         private double AvgRingSkill(Ctx ctx) =>
-            ctx.PairStat(w => w.RingSkills.GetOverallSkill());
+            ctx.LegalPairStat(w => w.RingSkills.GetOverallSkill());
 
         private double Rng(double min, double max) =>
             min + _rand.NextDouble() * (max - min);

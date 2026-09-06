@@ -115,3 +115,147 @@ to compile); `Pinner`/`Pinned` read oddly for DQ and count-out finishes.
 ### Result
 
 **337 tests passing** (321 existing + 16 new), full suite, Release.
+
+### Adjudication — phase 1 contentions
+
+Two review findings were design disagreements rather than defects, and went to a third agent.
+Both rulings went against the author, and the second found something neither of the first two
+agents had seen.
+
+#### Q1 — Should uneven sides be blocked? **Ruled: block.**
+
+The author argued for allowing it, citing the repo's own precedent: `Division.cs` documents
+that a cross-division match is *warned about, not blocked*, "because intergender matches are
+a legitimate booking decision, just an unusual one."
+
+The ruling rejected that precedent for a specific reason. A cross-division match is scored
+**correctly** — the engine has no gender term, so an intergender match genuinely is just a
+match, and the notice is about booking taste. A handicap match is not unmodelled, it is
+**mis-modelled with the sign inverted**. Measured:
+
+| booking | stars |
+|---|---|
+| Star vs B1 (1v1) | 3.184 |
+| Star & Weak vs B1 (2v1) | 2.753 |
+| Star vs Weak (1v1) | 2.478 |
+| Star vs Weak & Weak2 (1v2) | 2.478 |
+| Star vs Weak ×4 (1v4) | 2.478 |
+
+Adding a man to your side makes your match monotonically *worse*; being outnumbered four to
+one moves the rating by 0.000. You warn about a booking the engine handles. You block one the
+engine mis-handles. A second, independent reason settles it anyway: a 2v1 satisfies
+`IsTagMatch`, so it validates clean, executes, and then destroys the player's save on the
+serializer guard added above.
+
+Implemented, with the error text naming the missing *mechanic* rather than the size rule, so
+it reads as a testable exit condition rather than "handicap is not a feature yet". The ruling
+also directed that phase 2 must **not** simply delete it, but supersede it with the rule that
+actually protects the formula — *every beat must be workable by the side it is booked for* —
+which subsumes it and catches a case the blunt size rule would miss.
+
+#### Q2 — Whole-side or legal-performer aggregates? **Ruled: both agents were asking the wrong question.**
+
+On the axis itself the author was upheld, but told to restate the rule one level higher.
+"Crowd-level vs execution-level" is ambiguous the moment a craft stat feeds a crowd number.
+The rule is now stated on **the field being assigned** — see the plan §1, and the comment
+block on `Ctx`. Applying it exposed that the author had side-averaged *uniformly*: every
+crowd-facing site was correct and roughly a dozen craft sites were not. A jobber added to the
+star's side was moving the technical accumulator from 24.6 to 22.1 despite never touching
+anybody. Those are now on `LegalPair`/`LegalPairStat`, and the four variables that feed both a
+crowd and a craft field are computed twice.
+
+The finding neither earlier agent made is about the aggregation *function*, and it invalidated
+both proposed answers equally:
+
+| aggregation | star legal | jobber legal | phase-2 proxy |
+|---|---|---|---|
+| side mean (author's) | 2.753 | 1.905 | **2.329** |
+| legal only (plan's) | 3.184 | 1.455 | **2.320** |
+| flat mean of their two singles matches | — | — | 2.320 |
+| top-weighted (implemented) | 2.973 | 2.128 | **2.550** |
+
+Under either proposal, a star-and-jobber tag match grades as **exactly the average of the
+star's match and the jobber's match** — the star losing precisely what the jobber gains,
+symmetric to within noise. That is a conservation law, not a wrestling model, and it directly
+contradicts the standing reference: doc 12 §3.2 calls a top star working with a weaker man
+"the single most effective star-making tool that exists", and doc 17 §2.8 says proximity
+transfers heat *to* the weaker party.
+
+Fixed with `Ctx.DragWeight` (0.5): a side reads toward its strongest member, so a partner
+nobody knows dilutes the team without halving it, and the star carries. Named as a constant
+because phase 4's team chemistry should lower it for an established team — a veteran team
+reads to a crowd as one act rather than two people. Test: `AStarCarriesAWeakPartner_...`.
+
+Also fixed: a comment on `bothOverBonus` that still described behaviour the code had stopped
+having, and `FadeFactor`'s deliberate whole-side read is now documented where it lives.
+
+---
+
+## Phase 2 — The narrative machine
+
+**Goal:** a tag match that is not a singles match with four names on it.
+
+### What changed
+
+| File | Change |
+|---|---|
+| `Enums/BeatEnums.cs` | Eleven tag beat types: `Shine`, `Cutoff`, `Isolation`, `NearTag`, `HotTag`, `Tag`, `BlindTag`, `DoubleTeam`, `Miscommunication`, `SaveBreakup`, `AllFourBrawl`. |
+| `Engine/MatchEngineState.cs` | `Tag()` swaps the legal performer and clears that side's charge; `RecordIsolation`/`RecordNearTag` build it. Charge is credited to the side being *worked over*, not the side working. |
+| `Models/MatchPlan/MatchBeat.cs` | `IncomingIndex` (who comes in), `IsTagBeat`, `IsTagChange`. |
+| `Engine/MatchEngine.cs` | Nine handlers plus `HotTagCharge`. The aggregation rework from adjudication. |
+| `Models/MatchPlan/MatchPlan.cs` | Beat-legality validation; the `AllFourBrawl` exception; uneven-sides block. |
+| `Engine/BeatLibrary.cs` | Eleven templates under a new `Tag` category, each with a booker tip naming the mechanic. |
+| `Engine/MatchStructureLibrary.cs` | `Southern Tag`, `Formula Tag`, `Tag Sprint`; `MatchStructure.SideSize` and `ForSideSize()`. |
+| `Tests/TagMatchTests.cs` | New, 18 cases. |
+
+### The hot-tag charge, measured
+
+`HotTagCharge(isolations, nearTags)` returns 0.55 with no isolation — deliberately the same
+unearned-payoff penalty `ApplyFinish` charges for a finish momentum did not support — then
+`1.0 + 0.55·min(iso,3)/3 + 0.45·min(near,2)/2`.
+
+| spent | hot-tag pop | storytelling | rating |
+|---|---|---|---|
+| nothing | 20.75 | 16.40 | 2.301★ |
+| 1 isolation | 44.45 | 38.06 | 2.944★ |
+| 3 isolations | 55.76 | 53.39 | 3.079★ |
+| 3 isolations + 2 denied tags | 66.61 | 74.33 | 3.209★ |
+| 5 isolations | 51.62 | 59.64 | 3.105★ |
+
+The last row is the point of the saturation: a fifth isolation buys a *quieter* tag than the
+third did, because the charge has capped and the extra beats cost late-match fade. Overworking
+the heat is punished, which is correct.
+
+### Two things the tests got wrong before the code did
+
+Worth recording, because in both cases the first instinct was to adjust the engine:
+
+1. **The charge tests measured `CrowdPeakEnergy`.** That saturates against the crowd ceiling
+   at around 78 whatever you spend, so it cannot see the charge at all — it showed 3
+   isolations + 2 near tags as *worse* than 3 isolations alone. The charge governs the hot
+   tag's own delta and the final rating; those are what the tests measure now.
+2. **`AFourthIsolation` asserted equality.** Saturation means "buys nothing more", not
+   "produces an identical number" — the extra beats still cost fade. The assertion is now
+   `five.pop <= three.pop`.
+
+One thing genuinely was undersized: the hot tag was billed as the loudest planned moment in
+wrestling and given `Rng(16,26)` against a comeback's `Rng(12,20)`. At that size the isolation
+read as a cost with no payoff and the full formula graded below a sprint that never put anyone
+in peril. Now `Rng(26,40)`, and a denied tag is worth more per beat than another isolation
+(0.45 vs 0.55 across a cap of 2 rather than 3) so that taking one is not a straight loss.
+
+### One pre-existing test changed
+
+`MatchMatrixTests` sweeps `MatchStructureLibrary.All` into singles matches. Tag structures
+cannot be booked that way, so the sweep now enumerates `ForSideSize(1)`. The test's subject is
+the singles booking space; this keeps it that.
+
+### Result
+
+**351 tests passing.** Singles equivalence re-verified after the balance changes: the same
+48,720-match harness (7 structures × 4 match types × every roster pair × 2 familiarity levels,
+carrying per-beat deltas and full commentary text) is **byte-identical** to the phase 1 tree.
+
+### Review — round 2
+
+*(pending)*

@@ -26,6 +26,52 @@ namespace WrestlingSim.Enums
         // Near falls
         NearFall,
 
+        // ── Tag ──────────────────────────────────────────────────────────────
+        // The tag formula, in the order it is usually worked. Every one of these
+        // needs a side with somebody on the apron; see MatchPlan.Validate.
+
+        /// <summary>The face team's opening control stretch, before the heat.</summary>
+        Shine,
+
+        /// <summary>The heels take over and end the shine. The heat starts here.</summary>
+        Cutoff,
+
+        /// <summary>
+        /// The face-in-peril segment: one man kept cut off from his corner. Charges the
+        /// hot tag — this is what makes the payoff worth anything.
+        /// </summary>
+        Isolation,
+
+        /// <summary>
+        /// The tag reached for and denied. Quietens the room in the moment and charges the
+        /// hot tag harder than another isolation does.
+        /// </summary>
+        NearTag,
+
+        /// <summary>
+        /// The payoff. The loudest planned moment in the format, and worth almost nothing
+        /// if the isolation did not happen first.
+        /// </summary>
+        HotTag,
+
+        /// <summary>A routine tag. Changes who is legal without being a moment.</summary>
+        Tag,
+
+        /// <summary>A tag the opponents did not see. Heel cheating, or a face surprise.</summary>
+        BlindTag,
+
+        /// <summary>Team offence. Scores off how well the pair work together.</summary>
+        DoubleTeam,
+
+        /// <summary>Partners collide. A story now, and a team that splits up later.</summary>
+        Miscommunication,
+
+        /// <summary>The partner breaks up the pin. Extends a near-fall; wears out fast.</summary>
+        SaveBreakup,
+
+        /// <summary>Everyone in, referee loses control. Resets the room before the finish.</summary>
+        AllFourBrawl,
+
         // Finishes
         FinishClean,
         FinishRollup,

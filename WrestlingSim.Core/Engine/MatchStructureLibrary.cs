@@ -154,6 +154,76 @@ namespace WrestlingSim.Engine
                     Beat("Dominant Statement",    BeatControl.WrestlerA),
                 ]
             },
+
+            // ── Tag structures ───────────────────────────────────────────────
+            //
+            // Side A is the face team throughout. The shape is always the same and the
+            // shape is the point: establish them, cut them off, keep one man from his
+            // corner, deny the tag, then pay it off. See docs/tag-matches-plan.md §2.
+
+            new MatchStructure
+            {
+                Name        = "Southern Tag",
+                Description = "The canonical tag match. Shine, cut-off, a long isolation broken up by two " +
+                              "denied tags, then the hot tag and the breakdown. Everything the format is for.",
+                Tags        = ["Tag", "Classic", "Crowd"],
+                SideSize    = 2,
+                Beats       =
+                [
+                    Beat("Standard Collar-and-Elbow", BeatControl.Even),
+                    Beat("Shine",                     BeatControl.WrestlerA),
+                    Beat("Cut-Off",                   BeatControl.WrestlerB),
+                    Beat("Face in Peril",             BeatControl.WrestlerB),
+                    Beat("Near Tag",                  BeatControl.WrestlerB),
+                    Beat("Face in Peril",             BeatControl.WrestlerB),
+                    Beat("Near Tag",                  BeatControl.WrestlerB),
+                    Beat("Hot Tag",                   BeatControl.WrestlerA),
+                    Beat("Double Team",               BeatControl.WrestlerA),
+                    Beat("All Four In",               BeatControl.Even),
+                    Beat("Shock Kickout",             BeatControl.WrestlerB),
+                    Beat("Save",                      BeatControl.WrestlerA),
+                    Beat("Clean Victory",             BeatControl.WrestlerA),
+                ]
+            },
+
+            new MatchStructure
+            {
+                Name        = "Formula Tag",
+                Description = "The television version of the Southern Tag — one isolation shorter and no " +
+                              "breakdown. Fits a nine-minute slot and still pays off the hot tag.",
+                Tags        = ["Tag", "Short", "Television"],
+                SideSize    = 2,
+                Beats       =
+                [
+                    Beat("Standard Collar-and-Elbow", BeatControl.Even),
+                    Beat("Shine",                     BeatControl.WrestlerA),
+                    Beat("Cut-Off",                   BeatControl.WrestlerB),
+                    Beat("Face in Peril",             BeatControl.WrestlerB),
+                    Beat("Near Tag",                  BeatControl.WrestlerB),
+                    Beat("Hot Tag",                   BeatControl.WrestlerA),
+                    Beat("Double Team",               BeatControl.WrestlerA),
+                    Beat("Clean Victory",             BeatControl.WrestlerA),
+                ]
+            },
+
+            new MatchStructure
+            {
+                Name        = "Tag Sprint",
+                Description = "The opener. No isolation, no peril — just tandem offence, a miscommunication " +
+                              "and a flash finish. Deliberately does not use the hot tag.",
+                Tags        = ["Tag", "Short", "Fast"],
+                SideSize    = 2,
+                Beats       =
+                [
+                    Beat("Hot Start",         BeatControl.Even),
+                    Beat("Double Team",       BeatControl.WrestlerA),
+                    Beat("Double Team",       BeatControl.WrestlerB),
+                    Beat("Miscommunication",  BeatControl.WrestlerB),
+                    Beat("Blind Tag",         BeatControl.WrestlerA),
+                    Beat("Counter Roll-Up",   BeatControl.WrestlerA),
+                    Beat("Roll-Up Steal",     BeatControl.WrestlerA),
+                ]
+            },
         };
 
         // ── Query helpers ────────────────────────────────────────────────────
@@ -163,5 +233,12 @@ namespace WrestlingSim.Engine
 
         public static IEnumerable<MatchStructure> WithTag(string tag) =>
             All.Where(s => s.Tags.Any(t => t.Equals(tag, StringComparison.OrdinalIgnoreCase)));
+
+        /// <summary>
+        /// Structures a match of this shape can actually use. A singles match cannot work
+        /// a hot tag, and a tag match offered only singles structures never gets to be one.
+        /// </summary>
+        public static IEnumerable<MatchStructure> ForSideSize(int sideSize) =>
+            All.Where(s => s.SideSize == sideSize);
     }
 }

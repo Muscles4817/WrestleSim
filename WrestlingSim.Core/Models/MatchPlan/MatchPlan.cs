@@ -128,6 +128,50 @@ namespace WrestlingSim.Models.MatchPlan
 
             if (errors.Count > 0) return errors;
 
+            // Handicap is a real booking, and this is not a rule about taste. The engine
+            // has no term for numbers at all: advantage never moves for being outnumbered,
+            // and a 1v4 grades identically to a 1v1. Meanwhile side-weighting means the
+            // side with the *extra* man scores slightly worse. So a handicap match would
+            // not be graded generously or harshly — it would be graded as something else
+            // entirely. A 2v1 also cannot be saved, because SaveSerializer refuses any
+            // plan where IsTagMatch is true.
+            //
+            // The exit condition for this rule is a numbers term in the engine, not a
+            // decision that handicap is allowed.
+            if (SideA.Size != SideB.Size)
+                errors.Add(
+                    $"Sides are uneven ({SideA.Size} v {SideB.Size}). The engine has no " +
+                    "model for a numbers advantage yet, so a handicap match would be " +
+                    "graded as a normal one.");
+
+            // Every beat has to be workable by the side it is booked for. This is the rule
+            // that actually protects the tag formula — a hot tag needs someone to tag, and
+            // an isolation needs a corner to be kept away from. It subsumes the size check
+            // above and will outlive it.
+            foreach (var beat in Beats.Where(b => b.IsTagBeat))
+            {
+                // The one tag beat that belongs to nobody: everybody is in the ring, so
+                // Even is the right reading of it and both sides have to be teams.
+                if (beat.Type == BeatType.AllFourBrawl)
+                {
+                    if (!SideA.IsTag || !SideB.IsTag)
+                        errors.Add("All Four In needs a partner on both sides.");
+                    continue;
+                }
+
+                var side = ControlSide(beat);
+                if (side is null)
+                    errors.Add($"{beat.Type} has to be booked for one side or the other.");
+                else if (!side.IsTag)
+                    errors.Add(
+                        $"{beat.Type} is booked for a side of one — {side.Name} has nobody " +
+                        "on the apron.");
+                else if (beat.IncomingIndex is { } incoming
+                         && (incoming < 0 || incoming >= side.Size))
+                    errors.Add(
+                        $"{beat.Type} tags in member {incoming}, but {side.Name} has {side.Size}.");
+            }
+
             // A wrestler on both sides breaks every "which side is this person on" lookup
             // in the engine, and is not a booking anybody meant to make.
             foreach (var w in SideA.Members.Where(SideB.Contains))

@@ -71,6 +71,52 @@ namespace WrestlingSim.Engine
             _legalB = sideB;
         }
 
+        /// <summary>
+        /// Brings a fresh performer in for one side and returns who is now legal.
+        ///
+        /// With an explicit index, that member comes in. Without one the tag goes to the
+        /// next member round, which is the only sensible default for a two-man team and a
+        /// reasonable one for a trio.
+        /// </summary>
+        public int Tag(bool sideA, int memberCount, int? incoming = null)
+        {
+            int current = sideA ? _legalA : _legalB;
+            int next = incoming is { } i && i >= 0 && i < memberCount && i != current
+                ? i
+                : (current + 1) % Math.Max(1, memberCount);
+
+            if (sideA) _legalA = next; else _legalB = next;
+
+            // Coming in fresh is the whole point of a tag, so the charge the isolation
+            // built is spent and starts again from nothing.
+            ClearTagCharge(sideA);
+            return next;
+        }
+
+        // ── Hot-tag charge ───────────────────────────────────────────────────
+
+        // How much stored energy each side's corner has built while its man has been cut
+        // off. Indexed 0 = side A, 1 = side B, and always credited to the side being
+        // worked over rather than the side doing the working — it is their tag to make.
+        private readonly int[] _isolations = new int[2];
+        private readonly int[] _nearTags   = new int[2];
+
+        /// <summary>Isolation beats this side has suffered since its last tag.</summary>
+        public int IsolationsSuffered(bool sideA) => _isolations[sideA ? 0 : 1];
+
+        /// <summary>Tags this side has been denied since its last successful one.</summary>
+        public int NearTagsDenied(bool sideA) => _nearTags[sideA ? 0 : 1];
+
+        public void RecordIsolation(bool isolatedSideA) => _isolations[isolatedSideA ? 0 : 1]++;
+
+        public void RecordNearTag(bool reachingSideA) => _nearTags[reachingSideA ? 0 : 1]++;
+
+        private void ClearTagCharge(bool sideA)
+        {
+            _isolations[sideA ? 0 : 1] = 0;
+            _nearTags[sideA ? 0 : 1]   = 0;
+        }
+
         // ── Repetition tracking ──────────────────────────────────────────────
 
         /// <summary>
