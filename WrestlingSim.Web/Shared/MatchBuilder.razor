@@ -39,14 +39,14 @@
     <div class="panel">
         <div class="panel__title">What kind of match</div>
         <div class="picks picks--3">
-            @for (int n = 1; n <= 3; n++)
+            @foreach (var shape in Shapes)
             {
-                int size = n;
-                <button class="pick @(sideSize == size ? "is-selected" : "")"
-                        @onclick="() => SetSideSize(size)">
+                var pick = shape;
+                <button class="pick @(sideCount == pick.Sides && sideSize == pick.Size ? "is-selected" : "")"
+                        @onclick="() => SetShape(pick)">
                     <span class="pick__body">
-                        <span class="pick__name">@SideSizeLabel(size)</span>
-                        <span class="pick__desc">@SideSizeBlurb(size)</span>
+                        <span class="pick__name">@pick.Name</span>
+                        <span class="pick__desc">@pick.Blurb</span>
                     </span>
                 </button>
             }
@@ -82,30 +82,22 @@
             <span class="small muted">Side A wins by default in every preset</span>
         </div>
 
-        <div class="lineup">
-            <div class="lineup__side">
-                @Slot(SlotRef.CornerA, IsTeamMatch ? "Side A — starts" : "Corner A", a)
-                @for (int i = 0; i < sideSize - 1; i++)
+        <div class="lineup @(sideCount > 2 ? "lineup--multi" : "")">
+            @for (int side = 0; side < sideCount; side++)
+            {
+                int s = side;
+                if (s > 0)
                 {
-                    int index = i;
-                    @Slot(SlotRef.PartnerA(index),
-                          sideSize > 2 ? $"A's partner {index + 1}" : "A's partner",
-                          partnersA.ElementAtOrDefault(index))
+                    <div class="lineup__vs">vs</div>
                 }
-            </div>
-
-            <div class="lineup__vs">vs</div>
-
-            <div class="lineup__side">
-                @Slot(SlotRef.CornerB, IsTeamMatch ? "Side B — starts" : "Corner B", b)
-                @for (int i = 0; i < sideSize - 1; i++)
-                {
-                    int index = i;
-                    @Slot(SlotRef.PartnerB(index),
-                          sideSize > 2 ? $"B's partner {index + 1}" : "B's partner",
-                          partnersB.ElementAtOrDefault(index))
-                }
-            </div>
+                <div class="lineup__side">
+                    @for (int i = 0; i < sideSize; i++)
+                    {
+                        var lineupSlot = new SlotRef(s, i);
+                        @Slot(lineupSlot, SlotLabel(lineupSlot), SlotHolder(lineupSlot))
+                    }
+                </div>
+            }
         </div>
 
         @* ── The consequence, where the decision is ─────────────────────────
@@ -124,12 +116,14 @@
                 </div>
             }
 
-            @if (b is not null && a is not null && b.Division != a.Division)
+            @if (Everyone.Select(w => w.Division).Distinct().Count() > 1)
             {
                 <div class="notice notice--advice mt">
-                    This is an intergender match — @a.RingName is in the @DivisionName(a.Division)
-                    division and @b.RingName is in the @DivisionName(b.Division). Perfectly legal
-                    to book, just an unusual call.
+                    This is an intergender match — @string.Join(", ",
+                        Everyone.GroupBy(w => w.Division)
+                                .Select(g => $"{string.Join(" & ", g.Select(w => w.RingName))} " +
+                                             $"in the {DivisionName(g.Key)} division")).
+                    Perfectly legal to book, just an unusual call.
                 </div>
             }
         }
@@ -242,13 +236,38 @@
             <div class="field mt">
                 <span class="field__label">Who is on top</span>
                 <div class="chips">
-                    @foreach (var v in Enum.GetValues<BeatControl>())
+                    @foreach (var v in BookableControls)
                     {
-                        <button class="chip @(edit.Control == v ? "is-active" : "")"
-                                @onclick="() => { edit.Control = v; }">@ControlLabel(v)</button>
+                        var control = v;
+                        <button class="chip @(edit.Control == control ? "is-active" : "")"
+                                @onclick="() => { edit.Control = control; }">@ControlLabel(control)</button>
                     }
                 </div>
             </div>
+
+            @* ── Who takes the fall ─────────────────────────────────────────
+               Only on a multi-man finish, because that is the only place it means anything:
+               with two sides whoever did not win, lost. With three it is the whole point of
+               the format — doc 18 §2.5, a champion beaten without being beaten — and
+               MatchPlan.Validate refuses a plan that does not say. *@
+            @if (IsMultiMan && edit.IsFinish)
+            {
+                <div class="field mt">
+                    <span class="field__label">Who takes the fall</span>
+                    <div class="chips">
+                        @foreach (var v in BookableControls.Where(x => x != edit.Control))
+                        {
+                            var pinned = v;
+                            <button class="chip @(edit.Against == pinned ? "is-active" : "")"
+                                    @onclick="() => { edit.Against = pinned; }">@ControlLabel(pinned)</button>
+                        }
+                    </div>
+                    <span class="field__hint">
+                        The one who loses the fall, which need not be the one who loses the belt.
+                        That is the reason to book this match.
+                    </span>
+                </div>
+            }
 
             <div class="field mt">
                 <span class="field__label">Intensity</span>
@@ -408,8 +427,8 @@
         @if (existingFeud is not null && existingFeud.Intensity > FeudIntensity.None)
         {
             <p class="small muted">
-                @a!.RingName and @b!.RingName have history you have booked. Using it raises the
-                crowd's starting energy and unlocks feud-gated beats.
+                @PairingName have history you have booked. Using it raises the crowd's
+                starting energy and unlocks feud-gated beats.
             </p>
 
             <button class="pick @(feudChoice == FeudChoice.UseExisting ? "is-selected" : "")"
@@ -432,8 +451,8 @@
         else
         {
             <div class="notice notice--info">
-                @a!.RingName and @b!.RingName have no booked history. Book segments between them
-                to build a feud properly, or declare one by hand below.
+                @PairingName have no booked history. Book segments between them to build a
+                feud properly, or declare one by hand below.
             </div>
         }
 
@@ -541,7 +560,7 @@
     <div class="panel">
         <div class="panel__title">Match structure</div>
         <div class="picks">
-            @foreach (var s in MatchStructureLibrary.ForSideSize(SideSize))
+            @foreach (var s in MatchStructureLibrary.ForShape(sideCount, SideSize))
             {
                 var blocked = s.RequiresFeud && feud is null;
                 <button class="pick @(structureName == s.Name ? "is-selected" : "")"
@@ -574,17 +593,23 @@
 {
     <div class="panel">
         <div class="versus">
-            <div class="versus__side">
-                <div class="versus__corner">@(IsTeamMatch ? "Side A" : "Corner A")</div>
-                <div class="versus__name">@SideAName</div>
-                <div class="versus__meta">@a.CardPosition.Label() · @a.OvernessDisplay</div>
-            </div>
-            <div class="versus__vs">VS</div>
-            <div class="versus__side">
-                <div class="versus__corner">@(IsTeamMatch ? "Side B" : "Corner B")</div>
-                <div class="versus__name">@SideBName</div>
-                <div class="versus__meta">@b.CardPosition.Label() · @b.OvernessDisplay</div>
-            </div>
+            @for (int side = 0; side < sideCount; side++)
+            {
+                int s = side;
+                if (s > 0)
+                {
+                    <div class="versus__vs">VS</div>
+                }
+                var starter = Members(s).FirstOrDefault();
+                <div class="versus__side">
+                    <div class="versus__corner">@(IsTeamMatch ? $"Side {SideName(s)}" : $"Corner {SideName(s)}")</div>
+                    <div class="versus__name">@string.Join(" & ", Members(s).Select(w => w.RingName))</div>
+                    @if (starter is not null)
+                    {
+                        <div class="versus__meta">@starter.CardPosition.Label() · @starter.OvernessDisplay</div>
+                    }
+                </div>
+            }
         </div>
 
         @if (feud is not null)
@@ -784,37 +809,50 @@
     // The two starters. Partners are separate rather than a list, so every feud, title and
     // familiarity lookup keyed on the pair keeps reading the way it always did — those are
     // side-keyed in phase 5, not here.
-    private Wrestler? a, b;
-
     /// <summary>
-    /// The partners, one slot per extra man a side. A list rather than a single field
-    /// because a trios side has two — three a side is still two sides, so nothing else in
-    /// the builder had to change (docs/wrestling-reference/18-match-craft.md §2.5).
+    /// The lineup: one list per side, one slot per person on it.
+    ///
+    /// This was `a`, `b`, `partnersA` and `partnersB` — two corners and two partner lists —
+    /// which could not express a third *side* however many people it held. Doc 18 §2.5's
+    /// distinction is exactly that: trios is six people and still two sides, while a triple
+    /// threat is three people and three sides, and only the second is a multi-man match. The
+    /// builder now carries the same two dimensions the plan does.
     /// </summary>
-    private readonly List<Wrestler?> partnersA = new();
-    private readonly List<Wrestler?> partnersB = new();
+    private readonly List<List<Wrestler?>> sides = [new(), new(), new(), new()];
 
     /// <summary>People per side. 1 singles, 2 tag, 3 trios.</summary>
     private int sideSize = 1;
 
+    /// <summary>
+    /// How many sides. 2 for anything two-sided; 3 or 4 for a multi-man match, which
+    /// `MatchPlan.Validate` requires to be one wrestler a side.
+    /// </summary>
+    private int sideCount = 2;
+
     private int SideSize => sideSize;
     private bool IsTeamMatch => sideSize > 1;
+    private bool IsMultiMan  => sideCount > 2;
 
     /// <summary>
-    /// Both sides fully picked.
+    /// Every side picked in full.
     ///
     /// This used to read `partnersA.Take(sideSize - 1).All(w => w is not null)`, which is
-    /// vacuously true on an empty list — `partnersA` starts empty and only grows when a
-    /// slot is clicked. So the gate passed with no partners chosen at all, and `Finish()`
-    /// went on to build `MatchSide.Of(a)` vs `MatchSide.Of(b)`: a perfectly valid *singles*
-    /// match, booked silently for a player who asked for a tag or trios one.
+    /// vacuously true on an empty list — the partner lists start empty and only grow when a
+    /// slot is clicked. So the gate passed with no partners chosen at all and `Finish()`
+    /// built a perfectly valid *singles* match for a player who asked for a tag one.
     ///
-    /// `MembersA` already filters nulls and caps at `sideSize`, so counting it is the whole
-    /// check — it can only reach `sideSize` when the corner and every partner slot is
-    /// filled.
+    /// Counting is the whole check, because <see cref="Members"/> already drops nulls and
+    /// caps at the side size.
     /// </summary>
     private bool SidesComplete =>
-        MembersA.Count() == sideSize && MembersB.Count() == sideSize;
+        Enumerable.Range(0, sideCount).All(i => Members(i).Count() == sideSize);
+
+    /// <summary>Whoever is actually booked on a side, nulls dropped and capped at its size.</summary>
+    private IEnumerable<Wrestler> Members(int side) =>
+        side < sides.Count ? sides[side].Take(sideSize).Where(w => w is not null)! : [];
+
+    private IEnumerable<Wrestler> MembersA => Members(0);
+    private IEnumerable<Wrestler> MembersB => Members(1);
 
     // ── Slots ────────────────────────────────────────────────────────────
     //
@@ -822,47 +860,58 @@
     // replaces four inline roster lists with four buttons and one sheet — see the file
     // comment on RosterPicker for what that was costing.
 
-    private readonly record struct SlotRef(bool IsA, int Partner)
+    /// <summary>
+    /// One place in the lineup: which side, and who on it. Index 0 starts for that side.
+    /// </summary>
+    private readonly record struct SlotRef(int Side, int Index)
     {
-        public static SlotRef CornerA => new(true, -1);
-        public static SlotRef CornerB => new(false, -1);
-        public static SlotRef PartnerA(int i) => new(true, i);
-        public static SlotRef PartnerB(int i) => new(false, i);
-        public bool IsCorner => Partner < 0;
+        public bool IsStarter => Index == 0;
     }
 
     private SlotRef? openSlot;
 
-    private string SlotTitle(SlotRef slot) =>
-        slot.IsCorner
-            ? (IsTeamMatch ? $"Side {(slot.IsA ? "A" : "B")} — who starts" : $"Corner {(slot.IsA ? "A" : "B")}")
+    /// <summary>Every slot in the lineup, in booking order.</summary>
+    private IEnumerable<SlotRef> AllSlots =>
+        Enumerable.Range(0, sideCount)
+                  .SelectMany(side => Enumerable.Range(0, sideSize)
+                                                .Select(i => new SlotRef(side, i)));
+
+    /// <summary>What a side is called on screen.</summary>
+    private string SideName(int side) => ((char)('A' + side)).ToString();
+
+    /// <summary>The short label on the slot button itself.</summary>
+    private string SlotLabel(SlotRef slot) =>
+        slot.IsStarter
+            ? (IsTeamMatch ? $"Side {SideName(slot.Side)} — starts" : $"Corner {SideName(slot.Side)}")
             : sideSize > 2
-                ? $"{(slot.IsA ? "A" : "B")}'s partner {slot.Partner + 1}"
-                : $"{(slot.IsA ? "A" : "B")}'s partner";
+                ? $"{SideName(slot.Side)}'s partner {slot.Index}"
+                : $"{SideName(slot.Side)}'s partner";
+
+    private string SlotTitle(SlotRef slot) =>
+        slot.IsStarter
+            ? (IsTeamMatch ? $"Side {SideName(slot.Side)} — who starts" : $"Corner {SideName(slot.Side)}")
+            : sideSize > 2
+                ? $"{SideName(slot.Side)}'s partner {slot.Index}"
+                : $"{SideName(slot.Side)}'s partner";
 
     private Wrestler? SlotHolder(SlotRef slot) =>
-        slot.IsCorner
-            ? (slot.IsA ? a : b)
-            : (slot.IsA ? partnersA : partnersB).ElementAtOrDefault(slot.Partner);
+        sides[slot.Side].ElementAtOrDefault(slot.Index);
 
     /// <summary>
     /// The side this slot is being picked *against*, which is what the picker sorts by.
-    /// Empty while the other side is still empty — there is nothing to have a story with yet.
+    /// Empty while nobody else is booked — there is nothing to have a story with yet.
+    ///
+    /// In a multi-man match this is **everybody else in the ring** rather than one opposing
+    /// side. With three in there the story that decides the finish is often between two
+    /// people who are both about to lose to the third, and a picker that only knew about
+    /// "the other side" could not surface it.
     /// </summary>
     private IReadOnlyList<Wrestler> OpposingSide(SlotRef slot) =>
-        (slot.IsA ? MembersB : MembersA).ToList();
+        Enumerable.Range(0, sideCount).Where(i => i != slot.Side)
+                  .SelectMany(Members).ToList();
 
     /// <summary>What a name is already booked as, so the picker can show it rather than hide it.</summary>
-    private string? BookedAs(Wrestler w)
-    {
-        if (a == w) return IsTeamMatch ? "Side A" : "Corner A";
-        if (b == w) return IsTeamMatch ? "Side B" : "Corner B";
-        int i = partnersA.IndexOf(w);
-        if (i >= 0) return sideSize > 2 ? $"A's partner {i + 1}" : "A's partner";
-        i = partnersB.IndexOf(w);
-        if (i >= 0) return sideSize > 2 ? $"B's partner {i + 1}" : "B's partner";
-        return null;
-    }
+    private string? BookedAs(Wrestler w) => SlotOf(w) is { } slot ? SlotTitle(slot) : null;
 
     /// <summary>
     /// Puts a name in a slot. Choosing somebody already booked elsewhere *swaps* the two
@@ -882,27 +931,21 @@
 
     private SlotRef? SlotOf(Wrestler w)
     {
-        if (a == w) return SlotRef.CornerA;
-        if (b == w) return SlotRef.CornerB;
-        int i = partnersA.IndexOf(w);
-        if (i >= 0) return SlotRef.PartnerA(i);
-        i = partnersB.IndexOf(w);
-        if (i >= 0) return SlotRef.PartnerB(i);
+        for (int side = 0; side < sideCount; side++)
+        {
+            int i = sides[side].IndexOf(w);
+            if (i >= 0 && i < sideSize) return new SlotRef(side, i);
+        }
         return null;
     }
 
     private void Assign(SlotRef slot, Wrestler? w)
     {
-        if (slot.IsCorner)
-        {
-            if (slot.IsA) a = w; else b = w;
-            return;
-        }
-
-        var slots = slot.IsA ? partnersA : partnersB;
-        while (slots.Count <= slot.Partner) slots.Add(null);
-        slots[slot.Partner] = w;
+        var slots = sides[slot.Side];
+        while (slots.Count <= slot.Index) slots.Add(null);
+        slots[slot.Index] = w;
     }
+
 
     private sealed record TeamPanel(bool IsA, string Title, TagTeam? Known, bool Form);
 
@@ -919,11 +962,18 @@
         if (isA) formTeamA = value; else formTeamB = value;
     }
 
-    private IEnumerable<Wrestler> MembersA =>
-        new[] { a }.Concat(partnersA.Take(sideSize - 1)).Where(w => w is not null)!;
+    /// <summary>Everybody booked into the match, in side order.</summary>
+    private IEnumerable<Wrestler> Everyone =>
+        Enumerable.Range(0, sideCount).SelectMany(Members);
 
-    private IEnumerable<Wrestler> MembersB =>
-        new[] { b }.Concat(partnersB.Take(sideSize - 1)).Where(w => w is not null)!;
+    /// <summary>
+    /// The pairing the feud step is about. With two sides that is the two sides; with more
+    /// it is the first two, which is the billed rivalry — the others are surfaced by the
+    /// picker rather than here.
+    /// </summary>
+    private string PairingName =>
+        $"{string.Join(" & ", MembersA.Select(w => w.RingName))} and " +
+        $"{string.Join(" & ", MembersB.Select(w => w.RingName))}";
 
     private string SideAName => string.Join(" & ", MembersA.Select(w => w.RingName));
     private string SideBName => string.Join(" & ", MembersB.Select(w => w.RingName));
@@ -931,19 +981,27 @@
     /// <summary>Everyone already picked, so no name can be used twice.</summary>
     private IEnumerable<Wrestler> Chosen => MembersA.Concat(MembersB);
 
-    private static string SideSizeLabel(int n) => n switch
-    {
-        1 => "Singles",
-        2 => "Tag team",
-        _ => "Trios"
-    };
+    /// <summary>
+    /// A bookable match shape: how many sides, and how many a side.
+    ///
+    /// Two dimensions rather than one, because doc 18 §2.5 turns on the difference. Trios is
+    /// six people and two sides; a triple threat is three people and three sides, and only
+    /// the second has a third party to dispose of, a fall that has to name who took it, and
+    /// a result that says less than a singles match. Offering only "one, two or three a
+    /// side" could not express the second, so the engine could run three-ways and nobody
+    /// could book one.
+    /// </summary>
+    private readonly record struct MatchShape(string Name, int Sides, int Size, string Blurb);
 
-    private static string SideSizeBlurb(int n) => n switch
-    {
-        1 => "One against one.",
-        2 => "Two a side, with a corner to be kept away from.",
-        _ => "Three a side. Three fresh opponents on whoever is cut off, and a fresh partner to finish."
-    };
+    private static readonly MatchShape[] Shapes =
+    [
+        new("Singles",         2, 1, "One against one."),
+        new("Tag team",        2, 2, "Two a side, with a corner to be kept away from."),
+        new("Trios",           2, 3, "Three a side. Three fresh opponents on whoever is cut off, and a fresh partner to finish."),
+        new("Triple threat",   3, 1, "Three ways to win, no disqualification. Somebody has to be disposed of, and the fall has to say who took it."),
+        new("Fatal four-way",  4, 1, "Four ways to win. Smoother than a three-way and less dramatic — nobody is the odd one out.")
+    ];
+
     private MatchType matchType = MatchType.Standard;
     private Title? title;
 
@@ -1016,7 +1074,7 @@
     {
         get
         {
-            if (a is null || b is null) return null;
+            if (!MembersA.Any() || !MembersB.Any()) return null;
 
             // The freshness panel has to read the feud the simulator will actually use, or
             // it advises on a pairing that is not the one being booked.
@@ -1080,12 +1138,26 @@
     /// `max-width`, so in a tag match both options could truncate to the same string. The
     /// side names are shown once above the sheet in `.versus`, which is where they belong.
     /// </summary>
+    /// <summary>
+    /// The control values this match can actually use — the sides it has, plus Even and
+    /// Contested. Offering `SideC` in a singles match would let a player book a beat for
+    /// somebody who is not in it, which `Validate` then rejects with no clue why.
+    /// </summary>
+    private IEnumerable<BeatControl> BookableControls =>
+        Enumerable.Range(0, sideCount)
+                  .Select(Models.MatchPlan.MatchPlan.ControlFor)
+                  .Append(BeatControl.Even)
+                  .Append(BeatControl.Contested);
+
     private string ControlLabel(BeatControl control) => control switch
     {
-        BeatControl.WrestlerA => IsTeamMatch ? "Side A" : (a?.RingName ?? "A"),
-        BeatControl.WrestlerB => IsTeamMatch ? "Side B" : (b?.RingName ?? "B"),
         BeatControl.Even      => "Even",
-        _                     => "Contested"
+        BeatControl.Contested => "Contested",
+        _ => Models.MatchPlan.MatchPlan.SideIndex(control) is { } i && i < sideCount
+                ? (IsTeamMatch
+                    ? $"Side {SideName(i)}"
+                    : Members(i).FirstOrDefault()?.RingName ?? SideName(i))
+                : SideName(0)
     };
     private List<string> errors = new();
 
@@ -1098,12 +1170,26 @@
     /// which on a phone means a greyed control and a page you have to re-read to work out
     /// what you missed.
     /// </summary>
+    /// <summary>The first side that is not fully picked, if any.</summary>
+    private int? FirstEmptySide
+    {
+        get
+        {
+            for (int i = 0; i < sideCount; i++)
+                if (Members(i).Count() < sideSize) return i;
+            return null;
+        }
+    }
+
     private string? Blocker() => step switch
     {
-        0 when a is null => IsTeamMatch ? "Pick who starts for side A" : "Pick corner A",
-        0 when MembersA.Count() < sideSize
-            => sideSize > 2 ? "Side A needs two partners" : "Pick A's partner",
-        0 when b is null => IsTeamMatch ? "Pick who starts for side B" : "Pick corner B",
+        0 when FirstEmptySide is { } side
+            => sideSize == 1
+                ? $"Pick corner {SideName(side)}"
+                : Members(side).Any()
+                    ? (sideSize > 2 ? $"Side {SideName(side)} needs two partners"
+                                    : $"Pick {SideName(side)}'s partner")
+                    : $"Pick who starts for side {SideName(side)}",
         0 when MembersB.Count() < sideSize
             => sideSize > 2 ? "Side B needs two partners" : "Pick B's partner",
         4 when beats.Count == 0 => "A match needs at least one beat",
@@ -1186,15 +1272,37 @@
     /// written for one side size does not validate against another — leaving a stale one
     /// selected would hand the player a plan that cannot be booked.
     /// </summary>
-    private void SetSideSize(int value)
+    private void SetShape(MatchShape shape)
     {
-        if (sideSize == value) return;
-        sideSize = value;
-        partnersA.Clear();
-        partnersB.Clear();
+        if (sideCount == shape.Sides && sideSize == shape.Size) return;
+
+        sideCount = shape.Sides;
+        sideSize  = shape.Size;
+
+        // Everything downstream is about the people who were in it. Changing the shape
+        // changes who they are, so the lineup, the teams and the beat sheet all reset —
+        // leaving a structure booked for a tag match on a triple threat would be a plan the
+        // validator rejects with no way back to a good one.
+        foreach (var side in sides) side.Clear();
         formTeamA = formTeamB = false;
         structureName = "";
         beats = new List<MatchBeat>();
+    }
+
+    /// <summary>
+    /// The stories the engine should know about: whatever the player declared or reused,
+    /// plus every other live rivalry among the people in the match.
+    /// </summary>
+    private List<Feud> FeudsInPlay(Feud? declared)
+    {
+        var all = new List<Feud>();
+        if (declared is not null) all.Add(declared);
+
+        if (State.Career is { } career)
+            foreach (var other in career.FeudBook.Among(Everyone.ToList()))
+                if (!all.Contains(other)) all.Add(other);
+
+        return all;
     }
 
     private void ToggleTag(FeudHistoryTag tag)
@@ -1431,8 +1539,11 @@
         // was falsified by a path a hundred lines below it in this same file.
         await CloseBeatSheet();
 
-        var sideA = MatchSide.Of(MembersA.ToArray());
-        var sideB = MatchSide.Of(MembersB.ToArray());
+        var built = Enumerable.Range(0, sideCount)
+                              .Select(i => MatchSide.Of(Members(i).ToArray()))
+                              .ToList();
+        var sideA = built[0];
+        var sideB = built[1];
 
         // Attach the standing team, if these two are one. Without this every side a player
         // booked had Team == null, so chemistry was pinned at zero and the whole of phase 4
@@ -1447,11 +1558,14 @@
 
         var plan = new MatchPlanModel
         {
-            SideA = sideA,
-            SideB = sideB,
+            Sides        = built,
             MatchType    = matchType,
             IsBlowOff    = isBlowOff && feudChoice != FeudChoice.None,
-            Feud         = feud,
+            // Every live story among the people in the ring, not only the billed one. In a
+            // three-way the rivalry that decides the finish is often between two people who
+            // are both about to lose to the third, and the spite-break beats read it from
+            // here.
+            Feuds        = FeudsInPlay(feud),
             TitleAtStake = title,
             Beats        = beats
         };

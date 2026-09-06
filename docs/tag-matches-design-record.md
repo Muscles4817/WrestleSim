@@ -1684,3 +1684,84 @@ an exact match: **1.192 received against 1.192 predicted for a three-way, and 1.
 singles.**
 
 **569 tests passing.**
+
+---
+
+## The player can book a three-way
+
+Three merged PRs added sides, beats, blame and a status discount — all green, none of them
+reachable from the match builder. A mechanic only a unit test can invoke is half a feature, and
+shipping it as though it were whole is a way of being wrong about what the game does. That is
+now a working agreement in `CLAUDE.md` rather than a thing I keep noticing afterwards.
+
+### Step 0 asks a different question
+
+It offered one, two or three **a side**. It now offers a *shape* — sides and size together:
+
+```
+Singles         2 × 1      Triple threat   3 × 1
+Tag team        2 × 2      Fatal four-way  4 × 1
+Trios           2 × 3
+```
+
+Two dimensions rather than one, because doc 18 §2.5 turns on the difference: trios is six people
+and two sides, a triple threat is three people and three sides, and only the second has a third
+party to dispose of. One dimension could not express the second, which is exactly why the engine
+could run three-ways and nobody could book one.
+
+The lineup, the versus card, the blocker text, the picker and the beat editor all took the same
+change: `SlotRef(bool IsA, int Partner)` became `SlotRef(int Side, int Index)`, and `a`, `b`,
+`partnersA`, `partnersB` became one list per side. Two things got better rather than merely
+wider:
+
+- **The picker's "against" is now everybody else in the ring**, not one opposing side. In a
+  three-way the story that decides the finish is often between two people who are both about to
+  lose to the third, and a picker that only knew about "the other side" could not surface it.
+- **The plan carries every live story**, via `FeudBook.Among`, not just the billed one. That is
+  what the spite-break beats read.
+
+A multi-man finish gets a second chip row — **who takes the fall** — offered only where it means
+something. With two sides whoever did not win, lost; with three it is the point of the format,
+and `Validate` refuses a plan that does not say.
+
+### Two bugs the "is it bookable" test found
+
+Neither would have been caught by anything else, because both live between the structure library
+and the booking rather than inside either.
+
+**`MatchBeat.Clone()` never copied `Against`.** Every plan built from a preset goes through
+`Clone`, so a triple-threat preset named who takes the fall, the clone dropped it, and the plan
+failed validation with a message telling the player to say the thing the preset had already
+said. A field missing from `Clone` is a field silently dropped, and nothing else looks there.
+
+**A shape was offered with no preset behind it.** Fatal four-way was in step 0 before any
+four-way structure existed — a player could pick it, fill four slots, and find out at the
+confirm button. That is worse than not offering it, and it is precisely the failure the new rule
+is about, committed while writing the fix for the same class of failure.
+
+`EveryShapeTheBuilderOffers_HasAPresetThatValidates` now walks all five shapes, builds a plan
+from every preset, and validates it. Three new multi-man structures — Triple Threat, The Grudge
+Three-Way, Fatal Four-Way — the second of which runs the disposal loop through a spite break and
+a stolen fall, which is the format's characteristic finish.
+
+### And it is billed with everybody in it
+
+The result screen read **"Roman Reigns vs Rhea Ripley"** for a match with three people in it,
+because `BookedMatch.Name` was `SideA vs SideB`. Wrong on the card, on the result screen and in
+the show report. Now every side.
+
+Verified in a browser rather than only in tests: pick Triple Threat, fill three slots, choose a
+preset, confirm — **"Roman Reigns vs Rhea Ripley vs Becky Lynch", 4.11 stars, no validation
+errors, no console errors.**
+
+Four mutations, all killed: `Clone` dropping the fall, billing only the first two sides, a shape
+without a preset, and a multi-man preset whose finish names no loser.
+
+**586 tests passing.**
+
+### Still not built
+
+The play-by-play still narrates a three-way with two names — `Ctx.LegalA`/`LegalB`,
+`Opponent(w)` as "the one you are not", and about fifty commentary lines written for two people.
+The result is right and the commentary describes two of the three. Elimination, battle royals
+and the Rumble need multiple falls, which is a different shape from "first fall wins".
