@@ -405,25 +405,51 @@ namespace WrestlingSim.Engine
             }
 
             /// <summary>
-            /// Everyone legal right now, in side order — for the beats that address the room
-            /// rather than a pairing. An opening in a three-way is three people going at each
-            /// other, and saying "A and B" leaves one of them out of their own match.
+            /// Everyone in the exchange right now, in side order — for the beats that address
+            /// the room rather than a pairing. An opening in a three-way is three people going
+            /// at each other, and saying "A and B" leaves one of them out of their own match.
+            ///
+            /// "In the exchange" and not "in the match": somebody inside a disposal window is
+            /// on the floor by the booking's own account, and a crowd brawl billed with the
+            /// man who was just put through a table is the same defect the rest of this work
+            /// removed, one level up. It read *"Chaos! All three are taking this war
+            /// everywhere!"* about two people and a body.
+            ///
+            /// The floor drops out below two, because a room-wide line needs a room. With one
+            /// man upright the honest options are all bad — "Alpha are fighting into the
+            /// crowd" is worse than naming somebody who is down — so the full field stands and
+            /// the phrasing is at least grammatical.
             /// </summary>
-            public IReadOnlyList<Wrestler> AllLegal =>
-                Plan.Sides.Select(LegalOf).ToList();
+            public IReadOnlyList<Wrestler> AllLegal
+            {
+                get
+                {
+                    if (!State.SomebodyIsDisposed) return Plan.Sides.Select(LegalOf).ToList();
 
-            /// <summary>Everyone legal, billed — "A and B", or "A, B and C".</summary>
+                    var upright = Plan.Sides
+                        .Where(side => Plan.Sides.IndexOf(side) != State.DisposedSide)
+                        .ToList();
+
+                    return (upright.Count >= 2 ? upright : Plan.Sides).Select(LegalOf).ToList();
+                }
+            }
+
+            /// <summary>Everyone in the exchange, billed — "A and B", or "A, B and C".</summary>
             public string LegalBilling => MatchEngine.Billing(AllLegal.Select(w => w.RingName));
 
             /// <summary>
             /// How commentary refers to the field without naming it — "these two", "all
             /// three", "all four".
             ///
+            /// Counted off <see cref="AllLegal"/> rather than the side count, so it agrees
+            /// with the names in the sentence beside it. During a disposal window in a
+            /// three-way that is "these two", which is exactly what the spot bought.
+            ///
             /// Only for lines that address the room. A line about two specific rivals should
             /// still say "these two", because it is about those two and not about the match;
             /// the openings are the ones that were counting wrong.
             /// </summary>
-            public string LegalCollective => Plan.Sides.Count switch
+            public string LegalCollective => AllLegal.Count switch
             {
                 <= 2 => "these two",
                 3    => "all three",
@@ -431,7 +457,7 @@ namespace WrestlingSim.Engine
             };
 
             /// <summary>The same, as a sentence subject — "Both wrestlers", "All three".</summary>
-            public string LegalSubject => Plan.Sides.Count switch
+            public string LegalSubject => AllLegal.Count switch
             {
                 <= 2 => "Both wrestlers",
                 3    => "All three",

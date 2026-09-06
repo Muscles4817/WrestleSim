@@ -478,6 +478,84 @@ namespace WrestlingSim.Tests
         }
 
         /// <summary>
+        /// **A line about the room is about the people still in the room.**
+        ///
+        /// `AllLegal` walked every side with no regard to the disposal window, so a crowd
+        /// brawl booked while somebody was on the floor billed him anyway — *"Chaos! All
+        /// three are taking this war everywhere!"* about two people and a body. The names
+        /// and the count were both wrong, and they were wrong together, which is why the
+        /// sentence read fine.
+        ///
+        /// The count has to move with the names or the fix is half-done: two upright in a
+        /// three-way is "these two", which is precisely what the disposal spot bought.
+        /// </summary>
+        [Theory]
+        [InlineData(BeatType.CrowdBrawl)]
+        [InlineData(BeatType.FeudalEscalation)]
+        public void ARoomWideLine_LeavesOutTheManOnTheFloor(BeatType type)
+        {
+            const string onTheFloor = "Bravo";
+
+            for (int seed = 0; seed < 40; seed++)
+            {
+                var (a, b, c) = (W("Alpha"), W("Bravo"), W("Charlie"));
+
+                // FeudalEscalation is gated on a feud, and Alpha–Charlie is the pairing left
+                // standing once Bravo is out — so the beat has something to escalate.
+                var book = new FeudBook();
+                book.GetOrCreate(a, c).SetMinimumIntensity(FeudIntensity.Hot);
+
+                var lines = new MatchEngine(seed).Execute(new MatchPlanModel
+                {
+                    Sides = [MatchSide.Of(a), MatchSide.Of(b), MatchSide.Of(c)],
+                    Feuds = book.Among([a, b, c]).ToList(),
+                    Beats =
+                    [
+                        Beat(BeatType.HotOpening, BeatControl.Even),
+                        new() { Type = BeatType.DisposalSpot, Control = BeatControl.WrestlerA,
+                                Against = BeatControl.WrestlerB, Duration = BeatDuration.Long },
+                        Beat(type, BeatControl.WrestlerA),
+                        Finish()
+                    ]
+                }).BeatResults.Single(x => x.BeatType == type).Commentary.ToList();
+
+                if (seed == 0) foreach (var l in lines) output.WriteLine($"  {type}: {l}");
+
+                Assert.All(lines, line => Assert.DoesNotContain(onTheFloor, line));
+                Assert.All(lines, line => Assert.DoesNotContain("all three", line));
+                Assert.All(lines, line => Assert.DoesNotContain("All three", line));
+            }
+        }
+
+        /// <summary>
+        /// And with nobody down it still bills the whole field — the disposal filter must not
+        /// have quietly narrowed every room-wide line in the game.
+        /// </summary>
+        [Fact]
+        public void WithNobodyDown_ARoomWideLineStillBillsEverybody()
+        {
+            bool sawAllThree = false;
+
+            for (int seed = 0; seed < 40 && !sawAllThree; seed++)
+                sawAllThree = new MatchEngine(seed).Execute(new MatchPlanModel
+                {
+                    Sides = [MatchSide.Of(W("Alpha")), MatchSide.Of(W("Bravo")),
+                             MatchSide.Of(W("Charlie"))],
+                    Beats =
+                    [
+                        Beat(BeatType.HotOpening, BeatControl.Even),
+                        Beat(BeatType.CrowdBrawl, BeatControl.WrestlerA),
+                        Finish()
+                    ]
+                }).BeatResults.Single(x => x.BeatType == BeatType.CrowdBrawl)
+                  .Commentary.Any(l => l.Contains("Charlie") || l.Contains("all three"));
+
+            Assert.True(sawAllThree,
+                "No crowd brawl outside a disposal window mentioned the third man across " +
+                "forty seeds — the filter may be narrowing lines it should leave alone.");
+        }
+
+        /// <summary>
         /// **Commentary that counts the field counts it right.** An opening that says "these
         /// two" or "Both wrestlers" with three in the ring is the same error as naming only
         /// two of them, one level of abstraction up — and it survived the fix for the naming,
