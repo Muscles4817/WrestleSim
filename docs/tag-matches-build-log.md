@@ -984,3 +984,267 @@ templates" beside a measurement that implies five — corrected above.
 Three rounds, and the pattern in every one of them was the same: the engineering held up
 under everything three reviewers could throw at it, and what did not hold up was what I said
 about it. Worth stating plainly at the end of this file rather than leaving implied.
+
+---
+
+## A3 — feud decay and the terminal blow-off
+
+Doc 31 lists A3 in phase 1, "make results matter". It is the oldest unbuilt item on the
+list and the reason is visible in the code it replaces: `Feud.Heat` only ever went *up*.
+Every segment ever booked was still paying off months later, a feud left off television for
+a year was as hot as the night it started, and there was no cost whatever to starting five
+programmes and finishing none. Doc 20 §9 spends a section on exactly that booking.
+
+Three rules, each answering one line of the A3 brief.
+
+### Neglect costs
+
+`Feud.ApplyDailyDecay`, charged by `Career.AdvanceOneDay` alongside the momentum, title and
+chemistry decay that were already there. Fourteen days of grace, then 0.955 a day. §9 lists
+"a feud left off TV for three weeks loses its heat" among the things that kill one, and
+three weeks off television now costs 27.6% of it, a month 52%, two months 88%. (I first
+wrote "about a third" for the three-week figure and the code comment said it should cost
+"most of it"; neither is what 0.955 with a fortnight of grace actually does. Review measured
+it. The constant is the thing to trust, and fourteen days of grace is what makes three weeks
+modest — a feud is not punished for missing one week of television, and §9 does not say it
+should be.)
+
+Written with `DecayedTo` from the start, because `TagTeam.Decay` shipped without it in phase
+4 and compounded quadratically — `0.9985^(N(N+1)/2)` instead of `0.9985^N`, a thirty-day
+half-life on a curve written for two years. `DecayIsIdempotentPerDay` fails if the marker is
+removed, if it is stamped inside the grace period (the second half of that bug), or if the
+grace is dropped; `TheGracePeriod_IsRealAndIsNotCharged` catches the second and the third.
+See the round 1 section at the end of this file — the first version of this sentence claimed
+both tests caught all three, and review measured that they did not.
+
+### Not paying off costs, durably
+
+`RecordUnresolved` runs after every match that was not declared a blow-off. Three matches
+are free — doc 20 §9.1's "three matches is the natural life of a feud" — and the fourth
+starts accruing `Distrust`, which suppresses `StartingEnergyBonus` through `Credibility`.
+This is §9's interference loop: every match ends in a run-in, nothing resolves, and the
+crowd learns not to invest. The lesson is durable: `BlowOff` refunds some of it, and a new
+chapter inherits the rest.
+
+Two rules came out of testing rather than out of the brief, both because the first draft was
+wrong:
+
+* **A settled feud can be started again.** `FeudBook.GetOrCreate` returns the same object
+  for a pairing forever, so `Concluded` as written meant two people who ever finished a
+  programme could *never* feud again. The rematch years later is one of the oldest things in
+  wrestling. New heat on a settled feud now opens a new chapter and resets the patience
+  clock — but not the distrust.
+* **A feud that cools below Hot resets the patience clock.** Otherwise a programme that
+  quietly died of neglect came back a year later already one match from the limit.
+
+### Paying off pays — and has to actually pay off
+
+`MatchPlan.IsBlowOff` is a booker declaration rather than something derived from the beats,
+because that is what it is in real booking: nothing about a match's shape makes it a
+blow-off. It multiplies the *finish* beat — the payoff is the payoff, not a blanket bonus,
+and `DeclaringABlowOff_MovesTheMatch_AndOnlyTheFinish` asserts every earlier beat is
+identical to nine decimal places.
+
+Priced by what was built, §6's second requirement: ×1.45 Nuclear, ×1.28 Hot, ×1.05 Building,
+**×0.72** for a story the audience was never told mattered — worse than not declaring one,
+the same shape as the unearned finish in `ApplyFinish` and the unearned hot tag.
+
+And §6.1's *first* requirement, which the first draft ignored: a blow-off has to **resolve**.
+Booked to a disqualification, a count-out or a run-in it settles nothing, the feud stays
+open with its heat intact, and it costs 0.30 distrust against an ordinary unresolved match's
+0.18 — 1.67×, not the "double" the code comment first claimed. That is what makes declaring a blow-off a decision with a downside
+rather than a free multiplier, and it is checked end to end through `ShowSimulator` rather
+than only on the model.
+
+### What it is actually worth
+
+`Big Match Epic`, two 80-overness workers, 300 seeds a cell:
+
+```
+no feud                          3.7364
+Cold      chapter 3.7621   blow-off 3.7250   Δ −0.0371
+Building  chapter 3.7945   blow-off 3.8008   Δ +0.0063
+Hot       chapter 3.8628   blow-off 3.8949   Δ +0.0321
+Nuclear   chapter 3.9232   blow-off 3.9711   Δ +0.0479
+Nuclear, clean 3.9232  vs 10 unresolved 3.8749   Δ −0.0483
+```
+
+Stating this plainly rather than letting the multiplier imply more than it does: **the star
+rating moves by about 0.05**. That is a quarter of what having a Nuclear feud is worth at
+all (+0.19★ over none), which is proportionate — but it is not, on its own, a headline
+feature, and a ×1.45 on one beat of nine was never going to be. The teeth of A3 are
+elsewhere: heat now has to be maintained, distrust is durable, and a blow-off that does not
+resolve is punished.
+
+**What A3 asked for and this does not deliver:** "a blow-off should pay out accumulated heat
+as a large one-time result". There is no business axis to pay into — doc 18 §7's
+quality-versus-draw split is the prerequisite and it is not built. The quality and story
+halves ship; the business half is blocked on work nobody has started.
+
+### Persistence
+
+`LastAdvanced`, `DecayedTo`, `Concluded`, `ConcludedOn`, `MatchesSinceHot`, `Distrust` and
+`ChaptersSettled` on the feud; `IsBlowOff` on the card item. A pre-A3 save has no
+`LastAdvanced`, and the fallback is `LastMatchDate` rather than null **deliberately**: null
+means "never advanced" and therefore never decays, which would quietly exempt every feud in
+an existing save from the rule this release adds. Two round-trip tests, one of which checks
+the decay *clock* survives — not just the numbers — because a reload that hands every feud a
+fresh grace period is the same bug wearing a different hat.
+
+### Reachable in the game
+
+The blow-off is a real choice in both front ends: a toggle in the web builder's feud step
+that quotes the multiplier before the choice is made and warns when it would be unearned or
+when the pairing has been run into the ground, and a priced prompt in the console flow.
+Booking a blow-off with no feud, or a second one on a settled story, fails validation with
+an error that says which.
+
+**436 tests passing** (18 new). Every one of the seven new mechanisms was checked by
+inverting it and confirming the intended test went red.
+
+---
+
+## A3 — review round 1
+
+Verdict: **safe to merge, with two documentation corrections that should be made first.** The
+model was found correct, wired in, and — unusually for this build log — measurably alive in
+real play. What the review took apart was the *testing*, and it was right to.
+
+### Four mutations survived, and every one of them was a hookup
+
+The review deleted twenty things and sixteen died. The four survivors were not rules; they
+were the four lines that connect the rules to the game.
+
+| Deleted | Suite | Now fails |
+|---|---|---|
+| `Career.AdvanceOneDay`'s call to `ApplyDailyDecay` | 436/436 green | `TheWorldClock_CoolsAFeudNobodyIsTelling` |
+| `ShowSimulator`'s call to `RecordUnresolved` | 436/436 green | `AShowThatSettlesNothing_ChargesThePairingForIt` |
+| `Advance()` clearing `DecayedTo` | 436/436 green | `AdvancingAFeud_RestartsTheClockRatherThanResumingIt` |
+| the pre-A3 save fallback | 436/436 green | `AFeudFromAPreA3Save_StillCools` |
+
+Every test I wrote drove the model directly. So the headline mechanism's only hookup could be
+deleted and CI would say fine — while the *analogous* mechanism, title drift, has had a
+150-day `AdvanceOneDay` integration test since phase 5. I tested the rule and not the wire,
+four times, and did not notice because the rule tests are the interesting ones to write.
+
+The third of those has a measured cost, which is worth recording because it is invisible: a
+feud ignored for forty days and then re-booked keeps 18.12 heat with that line and drops to
+9.51 without it — **47.5% of what remained** — and the grace period is silently skipped from
+then on. That is one of the two halves of the `TagTeam` bug I said I had guarded against.
+
+### A test documented to catch a bug it could not catch
+
+`TheGracePeriod_IsRealAndIsNotCharged` says in its own comment that it exists to catch the
+marker being stamped inside the grace — *"that is the bug `TagTeam.Decay` shipped with and it
+is the same shape here."* The review applied exactly that mutation. **It passed.** It also
+passed with the marker removed entirely.
+
+Why: it called `ApplyDailyDecay` only on the *last* day of the grace, where `today == from`
+and stamping is harmless. It never called mid-grace, which is what the world clock does every
+single day. So two claims in the last section were false:
+
+* the build log's *"both fail if the marker is removed, if it is stamped inside the grace
+  period, or if the grace is dropped"* — measured, the grace test passes on the first two;
+* the PR body's *"the two halves of the `TagTeam.Decay` bug, each of which fails a different
+  test"* — measured, both halves fail the *same* test, and neither fails the one written for
+  them.
+
+The suite did catch both halves. Just not where I said. Fixed by ticking the grace day by day.
+
+### Two constants documented as something they are not
+
+* `HeatDailyRetention`'s comment said three weeks off television *"should cost most of it"*.
+  It costs **27.6%** — a month costs 52%, two months 88%. Fourteen days of grace is what makes
+  the three-week figure modest, and doc 20 §9 does not actually ask for more than that; the
+  comment was writing a stronger rule than the constant implements. The build log's softer
+  "about a third" was a stretch of the same number.
+* `RecordBrokenPromise`'s comment said a broken promise *"pays double"* an ordinary unresolved
+  match. It is 0.30 against 0.18 — **1.67×**.
+
+Both corrected against the measurement rather than the measurement adjusted to the prose.
+
+Seven of nine constants are unconstrained by any test, which the review is right to flag. The
+two decay tests that look like they pin values compute their expectations *from* the
+constants, so they pin the shape — geometric, idempotent, graced — and not the numbers. I have
+left that as it is deliberately: the shape is the part with a right answer, and pinning
+`0.955` to a test would only mean editing two places when the balance changes. It is recorded
+here so the next reader knows it is a choice rather than an oversight.
+
+### Two real defects
+
+* **A pre-A3 feud built entirely from segments never decayed at all.** The fallback chain was
+  `LastAdvanced ?? LastMatchDate`, and `RecordSegment` took no date before A3 — so a feud
+  built out of promos for a month has neither, loads as "never advanced", and
+  `ApplyDailyDecay` returns immediately, for ever. The review measured one sitting at 70 heat
+  after 400 simulated days. *"Build it with promos, then have the match"* is an ordinary way
+  to book. The chain now ends at the save's own clock.
+* **The web builder latched `isBlowOff` across a change of pairing.** `Next()` reset
+  `existingFeud` and `feudChoice` and not this, so ticking the blow-off for one pair and then
+  going Back to pick another whose feud was already settled produced *"has already been blown
+  off"* at validation with the toggle hidden and no control on screen to clear it. A dead end.
+
+### The brief had a bullet I marked done and had not built
+
+Doc 31's A3 entry asks for four things and I implemented three, marked the whole entry
+**implemented**, and noted only the *other* omission (no business payout). The unbuilt one:
+**"continuing past the blow-off should be penalised"**. As shipped it was not merely unbuilt,
+it was free — `AddHeat` reopened a settled feud at no cost, which lets a booker take the
+payoff and keep the programme, and is worse than having no blow-off at all.
+
+Built now, and deliberately time-sensitive, because the two cases are different bookings.
+Restarting a fortnight after the cage match tells the audience the ending they were sold did
+not count — doc 20 §6.2's scarcity argument — and costs 0.25 distrust. Reviving the same
+rivalry two years later is one of the oldest and best things in wrestling and costs nothing.
+Six months is the line. `ChaptersSettled` and `ConcludedOn`, which the review correctly called
+write-only state, are what the rule reads.
+
+`Conclude()` — the draft path, which separates two people rather than settling anything — now
+resets the patience clock without setting `Concluded`, because a programme taken off the
+player is not one the player refused to pay off. Two things were called "conclude" and only
+one of them meant it.
+
+### What I am not changing
+
+The review measured `Distrust` saturating in about nine matches past patience, after which it
+is a flat −45% on `StartingEnergyBonus` and stops discriminating — worth roughly **−0.03★**.
+That is small, and the honest response is to say so rather than inflate the constant: doc 31's
+entry and the PR body both now say plainly that the rating movement is not the point and that
+calling distrust "the teeth" of A3 overstated a ≤0.05★ nudge. What A3 actually does is put a
+clock on heat. Making distrust matter more means giving it a second consumer — a business
+axis, doc 18 §7 — which is the same prerequisite the missing blow-off payout is waiting on.
+
+**443 tests passing** (25 new). All four surviving mutations now fail the intended test,
+verified one at a time against the full suite.
+
+
+---
+
+## A3 — review round 2
+
+**Safe to merge**, with three one-liners, all of which are done. Every one of round 1's four
+surviving mutations now dies, and both links of the save-fallback chain have their own
+killer — dropping only the `?? career.CurrentDate` tail kills exactly the promos-only case
+it was added for, which is the right shape.
+
+Round 2 found the round-1 pattern once more, in miniature and twice:
+
+* **`51%` was not any reading of the curve.** A month is 52.13% (28 days is 47.5%, 31 is
+  54.3%). Wrong by 1.1 points, in the conservative direction, in two documents. Corrected.
+* **The reopen penalty's *wire* was untested**, which is exactly what round 1 spent four
+  mutations on, in the one mechanism this branch had just added. The rule only reads today's
+  date because `FeudBook.Record` calls `Advance` before `AddHeat`; reverting that reorder
+  charges a two-year revival as though it were a fortnight, and left all 443 green.
+  `ARevivalBookedThroughTheFeudBook_IsNotChargedAsAContinuation` now books through the book
+  rather than the model, and dies to the reorder.
+* And the sentence claiming both decay tests caught all three marker bugs was still standing
+  in the section where it was written, quoted as false ten lines away in another section but
+  not corrected in place. Corrected where it was made.
+
+One thing round 2 measured that is worth keeping visible rather than fixing: `BlowOff`
+forgives 0.35 and reopening too soon costs 0.25, so a booker who blows a feud off and
+immediately restarts it nets **−0.10 distrust per cycle**, converging on a floor of 0.25.
+The payoff-and-keep-the-programme loop is *priced*, not closed. Closing it means making the
+refund conditional on the ending being respected, which is a rule about the next chapter
+rather than this one — recorded rather than done, so the next reader knows it is a choice.
+
+**444 tests passing.**
