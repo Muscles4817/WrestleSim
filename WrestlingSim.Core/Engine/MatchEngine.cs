@@ -1882,7 +1882,11 @@ namespace WrestlingSim.Engine
         /// </summary>
         private static double VarietyNudge(MatchEngineState state, MatchPlan plan)
         {
-            int beats = plan.Beats.Count;
+            // Connective beats are excluded from both halves — see
+            // MatchEngineState.IsConnective. No singles or two-a-side preset contains one,
+            // so this is identical to `plan.Beats.Count` for everything that shipped before
+            // trios.
+            int beats = state.VarietyBeatCount;
             if (beats <= 2) return 0;
 
             // How close the plan came to using a distinct type for every beat.

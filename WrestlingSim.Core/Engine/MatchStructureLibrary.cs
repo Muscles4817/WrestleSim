@@ -249,12 +249,13 @@ namespace WrestlingSim.Engine
             // only the legal performers, so he contributes nothing to the work until he is
             // tagged in.
             //
-            // Which makes the tag changes load-bearing content rather than decoration. Both
-            // structures below name every incoming member explicitly, so all six people are
-            // legal at some point. The first pass of these two shipped with a single tag
-            // change each and left three of the six on the apron for the entire match —
-            // §9's "unexplained third man", which §2.5 calls the format's characteristic
-            // failure, shipped as a preset.
+            // Which makes the tag changes load-bearing content rather than decoration. Every
+            // tag that needs to name its incoming member does — the exception is Six-Man
+            // War's Hot Tag, where next-man-round is the answer anyway — so all six people
+            // are legal at some point in both. The first pass of these two shipped with a
+            // single tag change each and left three of the six on the apron for the entire
+            // match, which is doc 18 §9's "unexplained third man" in everything but the
+            // detail that §9 puts him on the floor rather than on the apron.
             //
             // The two are deliberately different matches, not one match at two lengths:
             // Six-Man War is the American six-man (the Southern Tag with a deeper heat and
@@ -270,11 +271,11 @@ namespace WrestlingSim.Engine
                 SideSize    = 3,
                 Beats       =
                 [
-                    // Five tag changes in thirteen beats, three of them on the rudo side.
-                    // Doc 25 §3.3 lists "rapid tag rules that allow constant motion" as the
-                    // first thing three-a-side changes, and constant motion is the opposite
-                    // of the Southern Tag: there is no isolation and no hot tag here at all,
-                    // so there is nothing to charge and nothing to spend.
+                    // Four tag changes in thirteen beats, two of them on the rudo side.
+                    // Doc 25 §3.3's second bullet is "rapid tag rules that allow constant
+                    // motion", and constant motion is the opposite of the Southern Tag:
+                    // there is no isolation and no hot tag here at all, so there is nothing
+                    // to charge and nothing to spend.
                     Beat("Hot Start",                 BeatControl.Even),
                     Beat("Shine",                     BeatControl.WrestlerA),
                     Tag ("Quick Tag",                 BeatControl.WrestlerA, incoming: 1),

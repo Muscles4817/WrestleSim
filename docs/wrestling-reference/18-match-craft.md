@@ -135,8 +135,9 @@ Formats, and what each is for:
 
   The **lucha trios** is a different match. Doc [25](25-international-models.md) §3.3 is
   explicit that three-a-side is the *default* in lucha rather than a variant, and that this
-  "changes everything": rapid tag rules that allow constant motion, story told through the
-  group dynamic, three falls traditionally, and singles matches made special by contrast.
+  "changes everything": more people on every card, rapid tag rules that allow constant motion,
+  story told through the group dynamic, and singles matches made special by contrast. (The
+  three-fall tradition is §3.1, not §3.3.)
   There is no long isolation in it and no hot tag to charge — the shape is the opposite of
   the Southern Tag.
 
@@ -382,7 +383,7 @@ The engine already implements a great deal of this. Notes on gaps:
 - **Rate well vs draw well as two separate outputs** (§7) is the highest-value addition
   in this document: the sim should report a **quality rating** and a **business result**,
   and they should be able to diverge sharply. That divergence is what wrestling is.
-- **Multi-man matches** (§2.5) need three things the two-side engine does not have, and the
+- **Multi-man matches** (§2.5) need four things the two-side engine does not have, and the
   order matters:
   1. **A per-side advantage reading.** The engine's `Advantage` runs −100 to +100, which is
      inherently two-poled: it can say who is on top of a two-sided match and cannot say
