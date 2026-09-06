@@ -1563,3 +1563,66 @@ Five mutations, four killed and one a true no-op: blame ignoring what the moment
 never applying it, a spite break recording nothing, and the extra pairings getting nothing.
 
 **559 tests passing.**
+
+---
+
+## Attention does not divide evenly
+
+Doc 18 §2.5: *a three-way between one over performer and two midcarders is not a three-way — it
+is the over performer's match with two people in it. The room follows whoever it came to see,
+and the sequences that do not involve them are dead air however well worked.*
+
+`MatchEngine.AttentionShare` is that, and it needed **no new mechanism** — only a reason for a
+beat to hold less than the whole room. The share a beat does not hold goes where any unheld
+attention already goes, which is silence, and A5 has modelled silence as the failure state
+since it was built. Measured across the same three-way, changing only whose spot it is:
+
+```
+the draw's spot:    pop 33.8 · heat 2.5 · silence  8.0   (82% invested)
+a midcarder's spot: pop 31.0 · heat 2.7 · silence 10.6   (76% invested)
+```
+
+The floor is 0.45, not zero: dead air in §2.5's sense is *flat*, not empty — they are still
+wrestling and the crowd is still in the building.
+
+**Multi-man only, and that limit is the doc's own reasoning.** Proximity transfers heat in a tag
+match (doc 17 §2.8) *because the partners share a story*; it does not here, because the
+participants are competing for the same attention. Two sides are the match; three are rivals for
+it. A mutation applying the penalty to tag matches as well fails three tests, one of them A5's
+corpus calibration.
+
+### Three wrong tests before a right one, and the third was a new mistake
+
+The first two compared **the draw's spot against a midcarder's spot** and called the gap the
+mechanism. Those differ anyway — a crowd pops harder for a bigger name whatever else is going
+on — so both passed with the rule's application deleted. That is the same confound as the
+disposal loop and `BoredShare` before it.
+
+Rewriting it to hold the wrestler fixed and vary *who else is in the match* was better reasoning
+and still wrong, and the reason is worth keeping: a star in the match **raises the crowd
+ceiling**, so a midcarder's spot is louder beside a draw than among equals — 12.02 against
+10.52 — and the attention penalty never had to beat that. The prediction I wrote into the test
+("the effect has to beat that to show up") was simply false.
+
+The third failure was a different mistake and a more embarrassing one. **All three versions
+measured `CrowdEnergyDelta`, which this rule does not touch.** Each beat handler sets its own
+energy delta; `AttentionShare` scales the connection feeding the *reaction vector*. So the rule
+worked the whole time and every test was pointed at the wrong quantity — which looks precisely
+like a mechanism that does not work.
+
+Found by probing the engine for what actually moved rather than writing a fourth assertion. The
+numbers were sitting there: `CrowdEnergyDelta` identical for both spots at 12.68, and silence
+5.51 against 10.56.
+
+Four mutations, all killed: the rule never applied, the penalty extended to tags, nobody being
+the draw, and the share always full.
+
+**562 tests passing.**
+
+### What §2.5 says that this still does not do
+
+*"This is the reason a multi-man match is a poor place to elevate somebody."* The crowd model
+now agrees; the **consequence** model does not. `HeatEconomy` still pays a midcarder for being in
+a match with a star exactly as it would in a tag match, so booking a three-way to elevate
+somebody works in the game while the doc says it does not work in the business. That is the next
+piece of this, and it is a consequence-layer change rather than a crowd one.

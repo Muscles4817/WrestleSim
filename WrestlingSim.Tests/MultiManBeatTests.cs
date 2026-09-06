@@ -590,5 +590,114 @@ namespace WrestlingSim.Tests
             Assert.Equal(ac, bc, 3);
         }
 
+        // ── Attention (doc 18 §2.5) ──────────────────────────────────────────
+
+        /// <summary>
+        /// **The rule.** The room follows whoever it came to see; the sequences that do not
+        /// involve them are dead air however well worked.
+        /// </summary>
+        [Fact]
+        public void TheRoomFollowsWhoeverItCameFor()
+        {
+            // Two sides are the match, so there is nobody to lose the room to.
+            Assert.Equal(1.0, MatchEngine.AttentionShare(0.4, 1.2, multiMan: false));
+            Assert.Equal(1.0, MatchEngine.AttentionShare(1.2, 1.2, multiMan: false));
+
+            // Three, and the biggest name still has all of it.
+            Assert.Equal(1.0, MatchEngine.AttentionShare(1.2, 1.2, multiMan: true), 6);
+
+            // A smaller name has less, and a much smaller name has the floor.
+            double mid   = MatchEngine.AttentionShare(0.6, 1.2, multiMan: true);
+            double small = MatchEngine.AttentionShare(0.1, 1.2, multiMan: true);
+            Assert.True(mid < 1.0 && mid > small);
+            Assert.True(small >= MatchEngine.AttentionFloor);
+
+            // Dead air is flat, not empty — they are still wrestling.
+            Assert.True(MatchEngine.AttentionFloor is > 0.2 and < 0.8,
+                "A sequence between the smaller names should be flattened, not silenced.");
+        }
+
+        /// <summary>
+        /// And end to end: **the sequences that are not about the draw are dead air.**
+        ///
+        /// Measured as silence, which is where the unheld attention goes — A5 already models
+        /// silence as the failure state, so this needed no new mechanism, only a reason for
+        /// the share to be less than one.
+        ///
+        /// Two earlier versions of this test measured `CrowdEnergyDelta` and found nothing,
+        /// because that is set by each beat's own handler and this rule does not touch it —
+        /// the rule is about *engagement*, which is the reaction vector. Both versions passed
+        /// with the rule's application deleted. Measuring the wrong quantity looks exactly
+        /// like measuring a mechanism that does not work.
+        /// </summary>
+        [Fact]
+        public void TheSequencesThatAreNotAboutTheDraw_AreDeadAir()
+        {
+            var draw = W("Draw", 96);
+            var midA = W("Mid A", 55);
+            var midB = W("Mid B", 55);
+
+            CrowdReaction Reaction(BeatControl whoseSpot) =>
+                new MatchEngine(Seed).Execute(new MatchPlanModel
+                {
+                    Sides = [MatchSide.Of(draw), MatchSide.Of(midA), MatchSide.Of(midB)],
+                    Beats =
+                    [
+                        Beat(BeatType.HotOpening, BeatControl.Even),
+                        Beat(BeatType.HighSpot, whoseSpot),
+                        new MatchBeat { Type = BeatType.FinishClean, Control = BeatControl.WrestlerA,
+                                        Against = BeatControl.WrestlerB }
+                    ]
+                }).Reaction;
+
+            var theirs  = Reaction(BeatControl.WrestlerA);   // the 96's spot
+            var nobody  = Reaction(BeatControl.SideC);       // a 55's spot
+
+            output.WriteLine($"  the draw's spot:    {theirs}");
+            output.WriteLine($"  a midcarder's spot: {nobody}");
+
+            Assert.True(nobody.Silence > theirs.Silence * 1.3,
+                "A sequence the room did not come for is dead air — it should leave " +
+                $"materially more silence. Got {nobody.Silence:F2} against {theirs.Silence:F2}.");
+
+            Assert.True(nobody.Investment < theirs.Investment,
+                $"…and less of the room invested: {nobody.Investment:F4} against " +
+                $"{theirs.Investment:F4}.");
+        }
+
+        /// <summary>
+        /// The same gap must **not** open in a tag match. Doc 17 §2.8: proximity transfers
+        /// heat there because the partners share a story; in a multi-man it does not,
+        /// because they are competing for the same attention. That distinction is the
+        /// doc's, and applying the penalty to tags as well would quietly delete it.
+        /// </summary>
+        [Fact]
+        public void ATagPartnersSpotIsNotFlattenedByTheirPartnerBeingBigger()
+        {
+            var draw = W("Draw", 96);
+            var mate = W("Mate", 55);
+
+            // The same measurement as the multi-man test — silence — so the comparison is
+            // like for like. A tag partner's spot is not dead air because the crowd came for
+            // the other one; they are working the same story.
+            var big   = ReactionFor(BeatControl.WrestlerA);
+            output.WriteLine($"  a tag team's spot: {big}");
+
+            Assert.Equal(1.0, MatchEngine.AttentionShare(0.5, 1.3, multiMan: false));
+
+            CrowdReaction ReactionFor(BeatControl who) =>
+                new MatchEngine(Seed).Execute(new MatchPlanModel
+                {
+                    SideA = MatchSide.Of(draw, mate),
+                    SideB = MatchSide.Of(W("Opp A", 70), W("Opp B", 70)),
+                    Beats =
+                    [
+                        Beat(BeatType.HotOpening, BeatControl.Even),
+                        new MatchBeat { Type = BeatType.HighSpot, Control = who },
+                        new MatchBeat { Type = BeatType.FinishClean, Control = BeatControl.WrestlerA }
+                    ]
+                }).Reaction;
+        }
+
     }
 }
