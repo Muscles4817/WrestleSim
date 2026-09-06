@@ -90,6 +90,22 @@ namespace WrestlingSim.Models
         /// <summary>Overness rounded for display.</summary>
         public int OvernessDisplay => (int)Math.Round(Overness);
 
+        /// <summary>
+        /// Charisma in words, in the same register as <see cref="World.Title.PrestigeLabel"/>.
+        ///
+        /// The segment picker showed "Cha 3.4 · Psych 62" — two numbers on two different
+        /// scales, neither of them stated, on the screen where charisma is the whole point.
+        /// Overness is 0–100 and charisma is 0–5, side by side in the same grey.
+        /// </summary>
+        public string CharismaLabel => Charisma switch
+        {
+            >= 4.2 => "Can carry a promo alone",
+            >= 3.4 => "Good on the microphone",
+            >= 2.6 => "Gets through a promo",
+            >= 1.8 => "Better in the ring",
+            _      => "Do not hand them a microphone"
+        };
+
         public CardPosition CardPosition => (int)Math.Round(EffectiveOverness) switch
         {
             >= 88 => CardPosition.MainEvent,

@@ -1,29 +1,38 @@
 @inject GameState State
+@inject IJSRuntime JS
+@implements IAsyncDisposable
 
+@* Only the steps this booking actually has, numbered by where they sit in that list —
+   so a match with no belt on the line does not show a skipped "3" and then jump to 4. *@
 <div class="steps">
-    @foreach (var (index, label) in StepLabels)
+    @{ var shown = ActiveSteps(); }
+    @for (int i = 0; i < shown.Count; i++)
     {
+        var (index, label) = shown[i];
         <div class="step @(step == index ? "is-current" : step > index ? "is-done" : "")">
-            <span class="step__n">@(step > index ? "✓" : (index + 1).ToString())</span>
+            <span class="step__n">@(step > index ? "✓" : (i + 1).ToString())</span>
             <span>@label</span>
         </div>
     }
+    @* On a phone the labels collapse to bare numerals, which is a map with no place names.
+       This is the one line that says where you are. *@
+    <div class="steps__where small muted">
+        @(shown.FindIndex(x => x.Index == step) + 1) of @shown.Count · @StepLabelFor(step)
+    </div>
 </div>
 
 @* ── 1. Wrestlers ─────────────────────────────────────────────────────── *@
 @if (step == 0)
 {
-    <CastFilter Query="@rosterQuery" QueryChanged="@(v => rosterQuery = v)"
-                Division="@rosterDivision" DivisionChanged="@(v => rosterDivision = v)"
-                HomeBrand="@State.BookingBrand"
-                IncludeCrossover="@includeCrossover" IncludeCrossoverChanged="@(v => includeCrossover = v)" />
-
-    @if (State.BookingBrand is { } home && includeCrossover)
+    @* The search and division chips live in the picker sheet now, one set per slot. They
+       used to be here, above four simultaneous lists, sharing a single query — so typing to
+       find B's partner re-filtered corner A's list and the page reflowed underneath you. *@
+    @if (State.BookingBrand is { } home)
     {
-        <div class="notice notice--warn">
+        <div class="notice notice--cost">
             <strong>Anyone outside @home.Name is a crossover.</strong>
-            It is worth something on the night and it takes a permanent bite out of what the
-            split means. Names from another brand are marked below with what they cost.
+            The picker offers your own brand first; turning on the other brands is one tap
+            inside it, and every crossover name is marked with what it costs.
         </div>
     }
 
@@ -60,210 +69,110 @@
         }
     </div>
 
+    @* ── The lineup ────────────────────────────────────────────────────────
+       Slots, not lists. Four inline rosters used to render here at once with no way to
+       collapse one after using it; a UX review measured a tag booking at ~116 pick cards
+       and about seventeen phone screens, and at three a side on a seventy-name roster it
+       is nearer thirty thousand pixels. Everything the lists did now lives in one
+       RosterPicker sheet, opened from whichever slot you tapped. *@
     <div class="panel">
         <div class="panel__title">
-            @(IsTeamMatch ? "Side A" : "Corner A")
-            @if (a is not null) { <span class="badge badge--gold">@SideAName</span> }
+            Who is in it
             <span class="spacer"></span>
-            <span class="small muted">wins by default in every preset</span>
+            <span class="small muted">Side A wins by default in every preset</span>
         </div>
-        @{ var poolA = FilteredRoster().ToList(); }
-        @if (poolA.Count == 0)
-        {
-            <div class="empty">Nobody matches that search.</div>
-        }
-        @foreach (var group in poolA.GroupBy(w => w.CardPosition).OrderByDescending(g => g.Key))
-        {
-            <div class="group-label">@group.Key.Label()</div>
-            <div class="picks picks--2">
-                @foreach (var w in group.OrderByDescending(x => x.Overness))
+
+        <div class="lineup">
+            <div class="lineup__side">
+                @Slot(SlotRef.CornerA, IsTeamMatch ? "Side A — starts" : "Corner A", a)
+                @for (int i = 0; i < sideSize - 1; i++)
                 {
-                    <button class="pick @(a == w ? "is-selected" : "")" @onclick="() => PickA(w)">
-                        <span class="pick__body">
-                            <span class="pick__name">
-                                @w.RingName
-                                @if (State.IsCrossover(w))
-                                {
-                                    <span class="badge badge--heel">crossover −@BrandIntegrity.CostOf(w).ToString("F1")</span>
-                                }
-                            </span>
-                            <span class="pick__desc">@w.Style · @(w.Gimmick?.NaturalAlignment.ToString() ?? "—")</span>
-                        </span>
-                        <span class="pick__meta">Pop @w.Overness.ToString("F0")<br />Cha @w.Charisma.ToString("F1")</span>
-                    </button>
+                    int index = i;
+                    @Slot(SlotRef.PartnerA(index),
+                          sideSize > 2 ? $"A's partner {index + 1}" : "A's partner",
+                          partnersA.ElementAtOrDefault(index))
                 }
             </div>
-        }
-    </div>
 
+            <div class="lineup__vs">vs</div>
 
-    @if (IsTeamMatch && a is not null)
-    {
-        @for (int slot = 0; slot < sideSize - 1; slot++)
-        {
-            int index = slot;
-            var chosen = partnersA.ElementAtOrDefault(index);
-            <div class="panel">
-                <div class="panel__title">
-                    @(sideSize > 2 ? $"A's partner {index + 1}" : "A's partner")
-                    @if (chosen is not null) { <span class="badge badge--gold">@chosen.RingName</span> }
-                    <span class="spacer"></span>
-                    <span class="small muted">starts on the apron</span>
-                </div>
-                <div class="picks picks--2">
-                    @foreach (var w in FilteredRoster().Where(x => !Chosen.Contains(x) || x == chosen)
-                                                       .OrderByDescending(x => x.Overness))
-                    {
-                        var pick = w;
-                        <button class="pick @(chosen == pick ? "is-selected" : "")"
-                                @onclick="() => PickPartner(partnersA, index, pick)">
-                            <span class="pick__body">
-                                <span class="pick__name">@pick.RingName</span>
-                                <span class="pick__desc">@pick.Style · @(pick.Gimmick?.NaturalAlignment.ToString() ?? "—")</span>
-                            </span>
-                            <span class="pick__meta">Pop @pick.Overness.ToString("F0")<br />Cha @pick.Charisma.ToString("F1")</span>
-                        </button>
-                    }
-                </div>
-            </div>
-        }
-        @if (MembersA.Count() == sideSize)
-        {
-            <div class="panel">
-                <div class="panel__title">
-                    Side A
-                    @if (ExistingTeamA is { } known) { <span class="badge badge--gold">@known.Name</span> }
-                </div>
-                @if (ExistingTeamA is { } teamA)
+            <div class="lineup__side">
+                @Slot(SlotRef.CornerB, IsTeamMatch ? "Side B — starts" : "Corner B", b)
+                @for (int i = 0; i < sideSize - 1; i++)
                 {
-                    <div class="notice">
-                        <strong>@teamA.Name</strong> — @teamA.ChemistryLabel.ToLowerInvariant(),
-                        @teamA.MatchesTogether match@(teamA.MatchesTogether == 1 ? "" : "es") together
-                        over @teamA.TenureLabel(Today). Chemistry makes their tandem offence land
-                        and lets the strongest of them carry the rest.
-                    </div>
-                }
-                else
-                {
-                    <label class="check">
-                        <input type="checkbox" @bind="formTeamA" />
-                        <span>Make them a standing team</span>
-                    </label>
-                    @if (formTeamA)
-                    {
-                        <div class="field">
-                            <span class="field__label">Team name</span>
-                            <input class="input" @bind="teamNameA" maxlength="48" placeholder="@SideAName" />
-                        </div>
-                        <div class="notice">
-                            A team starts with no chemistry and builds it by working together.
-                            A team that stops teaming stops being one.
-                        </div>
-                    }
+                    int index = i;
+                    @Slot(SlotRef.PartnerB(index),
+                          sideSize > 2 ? $"B's partner {index + 1}" : "B's partner",
+                          partnersB.ElementAtOrDefault(index))
                 }
             </div>
-        }
-    }
+        </div>
 
-    @if (MembersA.Count() == sideSize)
-    {
-        <div class="panel">
-            <div class="panel__title">
-                @(IsTeamMatch ? "Side B" : "Corner B")
-                @if (b is not null) { <span class="badge badge--gold">@SideBName</span> }
-            </div>
-            @if (b is not null && b.Division != a.Division)
+        @* ── The consequence, where the decision is ─────────────────────────
+           This used to be three Next-taps away, on the feud step, which the code comment
+           on PairingHistory says exists so "a booker needs to know a pairing is worn out
+           *while they can still book something else*". By the time you saw it, backing out
+           meant re-scrolling the roster walls, so nobody backed out. *@
+        @if (SidesComplete)
+        {
+            @if (PairingHistory is { MatchCount: > 0 } history)
             {
-                <div class="notice notice--warn">
+                <div class="notice @(PairingFamiliarity < 0.8 ? "notice--advice" : "notice--info") mt">
+                    <strong>Meeting @NextMeeting.ToString("F1") — @((int)Math.Round(PairingFamiliarity * 100))% of what the first one drew.</strong>
+                    @SideAName and @SideBName have met @history.MatchCount time@(history.MatchCount == 1 ? "" : "s").
+                    @FreshnessAdvice
+                </div>
+            }
+
+            @if (b is not null && a is not null && b.Division != a.Division)
+            {
+                <div class="notice notice--advice mt">
                     This is an intergender match — @a.RingName is in the @DivisionName(a.Division)
                     division and @b.RingName is in the @DivisionName(b.Division). Perfectly legal
                     to book, just an unusual call.
                 </div>
             }
-            @{ var poolB = FilteredRoster().Where(x => !Chosen.Contains(x) || x == b).ToList(); }
-            @foreach (var group in poolB.GroupBy(w => w.CardPosition).OrderByDescending(g => g.Key))
-            {
-                <div class="group-label">@group.Key.Label()</div>
-                <div class="picks picks--2">
-                    @foreach (var w in group.OrderByDescending(x => x.Overness))
-                    {
-                        <button class="pick @(b == w ? "is-selected" : "")" @onclick="() => PickB(w)">
-                            <span class="pick__body">
-                                <span class="pick__name">
-                                    @w.RingName
-                                    @if (State.IsCrossover(w))
-                                    {
-                                        <span class="badge badge--heel">crossover −@BrandIntegrity.CostOf(w).ToString("F1")</span>
-                                    }
-                                </span>
-                                <span class="pick__desc">@w.Style · @(w.Gimmick?.NaturalAlignment.ToString() ?? "—")</span>
-                            </span>
-                            <span class="pick__meta">Pop @w.Overness.ToString("F0")<br />Cha @w.Charisma.ToString("F1")</span>
-                        </button>
-                    }
-                </div>
-            }
-        </div>
-    }
-
-
-    @if (IsTeamMatch && b is not null)
-    {
-        @for (int slot = 0; slot < sideSize - 1; slot++)
-        {
-            int index = slot;
-            var chosen = partnersB.ElementAtOrDefault(index);
-            <div class="panel">
-                <div class="panel__title">
-                    @(sideSize > 2 ? $"B's partner {index + 1}" : "B's partner")
-                    @if (chosen is not null) { <span class="badge badge--gold">@chosen.RingName</span> }
-                    <span class="spacer"></span>
-                    <span class="small muted">starts on the apron</span>
-                </div>
-                <div class="picks picks--2">
-                    @foreach (var w in FilteredRoster().Where(x => !Chosen.Contains(x) || x == chosen)
-                                                       .OrderByDescending(x => x.Overness))
-                    {
-                        var pick = w;
-                        <button class="pick @(chosen == pick ? "is-selected" : "")"
-                                @onclick="() => PickPartner(partnersB, index, pick)">
-                            <span class="pick__body">
-                                <span class="pick__name">@pick.RingName</span>
-                                <span class="pick__desc">@pick.Style · @(pick.Gimmick?.NaturalAlignment.ToString() ?? "—")</span>
-                            </span>
-                            <span class="pick__meta">Pop @pick.Overness.ToString("F0")<br />Cha @pick.Charisma.ToString("F1")</span>
-                        </button>
-                    }
-                </div>
-            </div>
         }
-        @if (MembersB.Count() == sideSize)
+    </div>
+
+    @* Standing teams and team formation, once a side is complete. *@
+    @if (IsTeamMatch)
+    {
+        @foreach (var side in TeamPanels())
         {
             <div class="panel">
                 <div class="panel__title">
-                    Side B
-                    @if (ExistingTeamB is { } known) { <span class="badge badge--gold">@known.Name</span> }
+                    @side.Title
+                    @if (side.Known is { } known) { <span class="badge badge--gold">@known.Name</span> }
                 </div>
-                @if (ExistingTeamB is { } teamB)
+                @if (side.Known is { } team)
                 {
                     <div class="notice">
-                        <strong>@teamB.Name</strong> — @teamB.ChemistryLabel.ToLowerInvariant(),
-                        @teamB.MatchesTogether match@(teamB.MatchesTogether == 1 ? "" : "es") together
-                        over @teamB.TenureLabel(Today). Chemistry makes their tandem offence land
+                        <strong>@team.Name</strong> — @team.ChemistryLabel.ToLowerInvariant(),
+                        @team.MatchesTogether match@(team.MatchesTogether == 1 ? "" : "es") together
+                        over @team.TenureLabel(Today). Chemistry makes their tandem offence land
                         and lets the strongest of them carry the rest.
                     </div>
                 }
                 else
                 {
                     <label class="check">
-                        <input type="checkbox" @bind="formTeamB" />
+                        <input type="checkbox" checked="@side.Form"
+                               @onchange="e => SetForm(side.IsA, (bool?)e.Value ?? false)" />
                         <span>Make them a standing team</span>
                     </label>
-                    @if (formTeamB)
+                    @if (side.Form)
                     {
                         <div class="field">
                             <span class="field__label">Team name</span>
-                            <input class="input" @bind="teamNameB" maxlength="48" placeholder="@SideBName" />
+                            @if (side.IsA)
+                            {
+                                <input class="input" @bind="teamNameA" maxlength="48" placeholder="@SideAName" />
+                            }
+                            else
+                            {
+                                <input class="input" @bind="teamNameB" maxlength="48" placeholder="@SideBName" />
+                            }
                         </div>
                         <div class="notice">
                             A team starts with no chemistry and builds it by working together.
@@ -274,6 +183,123 @@
             </div>
         }
     }
+}
+
+@* One slot in the lineup: a 76px button that either invites a pick or reports one. *@
+@{
+    RenderFragment Slot(SlotRef slot, string label, Wrestler? held) =>
+    @<button class="slot @(held is null ? "is-empty" : "is-filled")"
+             @onclick="() => openSlot = slot">
+        <span class="label slot__label">@label</span>
+        @if (held is { } w)
+        {
+            <span class="slot__name">@w.RingName</span>
+            <span class="slot__meta">
+                @w.CardPosition.Label() · @w.OvernessDisplay
+                <Trend Momentum="@w.Momentum" ShowLabel="false" />
+                @if (State.IsCrossover(w))
+                {
+                    <span class="badge badge--heel">crossover −@BrandIntegrity.CostOf(w).ToString("F1")</span>
+                }
+            </span>
+        }
+        else
+        {
+            <span class="slot__hint">Tap to pick</span>
+        }
+    </button>;
+}
+
+@* The beat detail sheet. Chips rather than selects — three native <select>s in a row was
+   the single worst thing on a phone in this app.
+
+   Guarded on the step for the same reason the roster picker is, and the reason is that
+   review found this one still leaking after the picker was fixed. `Next()` and `Back()`
+   cleared `openSlot` and never `editing`, and this sheet rendered outside every step guard
+   — so focusing `← Back` behind the scrim and pressing Enter left the sheet on screen at
+   step 4, and choosing "Build from scratch" there regenerated `beats` underneath it. The
+   sheet was then editing an orphaned MatchBeat: chip taps mutated an object no longer in
+   the list and were silently discarded, and "Remove this beat" did nothing. Losing an edit
+   is milder than writing into the wrong feud, but it is the same defect, and the fix had
+   been applied to one of the two sheets. *@
+@if (step == BeatsStep && editing is { } edit)
+{
+    <div class="sheet sheet--short" role="dialog" aria-modal="true" aria-label="Edit beat">
+        <div class="sheet__head">
+            <div class="sheet__title">
+                <span class="label">@BeatTypeName(edit.Type)</span>
+                <span class="badge">@edit.DurationMinutes min</span>
+            </div>
+            <button class="btn btn--icon btn--ghost" @onclick="CloseBeatSheet" aria-label="Close">✕</button>
+        </div>
+        <div class="sheet__body sheet__body--pad">
+            @if (BeatLibrary.All.FirstOrDefault(t => t.Type == edit.Type)?.BookerTip is { } tip
+                 && !string.IsNullOrWhiteSpace(tip))
+            {
+                <div class="notice notice--advice">ⓘ @tip</div>
+            }
+
+            <div class="field mt">
+                <span class="field__label">Who is on top</span>
+                <div class="chips">
+                    @foreach (var v in Enum.GetValues<BeatControl>())
+                    {
+                        <button class="chip @(edit.Control == v ? "is-active" : "")"
+                                @onclick="() => { edit.Control = v; }">@ControlLabel(v)</button>
+                    }
+                </div>
+            </div>
+
+            <div class="field mt">
+                <span class="field__label">Intensity</span>
+                <div class="chips">
+                    @foreach (var v in Enum.GetValues<BeatIntensity>())
+                    {
+                        <button class="chip @(edit.Intensity == v ? "is-active" : "")"
+                                @onclick="() => { edit.Intensity = v; }">@v</button>
+                    }
+                </div>
+            </div>
+
+            <div class="field mt">
+                <span class="field__label">Length</span>
+                <div class="chips">
+                    @foreach (var v in Enum.GetValues<BeatDuration>())
+                    {
+                        <button class="chip @(edit.Duration == v ? "is-active" : "")"
+                                @onclick="() => { edit.Duration = v; }">@v</button>
+                    }
+                </div>
+            </div>
+
+            <div class="row mt">
+                <button class="btn btn--danger" disabled="@(!CanRemove(edit))"
+                        @onclick="async () => { beats.Remove(edit); await CloseBeatSheet(); }">Remove this beat</button>
+                <span class="spacer"></span>
+                <button class="btn btn--primary" @onclick="CloseBeatSheet">Done</button>
+            </div>
+        </div>
+    </div>
+    <div class="sheet__scrim" @onclick="CloseBeatSheet"></div>
+}
+
+@* The picker itself, rendered once for whichever slot is open.
+   Inside the step-0 guard, deliberately. It used to render outside it, and nothing cleared
+   `openSlot` on navigation — so a keyboard user could Tab to `Next →` *behind the scrim*
+   (there is no focus trap), advance to the Feud step with the roster sheet still on screen,
+   and swap a corner from it. `Next()` caches `existingFeud` at step 0 only, so the builder
+   then offered "Roman Reigns and Gunther have history you have booked — Hot, 30 heat, 2
+   matches", which is Cody Rhodes's feud, and confirming it would have written heat into the
+   wrong rivalry and unlocked feud-gated beats nobody earned. *@
+@if (step == 0 && openSlot is { } slot)
+{
+    <RosterPicker Title="@SlotTitle(slot)"
+                  Current="@SlotHolder(slot)"
+                  UsedAs="@BookedAs"
+                  Against="@OpposingSide(slot)"
+                  Picked="@(w => FillSlot(slot, w))"
+                  Cleared="@(() => { Assign(slot, null); openSlot = null; })"
+                  Cancelled="@(() => openSlot = null)" />
 }
 
 @* ── 2. Match type ────────────────────────────────────────────────────── *@
@@ -352,7 +378,10 @@
                             }
                         </span>
                     </span>
-                    <span class="pick__meta">Prestige @t.Prestige.ToString("F0")<br />+@t.StakesBonus.ToString("F0") crowd</span>
+                    @* PrestigeLabel — the string that says "genuinely prestigious" — existed,
+                       and was used in the tip *below* this list rather than on the option you
+                       are choosing between. "Prestige 68" is not a consequence. *@
+                    <span class="pick__meta">@t.PrestigeLabel<br />+@t.StakesBonus.ToString("F0") crowd at the bell</span>
                 </button>
             }
         </div>
@@ -375,15 +404,6 @@
 {
     <div class="panel">
         <div class="panel__title">Feud</div>
-
-        @if (PairingHistory is { MatchCount: > 0 } history)
-        {
-            <div class="notice @(PairingFamiliarity < 0.8 ? "notice--warn" : "notice--info")">
-                <strong>Meeting @NextMeeting.ToString("F1") — @((int)Math.Round(PairingFamiliarity * 100))% of what the first one drew.</strong>
-                @a!.RingName and @b!.RingName have wrestled @history.MatchCount time@(history.MatchCount == 1 ? "" : "s").
-                @FreshnessAdvice
-            </div>
-        }
 
         @if (existingFeud is not null && existingFeud.Intensity > FeudIntensity.None)
         {
@@ -550,20 +570,20 @@
 }
 
 @* ── 6. Beat editor ───────────────────────────────────────────────────── *@
-@if (step == 5)
+@if (step == BeatsStep)
 {
     <div class="panel">
         <div class="versus">
             <div class="versus__side">
                 <div class="versus__corner">@(IsTeamMatch ? "Side A" : "Corner A")</div>
                 <div class="versus__name">@SideAName</div>
-                <div class="versus__meta">Pop @a.Overness.ToString("F0") · Cha @a.Charisma.ToString("F1")</div>
+                <div class="versus__meta">@a.CardPosition.Label() · @a.OvernessDisplay</div>
             </div>
             <div class="versus__vs">VS</div>
             <div class="versus__side">
                 <div class="versus__corner">@(IsTeamMatch ? "Side B" : "Corner B")</div>
                 <div class="versus__name">@SideBName</div>
-                <div class="versus__meta">Pop @b.Overness.ToString("F0") · Cha @b.Charisma.ToString("F1")</div>
+                <div class="versus__meta">@b.CardPosition.Label() · @b.OvernessDisplay</div>
             </div>
         </div>
 
@@ -581,12 +601,27 @@
 
         @if (PairingFamiliarity < 0.99)
         {
-            <div class="notice notice--warn mt">
+            <div class="notice notice--advice mt">
                 <strong>Crowd interest in this pairing: @((int)Math.Round(PairingFamiliarity * 100))%.</strong>
                 The beat sheet is graded as written — the room is what shrinks.
             </div>
         }
     </div>
+
+    @* Above the sheet, not below the library. On a phone these used to render past both
+       and so were off-screen while you were doing the thing that triggered them. *@
+    @if (errors.Count > 0)
+    {
+        <div class="notice notice--error mb">
+            <strong>This plan will not run:</strong>
+            <ul>@foreach (var e in errors) { <li>@e</li> }</ul>
+        </div>
+    }
+
+    @if (HotTagWarning() is { } hotTagAdvice)
+    {
+        <div class="notice notice--advice mb">@hotTagAdvice</div>
+    }
 
     <div class="panel">
         <div class="panel__title">
@@ -595,52 +630,40 @@
             <span class="small muted">~@RuntimeMinutes min · @beats.Count beats</span>
         </div>
 
-        @foreach (var beat in beats)
+        @* One row, one tap target.
+           Below 640px each row used to become a stacked card carrying three full-width
+           native selects plus three icon buttons — about 200px a beat, so a seven-beat
+           Technical Showcase was ~1,400px before you added anything, and each of the three
+           commonest edits opened a full-screen wheel picker on iOS. The row is now a
+           summary; the edits live in a sheet with chips. *@
+        @for (int index = 0; index < beats.Count; index++)
         {
-            var i = beats.IndexOf(beat);
-            <div class="editor-row @(beat.IsFinish ? "is-finish" : beat.IsOpening ? "is-opening" : "")">
-                <div class="editor-row__n">@(i + 1)</div>
-                <div>
-                    <div class="editor-row__name">@BeatTypeName(beat.Type)</div>
-                    <div class="editor-row__sub">@beat.Intensity · @beat.Duration · @beat.DurationMinutes min</div>
-                </div>
-                <div class="editor-row__tools">
-                    <select class="inline-select" value="@beat.Control"
-                            @onchange="e => SetControl(beat, e.Value?.ToString())">
-                        <option value="@BeatControl.WrestlerA">A — @SideAName</option>
-                        <option value="@BeatControl.WrestlerB">B — @SideBName</option>
-                        <option value="@BeatControl.Even">Even</option>
-                        <option value="@BeatControl.Contested">Contested</option>
-                    </select>
+            var i = index;
+            var beat = beats[i];
 
-                    <select class="inline-select" value="@beat.Intensity"
-                            @onchange="e => SetIntensity(beat, e.Value?.ToString())">
-                        @foreach (var v in Enum.GetValues<BeatIntensity>())
-                        {
-                            <option value="@v">@v</option>
-                        }
-                    </select>
+            @* A place to insert, rather than "add at the end and press ↑ six times". *@
+            <button class="beat-gap" title="Insert a beat here" @onclick="() => OpenLibraryAt(i)">+</button>
 
-                    <select class="inline-select" value="@beat.Duration"
-                            @onchange="e => SetDuration(beat, e.Value?.ToString())">
-                        @foreach (var v in Enum.GetValues<BeatDuration>())
-                        {
-                            <option value="@v">@v</option>
-                        }
-                    </select>
-
+            <div class="beat-row @(beat.IsFinish ? "is-finish" : beat.IsOpening ? "is-opening" : "")">
+                <div class="beat-row__n">@(i + 1)</div>
+                <button class="beat-row__body" @onclick="() => OpenBeatSheet(beat)">
+                    <span class="beat-row__name">@BeatTypeName(beat.Type)</span>
+                    <span class="beat-row__sub">
+                        @ControlLabel(beat.Control) · @beat.Intensity · @beat.Duration · @beat.DurationMinutes min
+                    </span>
+                </button>
+                <div class="beat-row__move">
                     <button class="btn btn--icon btn--ghost" disabled="@(i == 0)"
                             title="Move up" @onclick="() => Move(i, -1)">↑</button>
                     <button class="btn btn--icon btn--ghost" disabled="@(i == beats.Count - 1)"
                             title="Move down" @onclick="() => Move(i, 1)">↓</button>
-                    <button class="btn btn--icon btn--danger" disabled="@(!CanRemove(beat))"
-                            title="Remove" @onclick="() => Remove(beat)">✕</button>
                 </div>
             </div>
         }
+        <button class="beat-gap" title="Add a beat at the end" @onclick="() => OpenLibraryAt(beats.Count)">+</button>
 
         <div class="row mt">
-            <button class="btn" @onclick="() => showAddBeat = !showAddBeat">
+            <button class="btn" @onclick="ToggleLibrary">
                 @(showAddBeat ? "Close beat library" : "+ Add a beat")
             </button>
         </div>
@@ -648,11 +671,32 @@
         @if (showAddBeat)
         {
             <div class="panel panel--flat mt">
+                @* Gated beats are hidden rather than greyed. In a singles match the whole
+                   Tag category — eleven of the library's forty-four — rendered disabled at
+                   45% opacity: a quarter of the list as scroll-tax you can never use.
+                   GateFor already knows which; it just showed them anyway. *@
+                @{ var blocked = BeatLibrary.All.Count(x => GateFor(x) is not null); }
+                @if (blocked > 0)
+                {
+                    <label class="check">
+                        <input type="checkbox" @bind="showGatedBeats" />
+                        <span>Show @blocked beat@(blocked == 1 ? "" : "s") this match cannot use</span>
+                    </label>
+                }
+                @if (justAdded is { } added)
+                {
+                    <div class="notice notice--info">Added <strong>@added</strong>. Keep going — the library stays open.</div>
+                }
                 @foreach (var category in BeatLibrary.Categories)
                 {
+                    var offered = BeatLibrary.ByCategory(category)
+                                             .Where(x => showGatedBeats || GateFor(x) is null)
+                                             .ToList();
+                    if (offered.Count == 0) { continue; }
+
                     <div class="group-label">@category</div>
                     <div class="picks">
-                        @foreach (var t in BeatLibrary.ByCategory(category))
+                        @foreach (var t in offered)
                         {
                             var gate = GateFor(t);
                             <button class="pick" disabled="@(gate is not null)" @onclick="() => AddBeat(t)">
@@ -676,18 +720,6 @@
         }
     </div>
 
-    @if (HotTagWarning() is { } hotTagAdvice)
-    {
-        <div class="notice notice--warn">@hotTagAdvice</div>
-    }
-
-    @if (errors.Count > 0)
-    {
-        <div class="notice notice--error">
-            <strong>This plan will not run:</strong>
-            <ul>@foreach (var e in errors) { <li>@e</li> }</ul>
-        </div>
-    }
 }
 
 @* ── Wizard controls ──────────────────────────────────────────────────── *@
@@ -696,6 +728,11 @@
 <div class="wizard-bar wizard-bar--sticky">
     <button class="btn btn--ghost" @onclick="Back">@(step == 0 ? "← Cancel" : "← Back")</button>
     <span class="wizard-bar__spacer"></span>
+    @* A greyed button and silence is not an explanation. This says what is missing. *@
+    @if (Blocker() is { } missing)
+    {
+        <span class="small muted wizard-bar__why">@missing</span>
+    }
     @if (step < LastStep)
     {
         <button class="btn btn--primary" disabled="@(!CanAdvance)" @onclick="Next">Next →</button>
@@ -721,6 +758,26 @@
     ];
 
     private static readonly int LastStep = StepLabels[^1].Index;
+
+    /// <summary>The beat sheet's step. Was the literal 5 in the markup and nowhere else.</summary>
+    private const int BeatsStep = 5;
+
+    /// <summary>
+    /// Belt and braces on the scroll lock, and this time it is actually both: `Next()`,
+    /// `Back()` and `Finish()` are the three ways off this screen, and a navigation that
+    /// bypasses all three still cannot leave the page stuck.
+    ///
+    /// Unlike `RosterPicker` this component is a plain `ComponentBase` with no
+    /// `GameState.Changed` subscription, so there is no sync `Dispose()` to chain to — the
+    /// only thing to release here is the lock.
+    /// </summary>
+    public async ValueTask DisposeAsync() => await CloseBeatSheet();
+
+    private List<(int Index, string Label)> ActiveSteps() =>
+        StepLabels.Where(x => x.Index == step || StepApplies(x.Index)).ToList();
+
+    private static string StepLabelFor(int index) =>
+        StepLabels.FirstOrDefault(x => x.Index == index).Label ?? "";
 
     private int step;
 
@@ -758,6 +815,109 @@
     /// </summary>
     private bool SidesComplete =>
         MembersA.Count() == sideSize && MembersB.Count() == sideSize;
+
+    // ── Slots ────────────────────────────────────────────────────────────
+    //
+    // A slot is a place in the lineup, and the picker sheet is opened against one. This
+    // replaces four inline roster lists with four buttons and one sheet — see the file
+    // comment on RosterPicker for what that was costing.
+
+    private readonly record struct SlotRef(bool IsA, int Partner)
+    {
+        public static SlotRef CornerA => new(true, -1);
+        public static SlotRef CornerB => new(false, -1);
+        public static SlotRef PartnerA(int i) => new(true, i);
+        public static SlotRef PartnerB(int i) => new(false, i);
+        public bool IsCorner => Partner < 0;
+    }
+
+    private SlotRef? openSlot;
+
+    private string SlotTitle(SlotRef slot) =>
+        slot.IsCorner
+            ? (IsTeamMatch ? $"Side {(slot.IsA ? "A" : "B")} — who starts" : $"Corner {(slot.IsA ? "A" : "B")}")
+            : sideSize > 2
+                ? $"{(slot.IsA ? "A" : "B")}'s partner {slot.Partner + 1}"
+                : $"{(slot.IsA ? "A" : "B")}'s partner";
+
+    private Wrestler? SlotHolder(SlotRef slot) =>
+        slot.IsCorner
+            ? (slot.IsA ? a : b)
+            : (slot.IsA ? partnersA : partnersB).ElementAtOrDefault(slot.Partner);
+
+    /// <summary>
+    /// The side this slot is being picked *against*, which is what the picker sorts by.
+    /// Empty while the other side is still empty — there is nothing to have a story with yet.
+    /// </summary>
+    private IReadOnlyList<Wrestler> OpposingSide(SlotRef slot) =>
+        (slot.IsA ? MembersB : MembersA).ToList();
+
+    /// <summary>What a name is already booked as, so the picker can show it rather than hide it.</summary>
+    private string? BookedAs(Wrestler w)
+    {
+        if (a == w) return IsTeamMatch ? "Side A" : "Corner A";
+        if (b == w) return IsTeamMatch ? "Side B" : "Corner B";
+        int i = partnersA.IndexOf(w);
+        if (i >= 0) return sideSize > 2 ? $"A's partner {i + 1}" : "A's partner";
+        i = partnersB.IndexOf(w);
+        if (i >= 0) return sideSize > 2 ? $"B's partner {i + 1}" : "B's partner";
+        return null;
+    }
+
+    /// <summary>
+    /// Puts a name in a slot. Choosing somebody already booked elsewhere *swaps* the two
+    /// rather than silently emptying the other — which is what the old pickers did, with no
+    /// warning and no visual cue that the name had been in use.
+    /// </summary>
+    private void FillSlot(SlotRef slot, Wrestler w)
+    {
+        var displaced = SlotHolder(slot);
+        var vacated   = SlotOf(w);
+
+        Assign(slot, w);
+        if (vacated is { } from && !from.Equals(slot)) Assign(from, displaced);
+
+        openSlot = null;
+    }
+
+    private SlotRef? SlotOf(Wrestler w)
+    {
+        if (a == w) return SlotRef.CornerA;
+        if (b == w) return SlotRef.CornerB;
+        int i = partnersA.IndexOf(w);
+        if (i >= 0) return SlotRef.PartnerA(i);
+        i = partnersB.IndexOf(w);
+        if (i >= 0) return SlotRef.PartnerB(i);
+        return null;
+    }
+
+    private void Assign(SlotRef slot, Wrestler? w)
+    {
+        if (slot.IsCorner)
+        {
+            if (slot.IsA) a = w; else b = w;
+            return;
+        }
+
+        var slots = slot.IsA ? partnersA : partnersB;
+        while (slots.Count <= slot.Partner) slots.Add(null);
+        slots[slot.Partner] = w;
+    }
+
+    private sealed record TeamPanel(bool IsA, string Title, TagTeam? Known, bool Form);
+
+    private IEnumerable<TeamPanel> TeamPanels()
+    {
+        if (MembersA.Count() == sideSize)
+            yield return new TeamPanel(true, "Side A", ExistingTeamA, formTeamA);
+        if (MembersB.Count() == sideSize)
+            yield return new TeamPanel(false, "Side B", ExistingTeamB, formTeamB);
+    }
+
+    private void SetForm(bool isA, bool value)
+    {
+        if (isA) formTeamA = value; else formTeamB = value;
+    }
 
     private IEnumerable<Wrestler> MembersA =>
         new[] { a }.Concat(partnersA.Take(sideSize - 1)).Where(w => w is not null)!;
@@ -807,27 +967,12 @@
             .OrderByDescending(t => t.Prestige)
             .ToList();
 
-    private string rosterQuery = "";
-    private Division? rosterDivision;
 
-    /// <summary>
-    /// Whether the other brands' rosters are on offer. Off by default, because the default
-    /// on a brand show is the brand's own roster — that is what exclusivity means.
-    /// </summary>
-    private bool includeCrossover;
 
-    /// <summary>
-    /// The roster narrowed by the search box, division chips and brand. With thirty
-    /// wrestlers a flat alphabetical wall is unusable on a phone, so the picker filters and
-    /// then groups by card position.
-    /// </summary>
-    private IEnumerable<Wrestler> FilteredRoster() =>
-        State.Roster
-            .Where(w => includeCrossover || !State.IsCrossover(w))
-            .Where(w => rosterDivision is null || w.Division == rosterDivision)
-            .Where(w => string.IsNullOrWhiteSpace(rosterQuery)
-                     || (w.RingName?.Contains(rosterQuery, StringComparison.OrdinalIgnoreCase) ?? false)
-                     || (w.RealName?.Contains(rosterQuery, StringComparison.OrdinalIgnoreCase) ?? false));
+    // includeCrossover and FilteredRoster moved into RosterPicker, which is now the only
+    // place the roster is filtered. The identical query lived here and in SegmentBuilder,
+    // which is why every improvement to selection had to be made in five places and so
+    // never was.
 
     private static string DivisionName(Division d) => d == Division.Womens ? "women's" : "men's";
 
@@ -921,21 +1066,79 @@
     private string structureName = "";
     private List<MatchBeat> beats = new();
     private bool showAddBeat;
+
+    /// <summary>Whether the library also lists beats this match's shape cannot book.</summary>
+    private bool showGatedBeats;
+
+    /// <summary>The beat whose detail sheet is open, if any.</summary>
+    private MatchBeat? editing;
+
+    /// <summary>
+    /// Who has control, short enough to fit.
+    ///
+    /// The old select rendered `A — Ricky Steamboat & Robert Gibson` inside a 190px
+    /// `max-width`, so in a tag match both options could truncate to the same string. The
+    /// side names are shown once above the sheet in `.versus`, which is where they belong.
+    /// </summary>
+    private string ControlLabel(BeatControl control) => control switch
+    {
+        BeatControl.WrestlerA => IsTeamMatch ? "Side A" : (a?.RingName ?? "A"),
+        BeatControl.WrestlerB => IsTeamMatch ? "Side B" : (b?.RingName ?? "B"),
+        BeatControl.Even      => "Even",
+        _                     => "Contested"
+    };
     private List<string> errors = new();
 
     private int RuntimeMinutes => 2 + beats.Sum(x => x.DurationMinutes);
 
-    private bool CanAdvance => step switch
+    private bool CanAdvance => Blocker() is null;
+
+    /// <summary>
+    /// What is stopping Next, in words. The bar used to disable the button and say nothing,
+    /// which on a phone means a greyed control and a page you have to re-read to work out
+    /// what you missed.
+    /// </summary>
+    private string? Blocker() => step switch
     {
-        0 => SidesComplete,
-        4 => beats.Count > 0,
-        _ => true
+        0 when a is null => IsTeamMatch ? "Pick who starts for side A" : "Pick corner A",
+        0 when MembersA.Count() < sideSize
+            => sideSize > 2 ? "Side A needs two partners" : "Pick A's partner",
+        0 when b is null => IsTeamMatch ? "Pick who starts for side B" : "Pick corner B",
+        0 when MembersB.Count() < sideSize
+            => sideSize > 2 ? "Side B needs two partners" : "Pick B's partner",
+        4 when beats.Count == 0 => "A match needs at least one beat",
+        _ => null
+    };
+
+    // ── Which steps exist ────────────────────────────────────────────────
+    //
+    // The championship step is empty for most matches — SelectableTitles() correctly
+    // returns nothing unless a champion is in it — and a step whose entire content is one
+    // "no titles apply" notice and a button you must tap past is not a step, it is a toll.
+    //
+    // Only the title step is skipped. The feud step is *not*, despite what the first version
+    // of this comment said, because declaring a feud by hand is always available and so the
+    // step is never truly empty — but it is close to empty in an exhibition, and that is a
+    // fair thing to revisit.
+
+    private const int TitleStep = 2;
+    private const int FeudStep  = 3;
+
+    private bool StepApplies(int index) => index switch
+    {
+        TitleStep => SelectableTitles().Any(),
+        _         => true
     };
 
     // ── Navigation ───────────────────────────────────────────────────────
 
-    private void Next()
+    private async Task Next()
     {
+        // Navigating away closes both sheets. The render guards make this belt and braces,
+        // and it should be both: a leaked sheet is a leaked *write path*.
+        openSlot = null;
+        await CloseBeatSheet();
+
         if (step == 0)
         {
             existingFeud = PairingHistory;
@@ -952,52 +1155,31 @@
             if (title is not null && !SelectableTitles().Contains(title)) title = null;
         }
 
-        if (step == 3) ResolveFeud();
+        if (step == FeudStep) ResolveFeud();
 
         step++;
+        while (step < LastStep && !StepApplies(step)) step++;
     }
 
     private async Task Back()
     {
+        openSlot = null;
+        await CloseBeatSheet();
+
         if (step == 0)
         {
             await OnCancel.InvokeAsync();
             return;
         }
+
         step--;
+        while (step > 0 && !StepApplies(step)) step--;
     }
 
-    private void PickA(Wrestler w)
-    {
-        a = w;
-        Release(w, exceptSideA: true);
-    }
-
-    private void PickB(Wrestler w)
-    {
-        b = w;
-        Release(w, exceptSideB: true);
-    }
-
-    private void PickPartner(List<Wrestler?> slots, int index, Wrestler w)
-    {
-        while (slots.Count <= index) slots.Add(null);
-        slots[index] = slots[index] == w ? null : w;
-        if (slots[index] is not null) Release(w, exceptSlot: (slots, index));
-    }
-
-    /// <summary>Frees a name from every other slot, so nobody is booked twice.</summary>
-    private void Release(Wrestler w, bool exceptSideA = false, bool exceptSideB = false,
-                         (List<Wrestler?> Slots, int Index)? exceptSlot = null)
-    {
-        if (!exceptSideA && a == w) a = null;
-        if (!exceptSideB && b == w) b = null;
-
-        foreach (var slots in new[] { partnersA, partnersB })
-            for (int i = 0; i < slots.Count; i++)
-                if (slots[i] == w && !(exceptSlot is { } e && ReferenceEquals(e.Slots, slots) && e.Index == i))
-                    slots[i] = null;
-    }
+    // PickA / PickB / PickPartner / Release are gone. Four pickers with four subtly
+    // different exclusion predicates are now one FillSlot, which *swaps* rather than
+    // silently nulling — the old Release cleared the other slot with no warning and no
+    // visual cue that the name had been in use.
 
     /// <summary>
     /// Changing the shape of the match. Clears the structure and beats, because a preset
@@ -1121,25 +1303,37 @@
 
     // ── Beat editing ─────────────────────────────────────────────────────
 
-    private void SetControl(MatchBeat beat, string? value)
+    /// <summary>
+    /// Opening and closing the beat sheet, in one place each.
+    ///
+    /// The lock matters as much as the guard. The picker locks the body while its sheet is
+    /// up; this one never did, so the page scrolled behind an open modal — review measured
+    /// it. And routing every close through here is what stops the next close path someone
+    /// adds from forgetting to release it, which is how the picker's version of this went
+    /// wrong the first time.
+    /// </summary>
+    private async Task OpenBeatSheet(MatchBeat beat)
     {
-        if (Enum.TryParse<BeatControl>(value, out var parsed)) beat.Control = parsed;
+        editing = beat;
+        await JS.InvokeVoidAsync("wrestleSim.lockScroll", true);
     }
 
-    private void SetIntensity(MatchBeat beat, string? value)
+    private async Task CloseBeatSheet()
     {
-        if (Enum.TryParse<BeatIntensity>(value, out var parsed)) beat.Intensity = parsed;
+        if (editing is null) return;
+        editing = null;
+        await JS.InvokeVoidAsync("wrestleSim.lockScroll", false);
     }
 
-    private void SetDuration(MatchBeat beat, string? value)
-    {
-        if (Enum.TryParse<BeatDuration>(value, out var parsed)) beat.Duration = parsed;
-    }
+    // SetControl / SetIntensity / SetDuration are gone with the three <select>s that
+    // needed them — the sheet binds the enums directly.
 
     private bool CanRemove(MatchBeat beat) =>
         !(beat.IsOpening && beats.Count(x => x.IsOpening) <= 1)
         && !(beat.IsFinish && beats.Count(x => x.IsFinish) <= 1);
 
+    // Kept because the beat sheet's Remove button calls beats.Remove directly and this is
+    // the older path; if a third caller ever appears, use this one.
     private void Remove(MatchBeat beat)
     {
         if (CanRemove(beat)) beats.Remove(beat);
@@ -1152,13 +1346,48 @@
         (beats[index], beats[to]) = (beats[to], beats[index]);
     }
 
+    /// <summary>
+    /// Adds a beat, and — deliberately — leaves the library open.
+    ///
+    /// It used to close on every add, which meant building a nine-beat match was seven
+    /// rounds of: add, library slams shut, scroll down past a now-longer sheet, find
+    /// "+ Add a beat", open, scroll from the top of forty-four templates again. Nobody
+    /// adds one beat.
+    /// </summary>
     private void AddBeat(BeatTemplate template)
     {
-        // Insert before the finish so the finish stays last.
-        int at = beats.FindLastIndex(x => x.IsFinish);
+        // Insert before the finish so the finish stays last — unless the player opened the
+        // library from a gap in the sheet, in which case they said where.
+        int at = insertAt ?? beats.FindLastIndex(x => x.IsFinish);
         if (at < 0) at = beats.Count;
+        at = Math.Clamp(at, 0, beats.Count);
+
         beats.Insert(at, template.ToMatchBeat(BeatControl.WrestlerA));
-        showAddBeat = false;
+        justAdded = template.Name;
+
+        // An explicit insertion point is used once and then released, so the next add goes
+        // back to the sensible default rather than stacking everything at one spot.
+        if (insertAt is { } used) insertAt = used + 1;
+    }
+
+    /// <summary>Where the next beat goes, when the player opened the library from a gap.</summary>
+    private int? insertAt;
+
+    /// <summary>The last template added, so the row can acknowledge it without closing.</summary>
+    private string? justAdded;
+
+    private void OpenLibraryAt(int index)
+    {
+        insertAt    = index;
+        showAddBeat = true;
+        justAdded   = null;
+    }
+
+    private void ToggleLibrary()
+    {
+        showAddBeat = !showAddBeat;
+        insertAt    = null;
+        justAdded   = null;
     }
 
     /// <summary>
@@ -1193,6 +1422,15 @@
 
     private async Task Finish()
     {
+        // Releasing the scroll lock before the component goes away. `Finish()` is the one
+        // exit from the last step that does not go through `Next()` or `Back()`, and the
+        // last step *is* the beats step — so confirming a booking with the beat sheet open
+        // tore this component down with `body { overflow: hidden }` still set and left the
+        // whole app unscrollable until a reload. Which is F1 again, re-created by the fix
+        // for it: the comment claiming every close path routes through `CloseBeatSheet()`
+        // was falsified by a path a hundred lines below it in this same file.
+        await CloseBeatSheet();
+
         var sideA = MatchSide.Of(MembersA.ToArray());
         var sideB = MatchSide.Of(MembersB.ToArray());
 

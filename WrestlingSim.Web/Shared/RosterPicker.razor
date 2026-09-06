@@ -1,0 +1,319 @@
+@*
+    One roster picker, used everywhere a *slot* is filled.
+
+    Not yet everywhere a name is chosen: SegmentBuilder still renders its own inline lists,
+    because a segment cast is a multi-select rather than a set of slots and the two want
+    different shapes. Five places became two, not one — worth saying, because the first
+    version of this comment claimed one.
+
+    Before this, the match builder rendered the roster four separate times, inline and
+    simultaneously — corner A, A's partners, corner B, B's partners — with no way to
+    collapse a list once it had been used. Picking A did not shrink A's list; it added
+    another list below it. A UX review measured step 1 of a tag booking at roughly 116
+    pick cards, about 12,000px, seventeen phone screens; at three a side and a seventy-name
+    roster it is nearer thirty thousand. And because every improvement to selection had to
+    be made in four places (five, with the segment builder), none of them were ever made:
+    no keyboard, no recency, no relevance, and a single shared search box so that typing to
+    find B's partner re-filtered corner A's list and reflowed the page underneath you.
+
+    So: a sheet, opened from a slot, closed on choose. One list at a time.
+
+    Two rules that are the point rather than decoration:
+
+      • **Rows carry the consequence, not the stats.** A row says "Upper card · 4th meeting,
+        61% of what the first drew", not "Pop 78 · Cha 3.4". The game already computes all
+        of that and showed it three wizard steps later, after the pairing was made and the
+        sunk cost of going back was 116 cards of scrolling.
+
+      • **Names already booked stay visible.** Hiding them is what forces the re-scroll, and
+        it hides the mistake. They are marked, and tapping one swaps the two slots.
+*@
+@inherits StateComponent
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<div class="sheet" role="dialog" aria-modal="true" aria-label="@Title"
+     @onkeydown="OnKey" @onkeydown:preventDefault="@SwallowsKey" tabindex="-1" @ref="sheet">
+    <div class="sheet__head">
+        <div class="sheet__title">
+            <span class="label">@Title</span>
+            @if (Current is { } filled) { <span class="badge badge--gold">@filled.RingName</span> }
+        </div>
+        @if (Current is not null)
+        {
+            <button class="btn btn--ghost btn--sm" @onclick="Clear">Clear</button>
+        }
+        <button class="btn btn--icon btn--ghost" @onclick="Cancel" aria-label="Close">✕</button>
+    </div>
+
+    @{
+        // Ranked once per render and shared by the placeholder count, the keyboard cursor
+        // and the list. It used to be called twice — the placeholder ran the full ranking
+        // again just to say how many names it produced.
+        var rows  = Rows();
+        var bands = rows.GroupBy(r => BookingSuggestions.Heading(r.Band, r.Wrestler)).ToList();
+        int emitted = -1;
+    }
+
+    <div class="sheet__filters">
+        <CastFilter Query="@query" QueryChanged="@OnQuery"
+                    Division="@division" DivisionChanged="@(v => { division = v; cursor = 0; })"
+                    HomeBrand="@State.BookingBrand"
+                    IncludeCrossover="@includeCrossover"
+                    IncludeCrossoverChanged="@(v => { includeCrossover = v; cursor = 0; })"
+                    Placeholder="@($"Search {rows.Count} names…")" />
+    </div>
+
+    <div class="sheet__body">
+        @if (bands.Count == 0)
+        {
+            <div class="empty">Nobody matches that search.</div>
+        }
+        else
+        {
+            @* `index` counts through the rendered order, not through the ranked list.
+               It used to be `rows.IndexOf(row)` against the flat ranking while the DOM was
+               built from a `GroupBy` — two orders that agree only while the ranking already
+               arrives grouped. It stopped arriving grouped, and the cursor pointed 23 rows
+               away from the highlight: arrow keys scrolled to one name and Enter booked
+               another, off screen. Counting the rows as they are emitted cannot desync,
+               whatever a future ranking does. *@
+            @foreach (var band in bands)
+            {
+                <div class="group-label">@band.Key</div>
+                @foreach (var row in band)
+                {
+                    var w = row.Wrestler;
+
+                    // `index` must be a *per-iteration* local. The previous version
+                    // incremented one method-scope variable declared outside both loops, and
+                    // every row's `@onfocus` lambda closed over that one variable — so all
+                    // 76 handlers read the value it held after rendering finished, which is
+                    // the last row. Six Tab presses put focus on row 1 and the gold highlight
+                    // on row 75, and Enter booked an enhancement talent seventy-five rows
+                    // away. That is the exact invariant the comment below says this exists to
+                    // protect, broken by the fix for the previous version of it.
+                    var index = ++emitted;
+                    @* The cursor follows focus rather than the mouse. It used to be an
+                       integer that `@onmouseover` also wrote, so the gold highlight and the
+                       DOM focus ring were two independent things: Tab to one row, hover
+                       another, press Enter, and you booked the one you were not looking at.
+                       On a laptop the mouse resting anywhere over the list silently
+                       overrode arrow-key navigation. Hover no longer moves it; clicking
+                       still books whatever you clicked. *@
+                    <button class="prow @(index == cursor ? "is-cursor" : "") @(row.BookedAs is null ? "" : "is-used")"
+                            @onclick="() => Choose(w)"
+                            @onfocus="() => cursor = index">
+                        <span class="prow__name">
+                            @w.RingName
+                            @if (row.BookedAs is { } role) { <span class="badge badge--dim">@role</span> }
+                            @if (State.IsCrossover(w))
+                            {
+                                <span class="badge badge--heel">crossover −@BrandIntegrity.CostOf(w).ToString("F1")</span>
+                            }
+                        </span>
+                        <span class="prow__why">@row.Reason</span>
+                        <span class="prow__pop tabnum">@w.OvernessDisplay</span>
+                        <Trend Momentum="@w.Momentum" ShowLabel="false" />
+                    </button>
+                }
+            }
+        }
+    </div>
+</div>
+<div class="sheet__scrim" @onclick="Cancel"></div>
+
+@code {
+    /// <summary>What this slot is, for the sheet's heading. "Corner A", "A's partner 2".</summary>
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+
+    /// <summary>Whoever is in the slot now, so the sheet can show it and offer to clear it.</summary>
+    [Parameter] public Wrestler? Current { get; set; }
+
+    /// <summary>
+    /// Names already booked into this match, and what they were booked as. Kept visible and
+    /// labelled rather than filtered out — see the file comment.
+    /// </summary>
+    [Parameter] public Func<Wrestler, string?> UsedAs { get; set; } = _ => null;
+
+    /// <summary>
+    /// The other side of the match, when it is known. Drives the whole relevance sort: who
+    /// has heat with these people, and who the crowd is sick of watching them fight.
+    /// </summary>
+    [Parameter] public IReadOnlyList<Wrestler> Against { get; set; } = [];
+
+    [Parameter] public EventCallback<Wrestler> Picked { get; set; }
+    [Parameter] public EventCallback Cancelled { get; set; }
+
+    /// <summary>Empties the slot. The old partner pickers toggled off on a second tap.</summary>
+    [Parameter] public EventCallback Cleared { get; set; }
+
+    private string query = "";
+    private Division? division;
+    private bool includeCrossover;
+    private int cursor;
+
+    private ElementReference sheet;
+    private bool focused;
+
+    /// <summary>
+    /// Focus moves into the sheet as soon as it opens.
+    ///
+    /// Without this, `document.activeElement` stayed on the slot button *outside* the
+    /// dialog, so Escape did nothing until the user Tabbed in — and that took four Tabs
+    /// through background controls, because the sheet is last in DOM order. The README
+    /// documents "Escape closes"; it did not, from the state anybody is actually in.
+    /// </summary>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !focused)
+        {
+            focused = true;
+            await JS.InvokeVoidAsync("wrestleSim.lockScroll", true);
+            await sheet.FocusAsync();
+        }
+        else if (moveTo is { } index)
+        {
+            moveTo = null;
+            // Scroll the cursor row into view. Focus stays on the sheet, which owns the key
+            // handling — moving DOM focus per row would fight the sheet's own keydown.
+            await JS.InvokeVoidAsync("wrestleSim.revealRow", sheet, index);
+        }
+    }
+
+    private int? moveTo;
+
+    /// <summary>
+    /// Whether this key is ours. The arrows scrolled the page *behind* the modal — measured
+    /// at 0 → 531px while the cursor walked off the bottom of the list — because nothing
+    /// called preventDefault.
+    /// </summary>
+    private bool SwallowsKey => swallow;
+    private bool swallow;
+
+    private sealed record Row(Wrestler Wrestler, string Section, string Why, string? UsedAs, int Rank);
+
+    private async Task Cancel()   { await Release(); await Cancelled.InvokeAsync(); }
+    private async Task Clear()    { await Release(); await Cleared.InvokeAsync(); }
+    private async Task Choose(Wrestler w) { await Release(); await Picked.InvokeAsync(w); }
+
+    /// <summary>Give the page back its scrollbar. Called on every way out of the sheet.</summary>
+    private async Task Release()
+    {
+        if (!focused) return;
+        focused = false;
+        await JS.InvokeVoidAsync("wrestleSim.lockScroll", false);
+    }
+
+    /// <summary>
+    /// And on disposal, so a sheet torn down by a navigation — which is how F1 got out —
+    /// cannot leave the page permanently unscrollable.
+    ///
+    /// `Dispose()` has to be called by hand. When a component implements both interfaces
+    /// Blazor runs **only** the async one, and the base `StateComponent.Dispose()` is the
+    /// single place that unsubscribes from `GameState.Changed`. Adding `IAsyncDisposable`
+    /// here therefore silently stopped the base cleanup: review measured the subscriber
+    /// count climbing 2 → 9 across eight picker opens, each dead component still being
+    /// notified of every state change and still holding its captured graph alive.
+    /// </summary>
+    public async ValueTask DisposeAsync()
+    {
+        await Release();
+        Dispose();
+    }
+
+    private void OnQuery(string v) { query = v; cursor = 0; }
+
+    /// <summary>
+    /// Arrow keys move the highlight, Enter takes it, Escape closes. Ten lines, and the app
+    /// had none of it anywhere — a grep for `onkeydown` across every screen returned nothing.
+    /// </summary>
+    private async Task OnKey(KeyboardEventArgs e)
+    {
+        // The same order the list renders in — see Rows().
+        var rows = Rows();
+        swallow = e.Key is "ArrowDown" or "ArrowUp";
+
+        switch (e.Key)
+        {
+            // Moving the cursor moves *focus*, which scrolls the row into view for free and
+            // keeps the highlight and the focus ring as one thing rather than two.
+            case "ArrowDown":
+                moveTo = Math.Min(cursor + 1, Math.Max(0, rows.Count - 1));
+                cursor = moveTo.Value;
+                break;
+
+            case "ArrowUp":
+                moveTo = Math.Max(cursor - 1, 0);
+                cursor = moveTo.Value;
+                break;
+
+            case "Enter":
+                if (cursor < rows.Count) await Choose(rows[cursor].Wrestler);
+                break;
+
+            case "Escape":
+                await Cancel();
+                break;
+        }
+    }
+
+    private DateOnly? Today => State.Career?.CurrentDate;
+
+    /// <summary>
+    /// The pool, ranked, **in the order the list is rendered**.
+    ///
+    /// The rows are grouped by band heading for display, so the grouped order is the order a
+    /// user sees — and it is now the only order this component has. Two rounds of review
+    /// went on this: first the cursor indexed the flat ranking while the DOM came from a
+    /// `GroupBy`, and when that was fixed by counting rows as they were emitted, `OnKey`'s
+    /// Enter was still resolving `rows[cursor]` against the flat list. The desync moved from
+    /// (scroll vs highlight) to (highlight vs Enter), which is worse — the highlighted row
+    /// scrolls into view correctly and Enter books something else, with no visual cue at all.
+    ///
+    /// Flattening the grouping here removes the second order rather than keeping the two in
+    /// step, so there is nothing left to desync. The razor still groups, but grouping an
+    /// already-grouped list preserves it.
+    /// </summary>
+    private IReadOnlyList<BookingSuggestions.Suggestion> Rows() =>
+        Ranked().GroupBy(r => BookingSuggestions.Heading(r.Band, r.Wrestler))
+                .SelectMany(g => g)
+                .ToList();
+
+    private IReadOnlyList<BookingSuggestions.Suggestion> Ranked() =>
+        BookingSuggestions.Rank(
+            State.Roster
+                 .Where(w => includeCrossover || !State.IsCrossover(w))
+                 .Where(w => division is null || w.Division == division)
+                 .Where(w => Matches(w, query)),
+            Against, State.FeudBook, UsedAs, StandingPartnerOf, RecentlyBooked(), Today);
+
+    private static bool Matches(Wrestler w, string q) =>
+        string.IsNullOrWhiteSpace(q)
+        || (w.RingName?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false)
+        || (w.RealName?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false);
+
+    private Wrestler? StandingPartnerOf(Wrestler w) =>
+        State.Career?.Teams.FirstOrDefault(t => t.IsActive && t.Contains(w))
+             ?.Members.FirstOrDefault(m => m != w);
+
+    private HashSet<Wrestler>? _recent;
+
+    /// <summary>Who was on the last card. Cheap, cached for the lifetime of the sheet.</summary>
+    private HashSet<Wrestler> RecentlyBooked()
+    {
+        if (_recent is not null) return _recent;
+
+        _recent = State.Career is { } career
+            ? career.Completed
+                    .OrderByDescending(s => s.Date)
+                    .Take(1)
+                    .SelectMany(s => s.Card)
+                    .OfType<BookedMatch>()
+                    .SelectMany(m => m.Plan.AllParticipants)
+                    .ToHashSet()
+            : [];
+
+        return _recent;
+    }
+}

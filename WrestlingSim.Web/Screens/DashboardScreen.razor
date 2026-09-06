@@ -42,7 +42,7 @@ else
 
     <div class="tiles">
         @* Next show *@
-        <div class="tile" style="cursor:default">
+        <div class="tile tile--static">
             <div class="tile__key">NEXT</div>
             @if (career.NextShow is { } next)
             {
@@ -80,7 +80,7 @@ else
         </div>
 
         @* Time *@
-        <div class="tile" style="cursor:default">
+        <div class="tile tile--static">
             <div class="tile__key">TIME</div>
             <div class="tile__name">@career.CurrentDate.ToString("d MMM yyyy")</div>
             <div class="tile__desc">
@@ -106,7 +106,7 @@ else
         @* The split *@
         @if (career.Brands.Active)
         {
-            <div class="tile" style="cursor:default">
+            <div class="tile tile--static">
                 <div class="tile__key">SPLIT</div>
                 <div class="tile__name">
                     @career.Brands.Integrity.ToString("F0") integrity
@@ -133,7 +133,7 @@ else
         }
 
         @* Roster *@
-        <div class="tile" style="cursor:default">
+        <div class="tile tile--static">
             <div class="tile__key">ROSTER</div>
             <div class="tile__name">@career.Roster.Count under contract</div>
             <div class="tile__desc">

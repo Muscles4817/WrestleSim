@@ -71,7 +71,9 @@ else
                 }
 
                 <div class="row mt">
-                    <button class="btn btn--sm btn--primary" @onclick="() => BookBlowoff(feud)">Book the blowoff →</button>
+                    <button class="btn btn--sm btn--primary" @onclick="() => BookBlowoff(feud)">
+                        @(State.InCareer ? "Put it on the card →" : "Book the blow-off →")
+                    </button>
                     <button class="btn btn--sm btn--ghost" @onclick="() => State.Go(Screen.Segment)">Add another angle</button>
                 </div>
             </div>
@@ -88,7 +90,23 @@ else
 
     protected override void OnInitialized() => feuds = State.FeudBook.All.ToList();
 
-    private void BookBlowoff(Feud feud) => State.Go(Screen.Match);
+    /// <summary>
+    /// This used to be `State.Go(Screen.Match)` from anywhere, which in a career sent the
+    /// player to the *exhibition sandbox* — a match that is not on any card and does not
+    /// count — and dropped the pairing on the way. A button called "book the blowoff" that
+    /// books nothing and forgets who it was about.
+    ///
+    /// It still cannot pre-fill the builder (the card screen owns that state), but it now
+    /// at least lands on the show being booked, which is where a blow-off goes.
+    /// </summary>
+    private void BookBlowoff(Feud feud)
+    {
+        // The next show that has not run is where a blow-off goes. Falling back to the
+        // calendar rather than to BookShow-with-no-show, which renders an empty screen.
+        if (State.Career?.NextShow is { } next) State.OpenShow(next);
+        else if (State.InCareer)                State.Go(Screen.Calendar);
+        else                                    State.Go(Screen.Match);
+    }
 
     /// <summary>
     /// What another match between these two would be worth against the first one —

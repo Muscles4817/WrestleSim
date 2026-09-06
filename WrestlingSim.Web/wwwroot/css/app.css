@@ -429,6 +429,16 @@ a { color: var(--gold); }
   .tile:hover::before { opacity: 1; }
 }
 .tile:focus-visible { outline: none; box-shadow: var(--ring); }
+
+/* A panel that happens to use the tile layout, and is not a button. `.tile` carries a
+   hover lift, a gold left-edge reveal and `cursor: pointer` — the affordance of the
+   landing screen's genuinely clickable tiles — and the dashboard was cancelling only the
+   cursor, inline, four times. Everything else still said "press me". */
+.tile--static { cursor: default; }
+.tile--static::before { content: none; }
+@media (hover: hover) and (pointer: fine) {
+  .tile--static:hover { transform: none; border-color: var(--line); box-shadow: none; }
+}
 .tile__key {
   font-size: 11px; letter-spacing: .2em; text-transform: uppercase;
   color: var(--gold); font-weight: 800; margin-bottom: 10px;
@@ -593,7 +603,10 @@ table.data tr:last-child td { border-bottom: 0; }
 
 /* ── Wizard steps ────────────────────────────────────────────────────────── */
 
-.steps { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: clamp(16px, 2.4vw, 24px); }
+.steps { display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+         margin-bottom: clamp(16px, 2.4vw, 24px); }
+/* Shown only where the pills lose their labels — see the mobile block. */
+.steps__where { display: none; }
 .step {
   display: flex; align-items: center; gap: 8px;
   padding: 6px 12px 6px 8px; border-radius: 999px;
@@ -621,7 +634,9 @@ table.data tr:last-child td { border-bottom: 0; }
   gap: var(--gap); text-align: center;
 }
 .versus__side { min-width: 0; }
-.versus__name { font-size: clamp(15px, 2.6vw, 20px); font-weight: 800; }
+/* Two tag-team names in a 1fr auto 1fr grid will overflow between 641 and 820px
+   without this. */
+.versus__name { font-size: clamp(15px, 2.6vw, 20px); font-weight: 800; overflow-wrap: anywhere; }
 .versus__meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
 .versus__vs { font-size: 12px; font-weight: 800; letter-spacing: .18em; color: var(--gold); padding: 0 6px; }
 .versus__corner { font-size: 10.5px; letter-spacing: .18em; color: var(--faint); font-weight: 800; }
@@ -784,7 +799,17 @@ table.data tr:last-child td { border-bottom: 0; }
     text-align: left;
     font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
   }
-  .editor-row__n::before { content: "Beat "; }
+  /* Unscoped, this prefixed every .editor-row on every phone — so the dashboard's
+     championship list read "BEAT ★", the calendar read "BEAT ▦", the save slots read
+     "BEAT ★", a title lineage read "BEAT 1", "BEAT 2", and the segment builder's action
+     rows read "BEAT" too. `.editor-row` is the app's universal list row and only the beat
+     editor was ever about beats.
+
+     The beat editor has since moved to `.beat-row` entirely, so no element carries this
+     modifier any more. Kept scoped rather than deleted: `.editor-row` still has eight
+     consumers and the day somebody adds a ninth that *is* about beats, this is where the
+     prefix should come from. */
+  .editor-row--beat .editor-row__n::before { content: "Beat "; }
   .editor-row__tools {
     display: grid; grid-template-columns: repeat(3, 1fr);
     gap: 8px; justify-content: stretch;
@@ -807,7 +832,10 @@ table.data tr:last-child td { border-bottom: 0; }
   .steps { gap: 4px; }
   .step { padding: 5px 10px 5px 6px; font-size: 11.5px; }
   .step span:not(.step__n) { display: none; }
-  .step.is-current span:not(.step__n) { display: inline; }
+  /* Not even the current one — the .steps__where line below carries it, in words,
+     once, instead of one pill being wider than the rest. */
+  .step.is-current span:not(.step__n) { display: none; }
+  .steps__where { display: block; width: 100%; margin-top: 2px; }
 
   .panel { padding: 14px; border-radius: var(--r); }
 
@@ -917,3 +945,192 @@ table.data tr:last-child td { border-bottom: 0; }
 .trend.is-steady  { color: var(--muted); }
 .trend.is-cooling { color: #d59a9a; }
 .trend.is-cold    { color: var(--heel); }
+
+/* ── Typography scale ──────────────────────────────────────────────────────
+   app.css had nineteen hard-coded font sizes, ten of them between 10px and
+   14.5px and differing by half a pixel, and fourteen letter-spacings. One
+   visual idea — the small uppercase tracked label — was implemented ten
+   separate times under ten class names: .screen__eyebrow, .tile__key,
+   .panel__title, .group-label, .field__label, .score-hero__label, .pbp__label,
+   .versus__corner, table.data th, .rcard__stat span.
+
+   New work uses these. The ten existing implementations are left where they
+   are rather than migrated in the same pass that rewrites selection — one
+   large change at a time — but there is now one decision to make instead of
+   ten, and .label is what to reach for. */
+:root {
+  --t-xs: 11px;  --t-sm: 12.5px; --t-md: 14px;
+  --t-lg: 16px;  --t-xl: 20px;   --t-2xl: 26px;
+  --track-label: .18em;
+}
+.label {
+  font-size: var(--t-xs); letter-spacing: var(--track-label);
+  text-transform: uppercase; font-weight: 700; color: var(--muted);
+}
+.label--gold { color: var(--gold); }
+.label--dim  { color: var(--gold-dim); }
+
+/* ── The lineup ────────────────────────────────────────────────────────────
+   Replaces four stacked roster walls with four buttons. See RosterPicker. */
+.lineup {
+  display: grid; grid-template-columns: 1fr auto 1fr;
+  gap: var(--gap); align-items: start;
+}
+.lineup__side { display: grid; gap: 8px; }
+.lineup__vs {
+  align-self: center; padding: 0 4px;
+  font-size: var(--t-xs); letter-spacing: var(--track-label);
+  text-transform: uppercase; color: var(--faint); font-weight: 800;
+}
+.slot {
+  display: grid; gap: 3px; width: 100%; min-height: 76px;
+  padding: 11px 13px; text-align: left; cursor: pointer;
+  background: var(--panel-2); border: 1px dashed var(--line);
+  border-radius: var(--r); color: inherit; font: inherit;
+  transition: border-color .14s, background .14s;
+}
+.slot.is-filled {
+  border-style: solid; border-color: rgba(245, 185, 59, .45);
+  background: rgba(245, 185, 59, .07);
+}
+.slot:focus-visible { outline: none; box-shadow: var(--ring); }
+@media (hover: hover) and (pointer: fine) {
+  .slot:hover { border-color: #3a4157; }
+  .slot.is-filled:hover { border-color: var(--gold); }
+}
+.slot__label { color: var(--faint); }
+.slot.is-filled .slot__label { color: var(--gold-dim); }
+.slot__name  { font-size: var(--t-lg); font-weight: 700; line-height: 1.2; }
+.slot__meta  { font-size: var(--t-sm); color: var(--muted);
+               display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.slot__hint  { font-size: var(--t-md); color: var(--faint); }
+
+@media (max-width: 640px) {
+  .lineup { grid-template-columns: 1fr; }
+  .lineup__vs { text-align: center; padding: 2px 0; }
+}
+
+/* ── The picker sheet ──────────────────────────────────────────────────────
+   One list, over the page, instead of four lists in it. */
+.sheet__scrim {
+  position: fixed; inset: 0; z-index: 40;
+  background: rgba(6, 8, 13, .72);
+}
+.sheet {
+  position: fixed; z-index: 41;
+  left: 50%; transform: translateX(-50%);
+  top: max(24px, env(safe-area-inset-top));
+  bottom: max(24px, env(safe-area-inset-bottom));
+  width: min(560px, calc(100vw - 24px));
+  display: grid; grid-template-rows: auto auto 1fr;
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: var(--r-lg); box-shadow: var(--shadow); overflow: hidden;
+}
+.sheet__head {
+  display: flex; align-items: center; gap: var(--gap);
+  padding: 12px var(--pad); border-bottom: 1px solid var(--line);
+}
+/* The close control is the one thing in a modal that must never be a near-miss. */
+.sheet__head .btn--icon { min-width: var(--tap); min-height: var(--tap); }
+.sheet__title { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.sheet__filters { padding: 10px var(--pad); border-bottom: 1px solid var(--line-soft); }
+.sheet__body { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+@media (max-width: 640px) {
+  /* Full-bleed on a phone, and anchored to the bottom so the search box and the
+     first rows are in the thumb zone rather than at the top of the screen. */
+  .sheet {
+    left: 0; right: 0; transform: none; width: auto;
+    top: 8vh; bottom: 0;
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+  }
+}
+
+/* One line per person, ~56px, instead of a 107px card. The old pick cards
+   carried "Pop 78 / Cha 3.4" — two different scales, adjacent, in grey — and
+   the row now carries the consequence instead. */
+.prow {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  grid-template-areas: "name pop trend" "why why why";
+  gap: 2px 10px; width: 100%; min-height: 56px;
+  padding: 9px var(--pad); text-align: left; cursor: pointer;
+  background: none; border: 0; border-bottom: 1px solid var(--line-soft);
+  color: inherit; font: inherit;
+}
+.prow__name  { grid-area: name; font-weight: 700; font-size: 15px;
+               display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.prow__why   { grid-area: why; font-size: var(--t-sm); color: var(--muted); }
+.prow__pop   { grid-area: pop; color: var(--ink-2); align-self: center; }
+.prow .trend { grid-area: trend; align-self: center; }
+.prow.is-cursor { background: rgba(245, 185, 59, .1); box-shadow: inset 2px 0 0 var(--gold); }
+.prow.is-used   { opacity: .62; }
+.prow:focus-visible { outline: none; box-shadow: var(--ring); }
+.tabnum { font-variant-numeric: tabular-nums; }
+
+/* ── Notice hierarchy ──────────────────────────────────────────────────────
+   Twenty-six of the app's notices were notice--warn, doing four different
+   jobs: "this will cost you", "this is unusual but fine", "this pairing is
+   worn out", "this belt is vacant". When more than half the notices are
+   amber, amber stops meaning anything.
+
+   --cost   a price you will pay, with the number in the strong
+   --advice a booking opinion — FreshnessAdvice, BookerTip. Counsel, not alarm.
+   --warn   reserved for this is about to go wrong. */
+.notice--advice {
+  border-color: rgba(122, 162, 247, .34);
+  background: rgba(122, 162, 247, .08);
+  color: #cbd8ff;
+}
+.notice--cost {
+  border-color: rgba(245, 185, 59, .34);
+  background: rgba(245, 185, 59, .07);
+  color: #ffe0a3;
+}
+
+/* ── Beat sheet ────────────────────────────────────────────────────────────
+   A row is a summary and a tap target; the edits are in a sheet. The old row
+   carried three native <select>s and three icon buttons, which below 640px
+   stacked into a ~200px card — a seven-beat match was 1,400px of editor
+   before you added anything, and each of the three commonest edits opened a
+   full-screen wheel picker on iOS. */
+.beat-row {
+  display: grid; grid-template-columns: 28px 1fr auto;
+  align-items: center; gap: 10px; min-height: 64px;
+  padding: 8px 12px; border-radius: var(--r);
+  border: 1px solid var(--line); background: var(--panel-2);
+}
+.beat-row + .beat-row { margin-top: 6px; }
+.beat-row__n {
+  font-size: var(--t-xs); letter-spacing: .12em; color: var(--faint);
+  font-weight: 800; text-align: center;
+}
+.beat-row__body {
+  display: grid; gap: 2px; text-align: left; min-width: 0;
+  background: none; border: 0; color: inherit; font: inherit; cursor: pointer;
+  padding: 6px 0;
+}
+.beat-row__name { font-weight: 700; font-size: 15px; }
+.beat-row__sub  { font-size: var(--t-sm); color: var(--muted); }
+.beat-row__move { display: flex; gap: 4px; }
+.beat-row__body:focus-visible { outline: none; box-shadow: var(--ring); }
+.beat-row.is-opening { border-left: 3px solid var(--gold-dim); }
+.beat-row.is-finish  { border-left: 3px solid var(--gold); }
+
+/* Insert here, rather than "add at the end and press ↑ six times". Quiet until
+   you go looking for it. */
+.beat-gap {
+  display: block; width: 100%; height: 18px; margin: 2px 0;
+  /* Touch gets a real target — see the (hover: none) block below. */
+  background: none; border: 0; color: var(--faint);
+  font-size: 12px; line-height: 1; cursor: pointer; opacity: 0;
+  transition: opacity .12s;
+}
+.beat-gap:focus-visible { opacity: 1; outline: none; box-shadow: var(--ring); }
+@media (hover: hover) and (pointer: fine) { .beat-gap:hover { opacity: 1; } }
+@media (hover: none) { .beat-gap { opacity: .5; height: var(--tap); margin: 0; } }
+
+.sheet--short { top: auto; height: min(80vh, 620px); bottom: max(0px, env(safe-area-inset-bottom)); }
+.sheet__body--pad { padding: var(--pad); }
+
+.mb { margin-bottom: var(--gap); }

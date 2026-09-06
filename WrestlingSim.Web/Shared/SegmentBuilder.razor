@@ -8,6 +8,12 @@
             <span>@label</span>
         </div>
     }
+    @* On a phone the pills collapse to bare numerals, so this line carries where you are.
+       Without it — which is how this shipped for a round — the change made two of the three
+       step bars strictly worse than before it. *@
+    <div class="steps__where small muted">
+        @(step + 1) of @StepLabels.Length · @StepLabels[step].Label
+    </div>
 </div>
 
 @* ── 1. Template ──────────────────────────────────────────────────────── *@
@@ -113,7 +119,7 @@
                                     <span class="badge badge--heel">crossover −@BrandIntegrity.CostOf(w).ToString("F1")</span>
                                 }
                             </span>
-                            <span class="pick__desc">Cha @w.Charisma.ToString("F1") · Psych @(w.Mental?.Psychology ?? 0)</span>
+                            <span class="pick__desc">@w.CharismaLabel · @w.CardPosition.Label()</span>
                         </span>
                     </button>
                 }
@@ -149,7 +155,7 @@
                                             <span class="badge badge--heel">crossover</span>
                                         }
                                     </span>
-                                    <span class="pick__desc">Cha @w.Charisma.ToString("F1") · Tough @(w.Mental?.Toughness ?? 0)</span>
+                                    <span class="pick__desc">@w.CharismaLabel · @w.CardPosition.Label()</span>
                                 </span>
                             </button>
                         }
@@ -502,7 +508,7 @@
         if (t.HistoryTag.HasValue && !segment.HistoryTags.Contains(t.HistoryTag.Value))
             segment.HistoryTags.Add(t.HistoryTag.Value);
 
-        showAddAction = false;
+        // Deliberately left open — see MatchBuilder.AddBeat.
     }
 
     private void SetPerformer(SegmentAction action, string? realName)
