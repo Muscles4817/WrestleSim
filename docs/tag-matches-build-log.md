@@ -304,3 +304,56 @@ which is what the notes say: `Robert def. Bobby — ★★★¾`.
 ### Review — round 3
 
 *(pending)*
+
+---
+
+## Phase 4 — Teams and chemistry
+
+**Goal:** a standing team is a different act from two singles wrestlers on the same side.
+
+### What changed
+
+| File | Change |
+|---|---|
+| `Models/World/TagTeam.cs` | New. Members, tenure, `MatchesTogether`, `LastTeamed`, and `Chemistry` with saturating growth and time-based decay. |
+| `Models/MatchPlan/MatchSide.cs` | `Team` and a derived `Chemistry` — 1.0 for a side of one, 0.0 for a pair with no standing team. |
+| `Engine/MatchEngine.cs` | `ChemistryLift` — chemistry reduces `DragWeight` per side. Chemistry scales `DoubleTeam` and `Miscommunication`. |
+| `Models/World/Career.cs` | `Teams`, `TeamFor(members)`, and per-day chemistry decay on the world clock. |
+| `Persistence/*` | `TagTeamDto`; card items carry `TeamAId`/`TeamBId` so a reloaded side points at the *same* team instance. |
+| `Engine/ShowSimulator.cs` | Records a match against each side's team. |
+| `Tests/TagTeamTests.cs` | New, 13 cases. |
+
+### Chemistry does two opposite jobs
+
+That is the design, and it is worth stating because a single "team quality" number would have
+been the obvious and wrong shape:
+
+1. **It makes tandem offence work.** `DoubleTeam` scales 0.78–1.22 with chemistry — worth
+   about half a skill grade either way. Two good singles wrestlers hit a double team
+   competently; a team that has done it two hundred times hits it in stereo. The commentary
+   forks on this too, so a scratch pairing reads as one.
+2. **It makes the pair read as one act.** Chemistry lowers that side's drag toward its
+   average (`ChemistryLift = 0.7`), so an established team reads much closer to its best
+   member. This is the mechanical form of "the tag division is where you elevate somebody"
+   — [12](wrestling-reference/12-pushes-and-positioning.md) §2.2.1. Measured: a star and a
+   rookie thrown together rate meaningfully below the same two as a real team.
+
+`Miscommunication` scales the *other* way for the same reason — a drilled team colliding is a
+departure and therefore a bigger story; two strangers colliding is Tuesday.
+
+### Decay is on the clock, not the match
+
+`Career.AdvanceOneDay` decays every active team, alongside momentum and title drift. Chemistry
+is a property of the team's history, not of any one match, and a team that stops teaming has
+to stop being a team even if the player never books them again. Sixty days of grace, then a
+just-under-two-year half-life: a reunion five years later is not the act that split up.
+
+### Result
+
+**369 tests passing.** Singles equivalence re-verified — the 48,720-match harness is still
+byte-identical, because a side of one returns its only member outright and never reaches the
+drag term.
+
+### Review — round 4
+
+*(pending)*

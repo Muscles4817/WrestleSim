@@ -56,6 +56,9 @@ namespace WrestlingSim.Persistence
 
         /// <summary>The brand split, or null for a promotion that has never divided.</summary>
         public BrandSplitDto? Brands { get; set; }
+
+        /// <summary>Standing tag teams. Absent in v2 saves; an empty list is correct there.</summary>
+        public List<TagTeamDto> Teams { get; set; } = new();
     }
 
     /// <summary>
@@ -64,6 +67,18 @@ namespace WrestlingSim.Persistence
     /// shares wrestler instances, and writing one by value here would hand the loaded
     /// career a second copy of that person.
     /// </summary>
+    public class TagTeamDto
+    {
+        public string Id { get; set; } = "";
+        public string Name { get; set; } = "";
+        public List<string> Members { get; set; } = new();
+        public string Formed { get; set; } = "";
+        public string? Disbanded { get; set; }
+        public int MatchesTogether { get; set; }
+        public string? LastTeamed { get; set; }
+        public double Chemistry { get; set; }
+    }
+
     public class TitleDto
     {
         public string Id { get; set; } = "";
@@ -227,6 +242,10 @@ namespace WrestlingSim.Persistence
         /// </summary>
         public List<string>? SideA { get; set; }
         public List<string>? SideB { get; set; }
+
+        /// <summary>Standing team on each side, by <see cref="TagTeamDto.Id"/>, if any.</summary>
+        public string? TeamAId { get; set; }
+        public string? TeamBId { get; set; }
 
         /// <summary>Index of the member who takes the opening bell for each side.</summary>
         public int StartingIndexA { get; set; }

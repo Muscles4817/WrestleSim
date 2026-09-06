@@ -55,6 +55,13 @@ namespace WrestlingSim.Models.World
         public BrandSplit Brands { get; set; } = new();
 
         /// <summary>
+        /// Standing tag teams. A pair booked together without a team here is two singles
+        /// wrestlers on the same side, which is a real and different thing — see
+        /// <see cref="TagTeam"/>.
+        /// </summary>
+        public List<TagTeam> Teams { get; set; } = new();
+
+        /// <summary>
         /// How far ahead the calendar is filled in from the definitions. Kept as a
         /// rolling window rather than generating years at once, and topped up whenever
         /// the clock moves.
@@ -63,6 +70,22 @@ namespace WrestlingSim.Models.World
 
         /// <summary>Real-world clock, for the save list. Not world time.</summary>
         public DateTime LastPlayedUtc { get; set; } = DateTime.UtcNow;
+
+        /// <summary>
+        /// The standing team these people are, if they are one. Order-insensitive, and
+        /// only matches a team that is exactly this set — a trio is not the tag team of
+        /// two of its members.
+        /// </summary>
+        public TagTeam? TeamFor(IEnumerable<Wrestler> members)
+        {
+            var set = members.ToList();
+            if (set.Count < 2) return null;
+
+            return Teams.FirstOrDefault(t =>
+                t.IsActive
+                && t.Members.Count == set.Count
+                && set.All(t.Contains));
+        }
 
         // ── Calendar queries ─────────────────────────────────────────────────
 
@@ -159,6 +182,11 @@ namespace WrestlingSim.Models.World
             // rather than only when someone books a match.
             foreach (var title in Titles.Active)
                 TitleEconomy.ApplyDailyDrift(title, CurrentDate);
+
+            // A team that stops teaming stops being a team. Same rule as everything else
+            // in here — the thing you are not maintaining is quietly getting worse.
+            foreach (var team in Teams.Where(t => t.IsActive))
+                team.Decay(CurrentDate);
 
             // Keep the rolling window full, so the calendar never runs dry ahead of you.
             MaterialiseSchedule();

@@ -122,11 +122,27 @@ namespace WrestlingSim.Engine
             public const double DragWeight = 0.5;
 
             /// <summary>
+            /// How much of the drag an established team removes. At full chemistry a team
+            /// reads as one act, so the weaker man barely pulls the side down at all —
+            /// which is the mechanical form of "the tag division is where you elevate
+            /// somebody" (docs/wrestling-reference/12-pushes-and-positioning.md §2.2.1).
+            /// </summary>
+            public const double ChemistryLift = 0.7;
+
+            /// <summary>
+            /// The drag actually applied to a side, after its chemistry. Two strangers get
+            /// the full <see cref="DragWeight"/>; a team that moves as one gets a fraction
+            /// of it and therefore reads much closer to its best member.
+            /// </summary>
+            private static double DragFor(MatchSide side) =>
+                DragWeight * (1.0 - ChemistryLift * Math.Clamp(side.Chemistry, 0, 1));
+
+            /// <summary>
             /// A profile factor for one whole side, weighted toward its strongest member.
             /// For a side of one this is exactly that member's value.
             /// </summary>
             public double SideAvg(MatchSide side, Func<PerformerProfile, double> f) =>
-                TopWeighted(side.Members.Select(m => f(For(m))));
+                TopWeighted(side.Members.Select(m => f(For(m))), DragFor(side));
 
             /// <summary>Both sides on a factor, each side read as a side first.</summary>
             public double Pair(Func<PerformerProfile, double> f) =>
@@ -134,8 +150,8 @@ namespace WrestlingSim.Engine
 
             /// <summary>A raw wrestler stat across both sides, each side read as a side first.</summary>
             public double PairStat(Func<Wrestler, double> f) =>
-                (TopWeighted(Plan.SideA.Members.Select(f))
-                 + TopWeighted(Plan.SideB.Members.Select(f))) / 2.0;
+                (TopWeighted(Plan.SideA.Members.Select(f), DragFor(Plan.SideA))
+                 + TopWeighted(Plan.SideB.Members.Select(f), DragFor(Plan.SideB))) / 2.0;
 
             /// <summary>The two performers actually working, for fields that describe work.</summary>
             public double LegalPair(Func<PerformerProfile, double> f) => (f(A) + f(B)) / 2.0;
@@ -143,13 +159,13 @@ namespace WrestlingSim.Engine
             /// <summary>A raw stat across the two performers actually working.</summary>
             public double LegalPairStat(Func<Wrestler, double> f) => (f(LegalA) + f(LegalB)) / 2.0;
 
-            private static double TopWeighted(IEnumerable<double> values)
+            private static double TopWeighted(IEnumerable<double> values, double drag)
             {
                 var list = values as IList<double> ?? values.ToList();
                 if (list.Count == 1) return list[0];
 
                 double best = list.Max();
-                return best + (list.Average() - best) * DragWeight;
+                return best + (list.Average() - best) * drag;
             }
         }
 
@@ -1401,21 +1417,31 @@ namespace WrestlingSim.Engine
             double combined = ctx.SideAvg(side, p => (p.Workrate + p.Athleticism) / 2.0);
             double weakestLink = side.Members.Min(m => ctx.For(m).Workrate);
 
-            r.CrowdEnergyDelta = Rng(7, 14) * iMod * dMod * ctx.SideAvg(side, p => p.Connection);
+            // The one beat that is genuinely about the pair rather than about either of
+            // them. Two good singles wrestlers hit a double team competently; a team that
+            // has done it two hundred times hits it in stereo. Spans 0.78–1.22, so it is
+            // worth roughly half a skill grade in either direction.
+            double chemistry = 0.78 + 0.44 * Math.Clamp(side.Chemistry, 0, 1);
+
+            r.CrowdEnergyDelta = Rng(7, 14) * iMod * dMod
+                                 * ctx.SideAvg(side, p => p.Connection) * chemistry;
             r.AdvantageDelta   = ControlSign(ctx, control) * Rng(14, 26) * iMod * dMod;
 
             r.TechnicalContribution = 7.0 * (AvgRingSkill(ctx) / 5.0) * iMod * dMod
-                                      * combined
+                                      * combined * chemistry
                                       * PerformerProfile.Blend(weakestLink, 0.35)
                                       * PerformerProfile.Blend(pOther.Selling, 0.45);
             r.StorytellingContribution = 3.5 * iMod * dMod;
 
-            r.Commentary.Add(Pick(
-                $"Beautiful double-team move from {side.Name} — they have done that a thousand times.",
-                $"{side.Name} hit it in perfect stereo! {other.RingName} never had a chance.",
-                $"Textbook tandem offence from {side.Name}. That is what a team looks like.",
-                $"{side.Name} take turns on {other.RingName} — quick tags, seamless work."
-            ));
+            r.Commentary.Add(side.Chemistry >= 0.6
+                ? Pick(
+                    $"Beautiful double-team move from {side.Name} — they have done that a thousand times.",
+                    $"{side.Name} hit it in perfect stereo! {other.RingName} never had a chance.",
+                    $"Textbook tandem offence from {side.Name}. That is what a team looks like.")
+                : Pick(
+                    $"{side.Name} go for a double team — it lands, but it is not pretty.",
+                    $"A double team from {side.Name}. They got there in the end.",
+                    $"{side.Name} try some tandem offence. You can see them thinking about it."));
         }
 
         /// <summary>
@@ -1434,13 +1460,19 @@ namespace WrestlingSim.Engine
             var side = ctx.SideOf(control);
             var pControl = ctx.For(control);
 
+            // A drilled team colliding is a bigger story than two strangers doing it,
+            // because it is a departure. It is also rarer, which is the booker's problem
+            // rather than the engine's — nothing stops it being booked, it just costs the
+            // side less when they were never in sync to begin with.
+            double surprise = 0.75 + 0.50 * Math.Clamp(side.Chemistry, 0, 1);
+
             r.CrowdEnergyDelta = Rng(3, 8) * iMod;
 
-            // Against the side that blundered.
-            r.AdvantageDelta = -ControlSign(ctx, control) * Rng(12, 24) * iMod;
+            // Against the side that blundered, and harder the better drilled they were.
+            r.AdvantageDelta = -ControlSign(ctx, control) * Rng(12, 24) * iMod * surprise;
 
             r.TechnicalContribution = 1.0 * iMod;
-            r.StorytellingContribution = 6.5 * iMod
+            r.StorytellingContribution = 6.5 * iMod * surprise
                                          * PerformerProfile.Blend(pControl.RingPsych, 0.40);
 
             string partner = side.Members.Count > 1

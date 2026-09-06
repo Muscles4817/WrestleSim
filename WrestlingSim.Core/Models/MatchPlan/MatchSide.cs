@@ -19,6 +19,20 @@ namespace WrestlingSim.Models.MatchPlan
         public List<Wrestler> Members { get; init; } = new();
 
         /// <summary>
+        /// The standing team these people are, if they are one. Null for two singles
+        /// wrestlers thrown together, which is a meaningfully different act — see
+        /// <see cref="World.TagTeam"/>.
+        /// </summary>
+        public World.TagTeam? Team { get; set; }
+
+        /// <summary>
+        /// 0–1. How well this side works as a unit. A side of one is trivially in sync
+        /// with itself; an ad-hoc pairing has nothing.
+        /// </summary>
+        public double Chemistry =>
+            Members.Count <= 1 ? 1.0 : Team?.Chemistry ?? 0.0;
+
+        /// <summary>
         /// Index into <see cref="Members"/> of whoever begins the match for this side.
         /// The rest start on the apron.
         /// </summary>

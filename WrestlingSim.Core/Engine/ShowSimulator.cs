@@ -301,6 +301,13 @@ namespace WrestlingSim.Engine
             update.Feud.RecordMatch(showDate);
             showResult.FeudUpdates.Add(update);
 
+            // ── Teams ────────────────────────────────────────────────────────
+            // Chemistry is built out of matches actually worked together, so it is
+            // recorded here rather than when a team is formed. Career.AdvanceOneDay
+            // decays it again for every day they do not.
+            foreach (var side in new[] { match.Plan.SideA, match.Plan.SideB })
+                side.Team?.RecordMatch(showDate);
+
             return engineResult.StarRating * 20.0; // 0–5★ → 0–100
         }
 

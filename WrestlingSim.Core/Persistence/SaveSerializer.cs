@@ -102,6 +102,18 @@ namespace WrestlingSim.Persistence
 
             Brands = ToDto(career.Brands),
 
+            Teams = career.Teams.Select(t => new TagTeamDto
+            {
+                Id              = t.Id,
+                Name            = t.Name,
+                Members         = t.Members.Select(w => w.Id).ToList(),
+                Formed          = Iso(t.Formed),
+                Disbanded       = t.Disbanded is { } d ? Iso(d) : null,
+                MatchesTogether = t.MatchesTogether,
+                LastTeamed      = t.LastTeamed is { } l ? Iso(l) : null,
+                Chemistry       = Math.Round(t.Chemistry, 4)
+            }).ToList(),
+
             Feuds = career.FeudBook.AllIncludingDormant
                 .Select(f => new FeudDto
                 {
@@ -209,6 +221,8 @@ namespace WrestlingSim.Persistence
                 Kind           = CardItemKind.Match,
                 SideA          = m.Plan.SideA.Members.Select(w => w.Id).ToList(),
                 SideB          = m.Plan.SideB.Members.Select(w => w.Id).ToList(),
+                TeamAId        = m.Plan.SideA.Team?.Id,
+                TeamBId        = m.Plan.SideB.Team?.Id,
                 StartingIndexA = m.Plan.SideA.StartingIndex,
                 StartingIndexB = m.Plan.SideB.StartingIndex,
                 MatchType      = m.Plan.MatchType,
@@ -315,6 +329,26 @@ namespace WrestlingSim.Persistence
                 BrandId        = d.BrandId
             }));
 
+            // Teams before cards, because a card item refers to a team by id.
+            foreach (var t in dto.Teams)
+            {
+                var members = Bind(t.Members, byId);
+                // A team one of whose members has left the roster is not a team any more.
+                if (members is null || members.Count < 2) continue;
+
+                career.Teams.Add(new TagTeam
+                {
+                    Id              = t.Id,
+                    Name            = t.Name,
+                    Members         = members,
+                    Formed          = ParseDate(t.Formed),
+                    Disbanded       = ParseOptionalDate(t.Disbanded),
+                    MatchesTogether = t.MatchesTogether,
+                    LastTeamed      = ParseOptionalDate(t.LastTeamed),
+                    Chemistry       = t.Chemistry
+                });
+            }
+
             if (dto.Brands is { } brands) career.Brands = FromDto(brands, byId);
 
             foreach (var f in dto.Feuds)
@@ -339,7 +373,7 @@ namespace WrestlingSim.Persistence
             RestoreTitles(dto, career, byId);
 
             foreach (var s in dto.Shows)
-                career.Shows.Add(FromDto(s, byId, career.FeudBook, career.Titles));
+                career.Shows.Add(FromDto(s, byId, career.FeudBook, career.Titles, career.Teams));
 
             return career;
         }
@@ -460,7 +494,8 @@ namespace WrestlingSim.Persistence
         }
 
         private static ScheduledShow FromDto(
-            ShowDto dto, Dictionary<string, Wrestler> byId, FeudBook feudBook, TitleRegistry titles)
+            ShowDto dto, Dictionary<string, Wrestler> byId, FeudBook feudBook,
+            TitleRegistry titles, List<TagTeam> teams)
         {
             var show = new ScheduledShow
             {
@@ -477,7 +512,7 @@ namespace WrestlingSim.Persistence
 
             foreach (var item in dto.Card)
             {
-                var built = FromDto(item, byId, feudBook, titles);
+                var built = FromDto(item, byId, feudBook, titles, teams);
                 if (built != null) show.Card.Add(built);
             }
 
@@ -501,7 +536,8 @@ namespace WrestlingSim.Persistence
         }
 
         private static ICardItem? FromDto(
-            CardItemDto dto, Dictionary<string, Wrestler> byId, FeudBook feudBook, TitleRegistry titles)
+            CardItemDto dto, Dictionary<string, Wrestler> byId, FeudBook feudBook,
+            TitleRegistry titles, List<TagTeam> teams)
         {
             if (dto.Kind == CardItemKind.Match)
             {
@@ -526,12 +562,14 @@ namespace WrestlingSim.Persistence
                     SideA = new MatchSide
                     {
                         Members       = sideA,
-                        StartingIndex = Math.Clamp(dto.StartingIndexA, 0, sideA.Count - 1)
+                        StartingIndex = Math.Clamp(dto.StartingIndexA, 0, sideA.Count - 1),
+                        Team          = teams.FirstOrDefault(t => t.Id == dto.TeamAId)
                     },
                     SideB = new MatchSide
                     {
                         Members       = sideB,
-                        StartingIndex = Math.Clamp(dto.StartingIndexB, 0, sideB.Count - 1)
+                        StartingIndex = Math.Clamp(dto.StartingIndexB, 0, sideB.Count - 1),
+                        Team          = teams.FirstOrDefault(t => t.Id == dto.TeamBId)
                     },
                     MatchType = dto.MatchType,
                     // Re-bind to the live feud so a reloaded card reads current heat.
