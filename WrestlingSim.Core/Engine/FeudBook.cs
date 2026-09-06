@@ -32,9 +32,49 @@ namespace WrestlingSim.Engine
         public IReadOnlyList<Feud> For(Wrestler w) =>
             All.Where(f => f.Involves(w)).ToList();
 
-        /// <summary>Returns the feud between two wrestlers, or null if they have no history.</summary>
-        public Feud? Find(Wrestler a, Wrestler b) =>
-            _feuds.TryGetValue(Key(a, b), out var feud) ? feud : null;
+        /// <summary>
+        /// The live story that puts these two on opposite sides, or null if there is none.
+        ///
+        /// A key lookup is not enough once a feud can have three camps: Rock, Triple H and
+        /// Foley in a triangle is one story keyed on all three, and asking for "Rock vs
+        /// Foley" has to find it. So this looks up the dedicated pairing first — a direct
+        /// rivalry beats being incidentally in the same larger story — and otherwise takes
+        /// the hottest story that has them opposed.
+        /// </summary>
+        public Feud? Find(Wrestler a, Wrestler b)
+        {
+            if (_feuds.TryGetValue(Key(a, b), out var exact)) return exact;
+
+            // `_feuds.Values`, not `All`: `All` hides feuds below Cold, and the key lookup
+            // this scan replaces did not. Searching the live ones only would have made
+            // `Find` blind to a dormant triangle while still finding a dormant pairing —
+            // the same question answered two different ways depending on how the story was
+            // shaped, which is not a distinction anything meant to draw.
+            return _feuds.Values
+                         .Where(f => f.Opposes(a, b))
+                         .OrderByDescending(f => f.Intensity)
+                         .ThenByDescending(f => f.Heat)
+                         .FirstOrDefault();
+        }
+
+        /// <summary>
+        /// Every live story among these people that has at least two of them opposed.
+        ///
+        /// This is what a multi-man match needs and a two-side match never did: with three
+        /// in the ring the match's headline rivalry is not the only one present, and the
+        /// story that decides the finish is often between two people who are both losing to
+        /// the third.
+        /// </summary>
+        /// <remarks>
+        /// Live stories only — this asks what is *going on* between these people, and a
+        /// dormant feud is by definition not going on. <see cref="Find"/> deliberately
+        /// differs: it answers "do these two have history", which a cold feud still is.
+        /// </remarks>
+        public IReadOnlyList<Feud> Among(IReadOnlyList<Wrestler> people) =>
+            All.Where(f => people.Any(a => people.Any(b => !ReferenceEquals(a, b) && f.Opposes(a, b))))
+               .OrderByDescending(f => f.Intensity)
+               .ThenByDescending(f => f.Heat)
+               .ToList();
 
         /// <summary>The rivalry between these two sides, if it has been booked before.</summary>
         public Feud? Find(IReadOnlyList<Wrestler> sideA, IReadOnlyList<Wrestler> sideB) =>
@@ -47,32 +87,38 @@ namespace WrestlingSim.Engine
         public Feud GetOrCreate(Wrestler a, Wrestler b) => GetOrCreate([a], [b]);
 
         /// <summary>The rivalry between these two sides, created if it is new.</summary>
-        public Feud GetOrCreate(IReadOnlyList<Wrestler> sideA, IReadOnlyList<Wrestler> sideB)
+        public Feud GetOrCreate(IReadOnlyList<Wrestler> sideA, IReadOnlyList<Wrestler> sideB) =>
+            GetOrCreate([sideA, sideB]);
+
+        /// <summary>
+        /// The story between these camps, created if it is new. Two camps is a rivalry;
+        /// three or more is a triangle or a faction war, which is one story and not several.
+        /// </summary>
+        public Feud GetOrCreate(IReadOnlyList<IReadOnlyList<Wrestler>> camps)
         {
-            string key = Key(sideA, sideB);
+            if (camps.Count < 2)
+                throw new ArgumentException("A feud needs at least two camps.", nameof(camps));
+
+            string key = Key(camps);
             if (_feuds.TryGetValue(key, out var existing)) return existing;
 
-            // Stable ordering so the same pairing always maps to the same feud whichever
-            // way round it is booked.
-            var (first, second) = Ordered(sideA, sideB);
             var feud = new Feud
             {
-                SideA     = first.ToList(),
-                SideB     = second.ToList(),
+                // Stable ordering so the same set of camps always maps to the same feud
+                // whichever way round it is booked.
+                Camps     = Ordered(camps).Select(c => c.ToList()).ToList(),
                 Intensity = FeudIntensity.None
             };
             _feuds[key] = feud;
             return feud;
         }
 
-        private static (IReadOnlyList<Wrestler>, IReadOnlyList<Wrestler>) Ordered(
-            IReadOnlyList<Wrestler> a, IReadOnlyList<Wrestler> b)
-        {
-            static string Name(IReadOnlyList<Wrestler> side) =>
-                string.Join("+", side.Select(w => w.RealName).OrderBy(n => n, StringComparer.Ordinal));
+        private static IReadOnlyList<IReadOnlyList<Wrestler>> Ordered(
+            IReadOnlyList<IReadOnlyList<Wrestler>> camps) =>
+            camps.OrderBy(CampName, StringComparer.Ordinal).ToList();
 
-            return string.CompareOrdinal(Name(a), Name(b)) <= 0 ? (a, b) : (b, a);
-        }
+        private static string CampName(IReadOnlyList<Wrestler> camp) =>
+            string.Join("+", camp.Select(w => w.RealName).OrderBy(n => n, StringComparer.Ordinal));
 
         /// <summary>
         /// Deposits heat and history tags from a booked segment or match.
@@ -156,21 +202,28 @@ namespace WrestlingSim.Engine
         /// the same as its appetite for any pair of men in them, and it has to wear out
         /// separately.
         /// </summary>
-        private static string Key(IEnumerable<Wrestler> a, IEnumerable<Wrestler> b)
-        {
-            string sideA = Side(a), sideB = Side(b);
-            return string.CompareOrdinal(sideA, sideB) <= 0
-                ? $"{sideA}␟{sideB}"
-                : $"{sideB}␟{sideA}";
+        private static string Key(IEnumerable<Wrestler> a, IEnumerable<Wrestler> b) =>
+            Key([a.ToList(), b.ToList()]);
 
-            // Length-prefixed rather than plain-joined: a wrestler whose RealName contains
-            // the separator would otherwise key identically to the team of the two people
-            // whose names sit either side of it, silently merging two rivalries into one.
-            static string Side(IEnumerable<Wrestler> members) =>
-                string.Concat(members.Select(w => w.RealName)
-                                     .OrderBy(n => n, StringComparer.Ordinal)
-                                     .Select(n => $"{n.Length}:{n}"));
-        }
+        /// <summary>
+        /// A camp-aware key. Each camp's names are sorted so billing order does not matter,
+        /// then the camps are sorted against each other so neither does home advantage.
+        ///
+        /// A team rivalry gets its own key rather than folding into one of the singles feuds
+        /// inside it, and a three-camp story gets its own rather than folding into any of the
+        /// pairings inside *it*. That is the point: the crowd's appetite for a triangle is
+        /// not the sum of its three pairings, and it has to wear out separately.
+        /// </summary>
+        private static string Key(IReadOnlyList<IReadOnlyList<Wrestler>> camps) =>
+            string.Join("␟", camps.Select(Side).OrderBy(x => x, StringComparer.Ordinal));
+
+        // Length-prefixed rather than plain-joined: a wrestler whose RealName contains the
+        // separator would otherwise key identically to the team of the two people whose
+        // names sit either side of it, silently merging two rivalries into one.
+        private static string Side(IEnumerable<Wrestler> members) =>
+            string.Concat(members.Select(w => w.RealName)
+                                 .OrderBy(n => n, StringComparer.Ordinal)
+                                 .Select(n => $"{n.Length}:{n}"));
     }
 
     /// <summary>What a single deposit of heat did to a feud.</summary>

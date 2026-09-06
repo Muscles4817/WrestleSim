@@ -1341,3 +1341,76 @@ Also missing, and each is a piece of work rather than a gap to paper over:
   not sides. Three-ways are constructible in code and not in the UI.
 
 **530 tests passing**, singles and tag byte-identity intact.
+
+---
+
+## Feuds can have more than two camps
+
+The multi-man work ran straight into a limit in the feud model, and the limit turned out to be
+older and broader than multi-man matches.
+
+`Feud` had `SideA` and `SideB`. Two camps, and a camp could be a team — so The Usos vs The New
+Day worked, and Rock vs Triple H vs Foley did not. Which matters, because **a three-way
+programme is one story, not three rivalries that happen to overlap.** Nobody was following
+"Rock vs Foley" on its own while the triangle was running, and the crowd's appetite for the
+triangle wears out as one thing.
+
+Faction warfare is the same shape with more bodies. And a betrayal, in this model, is a **camp
+splitting** rather than a new feud starting — which is the right way round, because the
+audience experiences it as the same story continuing.
+
+### What changed
+
+`Feud.Camps` is a list of camps, with `SideA`/`SideB` as shims over the first two — the pattern
+used for `WrestlerA`/`WrestlerB` and then for `MatchPlan.Sides`, and for the same reason: every
+existing feud, save and test keeps working untouched.
+
+The distinction that does the work is **camp versus participant**. `Involves(w)` asks whether
+somebody is in the story; `Opposes(a, b)` asks whether they are on opposite sides of it. Two
+members of the same faction are both in the feud and have no grievance with each other, and
+that gap is exactly what a betrayal closes.
+
+`FeudBook.Among(people)` is what a multi-man match needs and a two-side match never did: every
+live story among the people in the ring. In a three-way the match's headline rivalry is often
+*not* the one that decides the finish — the story that matters is between two people who are
+both about to lose to the third.
+
+### Two things worth recording
+
+**`Find(a, b)` could no longer be a key lookup.** A triangle is keyed on all three camps, so
+asking for "Rock vs Foley" has to search. It now takes the dedicated pairing first — a direct
+rivalry beats being incidentally in the same larger story — and otherwise the hottest story
+that has the two opposed.
+
+The first version of that search ran over `All`, which **hides feuds below Cold**. The key
+lookup it replaced did not. So `Find` would have been blind to a dormant triangle while still
+finding a dormant pairing: the same question answered two different ways depending on how the
+story happened to be shaped. It searches `_feuds.Values` now. `Among` still uses `All`, and
+that difference is deliberate — `Find` asks "do these two have history", which a cold feud is;
+`Among` asks "what is going on here", which it is not.
+
+**Saves.** `FeudDto.Camps` is written from v4 *alongside* `SideA`/`SideB` rather than instead of
+them, so a save from this build still opens in one that predates multi-party feuds — that build
+reads two camps and loses the third, which is wrong but survivable, where an unknown field
+would lose the whole feud.
+
+### The test that was failing while I called it passing
+
+`CampsAreOrderedStably` failed on clean code through an entire mutation run, and I read its
+failure as mutations being killed. Two separate mistakes:
+
+1. It asserted on `book.All`, which hides dormant feuds, so a freshly created feud was invisible
+   to it. My verification grep matched passing lines, so a test that never appeared read as a
+   test that passed. **Absence is not a pass**, and I have now made that mistake twice today in
+   the same shape — once with a browser run that only exercised arrow keys.
+2. Once fixed, the mutation that removes camp ordering entirely still passed it. The test was
+   named for the ordering and testing the *keying*: it got the same object back either way, so
+   the stored order was never examined. Split into two tests — one for "the same story booked
+   in any order is one feud", one for "the stored camp order is the same however it was booked",
+   which needs two separate books to be able to see the difference at all.
+
+Five mutations, all killed: ignoring camps in `Opposes`, blinding `Find` to pairs inside a
+larger story, dropping camp ordering, ignoring the persisted camps, and dropping the
+dedicated-pairing precedence.
+
+**540 tests passing.**

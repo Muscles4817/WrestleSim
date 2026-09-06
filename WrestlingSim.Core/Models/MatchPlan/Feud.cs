@@ -5,13 +5,59 @@ namespace WrestlingSim.Models.MatchPlan
     public class Feud
     {
         /// <summary>
-        /// The two sides of the feud. A singles rivalry is a feud between two sides of
-        /// one, and a team rivalry is genuinely its own thing rather than the sum of the
+        /// The camps in the feud. A singles rivalry is two camps of one; a team rivalry is
+        /// two camps of several, and is genuinely its own thing rather than the sum of the
         /// four singles feuds inside it — the crowd's appetite for The Usos vs The New Day
         /// is separate from its appetite for any one of those men against any other.
+        ///
+        /// **There can be more than two.** A three-way programme is one story with three
+        /// camps, not three separate rivalries that happen to overlap: when Rock, Triple H
+        /// and Foley are in a triangle, "Rock vs Foley" is not a thing anybody was following
+        /// on its own. Faction warfare is the same shape with more bodies, and a betrayal is
+        /// a camp splitting rather than a new feud starting.
+        ///
+        /// <see cref="SideA"/> and <see cref="SideB"/> are shims over the first two, so every
+        /// existing two-camp feud, save and test keeps working untouched.
         /// </summary>
-        public List<Wrestler> SideA { get; init; } = new();
-        public List<Wrestler> SideB { get; init; } = new();
+        public List<List<Wrestler>> Camps { get; init; } = [new(), new()];
+
+        /// <summary>The first camp. Shim over <see cref="Camps"/>.</summary>
+        public List<Wrestler> SideA
+        {
+            get => Camps[0];
+            init { while (Camps.Count < 1) Camps.Add(new()); Camps[0] = value; }
+        }
+
+        /// <summary>The second camp. Shim over <see cref="Camps"/>.</summary>
+        public List<Wrestler> SideB
+        {
+            get => Camps[1];
+            init { while (Camps.Count < 2) Camps.Add(new()); Camps[1] = value; }
+        }
+
+        /// <summary>Everyone in the feud, whichever camp they are in.</summary>
+        public IEnumerable<Wrestler> Participants => Camps.SelectMany(c => c);
+
+        /// <summary>True when the story has more than two camps in it.</summary>
+        public bool IsMultiParty => Camps.Count > 2;
+
+        /// <summary>Which camp this wrestler is in, or null if they are not in the feud.</summary>
+        public int? CampOf(Wrestler w)
+        {
+            for (int i = 0; i < Camps.Count; i++)
+                if (Camps[i].Contains(w)) return i;
+            return null;
+        }
+
+        /// <summary>
+        /// True when these two are on opposite sides of this story.
+        ///
+        /// Not the same as both being in it: two members of the same faction are in the feud
+        /// together and have no grievance with each other, which is the distinction that makes
+        /// a betrayal mean something — before it they share a camp, after it they do not.
+        /// </summary>
+        public bool Opposes(Wrestler a, Wrestler b) =>
+            CampOf(a) is { } x && CampOf(b) is { } y && x != y;
 
         /// <summary>Shim over <see cref="SideA"/>; see <see cref="Models.MatchPlan.MatchPlan"/>.</summary>
         public Wrestler WrestlerA
@@ -26,8 +72,8 @@ namespace WrestlingSim.Models.MatchPlan
             init => SideB.Add(value);
         }
 
-        /// <summary>True when either side of the rivalry is a team.</summary>
-        public bool IsTeamFeud => SideA.Count > 1 || SideB.Count > 1;
+        /// <summary>True when any camp in the rivalry is a team.</summary>
+        public bool IsTeamFeud => Camps.Any(c => c.Count > 1);
 
         public string SideAName => string.Join(" & ", SideA.Select(w => w.RingName));
         public string SideBName => string.Join(" & ", SideB.Select(w => w.RingName));
@@ -547,9 +593,13 @@ namespace WrestlingSim.Models.MatchPlan
             _                      => null
         };
 
-        public bool Involves(Wrestler w) => SideA.Contains(w) || SideB.Contains(w);
+        public bool Involves(Wrestler w) => CampOf(w) is not null;
+
+        /// <summary>Every camp's billing, for display.</summary>
+        public IEnumerable<string> CampNames =>
+            Camps.Select(c => string.Join(" & ", c.Select(w => w.RingName)));
 
         public override string ToString() =>
-            $"{SideAName} vs {SideBName} — {Intensity} ({Heat:F0} heat)";
+            $"{string.Join(" vs ", CampNames)} — {Intensity} ({Heat:F0} heat)";
     }
 }
