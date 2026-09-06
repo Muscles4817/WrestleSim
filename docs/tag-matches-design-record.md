@@ -1898,13 +1898,55 @@ the disposal spot names Becky, the spite break names Rhea and Roman, Becky steal
 console errors.
 
 **608 tests passing** — 600 before review, and the eight it took to make the mechanism
-actually load-bearing.
+actually load-bearing. (618 after round two, below.)
 
 ### Still not built
 
 Elimination, battle royals and the Rumble still need multiple falls. The pair-specific feud
 lines are correct but never mention that a third party is watching them cost each other the
 match, which is the beat a viewer would call.
+
+### Round two: the disposal window was consulted in one place
+
+Round one's crash was the rotation reading a beat number that did not exist yet. Round two found
+that the rotation was the *only* thing consulting `State.DisposedSide` at all, and it only
+filtered the target. Two consequences, both of them a name in the play-by-play belonging to
+somebody lying on the floor outside.
+
+**The man nobody booked to be in control was side A, always.** `Even` and `Contested` resolve to
+no side, and all twenty-three handlers fall back with `control ??= ctx.LegalA` — side A, whether
+or not side A is the one who has just been put through a table. An Even heat segment inside a
+disposal window read:
+
+> Bravo puts Alpha down hard on the outside — for now, this is one on one.
+> **Alpha takes over, imposing their will on a struggling Bravo.**
+
+Alpha is outside. Charlie — the only other man in the ring, and the entire reason the disposal
+exists — is not in either line. This is not an exotic booking: the builder offers the Even chip
+on every beat and the presets use it for openings, and the disposal's victim is not settable at
+all, so a disposal controlled by Bravo dumps Alpha every time and the player cannot book around
+it. The fallback is `LegalDefault` now, which is `LegalA` at two sides or with nobody disposed —
+so singles and tag do not move — and the first upright side otherwise.
+
+**And `TargetOf` was a fourth copy of the mapping.** `Sides.FirstOrDefault(x => x != self)`, no
+disposal filter, sitting eight hundred lines from the `Opponent` that had one. So a spite break
+during a window read *"Alpha breaks up Bravo's cover"* with Bravo on the floor, and a pin break
+read *"Bravo had it won."*
+
+The second consequence of that same line is worse and nothing would have surfaced it as a
+misread name: since `Against` is unsettable on every non-finish beat, "the first side that is not
+the controller" is **side A for everybody except side A**. In a fatal four-way, side D could
+never be disposed of, pin-broken, spite-broken or mutually destroyed by anyone, and a beat
+controlled by B, C or D always named Alpha. A quarter of the match was unreachable.
+
+Both now go through one resolver — `Ctx.OtherSide` — and `TargetOf` is a single expression that
+calls it. That is the fourth copy of this mapping found and deleted; the count is worth keeping
+because it is the strongest argument in this document for the shim pattern being worth its cost.
+
+Three mutations, all killed: reverting `LegalDefault` reddens five of six Even beat types;
+reverting `TargetOf` reddens all three multi-man beats **and** the four-way reachability test.
+
+**618 tests passing.**
 
 Two things review named that are logged rather than fixed here:
 

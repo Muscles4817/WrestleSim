@@ -342,16 +342,27 @@ namespace WrestlingSim.Engine
             /// With no declared target it is whoever is still upright, because a beat that
             /// does not say is between the people not currently lying on the floor.
             /// </summary>
-            public Wrestler Opponent(Wrestler w)
+            public Wrestler Opponent(Wrestler w) =>
+                !Plan.IsMultiMan ? (IsSideA(w) ? LegalB : LegalA)
+                                 : LegalOf(OtherSide(SideOf(w)));
+
+            /// <summary>
+            /// The side a beat is against, given the side it is worked by. The one answer:
+            /// `Opponent` reads it for the general path, `TargetOf` for the five multi-man
+            /// beats, and there is no third copy.
+            ///
+            /// Review round two found `TargetOf` outside this — a plain
+            /// `Sides.FirstOrDefault(x => x != self)` with no disposal filter — so a spite
+            /// break during a disposal window read "Alpha breaks up Bravo's cover" with
+            /// Bravo on the floor, and in a fatal four-way side D could never be the target
+            /// of anything, because the first side that is not the controller never is.
+            /// </summary>
+            public MatchSide OtherSide(MatchSide? mine)
             {
-                if (!Plan.IsMultiMan) return IsSideA(w) ? LegalB : LegalA;
-
-                var mine = SideOf(w);
-
                 if (CurrentBeat is { } beat
                     && Models.MatchPlan.MatchPlan.SideIndex(beat.Against ?? BeatControl.Even) is { } i
                     && i < Plan.Sides.Count && Plan.Sides[i] != mine)
-                    return LegalOf(Plan.Sides[i]);
+                    return Plan.Sides[i];
 
                 var upright = Plan.Sides
                     .Where(side => side != mine)
@@ -362,9 +373,35 @@ namespace WrestlingSim.Engine
                 // Math.Max because BeatIndex is -1 before RegisterBeat has run, and C# gives
                 // -1 % 2 == -1 rather than 1. Callers are meant to be inside a registered
                 // beat; an index out of range is a crash, which is worse than a wrong name.
-                return LegalOf(upright.Count > 0
+                return upright.Count > 0
                     ? upright[Math.Max(0, State.BeatIndex) % upright.Count]
-                    : Plan.Sides.First(side => side != mine));
+                    : Plan.Sides.FirstOrDefault(side => side != mine) ?? Plan.SideB;
+            }
+
+            /// <summary>
+            /// Who a beat that named nobody is worked by.
+            ///
+            /// `Even` and `Contested` resolve to no side, and every handler falls back with
+            /// `control ??= …`. That fallback was `LegalA` — side A whether or not side A is
+            /// the one who was just put through a table. Review round two: an Even heat
+            /// segment inside a disposal window read "Alpha takes over, imposing their will
+            /// on a struggling Bravo" with Alpha on the floor and Charlie, the only other
+            /// man in the ring, unmentioned.
+            ///
+            /// Two sides return `LegalA` untouched, so singles and tag are unchanged.
+            /// </summary>
+            public Wrestler LegalDefault
+            {
+                get
+                {
+                    if (!Plan.IsMultiMan || !State.SomebodyIsDisposed) return LegalA;
+
+                    var upright = Plan.Sides
+                        .Where(side => Plan.Sides.IndexOf(side) != State.DisposedSide)
+                        .ToList();
+
+                    return LegalOf(upright.Count > 0 ? upright[0] : Plan.SideA);
+                }
             }
 
             /// <summary>
@@ -1026,16 +1063,12 @@ namespace WrestlingSim.Engine
 
         // ── Multi-man (doc 18 §2.5) ──────────────────────────────────────────
 
-        /// <summary>The side a beat is aimed at, or the first side that is not the control.</summary>
-        private static MatchSide TargetOf(MatchBeat beat, Ctx ctx, Wrestler? control)
-        {
-            if (Models.MatchPlan.MatchPlan.SideIndex(beat.Against ?? BeatControl.Even) is { } i
-                && i < ctx.Plan.Sides.Count)
-                return ctx.Plan.Sides[i];
-
-            var self = control is null ? null : ctx.SideOf(control);
-            return ctx.Plan.Sides.FirstOrDefault(x => x != self) ?? ctx.Plan.SideB;
-        }
+        /// <summary>
+        /// The side a beat is aimed at. One line, because the resolver is `Ctx.OtherSide` and
+        /// this used to be a fourth copy of it that had drifted.
+        /// </summary>
+        private static MatchSide TargetOf(MatchBeat beat, Ctx ctx, Wrestler? control) =>
+            ctx.OtherSide(control is null ? null : ctx.SideOf(control));
 
         /// <summary>
         /// The third man is put through something and the ring belongs to the other two.
@@ -1048,7 +1081,7 @@ namespace WrestlingSim.Engine
         private void ApplyDisposalSpot(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, double iMod, double dMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             var target = TargetOf(beat, ctx, control);
             var victim = ctx.LegalOf(target);
 
@@ -1081,7 +1114,7 @@ namespace WrestlingSim.Engine
         private void ApplyPinBreak(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, double iMod, int timesUsed)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             var denied = ctx.LegalOf(TargetOf(beat, ctx, control));
 
             r.CrowdEnergyDelta = Rng(8, 15) * iMod
@@ -1115,7 +1148,7 @@ namespace WrestlingSim.Engine
         private void ApplySpiteBreak(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, double iMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             var rival = ctx.LegalOf(TargetOf(beat, ctx, control));
 
             var feud = ctx.Plan.FeudBetween(control, rival);
@@ -1155,7 +1188,7 @@ namespace WrestlingSim.Engine
         private void ApplyIgnoredOpportunity(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, double iMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             var rival = ctx.LegalOf(TargetOf(beat, ctx, control));
 
             var feud = ctx.Plan.FeudBetween(control, rival);
@@ -1186,7 +1219,7 @@ namespace WrestlingSim.Engine
         private void ApplyMutualDestruction(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, double iMod, double dMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             var rival = ctx.LegalOf(TargetOf(beat, ctx, control));
 
             var feud = ctx.Plan.FeudBetween(control, rival);
@@ -1419,7 +1452,7 @@ namespace WrestlingSim.Engine
         private void ApplyHeatSegment(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod, double dMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             other = ctx.Opponent(control);
 
             var pControl = ctx.For(control);
@@ -1483,7 +1516,7 @@ namespace WrestlingSim.Engine
         private void ApplyComeback(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod, double dMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             other = ctx.Opponent(control);
 
             var state    = ctx.State;
@@ -1543,7 +1576,7 @@ namespace WrestlingSim.Engine
         private void ApplyNearFall(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod, double feudMult, int timesUsed)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             other = ctx.Opponent(control);
 
             var state  = ctx.State;
@@ -1612,7 +1645,7 @@ namespace WrestlingSim.Engine
         private void ApplyHighSpot(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, double iMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             var pControl = ctx.For(control);
 
             double flyerSkill = control.RingSkills.HighFlyer;
@@ -1645,7 +1678,7 @@ namespace WrestlingSim.Engine
         private void ApplyRestHold(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, double iMod, double dMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             Wrestler other = ctx.Opponent(control);
             var pControl = ctx.For(control);
 
@@ -1704,7 +1737,7 @@ namespace WrestlingSim.Engine
         private void ApplyPsychologicalWarfare(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod, double feudMult)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             other = ctx.Opponent(control);
 
             var pControl = ctx.For(control);
@@ -1781,7 +1814,7 @@ namespace WrestlingSim.Engine
         private void ApplyRevengeSpot(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod, double feudMult)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             other = ctx.Opponent(control);
 
             var state    = ctx.State;
@@ -1833,7 +1866,7 @@ namespace WrestlingSim.Engine
         private void ApplyAlliesRejected(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, double iMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             var pControl = ctx.For(control);
 
             // The whole beat is "the crowd loves this person for refusing help".
@@ -1877,7 +1910,7 @@ namespace WrestlingSim.Engine
         private void ApplyShine(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod, double dMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             other = ctx.Opponent(control);
 
             var pControl = ctx.For(control);
@@ -1919,7 +1952,7 @@ namespace WrestlingSim.Engine
         private void ApplyCutoff(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod, double dMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             other = ctx.Opponent(control);
 
             var pControl = ctx.For(control);
@@ -1955,7 +1988,7 @@ namespace WrestlingSim.Engine
         private void ApplyIsolation(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod, double dMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             other = ctx.Opponent(control);
 
             var pControl    = ctx.For(control);
@@ -2042,7 +2075,7 @@ namespace WrestlingSim.Engine
         private void ApplyNearTag(BeatResult r, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod, double feudMult)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             other = ctx.Opponent(control);
 
             var pDenied  = ctx.For(other);
@@ -2089,7 +2122,7 @@ namespace WrestlingSim.Engine
         private void ApplyHotTag(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             other = ctx.Opponent(control);
 
             var state = ctx.State;
@@ -2184,7 +2217,7 @@ namespace WrestlingSim.Engine
         private void ApplyTag(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             other = ctx.Opponent(control);
 
             bool sideA = ctx.IsSideA(control);
@@ -2219,7 +2252,7 @@ namespace WrestlingSim.Engine
         private void ApplyDoubleTeam(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod, double dMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             other = ctx.Opponent(control);
 
             var side   = ctx.SideOf(control);
@@ -2267,7 +2300,7 @@ namespace WrestlingSim.Engine
         private void ApplyMiscommunication(BeatResult r, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             other = ctx.Opponent(control);
 
             var side = ctx.SideOf(control);
@@ -2311,7 +2344,7 @@ namespace WrestlingSim.Engine
         private void ApplySaveBreakup(BeatResult r, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod, int timesUsed)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             other = ctx.Opponent(control);
 
             var side  = ctx.SideOf(control);
@@ -2365,7 +2398,7 @@ namespace WrestlingSim.Engine
         private void ApplyFinish(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, Wrestler other, double iMod, double feudMult)
         {
-            control ??= ctx.LegalA;
+            control ??= ctx.LegalDefault;
             other = ctx.Opponent(control);
 
             var state    = ctx.State;

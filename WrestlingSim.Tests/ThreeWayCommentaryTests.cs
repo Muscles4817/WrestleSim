@@ -327,6 +327,157 @@ namespace WrestlingSim.Tests
         }
 
         /// <summary>
+        /// **A beat nobody is booked to control is not worked by the man on the floor.**
+        ///
+        /// Review round two. `Even` and `Contested` resolve to no side, and all twenty-three
+        /// handlers fell back with `control ??= ctx.LegalA` — side A, whether or not side A
+        /// had just been put through a table. An Even heat segment inside a disposal window
+        /// read *"Alpha takes over, imposing their will on a struggling Bravo"* with Alpha on
+        /// the floor and Charlie, the only other man in the ring, never mentioned.
+        ///
+        /// Reachable and unavoidable: the builder offers the Even chip on every beat and the
+        /// presets use it for openings, while the disposal's victim is not settable at all —
+        /// so a disposal controlled by Bravo dumps Alpha every time and the player cannot
+        /// book around it.
+        /// </summary>
+        [Theory]
+        [InlineData(BeatType.HeatSegment)]
+        [InlineData(BeatType.NearFall)]
+        [InlineData(BeatType.Comeback)]
+        [InlineData(BeatType.HighSpot)]
+        [InlineData(BeatType.RestHold)]
+        [InlineData(BeatType.PsychologicalWarfare)]
+        public void AnEvenBeatInADisposalWindow_IsNotWorkedByTheManOnTheFloor(BeatType type)
+        {
+            // Bravo puts Alpha out, so Alpha is the man on the floor — named rather than
+            // read back out of the commentary, which has three phrasings for the spot.
+            // The old fallback was `control ??= ctx.LegalA`, so Alpha is exactly who the
+            // Even beat used to be worked by.
+            const string onTheFloor = "Alpha";
+
+            var r = Run(
+            [
+                Beat(BeatType.HotOpening, BeatControl.Even),
+                Beat(BeatType.DisposalSpot, BeatControl.WrestlerB, BeatControl.WrestlerA),
+                Beat(type, BeatControl.Even),
+                Finish()
+            ]);
+
+            var during = r.BeatResults.Single(x => x.BeatType == type).Commentary.ToList();
+            foreach (var line in during) output.WriteLine($"  {type}/Even: {line}");
+
+            Assert.All(during, line => Assert.DoesNotContain(onTheFloor, line));
+        }
+
+        /// <summary>
+        /// **The multi-man beats do not name the man on the floor either.**
+        ///
+        /// Review round two, and the same root cause one function over: `TargetOf` was a
+        /// fourth copy of the BeatControl-to-side mapping — `Sides.FirstOrDefault(x => x !=
+        /// self)`, no disposal filter — while `Opponent` had one. So a spite break during a
+        /// window read *"Alpha breaks up Bravo's cover — and gives up the position doing
+        /// it"* with Bravo lying outside, and a pin break read *"Bravo had it won."*
+        ///
+        /// Both now go through `Ctx.OtherSide`, which is the only copy left.
+        /// </summary>
+        [Theory]
+        [InlineData(BeatType.SpiteBreak)]
+        [InlineData(BeatType.PinBreak)]
+        [InlineData(BeatType.IgnoredOpportunity)]
+        public void AMultiManBeatInADisposalWindow_DoesNotNameTheManOnTheFloor(BeatType type)
+        {
+            // Alpha puts Bravo out. Bravo is also "the first side that is not Alpha", which
+            // is precisely what the old TargetOf returned — so Bravo is the name that used
+            // to appear, from the floor, in a beat Alpha is working.
+            const string onTheFloor = "Bravo";
+
+            var r = Run(
+            [
+                Beat(BeatType.HotOpening, BeatControl.Even),
+                new() { Type = BeatType.DisposalSpot, Control = BeatControl.WrestlerA,
+                        Against = BeatControl.WrestlerB, Duration = BeatDuration.Long },
+                Beat(type, BeatControl.WrestlerA),
+                Finish()
+            ]);
+
+            var during = r.BeatResults.Single(x => x.BeatType == type).Commentary.ToList();
+            foreach (var line in during) output.WriteLine($"  {type}: {line}");
+
+            Assert.All(during, line => Assert.DoesNotContain(onTheFloor, line));
+
+            // Absence is not a pass. Swept rather than asserted on the one seed, because
+            // some of these beats have a phrasing that names no rival at all — the claim is
+            // that the rival, when named, is the man still standing, not that he is always
+            // named. Bravo must appear in none of them; Charlie in at least one.
+            bool sawUpright = false;
+            for (int seed = 0; seed < 40; seed++)
+            {
+                var lines = new MatchEngine(seed).Execute(new MatchPlanModel
+                {
+                    Sides = [MatchSide.Of(W("Alpha")), MatchSide.Of(W("Bravo")),
+                             MatchSide.Of(W("Charlie"))],
+                    Beats =
+                    [
+                        Beat(BeatType.HotOpening, BeatControl.Even),
+                        new() { Type = BeatType.DisposalSpot, Control = BeatControl.WrestlerA,
+                                Against = BeatControl.WrestlerB, Duration = BeatDuration.Long },
+                        Beat(type, BeatControl.WrestlerA),
+                        Finish()
+                    ]
+                }).BeatResults.Single(x => x.BeatType == type).Commentary.ToList();
+
+                Assert.All(lines, line => Assert.DoesNotContain(onTheFloor, line));
+                sawUpright |= lines.Any(line => line.Contains("Charlie"));
+            }
+
+            Assert.True(sawUpright,
+                $"Across forty seeds no {type} ever named Charlie — the rival may be " +
+                "unreachable rather than correct.");
+        }
+
+        /// <summary>
+        /// **In a fatal four-way, the fourth side can be the target of something.**
+        ///
+        /// The other half of the `TargetOf` defect: "the first side that is not the
+        /// controller" is side A for everyone except side A, so with `Against` unsettable on
+        /// every non-finish beat, side D could never be disposed of, pin-broken or
+        /// spite-broken by anybody, and a beat controlled by B, C or D always named Alpha.
+        /// Absence is not a pass, so this asserts the positive: Delta is targeted.
+        /// </summary>
+        [Fact]
+        public void InAFourWay_TheFourthSideCanBeTheTarget()
+        {
+            var (a, b, c, d) = (W("Alpha"), W("Bravo"), W("Charlie"), W("Delta"));
+
+            bool deltaTargeted = false;
+            for (int seed = 0; seed < 40 && !deltaTargeted; seed++)
+            {
+                var r = new MatchEngine(seed).Execute(new MatchPlanModel
+                {
+                    Sides = [MatchSide.Of(a), MatchSide.Of(b), MatchSide.Of(c), MatchSide.Of(d)],
+                    Beats =
+                    [
+                        Beat(BeatType.HotOpening, BeatControl.Even),
+                        Beat(BeatType.DisposalSpot, BeatControl.WrestlerA),
+                        Beat(BeatType.DisposalSpot, BeatControl.WrestlerB),
+                        Beat(BeatType.DisposalSpot, BeatControl.SideC),
+                        new() { Type = BeatType.FinishClean, Control = BeatControl.WrestlerA,
+                                Against = BeatControl.SideD }
+                    ]
+                });
+
+                deltaTargeted = r.BeatResults
+                    .Where(x => x.BeatType == BeatType.DisposalSpot)
+                    .SelectMany(x => x.Commentary)
+                    .Any(l => l.Contains("puts Delta down"));
+            }
+
+            Assert.True(deltaTargeted,
+                "Across forty seeds nobody ever disposed of Delta — the fourth side is " +
+                "unreachable as a target, which is what TargetOf's old fallback guaranteed.");
+        }
+
+        /// <summary>
         /// **Commentary that counts the field counts it right.** An opening that says "these
         /// two" or "Both wrestlers" with three in the ring is the same error as naming only
         /// two of them, one level of abstraction up — and it survived the fix for the naming,
