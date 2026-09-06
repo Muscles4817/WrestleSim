@@ -2020,3 +2020,47 @@ match shows no such field at all. Zero console errors on any of it.
 One mutation killed: disabling the new validation reddens both refusal tests.
 
 **622 tests passing.**
+
+## A line about the room is about the people still in the room
+
+Logged out of review round two and left alone while its branch was under review, because
+fixing a reviewer's aside on a branch being reviewed is how the last round's fixes become the
+next round's blockers.
+
+`AllLegal` walked every side with no regard to `State.DisposedSide`, and `LegalBilling`,
+`LegalCollective` and `LegalSubject` are all built on it. So a crowd brawl or a feudal
+escalation booked inside a disposal window billed the man who had just been put through a
+table:
+
+> **Chaos! All three are taking this war everywhere!**
+
+Two people and a body. It now reads *"Alpha and Charlie are fighting into the crowd!"*
+
+### The count has to move with the names
+
+The obvious fix — filter `AllLegal` — leaves the sentence half-repaired, because
+`LegalCollective` and `LegalSubject` were counting `Plan.Sides.Count`. Filter only the names
+and a three-way in a disposal window says "all three" about the two people it just correctly
+named. Both now count off `AllLegal`, so in a window a three-way is "these two", which is
+exactly what the spot bought.
+
+That half-fix is a mutation in its own right, and it is the one worth keeping: `M8` filters the
+names and leaves the count, and the crowd-brawl test still goes red. A test that only checked
+the absent name would have passed it.
+
+### The floor drops out below two
+
+A room-wide line needs a room. With one man upright the honest options are all bad — "Alpha are
+fighting into the crowd" is worse than naming somebody who is down — so below two upright the
+full field stands and the phrasing is at least grammatical. That case is reachable today only
+because the five multi-man beats are still offered in a singles match (logged separately); it
+is a guard against a shape the booker should not be able to make, not a feature.
+
+Two mutations killed, and the second is the interesting one:
+
+| | Mutation | Result |
+|---|---|---|
+| M7 | `AllLegal` ignores the window again | both beat types red |
+| M8 | names filtered, count still off `Sides.Count` | crowd brawl red |
+
+**625 tests passing.**
