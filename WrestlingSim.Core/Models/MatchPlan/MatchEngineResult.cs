@@ -43,6 +43,17 @@ namespace WrestlingSim.Models.MatchPlan
         public double MatchTypeCoherence { get; init; } = 1.0;
 
         /// <summary>
+        /// What the room actually did, as a profile rather than a level — see
+        /// <see cref="CrowdReaction"/>. The crowd component of the rating is scaled by
+        /// <see cref="CrowdReaction.Investment"/>, so a loud disengaged match now grades
+        /// below a quiet invested one.
+        /// </summary>
+        public CrowdReaction Reaction { get; init; } = new();
+
+        /// <summary>A plain-English reading of what the crowd was like.</summary>
+        public string CrowdNote => Reaction.Label;
+
+        /// <summary>
         /// 0–1. How much the crowd still wanted to see this specific pairing, 1.0 being
         /// the first time they had seen it. Below 1.0 the room was flatter than the work
         /// deserved — docs/wrestling-reference/20-storylines-and-feuds.md §9.1.
@@ -60,6 +71,22 @@ namespace WrestlingSim.Models.MatchPlan
         };
 
         // Final rating
+        /// <summary>
+        /// How the 0–100 <see cref="FinalScore"/> was actually assembled.
+        ///
+        /// Reported rather than kept private for two reasons. The player one, which is an
+        /// intention and not yet a description: a rating with no breakdown is a verdict, not
+        /// feedback — a booker who cannot see that a match lost four points on variety cannot
+        /// learn to book a better one. **Nothing in the UI reads this yet**, so the sentence
+        /// was written in the present tense about something that has not been built; review
+        /// caught it. The engineering reason is live today: it makes the composite
+        /// *testable*. Every claim about what a term does to a
+        /// rating had to be made through the star rating before this, which is the sum of
+        /// six things and so proves nothing about any one of them — and review found
+        /// exactly that hiding a term that had been deleted without a single test noticing.
+        /// </summary>
+        public ScoreBreakdown Breakdown { get; init; } = new();
+
         public double FinalScore  { get; init; }  // 0–100
         public double StarRating  { get; init; }  // 0–5
 
@@ -106,4 +133,50 @@ namespace WrestlingSim.Models.MatchPlan
                 .Concat(b.Commentary)
                 .Concat(new[] { $"  ▶ {b.StatsLine}", "" }));
     }
+
+    /// <summary>
+    /// The terms that make up <see cref="MatchEngineResult.FinalScore"/>. Weighted
+    /// components first, then the nudges — they sum to the score before clamping.
+    /// </summary>
+    public class ScoreBreakdown
+    {
+        /// <summary>Saturated technical score × the match type's technical weight.</summary>
+        public double Technical { get; init; }
+
+        /// <summary>Saturated storytelling score × the match type's storytelling weight.</summary>
+        public double Storytelling { get; init; }
+
+        /// <summary>
+        /// Normalised crowd reading × the crowd weight × <see cref="InvestmentFactor"/>.
+        /// </summary>
+        public double Crowd { get; init; }
+
+        /// <summary>The crowd term before investment was applied. Crowd / this = the factor.</summary>
+        public double CrowdBeforeInvestment { get; init; }
+
+        /// <summary>How much of the crowd term investment kept — 1.0 is a typical room.</summary>
+        public double InvestmentFactor { get; init; }
+
+        public double FinishNudge    { get; init; }
+        public double VarietyNudge   { get; init; }
+        public double CoherenceNudge { get; init; }
+
+        /// <summary>What investment was worth, in points of the final score.</summary>
+        public double InvestmentPoints => Crowd - CrowdBeforeInvestment;
+
+        /// <summary>Largest-first, for display. Nudges included, signed.</summary>
+        public IEnumerable<(string Label, double Points)> Ordered =>
+            new[]
+            {
+                ("Crowd",        Crowd),
+                ("Storytelling", Storytelling),
+                ("Technical",    Technical),
+                ("Finish",       FinishNudge),
+                ("Variety",      VarietyNudge),
+                ("Match type",   CoherenceNudge)
+            }
+            .Where(x => Math.Abs(x.Item2) > 0.005)
+            .OrderByDescending(x => Math.Abs(x.Item2));
+    }
+
 }
