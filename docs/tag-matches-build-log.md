@@ -722,6 +722,11 @@ through to "next man round" — side A went 0→1 and side B never tagged at all
 `B2` and `B3` were never legal, never worked, and were never named. Doc 18 §9 lists *"the
 unexplained third man — somebody is on the floor for minutes with no reason given"* as a named
 failure mode and §2.5 calls it the format's characteristic one. I shipped it as a preset.
+(Round 2 is right that this citation is loose: §9's line puts the unexplained man *on the
+floor*, and §2.5's "characteristic failure" sentence is about a triple threat — indeed §2.5
+as rewritten in this same PR says trios are the exception, because everyone not legal is on
+the apron by rule. The defect was real on its own terms and did not need the borrowed
+authority.)
 
 ### The blocking two
 
@@ -763,7 +768,7 @@ anyway.
 
 **`Lucha Trios` — actually lucha now.** The old version was a nine-beat sprint with one tag,
 named for Arena México. Doc 25 §3.3 says three-a-side in lucha means *"rapid tag rules that
-allow constant motion"*, so it now has five tag changes in thirteen beats, three of them on
+allow constant motion"*, so it now has four tag changes in thirteen beats, two of them on
 the rudo side, no isolation and no hot tag at all — and `Roll-Up Steal` for the "fall out of
 nowhere" its Description had always promised while ending on `Clean Victory` (finding 12).
 
@@ -787,15 +792,10 @@ the same number as over two, so three identical men *are* the same act. A side i
 its members, so a third man is worth exactly what the booking gives him to do. What was
 broken was the booking, not the reading.
 
-**`Six-Man War` still rates below `Southern Tag` at 3v3, by 0.05.** It is ahead on technical
-(+6.0), storytelling (+3.1) and crowd peak (+0.8) — it is measurably the bigger match — and
-behind on *average* crowd energy (73.0 vs 76.8), because seventeen beats with three isolations
-spend more of the match in the heat than thirteen with two. The composite weights the average,
-so the bigger match scores fractionally lower. That is a real property of the rating formula
-and arguably wrong; changing how the composite treats a long heat is a rating-formula change
-with nothing to do with trios, so it is not in this PR. Recorded rather than papered over: the
-Description claims a deeper heat and a fresh finisher, both of which are now true and
-measured, and it does not claim a higher rating.
+**`Six-Man War` rated 0.05 below `Southern Tag` at 3v3, and the reason I gave was wrong.**
+See the round 2 section at the end of this file: I attributed it to average crowd energy and
+deferred it, and round 2 measured that the whole of the gap and more is `VarietyNudge`. Fixed
+there rather than left standing here.
 
 ### The rest
 
@@ -836,3 +836,99 @@ the UX pass, where user-visible text is the subject, rather than being smuggled 
 commentary **text** changes at one template — the near-tag line rewritten for finding 5 — while
 its numbers are unchanged; `SpotPartner` and `NameCorner` both reduce to the previous
 expressions at two members.
+
+---
+
+## Trios — review round 2
+
+Verdict: **not safe to merge, narrowly, and for text only.**
+
+The engineering survived everything the reviewer could throw at it. Singles byte-identity
+re-proved with two independent harnesses over ~264k output lines covering **every** beat
+template in the library; 2v2 numerically identical with exactly one commentary template
+changed; all six people proved in the ring using the *production* `Tag()` rule rather than
+the test's copy of it; the side-size defence proved analytically from `TopWeighted` and
+empirically identical to full double precision at n = 2, 3, 4 and 5; 14,353 fuzzed plans
+with no throws and no illegal ratings; and both new guards confirmed to fail on the
+structures they were written against.
+
+What blocked it was that a round whose entire subject is *"I asserted a mechanic and then
+printed the measurement denying it"* shipped three more of them.
+
+### The one that mattered: I named the wrong cause, and used it to defer the work
+
+`Six-Man War` rated 0.05 below `Southern Tag` at 3v3. I attributed that to average crowd
+energy and wrote that fixing it "is a rating-formula change with nothing to do with trios,
+so it is not in this PR". Round 2 decomposed the composite over the same 300 seeds:
+
+```
+                star    techC   storyC  crowdC  finish  variety   distinct/beats
+Six-Man War    4.4403  24.257  24.831  28.660   9.788   1.271     12/17
+Southern Tag   4.4893  22.820  24.565  29.689   9.758   2.954     11/13
+delta                  +1.438  +0.265  −1.029  +0.031  −1.683
+```
+
+The crowd deficit is real (−1.029) and is *more than cancelled* by technical and
+storytelling (+1.703). The whole of the gap, and more, is `VarietyNudge` —
+`(distinct/beats − 0.6) × 12`, reading 0.846 for Southern Tag and 0.706 for Six-Man War.
+And the beats dragging that ratio down are the three `Quick Tag`s: **the exact beats that
+put the third man in the ring.**
+
+So the deferral does not survive its own correction. The engine was not expressing a view
+about long heats. It was taxing a structure for its connective tissue, which is a perverse
+incentive to leave the third man on the apron all night — the failure this whole PR exists
+to fix, re-entering through the rating formula.
+
+**Fixed at the source.** `BeatType.Tag` is excluded from both halves of the variety
+fraction. A routine tag is not a spot: nobody watching a six-man thinks *"that is the third
+tag, I have seen this"* — the tags are how the match moves, the way a rope-running exchange
+is. A hot tag and a blind tag are moments and stay counted. Deliberately narrow: **no
+singles or two-a-side preset in the library contains a plain `Tag`**, so every structure
+that shipped before trios reads exactly as it did.
+
+```
+                     before    after
+Six-Man War   3v3    4.4403    4.4882
+Lucha Trios   3v3    3.6926    3.7572
+Southern Tag  3v3    4.4893    4.4893   (unchanged — contains no plain Tag)
+Southern Tag  2v2  4.504411  4.504411
+Formula Tag   2v2  4.124584  4.124584
+Tag Sprint    2v2  3.377380  3.377380
+```
+
+`Six-Man War` and `Southern Tag` at 3v3 now sit 0.0011 apart, which is the honest resting
+place: two different matches of similar quality, with the six-man no longer penalised for
+booking the tags that make it a six-man. What that is *not* is a claim that a third man
+raises the ceiling — side size still has no term in the engine, correctly.
+
+### The rest
+
+| # | Found | Fix |
+|---|---|---|
+| N1 | *"Five tag changes in thirteen beats, three of them on the rudo side"* — in a code comment, the build log and the commit message. It is **four**, and **two**. The ten lines underneath say so. | Corrected in all three. |
+| R1 | The withdrawn "two corners" claim was still being **shown to the player**, in the side-size explainer and in `SideSizeBlurb(3)`. A trio has one corner — the engine's own `NameCorner` returns the singular for exactly that reason — and the structure books three isolations and two near tags, not two and two. | Both rewritten to say what the structure actually books. |
+| N2 | §2.5's sim-implications block says "need **three** things" and then lists four. Introduced by the fix for finding 11, which split point 1 in two. | "four things". |
+| N4 | *"Both structures below name every incoming member explicitly"* — false of `Six-Man War`'s `Hot Tag`, which relies on next-man-round. | Reworded. The property that matters — all six legal — was never in doubt. |
+| N5 | "rapid tag rules" is doc 25 §3.3's **second** bullet, not its first. | Corrected, and §3.3's dropped first bullet ("more people on every card") restored to the §2.5 summary. |
+| R2 | §2.5 attributed "three falls traditionally" to doc 25 §3.3. It is §3.1. | Corrected, with the section named inline. |
+| R3 | §9's "unexplained third man" and §2.5's "characteristic failure" cited for a case §2.5 explicitly exempts. | Noted inline in the round 1 section rather than deleted — the defect was real without the borrowed authority, and the overreach is worth keeping visible. |
+
+### Two findings recorded and deferred, with reasons
+
+* **M1.** `Lucha Trios` names all six individually in 300 of 500 matches. Its starters are
+  only ever named by the `Hot Start` opening, and two of that beat's four templates name
+  nobody. The Description says "all six work", which is true of the *booking* in every match
+  and visible in the *commentary* in three out of five. The new test measures the aggregate
+  over seeds and is honest about doing so, but the gap is real.
+* **M2.** Neither front end exposes `IncomingIndex`, so a player hand-building a trios cannot
+  name who comes in — everything falls through to next-man-round. Pre-existing, correctly
+  persisted, and the presets cover the common case; but the third man only works if you take
+  a preset and do not edit it.
+
+Both belong with the UX pass, along with the commentary calling every wrestler "him".
+
+**434 tests passing.** Equivalence re-run after the `VarietyNudge` change across 353,808
+dumped lines (every non-feud-gated structure × every match type × 14 wrestlers × both side
+sizes × 3 seeds, per-beat deltas at `"R"` precision plus full commentary): **zero
+non-commentary differences**, zero differences of any kind at one a side, and the 2v2
+differences are 560 instances of the one near-tag template rewritten for finding 5.
