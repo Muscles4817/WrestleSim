@@ -40,7 +40,7 @@ namespace WrestlingSim.Enums
         Cutoff,
 
         /// <summary>
-        /// The face-in-peril segment: one man kept cut off from his corner. Charges the
+        /// The face-in-peril segment: one of them kept cut off from the corner. Charges the
         /// hot tag — this is what makes the payoff worth anything.
         /// </summary>
         Isolation,

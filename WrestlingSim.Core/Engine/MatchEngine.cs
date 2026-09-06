@@ -1206,7 +1206,7 @@ namespace WrestlingSim.Engine
 
             r.Commentary.Add(Pick(
                 $"{control.RingName} cuts {other.RingName} off at the knees — and just like that, the complexion of this match has changed.",
-                $"One moment of distraction and {control.RingName} takes over. {other.RingName} is a long way from home.",
+                $"One moment of distraction and {control.RingName} takes over. {other.RingName} is a long way from their corner.",
                 $"There it is — {control.RingName} shuts the door, and {other.RingName} is in trouble.",
                 $"{control.RingName} catches {other.RingName} coming in and the heat is on."
             ));

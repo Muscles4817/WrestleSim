@@ -18,7 +18,13 @@ namespace WrestlingSim.Tests
     /// a women's tag match read *"Bianca Belair pulled him away"*.
     ///
     /// Eight templates in <see cref="MatchEngine"/>, three beat descriptions, a structure
-    /// description and two lines of UI.
+    /// description and three lines of UI.
+    ///
+    /// Note what these tests do <b>not</b> cover: nothing here scans `.razor` or `README.md`,
+    /// because neither is reachable through the object model. Two of the three UI strings
+    /// and both README fixes are therefore unguarded, and a future edit could reintroduce
+    /// them silently. Guarding them means a file-scanning test, which is a different kind of
+    /// test with different failure modes; recorded rather than pretended away.
     /// Wrestling's own vocabulary is left alone where it is the name of a thing — a six-man
     /// tag is a six-man tag, and the face in peril is the face in peril. What changed is the
     /// pronouns that attach to a named performer, and the referee's.
@@ -39,7 +45,7 @@ namespace WrestlingSim.Tests
         /// a person in a role, described by gender, in text a player reads.
         /// </summary>
         private static readonly Regex GenderedNoun =
-            new(@"\b(one|the|a|another|third|fourth|fresh|big|legal|same|other) (man|woman|guy|girl)\b",
+            new(@"\b(one|the|a|another|third|fourth|fresh|big|same|other) (man|woman|guy|girl)\b",
                 RegexOptions.IgnoreCase);
 
         [Fact]

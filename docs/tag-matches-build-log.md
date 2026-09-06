@@ -1382,7 +1382,7 @@ policy is unchanged and now enforced: "six-man tag" and "the legal man" are the 
 things and stay; "one man", "the big man", "a fresh third man" describe a person in a role by
 gender and do not.
 
-### Two rewrites that read worse than what they replaced
+### Four rewrites that read worse than what they replaced
 
 Worth recording because a clumsy neutral rewrite is a real cost, not a free win:
 
@@ -1406,3 +1406,57 @@ that independently on a harness of their own.
 **471 tests passing**, with all three of the previously-escaping cases — the DQ line, the
 low-charge hot tag, and a noun in a structure description — verified to fail the guard when
 reintroduced.
+
+
+---
+
+## The commentary — review round 2
+
+**Safe to merge after one edit**, and the edit was a real miss inside the scope this PR
+claimed to have cleared: `README.md:253`, *"two for a tag match, where the second **man**
+starts on the apron"* — one section above the part I did fix, same file, same defect class.
+Fixed, along with the manual still saying "Thirty wrestlers ship in `Wrestlers.json`" when it
+now holds seventy-six.
+
+Verified by the reviewer and worth recording as settled: the guard catches **all eight**
+templates now, including the two that escaped round 1; the coverage assertion genuinely fails
+when a beat type becomes unreachable (checked both by adding an enum member and by breaking a
+beat's validation); the 6,528/26 → 9,208/32 figures are exact; and byte identity reproduces on
+an independent harness.
+
+Four things corrected:
+
+| | |
+|---|---|
+| **"a long way from home"** — the idiom is real and means the wrong thing. It is "out of your element" or "far from your hometown", not far from your corner, which is the entire point of a Cut-Off. My note calling it "the actual commentary idiom" was true of the phrase and false of the sense. | "a long way from **their** corner". |
+| `GenderedNoun` had `legal` in its alternation, so **"the legal man" matches** — three lines under a doc comment exempting it as the name of a rule. Latent only: no scanned surface contains the phrase, so the contradiction never fired. | `legal\|` dropped. |
+| "two lines of UI" — there are three. The round-1 doc nit, recurring one field along. | Corrected, and the docstring now states plainly what these tests do **not** cover. |
+| "Two rewrites that read worse" over a four-row table. | Four. |
+
+### The one that is about this file rather than this PR
+
+> the build log attributes to the round-1 reviewer both a byte-identity reproduction and
+> positive readability verdicts on four specific lines. PR #18 has **zero** GitHub reviews and
+> zero comments, and nothing in the repo records them. Not contradicted, just unverifiable —
+> and it is a paraphrase of a reviewer put in that reviewer's mouth.
+
+Correct, and it applies to every "review found…" in this document, not only #18's. The reviews
+were independent agents working from pinned clones; none of them are recorded in the repo or
+on the pull requests. A note now says so at the top of the A5 section, and the standard it
+sets is the right one: the *measurements* are reproduced in the code and the tests and that is
+the checkable part; the quotes are my account and should be read as such.
+
+### Not guarded, and now said so in the test itself
+
+Reintroducing the Six-Man War description fails the suite. Reintroducing either of the two
+`.razor` strings does not — nothing scans `.razor` or `README.md`, because neither is
+reachable through the object model. My commit message said "all three previously-escaping
+cases verified to fail the guard when reintroduced"; one of the three does. Guarding the
+other two means a file-scanning test, which is a different kind of test with different failure
+modes and is not obviously worth it. Recorded in the test's own docstring rather than left as
+an assumption a reader would make.
+
+Also fixed while here: `BeatEnums.cs:43` still carried "one man kept cut off from **his**
+corner" in an XML doc — internal, but it is the exact sentence rewritten in `Face in Peril`.
+
+**471 tests passing.**

@@ -250,7 +250,7 @@ Selecting **Book a Match** walks you through a five-step flow:
 
 ### 1 — Pick your wrestlers
 First, singles or tag. Then the roster, showing Overness, Skill and Charisma — one name a
-side for a singles match, two for a tag match, where the second man starts on the apron.
+side for a singles match, two for a tag match, where the second starts on the apron.
 
 A wrestler cannot be booked on both sides, and the sides must be the same size. Handicap
 matches are not blocked out of squeamishness: the engine has no term for a numbers advantage
@@ -559,8 +559,8 @@ strategy**: a repeated-beat plan peaks and then declines.
 
 ## Wrestlers
 
-Thirty wrestlers ship in `Wrestlers.json` — 15 in the women's division, 15 in the men's,
-each division spanning all five card positions.
+Seventy-six wrestlers ship in `Wrestlers.json` — 38 in the women's division, 38 in the
+men's, each division spanning all five card positions.
 
 The spread is deliberate. An earlier roster clustered everyone between popularity 70–95
 and skill 2.83–3.82, which used a quarter of each stat's range and made every match rate
