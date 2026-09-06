@@ -1626,3 +1626,61 @@ now agrees; the **consequence** model does not. `HeatEconomy` still pays a midca
 a match with a star exactly as it would in a tag match, so booking a three-way to elevate
 somebody works in the game while the doc says it does not work in the business. That is the next
 piece of this, and it is a consequence-layer change rather than a crowd one.
+
+---
+
+## A multi-man match is a poor place to elevate somebody
+
+The last thing doc 18 §2.5 says that the engine disagreed with. The crowd model already
+concentrated attention on whoever the room came for; the **consequence** model still paid a
+challenger for pinning a star in a three-way exactly as if they had beaten them one on one.
+
+§2.5 makes what look like two claims — a multi-man title match *"lets a champion lose the match
+without losing cleanly"* and *"lets a challenger win without beating the champion"*, and it is
+*"a poor place to elevate somebody"*. They are one fact seen from both ends: **with three in the
+ring, pinning somebody does not establish that you can beat them.** They were fighting two
+people, and one of them was probably lying on the floor at the time.
+
+`HeatEconomy.Conclusiveness(sideCount)` discounts the status swing by 0.65 per side beyond the
+second — a three-way says about two-thirds of what a singles match says, a four-way under half.
+Measured, a 55 beating a 92 in a four-star match:
+
+```
+                     singles   three-way
+challenger gains      +2.95      +1.92
+star loses            −0.28      −0.18
+```
+
+**Both ends discounted by exactly the same 65%**, and that is the design rather than a
+convenience. Protection is the point *and* the cost: a booker who could take the protection
+without paying for it in elevation would have a free lunch, and §2.5's whole argument is that
+there is not one. A test asserts the two ratios are equal, so the two halves cannot drift apart.
+
+**Kept separate from `FinishWeight`.** That describes *how* the match ended — a roll-up, a
+run-in — and this describes *how many ways it could have*. They are independent facts and
+multiply independently: a clean pin in a three-way is decisive in the first sense and
+inconclusive in the second, and collapsing them into one enum would make it indistinguishable
+from a singles roll-up, which it is not. Measured: a clean three-way pays 1.92 against a singles
+roll-up's 1.47, so the three-way still says more.
+
+Trios are unaffected, because they are two sides. §2.5 is explicit that they are not a multi-man
+match — nobody has to be disposed of.
+
+### The hookup was the untested half, again
+
+Four mutations, and the one that survived the first pass was `ShowSimulator` always passing
+`sideCount: 2`. Every test in the new class called `HeatEconomy.ForMatch` directly, so the rule
+was covered and **nothing checked that anything called it**. That is the same gap A3's first
+review round found four of, and it is the third distinct flavour of the same underlying error
+this file now records: testing the rule but not its wiring, testing the mechanism through the
+thing it feeds, and measuring the wrong quantity entirely.
+
+The fix runs a real three-way through a real show and asserts the overness the winner actually
+received equals the discounted figure. That needed one correction of its own: recomputing the
+candidates *after* the show had already moved the wrestlers' overness put the answer between the
+two candidates and looked like the discount being half-applied — both the upset gap and the
+approaching-the-ceiling damping read current overness. Computing them from pristine copies gives
+an exact match: **1.192 received against 1.192 predicted for a three-way, and 1.834 for a
+singles.**
+
+**569 tests passing.**

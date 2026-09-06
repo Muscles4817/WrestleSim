@@ -314,7 +314,8 @@ namespace WrestlingSim.Engine
                     winningChemistry: ChemistryOf(match.Plan, engineResult.WinningSide),
                     losingChemistry:  ChemistryOf(match.Plan, engineResult.LosingSide))
                 : HeatEconomy.ForMatch(
-                    engineResult.Winner, engineResult.Loser, engineResult.StarRating, weight, familiarity);
+                    engineResult.Winner, engineResult.Loser, engineResult.StarRating, weight, familiarity,
+                    sideCount: match.Plan.Sides.Count);
 
             foreach (var raw in outcome.All)
             {
