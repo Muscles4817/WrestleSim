@@ -1267,3 +1267,77 @@ I was not confident of the legal name and would rather leave a gap than invent o
 the mistake this whole section exists to undo. Corrections welcome; they are data, not code.
 
 **521 tests passing**, unchanged.
+
+---
+
+## Multi-man matches — the model, not yet the match
+
+Doc 18 §2.5 separates two things that both get called "multi-man", and the separation decides
+what had to be built:
+
+- **Trios** are not a multi-man match. Nobody has to be disposed of, because everyone not legal
+  is on the apron by rule. Six people, still two sides, and the tag engine already ran them.
+- **A triple threat is the real thing.** Three sides, one fall, anyone can be pinned. With two
+  sides every second is accounted for — one working, one being worked — and with three,
+  somebody is doing nothing.
+
+### What is built
+
+**A plan has N sides.** `MatchPlan.Sides` replaces the `SideA`/`SideB` pair, both kept as shims
+over `Sides[0]` and `Sides[1]` — the pattern phase 1 used for `WrestlerA`/`WrestlerB`, for the
+same reason: every existing plan, save and test keeps working untouched, and singles and tag
+results stay byte-identical.
+
+**`MatchFormat` is derived, not stored**, so a plan cannot disagree with itself about what it
+is. It is a separate question from `MatchType`, which is how a match is *worked*.
+
+**The finish names who takes the fall, separately from who wins.** This is the format's one
+real booking tool — doc §2.5: the reason to book a multi-man title match is that the champion
+can be beaten without being beaten — and a finish that names only a winner cannot express it.
+`MatchBeat.Pinned` is null for two sides, where it is redundant, and required for three.
+
+**The rules that follow from three sides.** No disqualification and no count-out, because with
+three people there is no way to count two of them out at once; the format drops the rule rather
+than pretending to enforce it. Every side the same size. At most four sides. One wrestler a
+side for now.
+
+### The bug that justifies the whole approach
+
+`Ctx.LegalOf` was `side == Plan.SideA ? LegalA : LegalB`. Side C resolved to **side B's
+wrestler**, so a three-way booked with C taking the fall reported B as the loser: the booking
+said one thing and the result said another, silently.
+
+That is the exact failure mode of comparing an enum with `==` instead of resolving it once, and
+it is why `BeatControl` → side index now lives in a single `MatchPlan.SideIndex`. There were 118
+`BeatControl` references and **zero** switch statements — a hundred-odd places where
+`!= WrestlerA` quietly means "side B". Adding `SideC` to that enum without one resolver would
+have scattered this bug rather than fixing it.
+
+Four mutations, all killed: restoring the `LegalOf` fallback, allowing a DQ finish, checking
+evenness on only the first two sides, and dropping the pinned-side requirement.
+
+### What is **not** built, stated plainly
+
+**The engine still narrates a three-way as though two people were in it.** `Ctx` carries
+`LegalA`/`LegalB`, `Opponent(w)` is "the one you are not", `LegalPairStat` averages exactly two
+wrestlers, and around fifty commentary lines are written for two names. A triple threat
+executes and produces a correct winner, a correct pinned side and a plausible rating — but the
+play-by-play will describe two of the three.
+
+Also missing, and each is a piece of work rather than a gap to paper over:
+
+- **The disposal spot.** §2.5 says the entire craft of the format is disposing of the third
+  man plausibly and bringing him back at the right moment. There is no beat for it and no
+  state for who is currently out of the action.
+- **Crowd attention does not divide evenly.** §2.5: a three-way between one over performer and
+  two midcarders is the over performer's match with two people in it, and the sequences not
+  involving them are dead air however well worked. The crowd model treats all participants
+  alike.
+- **Elimination, battle royal and the Rumble.** These need multiple falls and a running
+  participant list, which is a different shape from "first fall wins".
+- **Handicap.** Still refused, and for the reason it always was: the engine has no term for a
+  numbers advantage, so it would grade a 1v2 as a normal match.
+- **The match builder cannot book one.** Step 0 offers one, two or three a side — sides *of*,
+  not sides. Three-ways are constructible in code and not in the UI.
+
+**530 tests passing**, singles and tag byte-identity intact.

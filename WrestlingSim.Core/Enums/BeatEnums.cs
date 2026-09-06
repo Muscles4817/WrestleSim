@@ -92,12 +92,25 @@ namespace WrestlingSim.Enums
         FinishSuperFinisher
     }
 
+    /// <summary>
+    /// Whose beat this is. Named for sides, not for wrestlers — in a tag match it is whichever
+    /// of that side's members is legal.
+    ///
+    /// `SideC` and `SideD` are appended rather than replacing the A/B names, so the several
+    /// hundred existing structure definitions keep reading the way they were written. The
+    /// value is resolved in exactly one place, <see cref="MatchPlan.MatchPlan.SideIndex"/>;
+    /// there is no second copy, because the risk with adding members to an enum that is
+    /// compared with `==` rather than switched on is precisely that `!= WrestlerA` silently
+    /// means "side B" in a hundred places.
+    /// </summary>
     public enum BeatControl
     {
         WrestlerA,
         WrestlerB,
         Even,
-        Contested  // rapid back-and-forth
+        Contested,  // rapid back-and-forth
+        SideC,
+        SideD
     }
 
     public enum BeatIntensity

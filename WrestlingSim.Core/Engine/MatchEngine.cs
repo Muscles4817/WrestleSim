@@ -180,7 +180,22 @@ namespace WrestlingSim.Engine
             public bool IsSideA(Wrestler w) => Plan.SideA.Contains(w);
 
             /// <summary>The legal performer for a given side.</summary>
-            public Wrestler LegalOf(MatchSide side) => side == Plan.SideA ? LegalA : LegalB;
+            /// <summary>
+            /// Whoever is legal for a side right now.
+            ///
+            /// Sides 0 and 1 carry live tag state, so they read it. Any further side is
+            /// one wrestler — <see cref="MatchPlan.Validate"/> refuses a multi-man match
+            /// with partners — so the legal member is the only member.
+            ///
+            /// This used to be `side == Plan.SideA ? LegalA : LegalB`, which returned side
+            /// B's wrestler for side C: booking a three-way with C pinned reported B as the
+            /// loser. That is the failure mode of comparing an enum with `==` rather than
+            /// resolving it once, which is why the control mapping now lives in one place.
+            /// </summary>
+            public Wrestler LegalOf(MatchSide side) =>
+                side == Plan.SideA ? LegalA
+                : side == Plan.SideB ? LegalB
+                : side.Members[0];
 
             /// <summary>The legal performer on the side this wrestler is *not* on.</summary>
             public Wrestler Opponent(Wrestler w) => IsSideA(w) ? LegalB : LegalA;

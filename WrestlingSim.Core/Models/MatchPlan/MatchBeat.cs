@@ -33,6 +33,18 @@ namespace WrestlingSim.Models.MatchPlan
         /// </summary>
         public int? IncomingIndex { get; set; }
 
+        /// <summary>
+        /// On a finish, which side takes the fall.
+        ///
+        /// With two sides this is redundant — whoever did not win, lost — and stays null. With
+        /// three it is the entire point of the format: doc 18 §2.5 says the reason to book a
+        /// multi-man title match is that *the champion can be beaten without being beaten*,
+        /// and that only means anything if the booking says who was actually pinned. A finish
+        /// that names only a winner cannot express it, and would silently make every
+        /// three-way a normal loss for somebody the booker never chose.
+        /// </summary>
+        public BeatControl? Pinned { get; set; }
+
         // ── Derived helpers ──────────────────────────────────────────────────
 
         public double IntensityModifier => Intensity switch
