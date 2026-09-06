@@ -1765,3 +1765,92 @@ The play-by-play still narrates a three-way with two names — `Ctx.LegalA`/`Leg
 `Opponent(w)` as "the one you are not", and about fifty commentary lines written for two people.
 The result is right and the commentary describes two of the three. Elimination, battle royals
 and the Rumble need multiple falls, which is a different shape from "first fall wins".
+
+## The commentary knows there are three people
+
+The previous section ended by admitting the play-by-play narrated a three-way with two names.
+The result was right and the story was about two of the three, which is the wrong half to get
+right: the finish is a number on a card, the commentary is what the player actually reads.
+
+### The third copy of the same mapping
+
+`BeatControl` → side index has now been got wrong three separate times, in three different
+places, each fixed independently:
+
+| Where | What it did | Symptom |
+|---|---|---|
+| `Ctx.LegalOf` | `side == SideA ? LegalA : LegalB` | side C resolved to B's wrestler |
+| `MatchEngine.Dominant` | knew only two sides | three-ways reported the wrong winner |
+| `Ctx.ControlLegal` | knew only `A` and `B` | a beat booked to C fell through to `control ??= ctx.LegalA` |
+
+The third is the worst of them, because the fallback made it silent. A beat booked to side C
+returned null, the `??=` credited it to side A, and the line came out **"Alpha covers — and
+Alpha is there to break it up."** Nobody breaks up their own pin, and no test asserted otherwise.
+
+The fix, again, was to delete the copy rather than teach it one more case. There is one resolver
+— `MatchPlan.SideIndex(BeatControl)` and its inverse `ControlFor(int)` — and everything routes
+through it. A fourth copy is the thing to look for the next time a multi-man line reads oddly.
+
+### The dispatch-level fix that did nothing
+
+`Opponent(w)` was "the one you are not", which in a three-way means "one of the two you are
+not", picked arbitrarily. The obvious fix is to resolve the opponent at dispatch from the beat's
+`Against` and hand it to the handler.
+
+That fix was inert. Sixteen handlers **recompute** `other = ctx.Opponent(control)` from the
+context rather than taking what dispatch worked out, so the corrected value was calculated,
+passed, and then thrown away sixteen times. A grep for `Opponent(` is what found it; reading the
+dispatch site was not enough, because the bug is in what the callees ignore.
+
+So `Opponent` itself became beat-aware. `Ctx.CurrentBeat` is set before each beat runs, and:
+
+```csharp
+if (CurrentBeat is { } beat
+    && MatchPlan.SideIndex(beat.Against ?? BeatControl.Even) is { } i
+    && i < Plan.Sides.Count && Plan.Sides[i] != mine)
+    return LegalOf(Plan.Sides[i]);
+```
+
+An undirected beat falls back to rotating through the sides that are still upright — skipping
+the disposed one, because the whole point of disposing of somebody is that they are not in the
+exchange. Singles and tag return early and are byte-identical.
+
+### "These two" when there are three
+
+Eleven lines hard-coded `ctx.LegalA` and `ctx.LegalB` — a billing of the first two sides
+*listed*, so in a three-way the third person was absent from the sentence by typing order.
+`MatchEngine.Billing` is a public static that renders a list as "A and B" or "A, B and C", and
+`LegalBilling` feeds it the legal wrestler from every side.
+
+Eight more lines were room-wide but counted to two in words: "these two", "Both wrestlers". Those
+now go through `LegalCollective` ("these two" / "all three" / "all four") and `LegalSubject`
+("Both wrestlers" / "All three"). Pair-specific feud lines were deliberately left alone — "these
+two have history" is *about* a pair, and widening it to the room would be a different and wronger
+sentence.
+
+Five mutations, all killed: `Opponent` ignoring `Against`; `ControlLegal` knowing only A and B;
+billing rendering only the first two; `CurrentBeat` never set; an undirected beat targeting the
+disposed side.
+
+### A test that asserted nothing
+
+`TwoSidedCommentaryIsUnchanged` was written, run, passed, and deleted, because what it asserted
+was that a local function returns the constant it returns. The collective test had the same
+shape in weaker form — it checked that "these two" was *absent* from a three-way. Absence is not
+a pass; a crash before the line is emitted produces the same green. It now sweeps forty seeds
+looking for the *positive* form, "all three", and fails if the phrasing never appears.
+
+That is the third time today a test measured the neighbourhood of a mechanism rather than the
+mechanism. It is the standing failure mode of this work and worth more suspicion than it gets.
+
+Browser-verified rather than only asserted: **"Roman Reigns vs Rhea Ripley vs Becky Lynch"** —
+the disposal spot names Becky, the spite break names Rhea and Roman, Becky steals the fall, zero
+console errors.
+
+**600 tests passing.**
+
+### Still not built
+
+Elimination, battle royals and the Rumble still need multiple falls. The pair-specific feud
+lines are correct but never mention that a third party is watching them cost each other the
+match, which is the beat a viewer would call.

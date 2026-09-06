@@ -202,6 +202,26 @@ namespace WrestlingSim.Engine
         /// </summary>
         public const double AttentionFloor = 0.45;
 
+        /// <summary>
+        /// Joins names the way a person says them: "A and B", "A, B and C".
+        ///
+        /// **Two names must read exactly as they always did.** Every singles and tag
+        /// commentary line goes through this, so a different answer at two would rewrite the
+        /// whole existing play-by-play — and the byte-identity harness would say so, which is
+        /// the point of having it.
+        /// </summary>
+        public static string Billing(IEnumerable<string> names)
+        {
+            var list = names.ToList();
+            return list.Count switch
+            {
+                0 => "",
+                1 => list[0],
+                2 => $"{list[0]} and {list[1]}",
+                _ => $"{string.Join(", ", list.Take(list.Count - 1))} and {list[^1]}"
+            };
+        }
+
         public static double MultiManNearFallFactor(bool multiMan, bool somebodyDisposed) =>
             multiMan && !somebodyDisposed ? CrowdedOutNearFall : 1.0;
 
@@ -296,17 +316,112 @@ namespace WrestlingSim.Engine
                 : side.Members[0];
 
             /// <summary>The legal performer on the side this wrestler is *not* on.</summary>
-            public Wrestler Opponent(Wrestler w) => IsSideA(w) ? LegalB : LegalA;
+            /// <summary>
+            /// The beat currently being resolved. Set once per beat by the dispatcher so
+            /// <see cref="Opponent"/> can answer for it.
+            ///
+            /// Hidden state is a cost, and it buys the thing this codebase has repeatedly
+            /// failed to get any other way: **one answer to "who is this against".** The
+            /// alternative was passing the beat to sixteen handlers that each recompute the
+            /// opponent — sixteen places to keep in step, which is how `LegalOf`,
+            /// `MatchEngine.Dominant` and `ControlLegal` each went wrong in turn.
+            /// </summary>
+            public MatchBeat? CurrentBeat { get; set; }
 
-            /// <summary>The legal performer for a beat's control, or null for Even / Contested.</summary>
-            public Wrestler? ControlLegal(MatchBeat beat) => beat.Control switch
+            /// <summary>
+            /// Who the current beat is against.
+            ///
+            /// With two sides this is "the one you are not", which is what it always meant
+            /// and why nothing needed more. With three it is a question only the booking can
+            /// answer, and it does: `MatchBeat.Against` names the side a beat is aimed at.
+            ///
+            /// Without this a beat booked against side C narrated side B — sixteen handlers
+            /// asked "the one you are not" in a match where that has no single answer, and
+            /// took the first one.
+            ///
+            /// With no declared target it is whoever is still upright, because a beat that
+            /// does not say is between the people not currently lying on the floor.
+            /// </summary>
+            public Wrestler Opponent(Wrestler w)
             {
-                BeatControl.WrestlerA => LegalA,
-                BeatControl.WrestlerB => LegalB,
-                _                     => null
+                if (!Plan.IsMultiMan) return IsSideA(w) ? LegalB : LegalA;
+
+                var mine = SideOf(w);
+
+                if (CurrentBeat is { } beat
+                    && Models.MatchPlan.MatchPlan.SideIndex(beat.Against ?? BeatControl.Even) is { } i
+                    && i < Plan.Sides.Count && Plan.Sides[i] != mine)
+                    return LegalOf(Plan.Sides[i]);
+
+                var upright = Plan.Sides
+                    .Where(side => side != mine)
+                    .Where(side => !State.SomebodyIsDisposed
+                                   || Plan.Sides.IndexOf(side) != State.DisposedSide)
+                    .ToList();
+
+                return LegalOf(upright.Count > 0
+                    ? upright[State.BeatIndex % upright.Count]
+                    : Plan.Sides.First(side => side != mine));
+            }
+
+            /// <summary>
+            /// Everyone legal right now, in side order — for the beats that address the room
+            /// rather than a pairing. An opening in a three-way is three people going at each
+            /// other, and saying "A and B" leaves one of them out of their own match.
+            /// </summary>
+            public IReadOnlyList<Wrestler> AllLegal =>
+                Plan.Sides.Select(LegalOf).ToList();
+
+            /// <summary>Everyone legal, billed — "A and B", or "A, B and C".</summary>
+            public string LegalBilling => MatchEngine.Billing(AllLegal.Select(w => w.RingName));
+
+            /// <summary>
+            /// How commentary refers to the field without naming it — "these two", "all
+            /// three", "all four".
+            ///
+            /// Only for lines that address the room. A line about two specific rivals should
+            /// still say "these two", because it is about those two and not about the match;
+            /// the openings are the ones that were counting wrong.
+            /// </summary>
+            public string LegalCollective => Plan.Sides.Count switch
+            {
+                <= 2 => "these two",
+                3    => "all three",
+                _    => "all four"
             };
 
-            public MatchSide SideOf(Wrestler w) => IsSideA(w) ? Plan.SideA : Plan.SideB;
+            /// <summary>The same, as a sentence subject — "Both wrestlers", "All three".</summary>
+            public string LegalSubject => Plan.Sides.Count switch
+            {
+                <= 2 => "Both wrestlers",
+                3    => "All three",
+                _    => "All four"
+            };
+
+
+
+            /// <summary>The legal performer for a beat's control, or null for Even / Contested.</summary>
+            /// <summary>
+            /// Whoever is legal for the side a beat is booked to. Null for Even and Contested.
+            ///
+            /// This was a third copy of the BeatControl-to-side mapping, and like the other
+            /// two it only knew about A and B — so a beat booked to side C resolved to
+            /// *null* and every handler's `control ??= ctx.LegalA` quietly credited it to
+            /// side A. A pin break booked for the third party read "Alpha covers, and Alpha
+            /// is there to break it up."
+            ///
+            /// It goes through the one resolver now. That is the third time this exact
+            /// defect has appeared in this codebase — `LegalOf`, `MatchEngine.Dominant`, and
+            /// here — and every time the fix has been to delete the copy rather than teach
+            /// it about one more case.
+            /// </summary>
+            public Wrestler? ControlLegal(MatchBeat beat) =>
+                Models.MatchPlan.MatchPlan.SideIndex(beat.Control) is { } i && i < Plan.Sides.Count
+                    ? LegalOf(Plan.Sides[i])
+                    : null;
+
+            public MatchSide SideOf(Wrestler w) =>
+                Plan.SideOf(w) ?? Plan.SideA;
 
             // ── Aggregation ──────────────────────────────────────────────────
             //
@@ -541,6 +656,7 @@ namespace WrestlingSim.Engine
             };
 
             // Wrestler references for this beat
+            ctx.CurrentBeat   = beat;
             Wrestler? control = ctx.ControlLegal(beat);
             Wrestler other    = control != null ? ctx.Opponent(control) : ctx.LegalB;
 
@@ -1229,18 +1345,18 @@ namespace WrestlingSim.Engine
             r.StorytellingContribution = 2.5 * iMod * PerformerProfile.Blend(connection, 0.6);
 
             r.Commentary.Add(Pick(
-                $"{ctx.LegalA.RingName} and {ctx.LegalB.RingName} immediately go at each other before the bell finishes ringing!",
-                $"No feeling-out process — the crowd erupts as these two collide from the first second!",
-                $"{ctx.LegalA.RingName} and {ctx.LegalB.RingName} are at each other's throats right away!",
-                $"The bell barely sounds before {ctx.LegalA.RingName} and {ctx.LegalB.RingName} are trading shots!",
-                $"There will be no feeling out here — these two want each other right now!"
+                $"{ctx.LegalBilling} immediately go at each other before the bell finishes ringing!",
+                $"No feeling-out process — the crowd erupts as {ctx.LegalCollective} collide from the first second!",
+                $"{ctx.LegalBilling} are at each other's throats right away!",
+                $"The bell barely sounds before {ctx.LegalBilling} are trading shots!",
+                $"There will be no feeling out here — {ctx.LegalCollective} want each other right now!"
             ));
             r.Commentary.Add(Pick(
                 "The pace is frenetic from the opening bell!",
                 "Neither wrestler is willing to take a step back.",
                 "The energy in the arena is electric — this is must-see television!",
                 "The crowd is immediately invested — they came to see exactly this!",
-                "Both wrestlers throwing everything at each other from the jump — breathtaking stuff!"
+                $"{ctx.LegalSubject} throwing everything at each other from the jump — breathtaking stuff!"
             ));
         }
 
@@ -1260,17 +1376,17 @@ namespace WrestlingSim.Engine
             r.StorytellingContribution = 3.0 * dMod * PerformerProfile.Blend(ctx.LegalPair(p => p.RingPsych), 0.6);
 
             r.Commentary.Add(Pick(
-                $"{ctx.LegalA.RingName} and {ctx.LegalB.RingName} circle each other, measuring the distance carefully.",
-                $"A deliberate, methodical start as both wrestlers respect each other's ability.",
+                $"{ctx.LegalBilling} circle each other, measuring the distance carefully.",
+                $"A deliberate, methodical start as {ctx.LegalSubject.ToLowerInvariant()} respect each other's ability.",
                 $"The feeling-out process begins — neither willing to show their hand too soon.",
-                $"{ctx.LegalA.RingName} and {ctx.LegalB.RingName} are in no rush — this is going to be a war of attrition.",
+                $"{ctx.LegalBilling} are in no rush — this is going to be a war of attrition.",
                 $"Slow, deliberate movements from both competitors — each hunting for an opening."
             ));
             r.Commentary.Add(Pick(
                 "Both competitors are playing the long game.",
                 "The chess match has begun.",
                 "They know this is a marathon, not a sprint.",
-                "This crowd is patient — they trust these two to take them somewhere special.",
+                $"This crowd is patient — they trust {ctx.LegalCollective} to take them somewhere special.",
                 "Every movement is calculated. Every step deliberate. Something is being built here."
             ));
         }
@@ -1286,10 +1402,10 @@ namespace WrestlingSim.Engine
             r.StorytellingContribution = 2.0 * dMod * PerformerProfile.Blend(ctx.LegalPair(p => p.RingPsych), 0.5);
 
             r.Commentary.Add(Pick(
-                $"{ctx.LegalA.RingName} and {ctx.LegalB.RingName} lock up.",
-                $"The match gets under way with both wrestlers testing each other.",
-                $"An even start as {ctx.LegalA.RingName} and {ctx.LegalB.RingName} feel each other out.",
-                $"A collar-and-elbow tie-up to open — both wrestlers gauging what they're dealing with.",
+                $"{ctx.LegalBilling} lock up.",
+                $"The match gets under way with {ctx.LegalSubject.ToLowerInvariant()} testing each other.",
+                $"An even start as {ctx.LegalBilling} feel each other out.",
+                $"A collar-and-elbow tie-up to open — {ctx.LegalSubject.ToLowerInvariant()} gauging what they're dealing with.",
                 $"Standard opening exchanges, but the undercurrent of tension is already obvious."
             ));
         }
@@ -1572,8 +1688,8 @@ namespace WrestlingSim.Engine
 
             r.Commentary.Add(Pick(
                 $"This match spills out to the floor! The crowd parts as the brawl comes to them!",
-                $"{ctx.LegalA.RingName} and {ctx.LegalB.RingName} are fighting into the crowd!",
-                $"Chaos! These two are taking this war everywhere!",
+                $"{ctx.LegalBilling} are fighting into the crowd!",
+                $"Chaos! {char.ToUpperInvariant(ctx.LegalCollective[0]) + ctx.LegalCollective[1..]} are taking this war everywhere!",
                 $"We have completely lost control — they're brawling through the entire arena!",
                 $"The guardrail is not going to contain this one — they're spilling out into the audience!"
             ));
@@ -1641,10 +1757,10 @@ namespace WrestlingSim.Engine
                                          * PerformerProfile.Blend(workedConnection, 0.5);
 
             r.Commentary.Add(Pick(
-                $"This feud reaches a boiling point! {ctx.LegalA.RingName} and {ctx.LegalB.RingName} can no longer contain their hatred!",
+                $"This feud reaches a boiling point! {ctx.LegalBilling} can no longer contain their hatred!",
                 $"Everything this feud has been building toward is pouring out right now!",
                 $"The bad blood between these two erupts — the crowd is absolutely unhinged!",
-                $"The gloves are off! The real hatred between {ctx.LegalA.RingName} and {ctx.LegalB.RingName} is on full display!",
+                $"The gloves are off! The real hatred between {ctx.LegalBilling} is on full display!",
                 $"This match has just become something completely different — the feud has taken over everything!"
             ));
             r.Commentary.Add(Pick(
