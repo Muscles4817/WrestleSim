@@ -29,32 +29,38 @@
 
     <div class="panel">
         <div class="panel__title">What kind of match</div>
-        <div class="picks picks--2">
-            <button class="pick @(isTag ? "" : "is-selected")" @onclick="() => SetTag(false)">
-                <span class="pick__body">
-                    <span class="pick__name">Singles</span>
-                    <span class="pick__desc">One against one.</span>
-                </span>
-            </button>
-            <button class="pick @(isTag ? "is-selected" : "")" @onclick="() => SetTag(true)">
-                <span class="pick__body">
-                    <span class="pick__name">Tag team</span>
-                    <span class="pick__desc">Two a side, with a corner to be kept away from.</span>
-                </span>
-            </button>
+        <div class="picks picks--3">
+            @for (int n = 1; n <= 3; n++)
+            {
+                int size = n;
+                <button class="pick @(sideSize == size ? "is-selected" : "")"
+                        @onclick="() => SetSideSize(size)">
+                    <span class="pick__body">
+                        <span class="pick__name">@SideSizeLabel(size)</span>
+                        <span class="pick__desc">@SideSizeBlurb(size)</span>
+                    </span>
+                </button>
+            }
         </div>
-        @if (isTag)
+        @if (IsTeamMatch)
         {
             <div class="notice">
-                A tag match is worked as a formula: shine, cut-off, one man kept from his corner,
+                A team match is worked as a formula: shine, cut-off, one man kept from his corner,
                 the tag denied, then the hot tag. The payoff is worth what the peril paid for it.
+                @if (sideSize > 2)
+                {
+                    <text>
+                        A third man buys a deeper heat — three fresh opponents can rotate on the
+                        man in peril — and a partner who has not been in the match yet to finish it.
+                    </text>
+                }
             </div>
         }
     </div>
 
     <div class="panel">
         <div class="panel__title">
-            @(isTag ? "Team A" : "Corner A")
+            @(IsTeamMatch ? "Side A" : "Corner A")
             @if (a is not null) { <span class="badge badge--gold">@SideAName</span> }
             <span class="spacer"></span>
             <span class="small muted">wins by default in every preset</span>
@@ -88,36 +94,80 @@
         }
     </div>
 
-    @if (isTag && a is not null)
+
+    @if (IsTeamMatch && a is not null)
     {
-        <div class="panel">
-            <div class="panel__title">
-                A's partner
-                @if (partnerA is not null) { <span class="badge badge--gold">@partnerA.RingName</span> }
-                <span class="spacer"></span>
-                <span class="small muted">starts on the apron</span>
+        @for (int slot = 0; slot < sideSize - 1; slot++)
+        {
+            int index = slot;
+            var chosen = partnersA.ElementAtOrDefault(index);
+            <div class="panel">
+                <div class="panel__title">
+                    @(sideSize > 2 ? $"A's partner {index + 1}" : "A's partner")
+                    @if (chosen is not null) { <span class="badge badge--gold">@chosen.RingName</span> }
+                    <span class="spacer"></span>
+                    <span class="small muted">starts on the apron</span>
+                </div>
+                <div class="picks picks--2">
+                    @foreach (var w in FilteredRoster().Where(x => !Chosen.Contains(x) || x == chosen)
+                                                       .OrderByDescending(x => x.Overness))
+                    {
+                        var pick = w;
+                        <button class="pick @(chosen == pick ? "is-selected" : "")"
+                                @onclick="() => PickPartner(partnersA, index, pick)">
+                            <span class="pick__body">
+                                <span class="pick__name">@pick.RingName</span>
+                                <span class="pick__desc">@pick.Style · @(pick.Gimmick?.NaturalAlignment.ToString() ?? "—")</span>
+                            </span>
+                            <span class="pick__meta">Pop @pick.Overness.ToString("F0")<br />Cha @pick.Charisma.ToString("F1")</span>
+                        </button>
+                    }
+                </div>
             </div>
-            <div class="picks picks--2">
-                @foreach (var w in FilteredRoster().Where(x => !Chosen.Contains(x) || x == partnerA)
-                                                   .OrderByDescending(x => x.Overness))
+        }
+        @if (MembersA.Count() == sideSize)
+        {
+            <div class="panel">
+                <div class="panel__title">
+                    Side A
+                    @if (ExistingTeamA is { } known) { <span class="badge badge--gold">@known.Name</span> }
+                </div>
+                @if (ExistingTeamA is { } teamA)
                 {
-                    <button class="pick @(partnerA == w ? "is-selected" : "")" @onclick="() => PickPartnerA(w)">
-                        <span class="pick__body">
-                            <span class="pick__name">@w.RingName</span>
-                            <span class="pick__desc">@w.Style · @(w.Gimmick?.NaturalAlignment.ToString() ?? "—")</span>
-                        </span>
-                        <span class="pick__meta">Pop @w.Overness.ToString("F0")<br />Cha @w.Charisma.ToString("F1")</span>
-                    </button>
+                    <div class="notice">
+                        <strong>@teamA.Name</strong> — @teamA.ChemistryLabel.ToLowerInvariant(),
+                        @teamA.MatchesTogether match@(teamA.MatchesTogether == 1 ? "" : "es") together
+                        over @teamA.TenureLabel(Today). Chemistry makes their tandem offence land
+                        and lets the strongest of them carry the rest.
+                    </div>
+                }
+                else
+                {
+                    <label class="check">
+                        <input type="checkbox" @bind="formTeamA" />
+                        <span>Make them a standing team</span>
+                    </label>
+                    @if (formTeamA)
+                    {
+                        <div class="field">
+                            <span class="field__label">Team name</span>
+                            <input class="input" @bind="teamNameA" maxlength="48" placeholder="@SideAName" />
+                        </div>
+                        <div class="notice">
+                            A team starts with no chemistry and builds it by working together.
+                            A team that stops teaming stops being one.
+                        </div>
+                    }
                 }
             </div>
-        </div>
+        }
     }
 
-    @if (a is not null && (!isTag || partnerA is not null))
+    @if (MembersA.Count() == sideSize)
     {
         <div class="panel">
             <div class="panel__title">
-                @(isTag ? "Team B" : "Corner B")
+                @(IsTeamMatch ? "Side B" : "Corner B")
                 @if (b is not null) { <span class="badge badge--gold">@SideBName</span> }
             </div>
             @if (b is not null && b.Division != a.Division)
@@ -128,7 +178,7 @@
                     to book, just an unusual call.
                 </div>
             }
-            @{ var poolB = FilteredRoster().Where(x => x != a && x != partnerA && x != partnerB).ToList(); }
+            @{ var poolB = FilteredRoster().Where(x => !Chosen.Contains(x) || x == b).ToList(); }
             @foreach (var group in poolB.GroupBy(w => w.CardPosition).OrderByDescending(g => g.Key))
             {
                 <div class="group-label">@group.Key.Label()</div>
@@ -154,102 +204,73 @@
         </div>
     }
 
-    @if (isTag && a is not null && partnerA is not null)
+
+    @if (IsTeamMatch && b is not null)
     {
-        <div class="panel">
-            <div class="panel__title">
-                Team A
-                @if (ExistingTeamA is { } known) { <span class="badge badge--gold">@known.Name</span> }
-            </div>
-            @if (ExistingTeamA is { } teamA)
-            {
-                <div class="notice">
-                    <strong>@teamA.Name</strong> — @teamA.ChemistryLabel.ToLowerInvariant(),
-                    @teamA.MatchesTogether match@(teamA.MatchesTogether == 1 ? "" : "es") together
-                    over @teamA.TenureLabel(Today).
-                    Chemistry makes their double teams land and lets the stronger of them carry
-                    the other.
+        @for (int slot = 0; slot < sideSize - 1; slot++)
+        {
+            int index = slot;
+            var chosen = partnersB.ElementAtOrDefault(index);
+            <div class="panel">
+                <div class="panel__title">
+                    @(sideSize > 2 ? $"B's partner {index + 1}" : "B's partner")
+                    @if (chosen is not null) { <span class="badge badge--gold">@chosen.RingName</span> }
+                    <span class="spacer"></span>
+                    <span class="small muted">starts on the apron</span>
                 </div>
-            }
-            else
-            {
-                <label class="check">
-                    <input type="checkbox" @bind="formTeamA" />
-                    <span>Make them a standing team</span>
-                </label>
-                @if (formTeamA)
+                <div class="picks picks--2">
+                    @foreach (var w in FilteredRoster().Where(x => !Chosen.Contains(x) || x == chosen)
+                                                       .OrderByDescending(x => x.Overness))
+                    {
+                        var pick = w;
+                        <button class="pick @(chosen == pick ? "is-selected" : "")"
+                                @onclick="() => PickPartner(partnersB, index, pick)">
+                            <span class="pick__body">
+                                <span class="pick__name">@pick.RingName</span>
+                                <span class="pick__desc">@pick.Style · @(pick.Gimmick?.NaturalAlignment.ToString() ?? "—")</span>
+                            </span>
+                            <span class="pick__meta">Pop @pick.Overness.ToString("F0")<br />Cha @pick.Charisma.ToString("F1")</span>
+                        </button>
+                    }
+                </div>
+            </div>
+        }
+        @if (MembersB.Count() == sideSize)
+        {
+            <div class="panel">
+                <div class="panel__title">
+                    Side B
+                    @if (ExistingTeamB is { } known) { <span class="badge badge--gold">@known.Name</span> }
+                </div>
+                @if (ExistingTeamB is { } teamB)
                 {
-                    <div class="field">
-                        <span class="field__label">Team name</span>
-                        <input class="input" @bind="teamNameA" maxlength="48"
-                               placeholder="@($"{a.RingName} & {partnerA.RingName}")" />
-                    </div>
                     <div class="notice">
-                        A team starts with no chemistry and builds it by working together.
-                        Two singles wrestlers thrown together are exactly that — and a team
-                        that stops teaming stops being one.
+                        <strong>@teamB.Name</strong> — @teamB.ChemistryLabel.ToLowerInvariant(),
+                        @teamB.MatchesTogether match@(teamB.MatchesTogether == 1 ? "" : "es") together
+                        over @teamB.TenureLabel(Today). Chemistry makes their tandem offence land
+                        and lets the strongest of them carry the rest.
                     </div>
                 }
-            }
-        </div>
-    }
-
-    @if (isTag && b is not null)
-    {
-        <div class="panel">
-            <div class="panel__title">
-                B's partner
-                @if (partnerB is not null) { <span class="badge badge--gold">@partnerB.RingName</span> }
-                <span class="spacer"></span>
-                <span class="small muted">starts on the apron</span>
-            </div>
-            <div class="picks picks--2">
-                @foreach (var w in FilteredRoster().Where(x => !Chosen.Contains(x) || x == partnerB)
-                                                   .OrderByDescending(x => x.Overness))
+                else
                 {
-                    <button class="pick @(partnerB == w ? "is-selected" : "")" @onclick="() => PickPartnerB(w)">
-                        <span class="pick__body">
-                            <span class="pick__name">@w.RingName</span>
-                            <span class="pick__desc">@w.Style · @(w.Gimmick?.NaturalAlignment.ToString() ?? "—")</span>
-                        </span>
-                        <span class="pick__meta">Pop @w.Overness.ToString("F0")<br />Cha @w.Charisma.ToString("F1")</span>
-                    </button>
+                    <label class="check">
+                        <input type="checkbox" @bind="formTeamB" />
+                        <span>Make them a standing team</span>
+                    </label>
+                    @if (formTeamB)
+                    {
+                        <div class="field">
+                            <span class="field__label">Team name</span>
+                            <input class="input" @bind="teamNameB" maxlength="48" placeholder="@SideBName" />
+                        </div>
+                        <div class="notice">
+                            A team starts with no chemistry and builds it by working together.
+                            A team that stops teaming stops being one.
+                        </div>
+                    }
                 }
             </div>
-        </div>
-    }
-
-    @if (isTag && b is not null && partnerB is not null)
-    {
-        <div class="panel">
-            <div class="panel__title">
-                Team B
-                @if (ExistingTeamB is { } knownB) { <span class="badge badge--gold">@knownB.Name</span> }
-            </div>
-            @if (ExistingTeamB is { } teamB)
-            {
-                <div class="notice">
-                    <strong>@teamB.Name</strong> — @teamB.ChemistryLabel.ToLowerInvariant(),
-                    @teamB.MatchesTogether match@(teamB.MatchesTogether == 1 ? "" : "es") together
-                    over @teamB.TenureLabel(Today).
-                </div>
-            }
-            else
-            {
-                <label class="check">
-                    <input type="checkbox" @bind="formTeamB" />
-                    <span>Make them a standing team</span>
-                </label>
-                @if (formTeamB)
-                {
-                    <div class="field">
-                        <span class="field__label">Team name</span>
-                        <input class="input" @bind="teamNameB" maxlength="48"
-                               placeholder="@($"{b.RingName} & {partnerB.RingName}")" />
-                    </div>
-                }
-            }
-        </div>
+        }
     }
 }
 
@@ -532,13 +553,13 @@
     <div class="panel">
         <div class="versus">
             <div class="versus__side">
-                <div class="versus__corner">@(isTag ? "Team A" : "Corner A")</div>
+                <div class="versus__corner">@(IsTeamMatch ? "Side A" : "Corner A")</div>
                 <div class="versus__name">@SideAName</div>
                 <div class="versus__meta">Pop @a.Overness.ToString("F0") · Cha @a.Charisma.ToString("F1")</div>
             </div>
             <div class="versus__vs">VS</div>
             <div class="versus__side">
-                <div class="versus__corner">@(isTag ? "Team B" : "Corner B")</div>
+                <div class="versus__corner">@(IsTeamMatch ? "Side B" : "Corner B")</div>
                 <div class="versus__name">@SideBName</div>
                 <div class="versus__meta">Pop @b.Overness.ToString("F0") · Cha @b.Charisma.ToString("F1")</div>
             </div>
@@ -705,22 +726,62 @@
     // familiarity lookup keyed on the pair keeps reading the way it always did — those are
     // side-keyed in phase 5, not here.
     private Wrestler? a, b;
-    private Wrestler? partnerA, partnerB;
 
-    /// <summary>Whether this is being booked as a tag match. Drives everything below.</summary>
-    private bool isTag;
+    /// <summary>
+    /// The partners, one slot per extra man a side. A list rather than a single field
+    /// because a trios side has two — three a side is still two sides, so nothing else in
+    /// the builder had to change (docs/wrestling-reference/18-match-craft.md §2.5).
+    /// </summary>
+    private readonly List<Wrestler?> partnersA = new();
+    private readonly List<Wrestler?> partnersB = new();
 
-    private int SideSize => isTag ? 2 : 1;
+    /// <summary>People per side. 1 singles, 2 tag, 3 trios.</summary>
+    private int sideSize = 1;
 
+    private int SideSize => sideSize;
+    private bool IsTeamMatch => sideSize > 1;
+
+    /// <summary>
+    /// Both sides fully picked.
+    ///
+    /// This used to read `partnersA.Take(sideSize - 1).All(w => w is not null)`, which is
+    /// vacuously true on an empty list — `partnersA` starts empty and only grows when a
+    /// slot is clicked. So the gate passed with no partners chosen at all, and `Finish()`
+    /// went on to build `MatchSide.Of(a)` vs `MatchSide.Of(b)`: a perfectly valid *singles*
+    /// match, booked silently for a player who asked for a tag or trios one.
+    ///
+    /// `MembersA` already filters nulls and caps at `sideSize`, so counting it is the whole
+    /// check — it can only reach `sideSize` when the corner and every partner slot is
+    /// filled.
+    /// </summary>
     private bool SidesComplete =>
-        a is not null && b is not null && (!isTag || (partnerA is not null && partnerB is not null));
+        MembersA.Count() == sideSize && MembersB.Count() == sideSize;
 
-    private string SideAName => partnerA is null ? a?.RingName ?? "" : $"{a!.RingName} & {partnerA.RingName}";
-    private string SideBName => partnerB is null ? b?.RingName ?? "" : $"{b!.RingName} & {partnerB.RingName}";
+    private IEnumerable<Wrestler> MembersA =>
+        new[] { a }.Concat(partnersA.Take(sideSize - 1)).Where(w => w is not null)!;
+
+    private IEnumerable<Wrestler> MembersB =>
+        new[] { b }.Concat(partnersB.Take(sideSize - 1)).Where(w => w is not null)!;
+
+    private string SideAName => string.Join(" & ", MembersA.Select(w => w.RingName));
+    private string SideBName => string.Join(" & ", MembersB.Select(w => w.RingName));
 
     /// <summary>Everyone already picked, so no name can be used twice.</summary>
-    private IEnumerable<Wrestler> Chosen =>
-        new[] { a, b, partnerA, partnerB }.Where(w => w is not null)!;
+    private IEnumerable<Wrestler> Chosen => MembersA.Concat(MembersB);
+
+    private static string SideSizeLabel(int n) => n switch
+    {
+        1 => "Singles",
+        2 => "Tag team",
+        _ => "Trios"
+    };
+
+    private static string SideSizeBlurb(int n) => n switch
+    {
+        1 => "One against one.",
+        2 => "Two a side, with a corner to be kept away from.",
+        _ => "Three a side. Three fresh opponents on one man, and a fresh man for the finish."
+    };
     private MatchType matchType = MatchType.Standard;
     private Title? title;
 
@@ -812,9 +873,7 @@
 
             // The freshness panel has to read the feud the simulator will actually use, or
             // it advises on a pairing that is not the one being booked.
-            var sideA = partnerA is null ? new[] { a } : [a, partnerA];
-            var sideB = partnerB is null ? new[] { b } : [b, partnerB];
-            return State.FeudBook.Find(sideA, sideB);
+            return State.FeudBook.Find(MembersA.ToList(), MembersB.ToList());
         }
     }
 
@@ -909,31 +968,47 @@
     private void PickA(Wrestler w)
     {
         a = w;
-        if (b == w) b = null;
-        if (partnerA == w) partnerA = null;
-        if (partnerB == w) partnerB = null;
+        Release(w, exceptSideA: true);
     }
 
     private void PickB(Wrestler w)
     {
         b = w;
-        if (partnerA == w) partnerA = null;
-        if (partnerB == w) partnerB = null;
+        Release(w, exceptSideB: true);
     }
 
-    private void PickPartnerA(Wrestler w) => partnerA = partnerA == w ? null : w;
-    private void PickPartnerB(Wrestler w) => partnerB = partnerB == w ? null : w;
+    private void PickPartner(List<Wrestler?> slots, int index, Wrestler w)
+    {
+        while (slots.Count <= index) slots.Add(null);
+        slots[index] = slots[index] == w ? null : w;
+        if (slots[index] is not null) Release(w, exceptSlot: (slots, index));
+    }
+
+    /// <summary>Frees a name from every other slot, so nobody is booked twice.</summary>
+    private void Release(Wrestler w, bool exceptSideA = false, bool exceptSideB = false,
+                         (List<Wrestler?> Slots, int Index)? exceptSlot = null)
+    {
+        if (!exceptSideA && a == w) a = null;
+        if (!exceptSideB && b == w) b = null;
+
+        foreach (var slots in new[] { partnersA, partnersB })
+            for (int i = 0; i < slots.Count; i++)
+                if (slots[i] == w && !(exceptSlot is { } e && ReferenceEquals(e.Slots, slots) && e.Index == i))
+                    slots[i] = null;
+    }
 
     /// <summary>
-    /// Switching between singles and tag. Clears the partners and the structure, because a
-    /// tag structure's beats are not bookable in a singles match and vice versa — leaving
-    /// a stale one selected would hand the player a plan that cannot validate.
+    /// Changing the shape of the match. Clears the structure and beats, because a preset
+    /// written for one side size does not validate against another — leaving a stale one
+    /// selected would hand the player a plan that cannot be booked.
     /// </summary>
-    private void SetTag(bool value)
+    private void SetSideSize(int value)
     {
-        if (isTag == value) return;
-        isTag = value;
-        partnerA = partnerB = null;
+        if (sideSize == value) return;
+        sideSize = value;
+        partnersA.Clear();
+        partnersB.Clear();
+        formTeamA = formTeamB = false;
         structureName = "";
         beats = new List<MatchBeat>();
     }
@@ -953,9 +1028,7 @@
 
             case FeudChoice.Declare:
                 // Declared feuds go into the book so later segments build on them.
-                var declared = State.FeudBook.GetOrCreate(
-                    partnerA is null ? [a!] : [a!, partnerA],
-                    partnerB is null ? [b!] : [b!, partnerB]);
+                var declared = State.FeudBook.GetOrCreate(MembersA.ToList(), MembersB.ToList());
                 declared.SetMinimumIntensity(declaredIntensity);
                 foreach (var tag in declaredTags) declared.AddTag(tag);
                 feud = declared;
@@ -1026,11 +1099,11 @@
     private TagTeam? TeamFor(MatchSide side) =>
         side.IsTag ? State.Career?.TeamFor(side.Members) : null;
 
-    private TagTeam? ExistingTeamA => a is not null && partnerA is not null
-        ? State.Career?.TeamFor(new[] { a, partnerA }) : null;
+    private TagTeam? ExistingTeamA =>
+        IsTeamMatch && MembersA.Count() == sideSize ? State.Career?.TeamFor(MembersA) : null;
 
-    private TagTeam? ExistingTeamB => b is not null && partnerB is not null
-        ? State.Career?.TeamFor(new[] { b, partnerB }) : null;
+    private TagTeam? ExistingTeamB =>
+        IsTeamMatch && MembersB.Count() == sideSize ? State.Career?.TeamFor(MembersB) : null;
 
     private TagTeam FormTeam(MatchSide side, string name)
     {
@@ -1106,8 +1179,8 @@
             return "must follow an Outside Party beat";
 
         // Nothing in the tag formula works without somebody on the apron.
-        if (!isTag && new MatchBeat { Type = t.Type }.IsTagBeat)
-            return "tag matches only";
+        if (!IsTeamMatch && new MatchBeat { Type = t.Type }.IsTagBeat)
+            return "needs a partner";
 
         // The hot tag is bookable cold — it just lands at barely half. That is a booking
         // decision the player is allowed to make badly, so this warns rather than gates.
@@ -1118,8 +1191,8 @@
 
     private async Task Finish()
     {
-        var sideA = partnerA is null ? MatchSide.Of(a!) : MatchSide.Of(a!, partnerA);
-        var sideB = partnerB is null ? MatchSide.Of(b!) : MatchSide.Of(b!, partnerB);
+        var sideA = MatchSide.Of(MembersA.ToArray());
+        var sideB = MatchSide.Of(MembersB.ToArray());
 
         // Attach the standing team, if these two are one. Without this every side a player
         // booked had Team == null, so chemistry was pinned at zero and the whole of phase 4
@@ -1175,7 +1248,7 @@
         BeatType.DoubleTeam           => "Double Team",
         BeatType.Miscommunication     => "Miscommunication",
         BeatType.SaveBreakup          => "Save",
-        BeatType.AllFourBrawl         => "All Four In",
+        BeatType.AllFourBrawl         => "Everybody In",
         BeatType.FinishClean          => "Finish: Clean",
         BeatType.FinishRollup         => "Finish: Roll-Up",
         BeatType.FinishSubmission     => "Finish: Submission",

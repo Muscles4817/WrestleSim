@@ -171,7 +171,7 @@ namespace WrestlingSim.Models.MatchPlan
                 if (beat.Type == BeatType.AllFourBrawl)
                 {
                     if (!SideA.IsTag || !SideB.IsTag)
-                        errors.Add("All Four In needs a partner on both sides.");
+                        errors.Add("Everybody In needs a partner on both sides.");
                     continue;
                 }
 
