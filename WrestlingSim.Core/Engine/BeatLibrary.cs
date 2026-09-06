@@ -211,7 +211,7 @@ namespace WrestlingSim.Engine
             new BeatTemplate
             {
                 Name             = "Jaw-Dropper",
-                Description      = "The move nobody expected. A 450° splash from the big man, a shooting star from the powerhouse. Maximum spectacle.",
+                Description      = "The move nobody expected. A 450° splash from somebody that size, a shooting star from a powerhouse. Maximum spectacle.",
                 Category         = CatSpot,
                 Type             = BeatType.HighSpot,
                 DefaultIntensity = BeatIntensity.Extreme,
@@ -476,7 +476,7 @@ namespace WrestlingSim.Engine
             new BeatTemplate
             {
                 Name             = "Face in Peril",
-                Description      = "One man kept cut off from his corner and worked over. The heart of the tag formula.",
+                Description      = "One of them kept cut off from the corner and worked over. The heart of the tag formula.",
                 Category         = CatTag,
                 Type             = BeatType.Isolation,
                 DefaultIntensity = BeatIntensity.Medium,
@@ -487,7 +487,7 @@ namespace WrestlingSim.Engine
             new BeatTemplate
             {
                 Name             = "Near Tag",
-                Description      = "He reaches for the corner and is dragged back. The crowd groans — and that groan is stored energy.",
+                Description      = "A hand reaches for the corner and is dragged back. The crowd groans — and that groan is stored energy.",
                 Category         = CatTag,
                 Type             = BeatType.NearTag,
                 DefaultIntensity = BeatIntensity.High,

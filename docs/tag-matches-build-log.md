@@ -1301,3 +1301,49 @@ closest pre-existing one — and it is what a bigger roster at a fixed quality c
 look like. Recorded because the honest reading of "23 tiers" is denser, not wider.
 
 **467 tests passing.**
+
+---
+
+## The commentary called everybody "him"
+
+Flagged during the trios round and deferred twice — once because fixing it would have muddied
+that PR's byte-identity claim, once into the UX pass. Both were reasonable at the time and
+neither is any more: the roster is now **thirty-eight women and thirty-eight men**, the match
+builder supports intergender bookings on purpose and *warns* about them rather than blocking
+them, and a near tag in a women's tag match read:
+
+```
+Rhea Ripley reaches — and Bianca Belair drags him back!
+```
+
+Eight interpolated templates in `MatchEngine`, three beat descriptions, and one line of UI.
+
+Wrestling's own vocabulary is left alone where it is the name of a thing. A six-man tag is a
+six-man tag; the face in peril is the face in peril; "the legal man" is what the rule is
+called. What changed is the pronouns that attach to a *named performer* — and the referee's,
+who has no stated gender either.
+
+Most of them wanted rewriting rather than substituting, because "they" dropped into a sentence
+written for "he" usually reads worse than the sentence deserves:
+
+| before | after |
+|---|---|
+| `{other} is a long way from his corner` | `…a long way from that corner` |
+| `Every time {other} gets to his feet, {control} drags him back` | `Every time {other} gets back up, {control} drags them down again` |
+| `{fresh} comes in. He had not been out there long enough for anyone to miss him.` | `{fresh} comes in — not that anybody had time to miss them.` |
+| `The referee finally reaches his limit` | `The referee has finally had enough` |
+| `He reaches for the corner and is dragged back` (Near Tag's description) | `A hand reaches for the corner and is dragged back` |
+
+That last one is there because **the test caught it and I had not**. My grep was
+case-sensitive, so a template beginning `"He reaches…"` went straight past it. The guard is
+`NoBeatTemplate_AssumesAWrestlersGender` plus `NoCommentaryLine_AssumesAWrestlersGender`, which
+runs 6,528 real commentary lines through the engine at one, two and three a side and scans
+them **after stripping the ring names** — otherwise a surname containing "her" or "his" would
+false-positive for ever and the test would be quietly disabled within a month.
+
+**Every number is unchanged.** `Pick()` selects by index, so rewriting the strings cannot move
+an RNG draw. Verified rather than asserted: 131,328 dumped rows — every non-feud-gated
+structure × every match type × 12 wrestlers × all three side sizes × 3 seeds, per-beat deltas
+at `"R"` round-trip precision — are **md5-identical** to `main`.
+
+**471 tests passing.**
