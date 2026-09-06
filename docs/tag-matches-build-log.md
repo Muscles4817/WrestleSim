@@ -683,7 +683,7 @@ Three rules, each answering one line of the A3 brief.
 `Feud.ApplyDailyDecay`, charged by `Career.AdvanceOneDay` alongside the momentum, title and
 chemistry decay that were already there. Fourteen days of grace, then 0.955 a day. §9 lists
 "a feud left off TV for three weeks loses its heat" among the things that kill one, and
-three weeks off television now costs 27.6% of it, a month 51%, two months 88%. (I first
+three weeks off television now costs 27.6% of it, a month 52%, two months 88%. (I first
 wrote "about a third" for the three-week figure and the code comment said it should cost
 "most of it"; neither is what 0.955 with a fortnight of grace actually does. Review measured
 it. The constant is the thing to trust, and fourteen days of grace is what makes three weeks
@@ -692,10 +692,11 @@ should be.)
 
 Written with `DecayedTo` from the start, because `TagTeam.Decay` shipped without it in phase
 4 and compounded quadratically — `0.9985^(N(N+1)/2)` instead of `0.9985^N`, a thirty-day
-half-life on a curve written for two years. `TheGracePeriod_IsRealAndIsNotCharged` and
-`DecayIsIdempotentPerDay` both fail if the marker is removed, if it is stamped inside the
-grace period (the second half of that bug), or if the grace is dropped. I checked by making
-each of those three changes and watching the right test go red.
+half-life on a curve written for two years. `DecayIsIdempotentPerDay` fails if the marker is
+removed, if it is stamped inside the grace period (the second half of that bug), or if the
+grace is dropped; `TheGracePeriod_IsRealAndIsNotCharged` catches the second and the third.
+See the round 1 section at the end of this file — the first version of this sentence claimed
+both tests caught all three, and review measured that they did not.
 
 ### Not paying off costs, durably
 
@@ -834,7 +835,7 @@ The suite did catch both halves. Just not where I said. Fixed by ticking the gra
 ### Two constants documented as something they are not
 
 * `HeatDailyRetention`'s comment said three weeks off television *"should cost most of it"*.
-  It costs **27.6%** — a month costs 51%, two months 88%. Fourteen days of grace is what makes
+  It costs **27.6%** — a month costs 52%, two months 88%. Fourteen days of grace is what makes
   the three-week figure modest, and doc 20 §9 does not actually ask for more than that; the
   comment was writing a stronger rule than the constant implements. The build log's softer
   "about a third" was a stretch of the same number.
@@ -895,3 +896,36 @@ axis, doc 18 §7 — which is the same prerequisite the missing blow-off payout 
 
 **443 tests passing** (25 new). All four surviving mutations now fail the intended test,
 verified one at a time against the full suite.
+
+
+---
+
+## A3 — review round 2
+
+**Safe to merge**, with three one-liners, all of which are done. Every one of round 1's four
+surviving mutations now dies, and both links of the save-fallback chain have their own
+killer — dropping only the `?? career.CurrentDate` tail kills exactly the promos-only case
+it was added for, which is the right shape.
+
+Round 2 found the round-1 pattern once more, in miniature and twice:
+
+* **`51%` was not any reading of the curve.** A month is 52.13% (28 days is 47.5%, 31 is
+  54.3%). Wrong by 1.1 points, in the conservative direction, in two documents. Corrected.
+* **The reopen penalty's *wire* was untested**, which is exactly what round 1 spent four
+  mutations on, in the one mechanism this branch had just added. The rule only reads today's
+  date because `FeudBook.Record` calls `Advance` before `AddHeat`; reverting that reorder
+  charges a two-year revival as though it were a fortnight, and left all 443 green.
+  `ARevivalBookedThroughTheFeudBook_IsNotChargedAsAContinuation` now books through the book
+  rather than the model, and dies to the reorder.
+* And the sentence claiming both decay tests caught all three marker bugs was still standing
+  in the section where it was written, quoted as false ten lines away in another section but
+  not corrected in place. Corrected where it was made.
+
+One thing round 2 measured that is worth keeping visible rather than fixing: `BlowOff`
+forgives 0.35 and reopening too soon costs 0.25, so a booker who blows a feud off and
+immediately restarts it nets **−0.10 distrust per cycle**, converging on a floor of 0.25.
+The payoff-and-keep-the-programme loop is *priced*, not closed. Closing it means making the
+refund conditional on the ending being respected, which is a rule about the next chapter
+rather than this one — recorded rather than done, so the next reader knows it is a choice.
+
+**444 tests passing.**

@@ -73,7 +73,7 @@ most significant thing missing from the sim right now.
 - Never blowing off should eventually convert heat into audience distrust
 
 Shipped as `Feud.ApplyDailyDecay` (charged by `Career.AdvanceOneDay`, 14 days of grace then
-0.955/day — three weeks idle costs 27.6%, a month 51%, two months 88%), `MatchPlan.IsBlowOff`
+0.955/day — three weeks idle costs 27.6%, a month 52%, two months 88%), `MatchPlan.IsBlowOff`
 (a booker declaration, priced by `Feud.PayoffFor` at ×1.45 Nuclear down to ×0.72 for one
 nobody was told mattered), and `Feud.Distrust` — accrued by `RecordUnresolved` past the third
 match, at 1.67× that rate by `RecordBrokenPromise` when a declared blow-off is booked to a

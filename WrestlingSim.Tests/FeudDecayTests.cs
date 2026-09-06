@@ -294,6 +294,45 @@ namespace WrestlingSim.Tests
             Assert.Equal(1, tooSoon.ChaptersSettled);
         }
 
+        /// <summary>
+        /// The same rule through `FeudBook.Record`, which is how the game actually books.
+        ///
+        /// Round 2 caught this as the round-1 pattern in miniature: the test above drives
+        /// `Advance` and `AddHeat` on the model in the right order, so reverting the
+        /// *reorder* in `FeudBook.Record` — which is what makes the rule read today's date
+        /// rather than the blow-off's — left all 443 green. With `AddHeat` first, a
+        /// two-year revival is charged as though it were a fortnight.
+        /// </summary>
+        [Fact]
+        public void ARevivalBookedThroughTheFeudBook_IsNotChargedAsAContinuation()
+        {
+            var book = new FeudBook();
+            var a = TestRoster.Make("Face");
+            var b = TestRoster.Make("Heel");
+
+            var feud = book.GetOrCreate(a, b);
+            feud.SetMinimumIntensity(FeudIntensity.Nuclear);
+            feud.BlowOff(Day0);
+
+            // Two years later, somebody books a segment between them.
+            book.Record(a, b, heat: 30, date: Day0.AddDays(730));
+
+            output.WriteLine($"  revived after two years: distrust {feud.Distrust:F2}, " +
+                             $"chapter {feud.ChaptersSettled + 1}");
+
+            Assert.False(feud.Concluded);
+            Assert.Equal(0, feud.Distrust);
+
+            // And the same book, restarting a settled programme a fortnight later, does pay.
+            var soon = book.GetOrCreate(TestRoster.Make("F2"), TestRoster.Make("H2"));
+            soon.SetMinimumIntensity(FeudIntensity.Nuclear);
+            soon.BlowOff(Day0);
+            book.Record(soon.SideA, soon.SideB, heat: 30, date: Day0.AddDays(14));
+
+            output.WriteLine($"  restarted after a fortnight: distrust {soon.Distrust:F2}");
+            Assert.True(soon.Distrust > 0);
+        }
+
         [Fact]
         public void ABlowOffIsWorthWhatWasBuilt_AndAnUnearnedOneIsWorthLessThanNothing()
         {
