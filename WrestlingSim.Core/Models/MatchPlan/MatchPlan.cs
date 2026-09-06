@@ -80,8 +80,38 @@ namespace WrestlingSim.Models.MatchPlan
 
         public List<MatchBeat> Beats { get; set; } = new();
 
-        // Active feud between the two sides, if any.
-        public Feud? Feud { get; set; }
+        /// <summary>
+        /// Every live story among the people in this match.
+        ///
+        /// A two-side match has at most one and the singular <see cref="Feud"/> shim below
+        /// is all anybody needed. A multi-man match routinely has more than one, and the
+        /// story that decides the finish is often between two people who are both about to
+        /// lose to the third — which is the entire reason
+        /// <see cref="Engine.FeudBook.Among"/> exists.
+        /// </summary>
+        public List<Feud> Feuds { get; set; } = new();
+
+        /// <summary>The headline feud. Shim over <see cref="Feuds"/>.</summary>
+        public Feud? Feud
+        {
+            get => Feuds.FirstOrDefault();
+            set
+            {
+                Feuds.Clear();
+                if (value is not null) Feuds.Add(value);
+            }
+        }
+
+        /// <summary>
+        /// The live story that puts these two on opposite sides in this match, if there is
+        /// one. Prefers a story that is actually about the pair over a larger one that
+        /// merely contains them.
+        /// </summary>
+        public Feud? FeudBetween(Wrestler a, Wrestler b) =>
+            Feuds.Where(f => f.Opposes(a, b))
+                 .OrderBy(f => f.Participants.Count())
+                 .ThenByDescending(f => f.Heat)
+                 .FirstOrDefault();
 
         /// <summary>
         /// The booker declaring that this match ends the feud.
@@ -134,7 +164,7 @@ namespace WrestlingSim.Models.MatchPlan
         /// The side that takes the fall.
         ///
         /// With two sides, whoever did not win. With more, the finish has to say — see
-        /// <see cref="MatchBeat.Pinned"/>. Null when it cannot be determined, which
+        /// <see cref="MatchBeat.Against"/>. Null when it cannot be determined, which
         /// <see cref="Validate"/> refuses to let a bookable plan reach.
         /// </summary>
         public MatchSide? BookedLosingSide
@@ -144,7 +174,7 @@ namespace WrestlingSim.Models.MatchPlan
                 var winning = BookedWinningSide;
                 if (winning is null) return null;
 
-                if (Beats.LastOrDefault(b => b.IsFinish)?.Pinned is { } pinned
+                if (Beats.LastOrDefault(b => b.IsFinish)?.Against is { } pinned
                     && SideIndex(pinned) is { } pi && pi < Sides.Count)
                     return Sides[pi];
 
@@ -387,10 +417,10 @@ namespace WrestlingSim.Models.MatchPlan
                 // be expressed, and the loss would land on whoever happened to be listed.
                 if (finish is not null)
                 {
-                    if (finish.Pinned is null)
+                    if (finish.Against is null)
                         errors.Add($"A {Sides.Count}-way finish has to say who takes the fall, " +
                                    "not just who wins — that is the whole point of the format.");
-                    else if (SideIndex(finish.Pinned.Value) is not { } pi || pi >= Sides.Count)
+                    else if (SideIndex(finish.Against.Value) is not { } pi || pi >= Sides.Count)
                         errors.Add("The side booked to take the fall is not in this match.");
                     else if (SideIndex(finish.Control) == pi)
                         errors.Add("The winner cannot also be the one pinned.");

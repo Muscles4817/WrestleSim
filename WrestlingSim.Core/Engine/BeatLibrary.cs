@@ -21,6 +21,7 @@ namespace WrestlingSim.Engine
         public const string CatStorytelling = "Storytelling";
         public const string CatFinish       = "Finish";
         public const string CatTag          = "Tag";
+        public const string CatMultiMan     = "Multi-Man";
 
         // ── Full catalogue ───────────────────────────────────────────────────
 
@@ -560,6 +561,61 @@ namespace WrestlingSim.Engine
                 DefaultDuration  = BeatDuration.Brief,
                 BookerTip        = "Book after a near fall. Wears out fast — by the third the referee is being openly ignored.",
                 Tags             = ["Tag", "Near Fall"]
+            },
+            new BeatTemplate
+            {
+                Name             = "Disposal Spot",
+                Description      = "The odd one out is put through something and stays down. The other two get the ring.",
+                Category         = CatMultiMan,
+                Type             = BeatType.DisposalSpot,
+                DefaultIntensity = BeatIntensity.High,
+                DefaultDuration  = BeatDuration.Short,
+                BookerTip        = "The beat the format runs on. A near fall only means something while somebody is out — but a longer disposal is not a better one, it is the 'where did they go?' problem.",
+                Tags             = ["Multi-Man", "Spot"]
+            },
+            new BeatTemplate
+            {
+                Name             = "Pin Break",
+                Description      = "A third party breaks up the cover.",
+                Category         = CatMultiMan,
+                Type             = BeatType.PinBreak,
+                DefaultIntensity = BeatIntensity.High,
+                DefaultDuration  = BeatDuration.Brief,
+                BookerTip        = "Control is whoever breaks it; aim it at whoever was covering. Wears out as fast as the tag save.",
+                Tags             = ["Multi-Man", "Near Fall"]
+            },
+            new BeatTemplate
+            {
+                Name             = "Spite Break",
+                Description      = "Could have won it. Broke up the cover to deny a rival instead.",
+                Category         = CatMultiMan,
+                Type             = BeatType.SpiteBreak,
+                DefaultIntensity = BeatIntensity.High,
+                DefaultDuration  = BeatDuration.Brief,
+                BookerTip        = "Needs a live feud between the two to be worth anything — pays four times as much with a hot one as with none. Costs the spiter position, which is the point.",
+                Tags             = ["Multi-Man", "Story", "Feud"]
+            },
+            new BeatTemplate
+            {
+                Name             = "Ignored Opportunity",
+                Description      = "Walks past a winnable cover to get at a rival instead.",
+                Category         = CatMultiMan,
+                Type             = BeatType.IgnoredOpportunity,
+                DefaultIntensity = BeatIntensity.Medium,
+                DefaultDuration  = BeatDuration.Brief,
+                BookerTip        = "The cheaper cousin of the spite break. Book it on the way to one.",
+                Tags             = ["Multi-Man", "Story", "Feud"]
+            },
+            new BeatTemplate
+            {
+                Name             = "Mutual Destruction",
+                Description      = "Two rivals wipe each other out and neither can capitalise.",
+                Category         = CatMultiMan,
+                Type             = BeatType.MutualDestruction,
+                DefaultIntensity = BeatIntensity.High,
+                DefaultDuration  = BeatDuration.Short,
+                BookerTip        = "One beat before the survivor crawls over. Nobody gains an advantage — that is the beat.",
+                Tags             = ["Multi-Man", "Story", "Feud"]
             },
             new BeatTemplate
             {

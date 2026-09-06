@@ -1414,3 +1414,89 @@ larger story, dropping camp ordering, ignoring the persisted camps, and dropping
 dedicated-pairing precedence.
 
 **540 tests passing.**
+
+---
+
+## The multi-man beats
+
+Five beats a three-way has that a two-side match does not, and one rule that gives the format
+its own reason to exist.
+
+### The loop
+
+**`DisposalSpot`** puts somebody through something and buys a window. **`MultiManNearFallFactor`**
+is what the window is for: with three sides every cover is breakable, so a near fall is not a
+question about the person being pinned — it is a question about whether somebody arrives, and
+the crowd knows the answer is usually yes. Inside a disposal window a near fall is worth full
+value; outside one it keeps **60%**, and is a spot with a count attached.
+
+So **disposal → sequence → near fall** is the loop a good multi-man match runs, and a booking
+that never disposes of anybody is a booking whose near falls nobody believes. Measured, same
+plan, only the disposal's duration differing: **8.04 with the third party still down, 4.82 once
+they are back up.**
+
+The window is deliberately short — one to three beats by duration. §2.5's characteristic
+failure is the four-minute absence nobody explains, so a longer disposal is not a better one.
+
+**`PinBreak`** is the generic save, and wears out like the tag save does.
+
+### The feud beats
+
+These are what the pairwise-feud work was for. All three read the story between the wrestler
+doing it and the wrestler it is aimed at, via `MatchPlan.FeudBetween`, and pay out on its
+intensity:
+
+- **`SpiteBreak`** — could have won it, broke up the cover to deny a rival instead. The
+  signature beat, and the one that says the grudge outranks the prize.
+- **`IgnoredOpportunity`** — walks past a winnable cover to get at a rival. The cheaper cousin,
+  booked on the way to a spite break.
+- **`MutualDestruction`** — two rivals wipe each other out and nobody gains an advantage, which
+  is the whole beat. One beat before the survivor crawls over.
+
+**A grudge is most of what a spite break is worth: 8.49 storytelling with a nuclear feud
+against 2.23 between strangers, 3.8×.** That asymmetry is the point. Two people with a live
+feud wrecking each other's title shot is the best thing in a multi-man match; two strangers
+doing the same thing is one of them throwing a win away for no reason, and the engine says so
+rather than paying for the beat's name.
+
+And a spite break **costs the spiter position** — measured −11.16 advantage against themselves.
+It is not a good decision, it is a character decision, and a booking that never pays for it is
+not telling the story it thinks it is.
+
+### I made the same mistake I had written up hours earlier
+
+Seven mutations, and **two survived the first pass — both on the disposal loop, the centrepiece.**
+Deleting the near-fall discount passed. Making the disposal spot dispose of nobody passed.
+
+The test compared a plan containing a `DisposalSpot` against a plan containing a `RestHold`. Two
+plans that differ by a beat differ in a dozen ways: the disposal pumps more crowd energy, and
+the near fall reads crowd energy, so it came out bigger whether or not the rule existed. **I was
+measuring the gap between two beats and calling it the mechanism.**
+
+That is the identical error recorded in "A5 — review round 4" earlier the same day, about
+`BoredShare`, where a binary threshold survived two attempts to catch it because a match
+aggregates the mechanism away. I wrote *"testing a mechanism through the thing it feeds is how
+three rounds of this went wrong"* and then did it again on the next feature.
+
+Fixed the same way, which is now the pattern for this codebase: **the rule is a pure function,
+`MatchEngine.MultiManNearFallFactor`, tested directly.** Plus a behavioural test with the
+confound actually controlled — identical beats in identical order, differing only in whether the
+disposal has expired by the time the near fall lands.
+
+Seven mutations, all killed: the discount deleted, disposal recording nothing, the window never
+closing, the feud beats paying the same with no grudge, a spite break gaining position instead
+of costing it, mutual destruction leaving somebody ahead, and beats ignoring the side they were
+aimed at.
+
+**553 tests passing.**
+
+### Still not built
+
+The blame transfer we designed — a multi-man loss *feeding* the feud, so that being cost the
+match by a rival adds heat to their story — is not wired up. The beats express it inside the
+match; nothing carries it out to `FeudBook` afterwards. That needs the result to say which
+feuds the match touched, and it is the next piece rather than a gap to paper over.
+
+Also still open: the engine narrates a three-way with two names, crowd attention divides evenly
+between all participants when §2.5 says it concentrates on whoever the room came for, and the
+match builder still cannot book one.

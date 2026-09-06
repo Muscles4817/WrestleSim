@@ -34,7 +34,14 @@ namespace WrestlingSim.Models.MatchPlan
         public int? IncomingIndex { get; set; }
 
         /// <summary>
-        /// On a finish, which side takes the fall.
+        /// The other side this beat is about.
+        ///
+        /// On a finish it is who takes the fall. On a multi-man beat it is who the beat is
+        /// aimed at — whose cover is being broken out of spite, which rival is being chased
+        /// instead of the win. One field rather than two because it is one idea: `Control`
+        /// says who is doing it, this says to whom.
+        ///
+        /// On a finish, specifically: which side takes the fall.
         ///
         /// With two sides this is redundant — whoever did not win, lost — and stays null. With
         /// three it is the entire point of the format: doc 18 §2.5 says the reason to book a
@@ -43,7 +50,7 @@ namespace WrestlingSim.Models.MatchPlan
         /// that names only a winner cannot express it, and would silently make every
         /// three-way a normal loss for somebody the booker never chose.
         /// </summary>
-        public BeatControl? Pinned { get; set; }
+        public BeatControl? Against { get; set; }
 
         // ── Derived helpers ──────────────────────────────────────────────────
 

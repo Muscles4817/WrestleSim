@@ -35,7 +35,7 @@ namespace WrestlingSim.Tests
                 [
                     new MatchBeat { Type = BeatType.HotOpening,  Control = BeatControl.Even },
                     new MatchBeat { Type = BeatType.NearFall,    Control = BeatControl.SideC },
-                    new MatchBeat { Type = BeatType.FinishClean, Control = winner, Pinned = pinned }
+                    new MatchBeat { Type = BeatType.FinishClean, Control = winner, Against = pinned }
                 ]
             };
         }
@@ -91,7 +91,7 @@ namespace WrestlingSim.Tests
         [Theory]
         [InlineData(BeatControl.SideC, "C")]
         [InlineData(BeatControl.WrestlerB, "B")]
-        public void EachSideCanBeTheOnePinned(BeatControl pinned, string expected)
+        public void EachSideCanBeTheOneAgainst(BeatControl pinned, string expected)
         {
             var r = new MatchEngine(Seed).Execute(ThreeWay(BeatControl.WrestlerA, pinned));
             Assert.Equal(expected, r.Loser!.RingName);
@@ -138,7 +138,7 @@ namespace WrestlingSim.Tests
             {
                 Sides = [MatchSide.Of(W("A")), MatchSide.Of(W("B")), MatchSide.Of(W("C1"), W("C2"))],
                 Beats = [new MatchBeat { Type = BeatType.FinishClean,
-                                         Control = BeatControl.WrestlerA, Pinned = BeatControl.SideC }]
+                                         Control = BeatControl.WrestlerA, Against = BeatControl.SideC }]
             };
 
             // Sides A and B match, so a check that only compared those two would pass this.
