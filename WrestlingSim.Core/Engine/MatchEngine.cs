@@ -170,6 +170,38 @@ namespace WrestlingSim.Engine
         /// </summary>
         public const double BlameHeatPerStar = 0.8;
 
+        /// <summary>
+        /// How much of the room a beat actually has, given who it is about and who else is
+        /// in the match.
+        ///
+        /// Doc 18 §2.5: **crowd attention does not divide evenly.** A three-way between one
+        /// over performer and two midcarders is not a three-way — it is the over performer's
+        /// match with two people in it. The room follows whoever it came to see, and the
+        /// sequences that do not involve them are dead air however well worked.
+        ///
+        /// Multi-man only, and that limit is the doc's own reasoning rather than
+        /// convenience: proximity transfers heat in a tag match (doc 17 §2.8) *because the
+        /// partners share a story*, and it does not here because the participants are
+        /// competing for the same attention. Two sides are the match; three are rivals for
+        /// it.
+        ///
+        /// The floor is not zero. A sequence between the two smaller names is flat, not
+        /// silent — they are still wrestling, and the crowd is still in the building.
+        /// </summary>
+        public static double AttentionShare(double connection, double topConnection, bool multiMan)
+        {
+            if (!multiMan || topConnection <= 1e-9) return 1.0;
+            double ratio = Math.Clamp(connection / topConnection, 0, 1);
+            return AttentionFloor + (1.0 - AttentionFloor) * ratio;
+        }
+
+        /// <summary>
+        /// What a beat keeps when it is about nobody the room came for. Dead air in §2.5's
+        /// sense is *flat*, not empty — and what the lost share becomes is silence, which A5
+        /// already models as the failure state rather than as a new mechanism.
+        /// </summary>
+        public const double AttentionFloor = 0.45;
+
         public static double MultiManNearFallFactor(bool multiMan, bool somebodyDisposed) =>
             multiMan && !somebodyDisposed ? CrowdedOutNearFall : 1.0;
 
@@ -215,6 +247,15 @@ namespace WrestlingSim.Engine
 
             /// <summary>How much the crowd still wants to see this specific pairing, 0–1.</summary>
             public double Familiarity { get; init; } = 1.0;
+
+            /// <summary>
+            /// The most connected performer in the match — whoever the room came for. Used
+            /// only by <see cref="AttentionShare"/>, and only when there are more than two
+            /// sides.
+            /// </summary>
+            public double TopConnection => Profiles.Count == 0
+                ? 0.0
+                : Profiles.Values.Max(p => p.Connection);
 
             /// <summary>Whoever is legal for side A right now.</summary>
             public Wrestler LegalA => Plan.SideA.Members[State.LegalA];
@@ -741,6 +782,12 @@ namespace WrestlingSim.Engine
             double connection = control is not null
                 ? ctx.For(control).Connection
                 : ctx.Pair(p => p.Connection);
+
+            // And in a multi-man match, how much of the room this beat has at all. The
+            // share the beat does not hold does not vanish — it lands in the same place any
+            // unheld attention lands, which is silence.
+            connection *= AttentionShare(connection, ctx.TopConnection, ctx.Plan.IsMultiMan);
+
             double attention = Math.Clamp((connection - 0.32) / 0.80, 0, 1);
 
             // **What the booking has asked them to sit through.** This is the half that
