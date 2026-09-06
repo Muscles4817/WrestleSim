@@ -172,6 +172,36 @@ namespace WrestlingSim.Tests
         }
 
         [Fact]
+        public void SavingATagMatch_RefusesRatherThanSilentlyHalvingIt()
+        {
+            // Save v2 stores two wrestlers per match, so a side with a partner on it has
+            // nowhere to go. Before this guard, ToDto wrote only each side's starter and
+            // a booked 2v2 came back off disk as a singles match with no error at all.
+            // Tag sides land in save v3 (docs/tag-matches-plan.md §4); until then this
+            // fails loudly.
+            var roster = Roster();
+            var career = NewCareer(roster);
+            var show = career.Schedule("Weekly", career.CurrentDate, ShowType.Television);
+
+            show.Card.Add(new BookedMatch
+            {
+                Plan = new MatchPlanModel
+                {
+                    SideA = MatchSide.Of(roster[0], roster[1]),
+                    SideB = MatchSide.Of(roster[2], TestRoster.Make("Delta Four", overness: 50)),
+                    Beats =
+                    [
+                        new MatchBeat { Type = BeatType.HotOpening, Control = BeatControl.Even },
+                        new MatchBeat { Type = BeatType.FinishClean, Control = BeatControl.WrestlerA }
+                    ]
+                }
+            });
+
+            var ex = Assert.Throws<NotSupportedException>(() => SaveSerializer.ToJson(career));
+            Assert.Contains("save v3", ex.Message);
+        }
+
+        [Fact]
         public void ALoadedCardIsStillRunnable()
         {
             var roster = Roster();

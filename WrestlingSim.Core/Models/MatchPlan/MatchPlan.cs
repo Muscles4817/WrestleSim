@@ -117,6 +117,17 @@ namespace WrestlingSim.Models.MatchPlan
             if (SideB.Members.Count == 0) errors.Add("Side B has nobody in it.");
             if (errors.Count > 0) return errors;
 
+            // The engine indexes Members with the raw StartingIndex, so an out-of-range
+            // value has to be caught here rather than quietly clamped — otherwise this
+            // method reports a plan as valid that Execute then throws on.
+            foreach (var (side, label) in new[] { (SideA, "A"), (SideB, "B") })
+                if (side.StartingIndex < 0 || side.StartingIndex >= side.Members.Count)
+                    errors.Add(
+                        $"Side {label} starts with member {side.StartingIndex}, but it has " +
+                        $"{side.Members.Count}.");
+
+            if (errors.Count > 0) return errors;
+
             // A wrestler on both sides breaks every "which side is this person on" lookup
             // in the engine, and is not a booking anybody meant to make.
             foreach (var w in SideA.Members.Where(SideB.Contains))

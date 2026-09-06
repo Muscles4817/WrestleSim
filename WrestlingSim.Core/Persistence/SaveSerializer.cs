@@ -201,6 +201,15 @@ namespace WrestlingSim.Persistence
 
         private static CardItemDto? ToDto(ICardItem item) => item switch
         {
+            // The save format still describes a match as two wrestlers, so a side with a
+            // partner on it has nowhere to go. Refusing is not a limitation worth hiding:
+            // saving silently would drop every partner and turn a booked tag match back
+            // into a singles match on reload. Sides land in save v3 — see
+            // docs/tag-matches-plan.md §4.
+            BookedMatch { Plan.IsTagMatch: true } tag => throw new NotSupportedException(
+                $"Cannot save the tag match '{tag.Name}' — the save format stores two " +
+                "wrestlers per match. Tag sides are added in save v3."),
+
             BookedMatch m => new CardItemDto
             {
                 Kind          = CardItemKind.Match,

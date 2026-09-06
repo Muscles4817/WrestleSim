@@ -124,6 +124,53 @@ namespace WrestlingSim.Tests
             Assert.Contains(plan.Validate(), e => e.Contains("booked twice on the same side"));
         }
 
+        [Fact]
+        public void AnOutOfRangeStartingIndex_IsReportedNotClamped()
+        {
+            // Starter used to clamp, so Validate() reported this plan as fine and then
+            // Execute threw an ArgumentOutOfRangeException indexing Members. A method
+            // whose contract is "empty list = valid to execute" has to catch it.
+            var plan = new MatchPlanModel
+            {
+                SideA = new MatchSide { Members = { TestRoster.Make("A1"), TestRoster.Make("A2") }, StartingIndex = 5 },
+                SideB = MatchSide.Of(TestRoster.Make("B1")),
+                Beats = Structure("TV Formula")
+            };
+
+            Assert.Contains(plan.Validate(), e => e.Contains("starts with member 5"));
+        }
+
+        [Fact]
+        public void ANegativeStartingIndex_IsAlsoReported()
+        {
+            var plan = new MatchPlanModel
+            {
+                SideA = new MatchSide { Members = { TestRoster.Make("A1") }, StartingIndex = -1 },
+                SideB = MatchSide.Of(TestRoster.Make("B1")),
+                Beats = Structure("TV Formula")
+            };
+
+            Assert.Contains(plan.Validate(), e => e.Contains("starts with member -1"));
+        }
+
+        [Fact]
+        public void EveryPlanThatValidates_AlsoExecutes()
+        {
+            // The property finding 1 broke: Validate() and Execute() must agree.
+            var plan = new MatchPlanModel
+            {
+                SideA = new MatchSide { Members = { TestRoster.Make("A1"), TestRoster.Make("A2") }, StartingIndex = 1 },
+                SideB = MatchSide.Of(TestRoster.Make("B1"), TestRoster.Make("B2")),
+                Beats = Structure("TV Formula")
+            };
+
+            Assert.Empty(plan.Validate());
+            var result = new MatchEngine(Seed).Execute(plan);
+
+            // Side A started its second member, so that is who is still legal at the bell.
+            Assert.Equal("A2", result.Pinner.RingName);
+        }
+
         // ── Execution ────────────────────────────────────────────────────────
 
         [Fact]
@@ -213,12 +260,18 @@ namespace WrestlingSim.Tests
         }
 
         [Fact]
-        public void ControlSign_FollowsTheSide_NotTheNamedWrestler()
+        public void EveryBeatBookedForOneSide_LeavesThatSideAhead()
         {
-            // ControlSign used to be `ReferenceEquals(control, Plan.WrestlerA)`. For a
-            // side-A partner that is false, so a beat booked for side A would have swung
-            // advantage to side B. Booking the whole match for one side must leave that
-            // side decisively ahead however many people are on it.
+            // Honest scope note. ControlSign changed from
+            // `ReferenceEquals(control, Plan.WrestlerA)` to a side lookup, and that matters
+            // — but it is *preparatory*, not a bug fixed here. In phase 1 the legal
+            // performer is always the side's starter and `Plan.WrestlerA` returns exactly
+            // `SideA.Starter`, so the two expressions are provably equivalent and no test
+            // written now can tell them apart. (Verified: reverting ControlSign leaves the
+            // whole suite green.) What this pins is the weaker property that does hold
+            // today — advantage tracks the side a beat is booked for. The test that can
+            // actually catch a ControlSign regression arrives with phase 2, when a hot tag
+            // makes a partner legal.
             var plan = new MatchPlanModel
             {
                 SideA = MatchSide.Of(TestRoster.Make("A1"), TestRoster.Make("A2")),

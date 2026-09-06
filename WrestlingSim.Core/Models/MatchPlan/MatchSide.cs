@@ -29,8 +29,21 @@ namespace WrestlingSim.Models.MatchPlan
         /// <summary>True once there is someone on the apron to tag.</summary>
         public bool IsTag => Members.Count > 1;
 
-        /// <summary>Who takes the opening bell for this side.</summary>
-        public Wrestler Starter => Members[Math.Clamp(StartingIndex, 0, Members.Count - 1)];
+        /// <summary>
+        /// Who takes the opening bell for this side.
+        ///
+        /// This deliberately does not clamp an out-of-range <see cref="StartingIndex"/>.
+        /// Clamping made <see cref="MatchPlan.Validate"/> report a plan as valid that the
+        /// engine then crashed on, because the engine indexes <see cref="Members"/> with
+        /// the raw value. A wrong index is a booking error and is reported as one.
+        /// </summary>
+        public Wrestler Starter =>
+            Members.Count == 0
+                ? throw new InvalidOperationException("This side has nobody in it.")
+                : StartingIndex >= 0 && StartingIndex < Members.Count
+                    ? Members[StartingIndex]
+                    : throw new InvalidOperationException(
+                        $"StartingIndex {StartingIndex} is outside this side's {Members.Count} member(s).");
 
         /// <summary>"Rhea Ripley" for a singles side, "Rhea Ripley &amp; Liv Morgan" for a team.</summary>
         public string Name => string.Join(" & ", Members.Select(m => m.RingName));
