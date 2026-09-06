@@ -31,15 +31,17 @@ namespace WrestlingSim.Tests
         /// Every test in here asserts on a different property of the same sweep and the
         /// seeds are fixed, so running it per test produced eight identical matrices. That
         /// was affordable on a thirty-person roster and is not on a seventy-six-person one:
-        /// the sweep is quadratic in roster size, so it grew from 500k matches to 1.8m, and
-        /// doing that eight times took two and a half minutes to learn nothing new.
+        /// the sweep is quadratic in roster size, so it grew from 271,440 matches to
+        /// 1,778,400, and doing that eight times took two and a half minutes to learn
+        /// nothing new. (The first version of this comment said "500k to 1.8m" — the second
+        /// figure is right and the first was overstated by about 1.8×. Review counted them.)
         /// </summary>
         private static readonly Lazy<List<Cell>> Matrix = new(() => RunSweep());
 
         private static List<Cell> Sweep() => Matrix.Value;
 
         /// <summary>Executes the full matrix. Only ever called through <see cref="Matrix"/>.</summary>
-        private static List<Cell> RunSweep(int runsPerCell = RunsPerCell)
+        private static List<Cell> RunSweep(int runsPerCell = RunsPerCell)   // parameter kept for a one-off probe
         {
             var cells = new List<Cell>();
 
@@ -156,6 +158,13 @@ namespace WrestlingSim.Tests
                 $"The middle 90% of results should still span a real range, got {p05:F2}–{p95:F2}");
             Assert.True(perfect < 1.0,
                 $"{perfect:F2}% of all matches rated a perfect 5.00 — the ceiling is being hit routinely.");
+            // Margin to the floor is thin and getting thinner as the roster grows downward:
+            // the sweep mean fell 3.35 → 2.99 when the roster went from 30 to 76, because
+            // the additions are weighted to the lower card. It earns its tightness — it is
+            // currently the assertion that catches a mutant making BeatControl a no-op —
+            // but the next tranche of enhancement talent will trip it, and that failure
+            // will read as an engine regression when it is a data change. Widen the floor
+            // then, deliberately, rather than wondering what broke.
             Assert.InRange(mean, 2.8, 4.3);
         }
 

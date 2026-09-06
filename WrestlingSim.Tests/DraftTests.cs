@@ -187,6 +187,71 @@ namespace WrestlingSim.Tests
             Assert.Contains(new[] { red, blue }, brand => brand == first);
         }
 
+        /// <summary>
+        /// A draft that separates two partners has separated the act.
+        ///
+        /// Unreachable until the shipped roster started carrying seeded tag teams:
+        /// `career.Teams` was empty at career start, so a day-one draft had nothing to
+        /// split. Review measured an AutoPick draft splitting five of the shipped nine, all
+        /// left `IsActive` and decaying chemistry for a pairing nobody could ever book again.
+        /// </summary>
+        [Fact]
+        public void ADraftThatSeparatesATeam_BreaksItUp()
+        {
+            var career = Split(4, out _, out _);
+            var a = career.Roster[0];
+            var b = career.Roster[1];
+
+            var team = new TagTeam
+            {
+                Name    = "The Split",
+                Members = [a, b],
+                Formed  = career.CurrentDate,
+                Chemistry = 0.8
+            };
+            career.Teams.Add(team);
+
+            var board = DraftBoard.Create(career, seed: 6);
+            board.Pick(a);
+            board.Pick(b);
+            board.AutoComplete();
+
+            var outcome = Draft.Apply(career, board);
+
+            Assert.NotEqual(career.Brands.BrandOf(a), career.Brands.BrandOf(b));
+            Assert.False(team.IsActive);
+            Assert.Equal(1, outcome.TeamsDisbanded);
+        }
+
+        /// <summary>And a team the draft keeps together is left alone.</summary>
+        [Fact]
+        public void ATeamThatSurvivesTheDraft_StaysATeam()
+        {
+            var career = Split(4, out _, out _);
+            var a = career.Roster[0];
+            var b = career.Roster[1];
+
+            var team = new TagTeam
+            {
+                Name = "The Survivors", Members = [a, b],
+                Formed = career.CurrentDate, Chemistry = 0.8
+            };
+            career.Teams.Add(team);
+
+            var board = DraftBoard.Create(career, seed: 6);
+            var first = board.OnTheClock!;
+            board.Pick(a);
+            // Give the same brand the next pick by drafting for everyone else first.
+            board.AutoComplete();
+            career.Brands.Assign(b, first);
+
+            var outcome = Draft.Apply(career, board);
+
+            Assert.Equal(career.Brands.BrandOf(a), career.Brands.BrandOf(b));
+            Assert.True(team.IsActive);
+            Assert.Equal(0, outcome.TeamsDisbanded);
+        }
+
         [Fact]
         public void AFeudThatSurvivesTheDraft_KeepsItsHeat()
         {

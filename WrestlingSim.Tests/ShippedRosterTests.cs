@@ -150,12 +150,22 @@ namespace WrestlingSim.Tests
         {
             // The seed file names people by real name. If a roster edit removes one of
             // them the team has to disappear, not bind to a half-side or throw on startup.
-            var thinned = Roster.Skip(1).ToList();
+            //
+            // The first version of this dropped `Roster.Skip(1)` — Demi Bennett, who is in
+            // no tag team — so both assertions passed with nothing skipped and the arm
+            // never exercised the path it is named for. Review measured `full=9,
+            // missing=9`. It now removes somebody who is actually in a team.
+            var full = TagTeamSeed.SeedDefaults(Roster, Day);
+            Assert.NotEmpty(full);
 
-            var full   = TagTeamSeed.SeedDefaults(Roster, Day);
+            var victim  = full[0].Members[0];
+            var thinned = Roster.Where(w => w != victim).ToList();
             var missing = TagTeamSeed.SeedDefaults(thinned, Day);
 
-            Assert.True(missing.Count <= full.Count);
+            output.WriteLine($"  removed {victim.RingName}: {full.Count} teams → {missing.Count}");
+
+            Assert.Equal(full.Count - 1, missing.Count);
+            Assert.DoesNotContain(missing, t => t.Members.Contains(victim));
             Assert.All(missing, t => Assert.All(t.Members, m => Assert.Contains(m, thinned)));
 
             Assert.Empty(TagTeamSeed.SeedDefaults(new List<Wrestler>(), Day));

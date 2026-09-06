@@ -21,6 +21,9 @@ namespace WrestlingSim.Engine
         /// <summary>Feuds ended because the two are no longer on the same show.</summary>
         public int FeudsEnded { get; init; }
 
+        /// <summary>Standing teams broken up because the draft put them on different brands.</summary>
+        public int TeamsDisbanded { get; init; }
+
         /// <summary>Pairings whose match-count fatigue was cleared.</summary>
         public int PairingsRefreshed { get; init; }
 
@@ -242,6 +245,25 @@ namespace WrestlingSim.Engine
                 }
             }
 
+            // Same rule for teams as for feuds, and it was missing. A draft that puts two
+            // partners on different brands has separated the act — there is no show left on
+            // which to be a team, and leaving them Active means chemistry keeps decaying
+            // for a pairing nobody can book, for ever.
+            //
+            // Unreachable before the shipped roster carried seeded teams: `career.Teams` was
+            // empty at career start, so a day-one draft had nothing to split. On the shipped
+            // nine, an AutoPick draft splits five of them.
+            int disbanded = 0;
+            foreach (var team in career.Teams.Where(t => t.IsActive && t.Members.Count > 1))
+            {
+                var brands = team.Members.Select(m => split.BrandOf(m.Id)?.Id).Distinct().ToList();
+                if (brands.Count > 1 && brands.All(x => x is not null))
+                {
+                    team.Disbanded = career.CurrentDate;
+                    disbanded++;
+                }
+            }
+
             double repair = (split.Ceiling - split.Integrity) * RepairShare(daysSince);
             split.Integrity = Math.Clamp(split.Integrity + repair, 0, split.Ceiling);
             split.LastDraftOn = career.CurrentDate;
@@ -251,6 +273,7 @@ namespace WrestlingSim.Engine
                 Picks             = board.Picks.ToList(),
                 Moved             = moved,
                 FeudsEnded        = ended,
+                TeamsDisbanded    = disbanded,
                 PairingsRefreshed = refreshed,
                 IntegrityBefore   = before,
                 IntegrityAfter    = split.Integrity,
