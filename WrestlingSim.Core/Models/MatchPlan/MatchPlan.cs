@@ -7,18 +7,52 @@ namespace WrestlingSim.Models.MatchPlan
     public class MatchPlan
     {
         /// <summary>
-        /// The two sides. A singles match is a match between two sides of one, which is
-        /// why there is no separate singles plan type.
+        /// The sides. A singles match is two sides of one, a tag match two sides of two, a
+        /// triple threat three sides of one — which is why there is no separate plan type
+        /// for any of them.
         ///
-        /// <see cref="WrestlerA"/> and <see cref="WrestlerB"/> below are compatibility
-        /// shims over these, so an object initialiser written for the singles-only engine
-        /// still reads and behaves the same. Set either the shims or the sides for a given
-        /// side, not both — the shim appends to whatever <see cref="SideA"/> currently is,
-        /// so doing both would leave you with three people on one side.
+        /// <see cref="SideA"/> and <see cref="SideB"/> are shims over the first two, exactly
+        /// as <see cref="WrestlerA"/>/<see cref="WrestlerB"/> are shims over their starters.
+        /// The same reasoning applies one level up: almost everything the engine asks is
+        /// side-level, and "who is on top" does not become a different question with a third
+        /// side in the match — but *some things do*, and those are the whole of what a
+        /// multi-man match is. See <see cref="MatchFormat"/>.
+        ///
+        /// Two sides is the default so every existing plan, save file and test keeps working
+        /// unchanged; a plan is only multi-man if somebody adds a third side.
         /// </summary>
-        public MatchSide SideA { get; init; } = new();
+        public List<MatchSide> Sides { get; init; } = [new(), new()];
 
-        public MatchSide SideB { get; init; } = new();
+        /// <summary>The first side. Shim over <see cref="Sides"/>.</summary>
+        public MatchSide SideA
+        {
+            get => Sides[0];
+            init { while (Sides.Count < 1) Sides.Add(new()); Sides[0] = value; }
+        }
+
+        /// <summary>The second side. Shim over <see cref="Sides"/>.</summary>
+        public MatchSide SideB
+        {
+            get => Sides[1];
+            init { while (Sides.Count < 2) Sides.Add(new()); Sides[1] = value; }
+        }
+
+        /// <summary>
+        /// What kind of match this is, structurally — which is not the same question as
+        /// <see cref="MatchType"/>, which is how it is *worked* (technical, spotfest…).
+        ///
+        /// Derived rather than stored, because the format is a fact about the sides and
+        /// storing it would let a plan disagree with itself.
+        /// </summary>
+        public MatchFormat Format => Sides.Count switch
+        {
+            <= 2 => MatchFormat.TwoSided,
+            3    => MatchFormat.TripleThreat,
+            _    => MatchFormat.MultiWay
+        };
+
+        /// <summary>True when more than two sides can win — the third-man problem applies.</summary>
+        public bool IsMultiMan => Sides.Count > 2;
 
         /// <summary>The wrestler who starts for side A. Shim; see <see cref="SideA"/>.</summary>
         public Wrestler WrestlerA
@@ -38,11 +72,11 @@ namespace WrestlingSim.Models.MatchPlan
             init => SideB.Members.Add(value);
         }
 
-        /// <summary>Everyone in the match, side A first.</summary>
-        public IEnumerable<Wrestler> AllParticipants => SideA.Members.Concat(SideB.Members);
+        /// <summary>Everyone in the match, in side order.</summary>
+        public IEnumerable<Wrestler> AllParticipants => Sides.SelectMany(s => s.Members);
 
-        /// <summary>True when either side has a partner on the apron.</summary>
-        public bool IsTagMatch => SideA.IsTag || SideB.IsTag;
+        /// <summary>True when any side has a partner on the apron.</summary>
+        public bool IsTagMatch => Sides.Any(s => s.IsTag);
 
         public List<MatchBeat> Beats { get; set; } = new();
 
