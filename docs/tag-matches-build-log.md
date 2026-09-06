@@ -1541,11 +1541,18 @@ High · Long · 4 min`) and the edits live in a sheet with chip rows.
 Two corrections to what I first wrote here, both measured by review and both flattering in
 the direction you would expect:
 
-* "a 64px summary" — 64px is the CSS `min-height`. The rendered row is **75px** at 390px,
-  and 113px when it wraps at 320px.
-* "thirteen beats occupy about the space three used to" — thirteen new rows are **1,370px**,
-  which is about *seven* old rows, not three. The page total for the beat step went 3,561px →
-  2,250px, a real 37% reduction, and that is the number worth quoting.
+* "a 64px summary" — 64px is the CSS `min-height`. ~~The rendered row is **75px** at 390px,
+  and 113px when it wraps at 320px.~~ **Both figures were the best case quoted as the typical
+  one, and round 2 caught it.** Re-measured on a 13-beat sheet: at 390px the rows are 75px or
+  94px depending on whether `.beat-row__sub` wraps in the `1fr` column, and **9 of 13 wrap** —
+  so 94px is the row you actually see and 75px is the exception. At 320px they run 94–137px,
+  making the worst case **137px**, not 113px.
+* "thirteen beats occupy about the space three used to" — about *seven* old rows, not three.
+  ~~The page total for the beat step went 3,561px → 2,250px, a real 37% reduction.~~ **Also
+  wrong, and wrong when written**: the same round that quoted 2,250px had already doubled
+  `.beat-gap` from 22px to 44px for the touch target, adding roughly 250px to the page it was
+  describing. Measured now: **2,320px** at 390px (rows alone 1,146px, the row block 1,409px).
+  Still a large reduction, and 37% was not the size of it.
 
 Step 0, after, at 390×844: singles **1,229px**, tag **1,781px**, trios **2,052px** — so the
 tag booking that was 16,269px is a genuine **9.1×** reduction, and trios goes from 22,815px to
@@ -1739,8 +1746,8 @@ the filled slot now.
 |---|---|
 | "~116 pick cards, ~12,000px, 17 screens" | 114 cards, **16,269px, 19.3 screens** — understated |
 | "nearer thirty thousand on the seventy-name roster now in flight" | Extrapolation stated as fact, on a roster that then existed only on an unmerged branch |
-| "the row is now a 64px summary" | 64px is the `min-height`; rendered **75px** |
-| "thirteen beats occupy about the space three used to" | About **seven**. The page went 3,561 → 2,250px, a real 37% |
+| "the row is now a 64px summary" | 64px is the `min-height`; rendered **75 or 94px**, and 9 of 13 are 94 |
+| "thirteen beats occupy about the space three used to" | About **seven**. The page figure quoted here was itself wrong — see round 2 |
 | "26 of 49 notices were `--warn`" | **30 of 56**, and only six were reclassified — warn is still ~43% |
 | "eleven of forty-four" Tag beats gated in singles | Eleven in the category, **nine** gated |
 | "`BEAT ★` on exactly five screens" | Six surfaces; twelve files use the class |
@@ -1850,3 +1857,98 @@ worth having are precisely the ones a new save cannot produce. Their coverage is
 tests and the five mutations, not this. What this rules out is the refactor having broken the
 wiring between the two, which is the specific risk of moving code out of a component and
 testing only the half that left.
+
+---
+
+## The UX pass — review round 2
+
+**Do not merge**, and the reason is worth stating plainly: this round fixed four things and
+broke three, two of them in exactly the categories it had just closed. The four round-1
+blockers are genuinely fixed and review could not break three of them by any route it tried —
+but a leaked sheet came back in the *other* sheet, and the keyboard cursor bug came back in a
+worse form, introduced by the refactor that was supposed to be behaviour-preserving.
+
+### The extraction reintroduced the cursor bug, worse than the original
+
+`BookingSuggestions` collapsed the `Plain` band to a single sort value. The code it replaced
+ranked plain rows by card position within the band; the extracted version ranked them by
+overness alone while still *heading* them by card position.
+
+Those are the same order only when nobody has momentum. `CardPosition` reads
+`EffectiveOverness`, which is overness plus a momentum term, so anybody on a streak crosses a
+tier boundary without moving in an overness sort. Review reproduced the headings coming out
+`MAIN EVENT, MIDCARD, UPPER CARD, LOWER CARD, ENHANCEMENT` in a real career after eight shows.
+
+The headings are the visible symptom. The bug is that the picker *groups* these rows to render
+them, and then indexed the cursor into the ungrouped list — so once the ranking stopped
+arriving grouped, the rendered order and the indexed order were two different lists:
+
+```
+ArrowDown#10:  expected dom 10  highlight dom 33  Gunther   visible=FALSE
+```
+
+From the tenth press the highlight sat 23 rows off screen, `revealRow` scrolled to a different
+row than the one highlighted, and Enter booked a name the user could not see. That is round
+1's F2/F3 with a worse failure mode, and **I had claimed in writing that the extraction was
+byte-identical in the browser.** It was — on a fresh career, which has no momentum, which is
+the one state where the two orders agree. I ran that check and reported it, including its
+limits, and its limits were exactly where the bug lived.
+
+Fixed twice over, because one of the two fixes should have been there from the start:
+
+* `SortKey` restores card-position tiering inside `Plain`, so the headings are contiguous.
+* The picker now derives `index` by counting rows **as it emits them**, instead of looking
+  each row up in the ranked list. The rendered order is the only order the cursor knows about,
+  so it cannot desync again whatever a future band ordering does.
+
+Browser-verified on the fix: headings `Main event, Upper card, Midcard, Lower card,
+Enhancement`, and across fourteen arrow presses `desync=0 offscreen=0`.
+
+### The picker suggested booking a tag team against itself
+
+The `Against.Count > 0` gate I removed in round 1 — correctly, it stopped the partner tier
+firing where it was most useful — sat next to `Against.Contains(mate) is false`, and I took
+both. So with one member of a standing team booked on side A, the *side B* picker offered his
+partner at the top of the list, reason "Grady Kilbride's partner".
+
+Restoring the guard failed no test, which is the more useful half. The eight tests added this
+round are the right tests and all five claimed mutations reproduce exactly — but they did not
+cover this, the staleness threshold, the band headings, or the card-position order that had
+just broken. Four more tests, each killing the mutation review used to find the gap.
+
+The card-position test needed writing twice. The first version used three names and passed
+under the very mutation it was written for: an out-of-tier name at either *end* of the list is
+still contiguous, so the property only bites with four names and the odd one in the middle.
+
+### Two leaks, one fixed and one not
+
+`IAsyncDisposable` on `RosterPicker` silently disabled the base `StateComponent.Dispose()` —
+Blazor runs only the async overload when a component implements both, and `Dispose()` is the
+only place that unsubscribes from `GameState.Changed`. Review measured the subscriber count
+climbing 2 → 9 across eight picker opens, every dead component still being notified and still
+holding its captured graph alive. `DisposeAsync` now calls it.
+
+And the beat-editor sheet still had the whole of F1: rendered outside every step guard, never
+cleared by `Next()` or `Back()`, and never locking body scroll. Focus `← Back` behind the
+scrim, press Enter, and the sheet stays on screen at step 4 — then "Build from scratch"
+regenerates `beats` underneath it and the sheet is editing an orphan, where chip taps mutate
+an object no longer in the list and "Remove this beat" does nothing. Milder than writing into
+the wrong feud, but the same defect, and I had fixed one of the two sheets while writing a
+comment describing the fix as belt-and-braces.
+
+Both sheets are now guarded on their step, cleared on navigation, and locked. Every close path
+on the beat sheet routes through one `CloseBeatSheet()`, so the next close path somebody adds
+cannot forget the release — which is how the picker's version went wrong the first time.
+Browser-verified: sheet opens with `body.overflow: hidden`, and forcing Back behind the scrim
+leaves `sheet=0`, `overflow: ""`, `4 of 5 · Structure`.
+
+### And an unresolved merge conflict, committed, for two rounds
+
+`README.md` carried a raw `<<<<<<< HEAD` / `======= ` / `>>>>>>> origin/main` block in the
+"Pick your wrestlers" section, introduced by the merge commit that brought main into this
+branch and still there two review rounds later. Neither round 1 nor my own reading caught it;
+the tests do not read the README and neither, apparently, did I after merging. Resolved, and
+the surviving text rewritten, since it described the sort order that had just changed twice.
+
+**488 tests passing**, up from 479. Nine of them are this round's, and each was written
+against a specific mutation review used to demonstrate a gap.

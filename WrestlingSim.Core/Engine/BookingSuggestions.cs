@@ -36,7 +36,7 @@ namespace WrestlingSim.Engine
             /// <summary>On the most recent card.</summary>
             Recent = 10,
 
-            /// <summary>Nothing in particular — sorted by card position.</summary>
+            /// <summary>Nothing in particular — sorted by card position, then popularity.</summary>
             Plain = 20,
 
             /// <summary>The crowd has been shown this pairing too often.</summary>
@@ -69,9 +69,35 @@ namespace WrestlingSim.Engine
             IReadOnlySet<Wrestler> recentlyBooked,
             DateOnly? today) =>
             pool.Select(w => Describe(w, against, feuds, bookedAs, standingPartnerOf, recentlyBooked, today))
-                .OrderBy(x => (int)x.Band)
+                .OrderBy(SortKey)
                 .ThenByDescending(x => x.Wrestler.Overness)
                 .ToList();
+
+        /// <summary>
+        /// Where a suggestion sorts. The band, except that <see cref="SuggestionBand.Plain"/>
+        /// subdivides by card position.
+        ///
+        /// That subdivision is not cosmetic and losing it was a real bug. A plain row's
+        /// heading *is* its card position, so if plain rows are ordered by popularity alone
+        /// the headings stop being contiguous — `CardPosition` is derived from
+        /// `EffectiveOverness`, which is overness plus a momentum term, so anybody on a
+        /// streak crosses a band boundary without moving in an overness sort. Review
+        /// reproduced `MAIN EVENT, MIDCARD, UPPER CARD, LOWER CARD, ENHANCEMENT` in a real
+        /// career after eight shows.
+        ///
+        /// The consequence was not just untidy headings. The picker groups these rows for
+        /// display, so a non-contiguous order meant the rendered order and the ranked order
+        /// were different lists, and the keyboard cursor indexed the wrong one: by the tenth
+        /// arrow press the highlight was 23 rows off screen and Enter booked a name that was
+        /// not visible. That is the same keyboard bug round 1 found, reintroduced in a worse
+        /// form by a refactor that was supposed to be behaviour-preserving — the picker now
+        /// derives its cursor from the order it actually renders, so this cannot desync
+        /// again even if a future band is added out of order.
+        /// </summary>
+        private static int SortKey(Suggestion s) =>
+            s.Band == SuggestionBand.Plain
+                ? (int)SuggestionBand.Plain + (CardPosition.MainEvent - s.Wrestler.CardPosition)
+                : (int)s.Band;
 
         private static Suggestion Describe(
             Wrestler w,
@@ -116,7 +142,13 @@ namespace WrestlingSim.Engine
                             : ""), null);
             }
 
-            if (standingPartnerOf(w) is { } mate && bookedAs(mate) is not null)
+            // `!against.Contains(mate)` is load-bearing: without it the picker offers a
+            // standing team's two members *against each other*, at the top of the list, with
+            // "X's partner" as the reason. The guard existed before the extraction and was
+            // dropped along with a separate gate that genuinely needed removing.
+            if (standingPartnerOf(w) is { } mate
+                && bookedAs(mate) is not null
+                && !against.Contains(mate))
                 return new Suggestion(w, SuggestionBand.Partner,
                     $"{position} · {mate.RingName}'s partner", null);
 

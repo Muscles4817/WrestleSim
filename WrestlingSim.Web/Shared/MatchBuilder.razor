@@ -1,4 +1,5 @@
 @inject GameState State
+@inject IJSRuntime JS
 
 @* Only the steps this booking actually has, numbered by where they sit in that list —
    so a match with no belt on the line does not show a skipped "3" and then jump to 4. *@
@@ -209,8 +210,18 @@
 }
 
 @* The beat detail sheet. Chips rather than selects — three native <select>s in a row was
-   the single worst thing on a phone in this app. *@
-@if (editing is { } edit)
+   the single worst thing on a phone in this app.
+
+   Guarded on the step for the same reason the roster picker is, and the reason is that
+   review found this one still leaking after the picker was fixed. `Next()` and `Back()`
+   cleared `openSlot` and never `editing`, and this sheet rendered outside every step guard
+   — so focusing `← Back` behind the scrim and pressing Enter left the sheet on screen at
+   step 4, and choosing "Build from scratch" there regenerated `beats` underneath it. The
+   sheet was then editing an orphaned MatchBeat: chip taps mutated an object no longer in
+   the list and were silently discarded, and "Remove this beat" did nothing. Losing an edit
+   is milder than writing into the wrong feud, but it is the same defect, and the fix had
+   been applied to one of the two sheets. *@
+@if (step == BeatsStep && editing is { } edit)
 {
     <div class="sheet sheet--short" role="dialog" aria-modal="true" aria-label="Edit beat">
         <div class="sheet__head">
@@ -218,7 +229,7 @@
                 <span class="label">@BeatTypeName(edit.Type)</span>
                 <span class="badge">@edit.DurationMinutes min</span>
             </div>
-            <button class="btn btn--icon btn--ghost" @onclick="() => editing = null" aria-label="Close">✕</button>
+            <button class="btn btn--icon btn--ghost" @onclick="CloseBeatSheet" aria-label="Close">✕</button>
         </div>
         <div class="sheet__body sheet__body--pad">
             @if (BeatLibrary.All.FirstOrDefault(t => t.Type == edit.Type)?.BookerTip is { } tip
@@ -262,13 +273,13 @@
 
             <div class="row mt">
                 <button class="btn btn--danger" disabled="@(!CanRemove(edit))"
-                        @onclick="() => { beats.Remove(edit); editing = null; }">Remove this beat</button>
+                        @onclick="async () => { beats.Remove(edit); await CloseBeatSheet(); }">Remove this beat</button>
                 <span class="spacer"></span>
-                <button class="btn btn--primary" @onclick="() => editing = null">Done</button>
+                <button class="btn btn--primary" @onclick="CloseBeatSheet">Done</button>
             </div>
         </div>
     </div>
-    <div class="sheet__scrim" @onclick="() => editing = null"></div>
+    <div class="sheet__scrim" @onclick="CloseBeatSheet"></div>
 }
 
 @* The picker itself, rendered once for whichever slot is open.
@@ -558,7 +569,7 @@
 }
 
 @* ── 6. Beat editor ───────────────────────────────────────────────────── *@
-@if (step == 5)
+@if (step == BeatsStep)
 {
     <div class="panel">
         <div class="versus">
@@ -634,7 +645,7 @@
 
             <div class="beat-row @(beat.IsFinish ? "is-finish" : beat.IsOpening ? "is-opening" : "")">
                 <div class="beat-row__n">@(i + 1)</div>
-                <button class="beat-row__body" @onclick="() => editing = beat">
+                <button class="beat-row__body" @onclick="() => OpenBeatSheet(beat)">
                     <span class="beat-row__name">@BeatTypeName(beat.Type)</span>
                     <span class="beat-row__sub">
                         @ControlLabel(beat.Control) · @beat.Intensity · @beat.Duration · @beat.DurationMinutes min
@@ -746,6 +757,9 @@
     ];
 
     private static readonly int LastStep = StepLabels[^1].Index;
+
+    /// <summary>The beat sheet's step. Was the literal 5 in the markup and nowhere else.</summary>
+    private const int BeatsStep = 5;
 
     private List<(int Index, string Label)> ActiveSteps() =>
         StepLabels.Where(x => x.Index == step || StepApplies(x.Index)).ToList();
@@ -1106,11 +1120,12 @@
 
     // ── Navigation ───────────────────────────────────────────────────────
 
-    private void Next()
+    private async Task Next()
     {
-        // Navigating away closes the picker. The render guard above makes this belt and
-        // braces, and it should be both: a leaked sheet is a leaked *write path*.
+        // Navigating away closes both sheets. The render guards make this belt and braces,
+        // and it should be both: a leaked sheet is a leaked *write path*.
         openSlot = null;
+        await CloseBeatSheet();
 
         if (step == 0)
         {
@@ -1137,6 +1152,7 @@
     private async Task Back()
     {
         openSlot = null;
+        await CloseBeatSheet();
 
         if (step == 0)
         {
@@ -1274,6 +1290,28 @@
     }
 
     // ── Beat editing ─────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Opening and closing the beat sheet, in one place each.
+    ///
+    /// The lock matters as much as the guard. The picker locks the body while its sheet is
+    /// up; this one never did, so the page scrolled behind an open modal — review measured
+    /// it. And routing every close through here is what stops the next close path someone
+    /// adds from forgetting to release it, which is how the picker's version of this went
+    /// wrong the first time.
+    /// </summary>
+    private async Task OpenBeatSheet(MatchBeat beat)
+    {
+        editing = beat;
+        await JS.InvokeVoidAsync("wrestleSim.lockScroll", true);
+    }
+
+    private async Task CloseBeatSheet()
+    {
+        if (editing is null) return;
+        editing = null;
+        await JS.InvokeVoidAsync("wrestleSim.lockScroll", false);
+    }
 
     // SetControl / SetIntensity / SetDuration are gone with the three <select>s that
     // needed them — the sheet binds the enums directly.

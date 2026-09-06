@@ -251,23 +251,19 @@ them for this booking are skipped rather than shown empty — most matches have 
 the line, so most bookings are five.
 
 ### 1 — Pick your wrestlers
-<<<<<<< HEAD
 First, how many a side: one, two or three. Then the lineup — a slot for each place in the
 match, each opening a picker over the page rather than another list on it.
 
 The picker sorts by what matters rather than by popularity: anyone with a live feud against
-the side you have already filled comes first, then anyone the crowd has been shown too often
-(with the number, so you can see what the pairing is still worth), then by card position.
-Names already booked into this match stay in the list, marked, and tapping one swaps the two
-slots. Arrow keys move, Enter picks, Escape closes.
+the side you have already filled comes first, then a standing tag partner of somebody already
+booked, then anyone on the last card, then the rest by card position — and a pairing the
+crowd has been shown too often sinks below all of it, with the number, so you can see what
+the pairing is still worth. Names already booked into this match stay in the list, marked,
+and tapping one swaps the two slots. Arrow keys move, Enter picks, Escape closes.
 
 The moment both sides are complete, the pairing's freshness appears under the lineup — how
 many times these two have met and what the next one is worth. That is the point at which it
 is useful, which is while you can still book something else.
-=======
-First, singles or tag. Then the roster, showing Overness, Skill and Charisma — one name a
-side for a singles match, two for a tag match, where the second starts on the apron.
->>>>>>> origin/main
 
 A wrestler cannot be booked on both sides, and the sides must be the same size. Handicap
 matches are not blocked out of squeamishness: the engine has no term for a numbers advantage

@@ -46,30 +46,45 @@
         <button class="btn btn--icon btn--ghost" @onclick="Cancel" aria-label="Close">✕</button>
     </div>
 
+    @{
+        // Ranked once per render and shared by the placeholder count, the keyboard cursor
+        // and the list. It used to be called twice — the placeholder ran the full ranking
+        // again just to say how many names it produced.
+        var rows  = Rows();
+        var bands = rows.GroupBy(r => BookingSuggestions.Heading(r.Band, r.Wrestler)).ToList();
+    }
+
     <div class="sheet__filters">
         <CastFilter Query="@query" QueryChanged="@OnQuery"
                     Division="@division" DivisionChanged="@(v => { division = v; cursor = 0; })"
                     HomeBrand="@State.BookingBrand"
                     IncludeCrossover="@includeCrossover"
                     IncludeCrossoverChanged="@(v => { includeCrossover = v; cursor = 0; })"
-                    Placeholder="@($"Search {Rows().Count()} names…")" />
+                    Placeholder="@($"Search {rows.Count} names…")" />
     </div>
 
     <div class="sheet__body">
-        @{ var rows = Rows().ToList(); }
-        @if (rows.Count == 0)
+        @if (bands.Count == 0)
         {
             <div class="empty">Nobody matches that search.</div>
         }
         else
         {
-            @foreach (var band in rows.GroupBy(r => BookingSuggestions.Heading(r.Band, r.Wrestler)))
+            @* `index` counts through the rendered order, not through the ranked list.
+               It used to be `rows.IndexOf(row)` against the flat ranking while the DOM was
+               built from a `GroupBy` — two orders that agree only while the ranking already
+               arrives grouped. It stopped arriving grouped, and the cursor pointed 23 rows
+               away from the highlight: arrow keys scrolled to one name and Enter booked
+               another, off screen. Counting the rows as they are emitted cannot desync,
+               whatever a future ranking does. *@
+            int index = -1;
+            @foreach (var band in bands)
             {
                 <div class="group-label">@band.Key</div>
                 @foreach (var row in band)
                 {
                     var w = row.Wrestler;
-                    int index = rows.IndexOf(row);
+                    index++;
                     @* The cursor follows focus rather than the mouse. It used to be an
                        integer that `@onmouseover` also wrote, so the gold highlight and the
                        DOM focus ring were two independent things: Tab to one row, hover
@@ -184,8 +199,19 @@
     /// <summary>
     /// And on disposal, so a sheet torn down by a navigation — which is how F1 got out —
     /// cannot leave the page permanently unscrollable.
+    ///
+    /// `Dispose()` has to be called by hand. When a component implements both interfaces
+    /// Blazor runs **only** the async one, and the base `StateComponent.Dispose()` is the
+    /// single place that unsubscribes from `GameState.Changed`. Adding `IAsyncDisposable`
+    /// here therefore silently stopped the base cleanup: review measured the subscriber
+    /// count climbing 2 → 9 across eight picker opens, each dead component still being
+    /// notified of every state change and still holding its captured graph alive.
     /// </summary>
-    public async ValueTask DisposeAsync() => await Release();
+    public async ValueTask DisposeAsync()
+    {
+        await Release();
+        Dispose();
+    }
 
     private void OnQuery(string v) { query = v; cursor = 0; }
 

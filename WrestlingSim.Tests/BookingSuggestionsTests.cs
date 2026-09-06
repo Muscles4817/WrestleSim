@@ -60,6 +60,137 @@ namespace WrestlingSim.Tests
                          ranked.Select(r => r.Wrestler.RingName));
         }
 
+        /// <summary>
+        /// **Card position, not popularity** — and the difference between them is momentum.
+        ///
+        /// The test above is named for this and cannot detect it: with no momentum, card
+        /// position and overness give the same order, so it passes just as happily under
+        /// `OrderByDescending(Overness)`. It is the one test in this class that the
+        /// popularity-only mutation does not kill, for exactly that reason.
+        ///
+        /// It matters because `CardPosition` comes off `EffectiveOverness`, which is overness
+        /// plus a momentum term — so anybody on a streak crosses a band boundary without
+        /// moving in an overness sort. A plain row's heading *is* its card position, so an
+        /// overness-only order produces non-contiguous headings, and review reproduced
+        /// `MAIN EVENT, MIDCARD, UPPER CARD, LOWER CARD, ENHANCEMENT` in a real career.
+        ///
+        /// The picker then groups these rows to render them, so a ranking that does not
+        /// arrive grouped is a *different list* from the one on screen — which is how the
+        /// keyboard cursor ended up 23 rows from the highlight, with Enter booking a name
+        /// that was not visible. The component no longer indexes the ranked list, so that
+        /// specific failure cannot recur; this keeps the headings contiguous, which is the
+        /// other half.
+        /// </summary>
+        [Fact]
+        public void MomentumMovesSomebodyBetweenTiers_AndTheOrderFollowsTheTierNotTheNumber()
+        {
+            // The cold streak has to land in the *middle* of the overness order, not at its
+            // head — an out-of-tier name at either end is still contiguous, so the first
+            // version of this test passed under the very mutation it was written for. It
+            // takes four names to state the property.
+            var top   = W("Top", 95);
+            var cold  = W("Cold Streak", 92);   // MainEvent on paper, dropped a tier by form
+            var mid   = W("Steady", 90);
+            var low   = W("Also Steady", 89);
+
+            cold.Momentum = -90;                // 92 − 13.5 = 78.5, an upper-carder
+
+            var ranked = Rank([cold, top, low, mid]);
+
+            foreach (var r in ranked)
+                output.WriteLine($"  {r.Wrestler.RingName,-12} overness {r.Wrestler.Overness:F0} " +
+                                 $"effective {r.Wrestler.EffectiveOverness:F1} → {r.Wrestler.CardPosition}");
+
+            // The premise: momentum has actually moved somebody across a boundary. Without
+            // this the assertion below is vacuous.
+            Assert.NotEqual(top.CardPosition, cold.CardPosition);
+
+            // Headings are contiguous — every row of a card position sits together. Under a
+            // popularity-only sort the cold streak sorts first on 90 while belonging to a
+            // lower tier, and the tiers interleave.
+            var positions = ranked.Select(r => r.Wrestler.CardPosition).ToList();
+            Assert.Equal(positions.Distinct().Count(), CountRuns(positions));
+        }
+
+        private static int CountRuns<T>(IReadOnlyList<T> xs)
+        {
+            int runs = 0;
+            for (int i = 0; i < xs.Count; i++)
+                if (i == 0 || !Equals(xs[i], xs[i - 1])) runs++;
+            return runs;
+        }
+
+        /// <summary>
+        /// A standing partner already booked on the *other* side is not a suggestion, it is
+        /// a mistake. The guard existed before the sort moved into Core and was dropped in
+        /// the move, so the picker offered a team's two members against each other at the
+        /// top of the list, labelled "X's partner". Review found it in a real career with a
+        /// seeded team.
+        /// </summary>
+        [Fact]
+        public void ATeamMateAlreadyOnTheOtherSide_IsNotSuggestedAsOpposition()
+        {
+            var booked = W("Booked", 80);
+            var mate   = W("Mate", 45);
+            var other  = W("Other", 60);
+
+            var ranked = Rank(
+                [mate, other],
+                against: [booked],                              // their partner is the opposition
+                bookedAs: w => w == booked ? "Side A" : null,
+                partnerOf: w => w == mate ? booked : null);
+
+            var m = ranked.Single(r => r.Wrestler == mate);
+            Assert.NotEqual(Band.Partner, m.Band);
+            Assert.DoesNotContain("partner", m.Reason);
+        }
+
+        /// <summary>
+        /// The staleness threshold, which review measured as uncovered: moving it from 0.75
+        /// to 0.999 — so that every pairing with any history reads as worn out — failed
+        /// nothing.
+        /// </summary>
+        [Fact]
+        public void APairingWithAFewMatchesLeftInIt_IsNotYetWornOut()
+        {
+            var rival  = W("Rival", 70);
+            var facing = W("Facing", 70);
+
+            var feuds = new FeudBook();
+            var feud  = feuds.GetOrCreate(rival, facing);
+            feud.SetMinimumIntensity(FeudIntensity.Hot);
+            feud.RecordMatch(Today);
+
+            var only = Rank([rival], against: [facing], feuds: feuds).Single();
+            output.WriteLine($"  after one meeting: freshness {feud.Familiarity(Today):F3} → {only.Band}");
+
+            Assert.True(feud.Familiarity(Today) > BookingSuggestions.StaleBelow,
+                "One prior meeting is not a worn-out pairing.");
+            Assert.Equal(Band.Story, only.Band);
+        }
+
+        /// <summary>
+        /// The band headings are the only thing a user reads about why a name is where it
+        /// is, and nothing checked them: review replaced every one with "BANANA" and the
+        /// suite stayed green.
+        /// </summary>
+        [Theory]
+        [InlineData(Band.Story,   "There is a story here")]
+        [InlineData(Band.Partner, "Suggested")]
+        [InlineData(Band.Recent,  "Recently booked")]
+        [InlineData(Band.WornOut, "The crowd has seen this")]
+        [InlineData(Band.Booked,  "Already in this match")]
+        public void EachBandSaysWhyItIsThere(Band band, string expected) =>
+            Assert.Equal(expected, BookingSuggestions.Heading(band, W("Anyone")));
+
+        /// <summary>A plain row has no story, so its heading is where it sits on the card.</summary>
+        [Fact]
+        public void APlainRowIsHeadedByItsCardPosition()
+        {
+            var w = W("Anyone", 94);
+            Assert.Equal(w.CardPosition.Label(), BookingSuggestions.Heading(Band.Plain, w));
+        }
+
         [Fact]
         public void ALiveFeudWithTheOtherSide_ComesFirst_EvenOverAMuchBiggerName()
         {
