@@ -206,6 +206,21 @@ namespace WrestlingSim.Models.MatchPlan
                 Concluded       = false;
                 MatchesSinceHot = 0;
                 ChaptersSettled++;
+
+                // Doc 31's A3 brief also asks that **continuing past the blow-off be
+                // penalised**, and the first version made it free — which is worse than
+                // not having a blow-off, because it lets a booker take the payoff and
+                // keep the programme.
+                //
+                // The cost is time-sensitive, because the two cases are genuinely
+                // different. Restarting a fortnight after the cage match is telling the
+                // audience the ending they were sold did not count, and it is exactly
+                // doc 20 §6.2's scarcity argument — a stipulation used again immediately
+                // means nothing. Reviving the same rivalry two years later is one of the
+                // oldest and best things in wrestling and should cost nothing at all.
+                if (ConcludedOn is { } settled && LastAdvanced is { } now
+                    && now.DayNumber - settled.DayNumber < RespectTheEndingDays)
+                    Distrust = Math.Clamp(Distrust + ReopenedTooSoonDistrust, 0, 1);
             }
 
             var before = Intensity;
@@ -260,6 +275,14 @@ namespace WrestlingSim.Models.MatchPlan
         {
             Heat = 0;
             Intensity = FeudIntensity.None;
+
+            // Not the same thing as a blow-off, deliberately: nothing was *settled*, the
+            // two were separated. So `Concluded` stays false — these two still have
+            // unfinished business if a later draft puts them back together — but the
+            // patience clock resets, because a programme that was taken off the player is
+            // not one the player refused to pay off.
+            MatchesSinceHot = 0;
+            DecayedTo       = null;
         }
 
         // ── Decay ────────────────────────────────────────────────────────────
@@ -282,10 +305,15 @@ namespace WrestlingSim.Models.MatchPlan
         public const int HeatGraceDays = 14;
 
         /// <summary>
-        /// Heat kept per day once past the grace. ~0.955 halves a feud in about a
-        /// fortnight of neglect on top of the grace — doc 20 §9 lists "a feud left off TV
-        /// for three weeks loses its heat" as one of the things that kills them, and three
-        /// weeks off television should cost most of it.
+        /// Heat kept per day once past the grace. Doc 20 §9 lists "a feud left off TV for
+        /// three weeks loses its heat" as one of the things that kills them.
+        ///
+        /// Measured against that, not asserted: three weeks idle is seven days past the
+        /// grace and costs **27.6%**; a month costs 51%; two months costs 88%. The first
+        /// draft of this comment said three weeks "should cost most of it", which the
+        /// constant does not do and review caught. Fourteen days of grace is what makes the
+        /// three-week figure modest — a feud is not punished for missing one week of
+        /// television, and doc 20 §9 does not say it should be.
         /// </summary>
         public const double HeatDailyRetention = 0.955;
 
@@ -356,6 +384,15 @@ namespace WrestlingSim.Models.MatchPlan
         public const int PatienceMatches = 3;
 
         /// <summary>
+        /// How long an ending is owed before restarting the same programme reads as a
+        /// revival rather than as the ending not having counted. Six months.
+        /// </summary>
+        public const int RespectTheEndingDays = 180;
+
+        /// <summary>What restarting a settled feud inside that window costs.</summary>
+        public const double ReopenedTooSoonDistrust = 0.25;
+
+        /// <summary>
         /// What a blow-off is worth right now, as a multiplier on the match.
         ///
         /// Proportional to what was actually built — doc 20 §5, the stipulation must match
@@ -395,7 +432,7 @@ namespace WrestlingSim.Models.MatchPlan
 
         /// <summary>
         /// The promise was made and not kept. The feud stays open, and the pairing pays
-        /// double what an ordinary unresolved match costs.
+        /// 1.67× what an ordinary unresolved match costs (0.30 against 0.18).
         /// </summary>
         public void RecordBrokenPromise()
         {
@@ -413,6 +450,11 @@ namespace WrestlingSim.Models.MatchPlan
             Heat        = 0;
             Intensity   = FeudIntensity.None;
             DecayedTo   = null;
+
+            // The blow-off is itself an event, so it is the last thing that advanced the
+            // feud. This is what the reopen check in AddHeat measures "too soon" against
+            // when nothing else has happened since.
+            if (date is { } d) LastAdvanced = d;
             Distrust    = Math.Max(0, Distrust - 0.35);  // resolving earns some belief back
         }
 

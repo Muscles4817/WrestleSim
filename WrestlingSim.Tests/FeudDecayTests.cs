@@ -75,7 +75,15 @@ namespace WrestlingSim.Tests
         {
             var feud = Hot();
 
-            feud.ApplyDailyDecay(Day0.AddDays(Feud.HeatGraceDays));
+            // Ticked every day *inside* the grace, which is what the world clock actually
+            // does. The first version only called on the last day of the grace, where
+            // `today == from` and stamping the marker is harmless — so it passed with the
+            // marker stamped mid-grace and passed with the marker removed entirely, which
+            // is precisely the bug its own comment claimed it existed to catch. Review
+            // applied both mutations and watched it stay green.
+            for (int day = 1; day <= Feud.HeatGraceDays; day++)
+                feud.ApplyDailyDecay(Day0.AddDays(day));
+
             Assert.Equal(60, feud.Heat, 6);
 
             // One day past the grace charges exactly one day — not fifteen. Stamping the
@@ -245,6 +253,47 @@ namespace WrestlingSim.Tests
                 "What the booker taught the crowd should outlive the story it was taught by.");
         }
 
+        /// <summary>
+        /// Doc 31's A3 brief asks for this in as many words — *"continuing past the blow-off
+        /// should be penalised"* — and the first version made it free, which is worse than
+        /// having no blow-off at all: it let a booker take the payoff and keep the programme.
+        ///
+        /// Time-sensitive, because the two cases are genuinely different. Restarting a
+        /// fortnight after the cage match tells the audience the ending they were sold did
+        /// not count (doc 20 §6.2's scarcity argument). Reviving the same rivalry two years
+        /// later is one of the oldest and best things in wrestling.
+        /// </summary>
+        [Fact]
+        public void RestartingRightAfterTheBlowOff_Costs_AndAGenuineRevivalDoesNot()
+        {
+            Feud Settled(DateOnly on)
+            {
+                var f = Hot(80);
+                f.BlowOff(on);
+                return f;
+            }
+
+            var tooSoon = Settled(Day0);
+            tooSoon.Advance(Day0.AddDays(21));
+            tooSoon.AddHeat(50);
+
+            var revival = Settled(Day0);
+            revival.Advance(Day0.AddDays(Feud.RespectTheEndingDays + 30));
+            revival.AddHeat(50);
+
+            output.WriteLine($"  restarted after 21 days:  distrust {tooSoon.Distrust:F2}, " +
+                             $"credibility {tooSoon.Credibility:F2}");
+            output.WriteLine($"  revived after 7 months:   distrust {revival.Distrust:F2}, " +
+                             $"credibility {revival.Credibility:F2}");
+
+            Assert.True(tooSoon.Distrust > revival.Distrust,
+                "Carrying on a fortnight after the blow-off should cost what a revival does not.");
+            Assert.Equal(0, revival.Distrust);
+            Assert.False(tooSoon.Concluded);
+            Assert.False(revival.Concluded);
+            Assert.Equal(1, tooSoon.ChaptersSettled);
+        }
+
         [Fact]
         public void ABlowOffIsWorthWhatWasBuilt_AndAnUnearnedOneIsWorthLessThanNothing()
         {
@@ -379,6 +428,157 @@ namespace WrestlingSim.Tests
                     Assert.True(feud.Distrust > 0,
                         "A blow-off that settled nothing should have cost something.");
             }
+        }
+
+        // ── Wired in, not just implemented ───────────────────────────────────
+        //
+        // Review mutation-tested this branch and found four survivors, every one of them a
+        // *hookup* rather than a rule: the decay call in the world clock, the
+        // RecordUnresolved call in the show simulator, Advance() clearing the decay marker,
+        // and the pre-A3 save fallback. Each could be deleted with 436 tests still green,
+        // because every test above drives the model directly. A mechanism nothing calls is
+        // not a mechanism, and these four are what make the difference between a feature
+        // and a class.
+
+        /// <summary>
+        /// The world clock actually cools feuds. `TitleShowTests` already runs 150 days of
+        /// `AdvanceOneDay` to prove title drift is wired in; this is the same guard for the
+        /// mechanism A3 is named after, and it was missing.
+        /// </summary>
+        [Fact]
+        public void TheWorldClock_CoolsAFeudNobodyIsTelling()
+        {
+            var career = CareerWithFeud(out var feud);
+            feud.AddHeat(60);
+            feud.Advance(career.CurrentDate);
+
+            double before = feud.Heat;
+            for (int i = 0; i < 60; i++) career.AdvanceOneDay();
+
+            output.WriteLine($"  {before:F1} heat → {feud.Heat:F1} after 60 days of the clock " +
+                             $"({feud.Intensity})");
+
+            Assert.True(feud.Heat < before * 0.2,
+                $"Sixty days of the world clock left the feud at {feud.Heat:F1} of {before:F1}. " +
+                "ApplyDailyDecay is not being called.");
+        }
+
+        /// <summary>
+        /// And the clock respects the grace, so a feud advanced every fortnight never cools —
+        /// which is the half of the rule that stops it being a flat decay.
+        /// </summary>
+        [Fact]
+        public void TheWorldClock_LeavesAFeudAloneWhileItIsBeingTold()
+        {
+            var career = CareerWithFeud(out var feud);
+            feud.AddHeat(60);
+
+            for (int i = 0; i < 60; i++)
+            {
+                career.AdvanceOneDay();
+                if (i % 10 == 0) feud.Advance(career.CurrentDate);
+            }
+
+            output.WriteLine($"  told every ten days: {feud.Heat:F1} heat after 60 ({feud.Intensity})");
+            Assert.Equal(60, feud.Heat, 6);
+        }
+
+        /// <summary>
+        /// A show that settles nothing charges the pairing for it. This is the only place
+        /// distrust accrues in career play, and it could be deleted with a green suite.
+        /// </summary>
+        [Fact]
+        public void AShowThatSettlesNothing_ChargesThePairingForIt()
+        {
+            var book = new FeudBook();
+            var a = TestRoster.Make("Face", overness: 80);
+            var b = TestRoster.Make("Heel", overness: 78);
+
+            var feud = book.GetOrCreate(a, b);
+            feud.SetMinimumIntensity(FeudIntensity.Nuclear);
+
+            for (int night = 1; night <= 6; night++)
+            {
+                var show = new Show
+                {
+                    Name = $"Night {night}",
+                    Date = new DateTime(2026, 1, 1).AddDays(night * 7),
+                    TotalDurationMinutes = 180,
+                    Card =
+                    [
+                        new BookedMatch
+                        {
+                            StructureName = "TV Formula",
+                            Plan = new MatchPlanModel
+                            {
+                                WrestlerA = a, WrestlerB = b, Feud = feud,
+                                Beats = MatchStructureLibrary.Find("TV Formula")!
+                                            .Beats.Select(x => x.Clone()).ToList()
+                            }
+                        }
+                    ]
+                };
+                new ShowSimulator(book, seed: night).Simulate(show);
+                output.WriteLine($"  after night {night}: matchesSinceHot {feud.MatchesSinceHot}, " +
+                                 $"distrust {feud.Distrust:F2}");
+            }
+
+            Assert.True(feud.MatchesSinceHot >= 6, "The show simulator is not counting matches.");
+            Assert.True(feud.Distrust > 0,
+                "Six shows and nothing settled cost the pairing nothing — RecordUnresolved " +
+                "is not being called.");
+        }
+
+        /// <summary>
+        /// Telling the story again restarts the decay clock rather than resuming where it
+        /// left off. Without this a feud ignored for a month and then re-booked keeps its
+        /// old marker: review measured it losing a further 47.5% of what remained, and the
+        /// grace period silently skipped for good.
+        /// </summary>
+        [Fact]
+        public void AdvancingAFeud_RestartsTheClockRatherThanResumingIt()
+        {
+            var resumed = Hot(60);
+            var restarted = Hot(60);
+
+            // Both ignored for forty days.
+            for (int d = 1; d <= 40; d++)
+            {
+                resumed.ApplyDailyDecay(Day0.AddDays(d));
+                restarted.ApplyDailyDecay(Day0.AddDays(d));
+            }
+            Assert.Equal(resumed.Heat, restarted.Heat, 9);
+
+            // Then one is told again. Its grace should start over from that night.
+            restarted.Advance(Day0.AddDays(40));
+
+            for (int d = 41; d <= 54; d++)
+            {
+                resumed.ApplyDailyDecay(Day0.AddDays(d));
+                restarted.ApplyDailyDecay(Day0.AddDays(d));
+            }
+
+            output.WriteLine($"  a fortnight later: never re-told {resumed.Heat:F2}, " +
+                             $"re-told on day 40 {restarted.Heat:F2}");
+
+            Assert.True(restarted.Heat > resumed.Heat * 1.2,
+                $"Re-booking a cold feud bought it nothing: {restarted.Heat:F2} vs " +
+                $"{resumed.Heat:F2}. Advance() is not clearing the decay marker.");
+        }
+
+        private static Career CareerWithFeud(out Feud feud)
+        {
+            var a = TestRoster.Make("Face", overness: 80);
+            var b = TestRoster.Make("Heel", overness: 78);
+            var career = new Career
+            {
+                Promotion   = new Promotion { Name = "Decay Wrestling", Tier = PromotionTier.National },
+                StartDate   = Day0,
+                CurrentDate = Day0,
+                Roster      = [a, b]
+            };
+            feud = career.FeudBook.GetOrCreate(a, b);
+            return career;
         }
 
         private sealed record Run(double Stars, double FinishCrowd, double BeforeFinish);

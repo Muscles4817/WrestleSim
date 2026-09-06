@@ -385,12 +385,22 @@ namespace WrestlingSim.Persistence
                     f.RememberedMeetings > 0 ? f.RememberedMeetings : f.MatchCount,
                     ParseOptionalDate(f.LastMatchDate));
 
-                // A pre-A3 save has no LastAdvanced. Falling back to LastMatchDate is the
-                // conservative reading — the alternative is null, which means "never
-                // advanced" and therefore *never decays*, quietly exempting every feud in
-                // an old save from the rule this release adds.
+                // A pre-A3 save has no LastAdvanced, and null means "never advanced" and
+                // therefore *never decays* — which would quietly exempt every feud in an
+                // old save from the rule this release adds.
+                //
+                // LastMatchDate is the first fallback and the save's own clock is the
+                // second. The clock matters more than it looks: a feud built entirely out
+                // of segments has no LastMatchDate at all, because RecordSegment did not
+                // take a date before A3 — and "build it with promos for a month, then have
+                // the match" is an ordinary way to book. Review measured such a feud
+                // sitting at 70 heat after 400 simulated days. Falling back to the save
+                // date gives it a grace period starting from the load and then decays it
+                // like everything else.
                 feud.RestoreDecay(
-                    ParseOptionalDate(f.LastAdvanced) ?? ParseOptionalDate(f.LastMatchDate),
+                    ParseOptionalDate(f.LastAdvanced)
+                        ?? ParseOptionalDate(f.LastMatchDate)
+                        ?? career.CurrentDate,
                     ParseOptionalDate(f.DecayedTo));
                 feud.RestoreResolution(
                     f.Concluded, ParseOptionalDate(f.ConcludedOn),

@@ -73,18 +73,22 @@ most significant thing missing from the sim right now.
 - Never blowing off should eventually convert heat into audience distrust
 
 Shipped as `Feud.ApplyDailyDecay` (charged by `Career.AdvanceOneDay`, 14 days of grace then
-0.955/day), `MatchPlan.IsBlowOff` (a booker declaration, priced by `Feud.PayoffFor` at
-×1.45 Nuclear down to ×0.72 for one nobody was told mattered), and `Feud.Distrust` —
-accrued by `RecordUnresolved` past the third match, and by `RecordBrokenPromise` at double
-rate when a declared blow-off is booked to a disqualification or a count-out and therefore
-does not *resolve* (§6.1's first requirement).
+0.955/day — three weeks idle costs 27.6%, a month 51%, two months 88%), `MatchPlan.IsBlowOff`
+(a booker declaration, priced by `Feud.PayoffFor` at ×1.45 Nuclear down to ×0.72 for one
+nobody was told mattered), and `Feud.Distrust` — accrued by `RecordUnresolved` past the third
+match, at 1.67× that rate by `RecordBrokenPromise` when a declared blow-off is booked to a
+disqualification or a count-out and therefore does not *resolve* (§6.1's first requirement),
+and once more for restarting a settled programme inside six months, which is this entry's
+"continuing past the blow-off should be penalised".
 
-What it is worth, measured on a `Big Match Epic` between two eighty-overness workers, 300
-seeds a cell: having a Nuclear feud at all is +0.19★ over none; settling it is a further
-+0.05★; ten matches that settle nothing is −0.05★. The rating movement is deliberately a
-quarter of what the feud itself is worth rather than a headline — the teeth of this change
-are that heat now has to be *maintained*, and that distrust is durable and survives the
-blow-off that earns some of it back.
+What it is worth, measured on a `Big Match Epic` between two eighty-overness workers: having
+a Nuclear feud at all is +0.19★ over none; settling it is a further +0.05★; ten matches that
+settle nothing is −0.05★. **The rating movement is small and that is not the point** — it is
+a quarter of what the feud itself is worth, and full distrust saturation costs about 0.03★
+because `Credibility` feeds one consumer. What this change actually does is put a *clock* on
+heat: a programme has to be maintained, an ending has to be paid for, and neither was true
+before. Calling distrust "the teeth" of it overstates a ≤0.05★ nudge, which the first draft
+of this entry did.
 
 One thing A3's brief asked for and this does not do: a blow-off does not pay out as a large
 one-time **business** result, because there is no business axis to pay into yet. §7 of doc

@@ -878,6 +878,11 @@
         if (step == 0)
         {
             existingFeud = PairingHistory;
+            // Reset with the pairing. Left latched, a blow-off ticked for one pair survived
+            // a Back-and-change to another whose feud was already settled — the toggle is
+            // hidden in that state, so Finish() produced "has already been blown off" with
+            // no control on screen to clear it.
+            isBlowOff    = false;
             feudChoice = existingFeud is not null && existingFeud.Intensity > FeudIntensity.None
                 ? FeudChoice.UseExisting
                 : FeudChoice.None;

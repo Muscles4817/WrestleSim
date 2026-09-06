@@ -90,12 +90,14 @@ namespace WrestlingSim.Engine
             var feud = GetOrCreate(sideA, sideB);
             var before = feud.Intensity;
 
-            feud.AddHeat(heat);
-
+            // Advance *before* AddHeat, because AddHeat's reopen rule asks how long ago
+            // this feud was settled and needs today's date to answer.
+            //
             // Anything on screen between these two restarts the decay clock, whether or not
             // it added heat — a beatdown on a feud already at Nuclear adds nothing to the
             // number and is still the story being told this week.
             feud.Advance(date);
+            feud.AddHeat(heat);
 
             var newTags = new List<FeudHistoryTag>();
             foreach (var tag in tags ?? Enumerable.Empty<FeudHistoryTag>())
