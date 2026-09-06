@@ -20,6 +20,13 @@ namespace WrestlingSim.Engine
         /// difference between the third man working the match and standing on the apron for
         /// all of it.
         /// </summary>
+        /// <summary>Aims a beat at a side — who is disposed of, whose cover is broken, who is pinned.</summary>
+        private static MatchBeat Against(MatchBeat beat, BeatControl against)
+        {
+            beat.Against = against;
+            return beat;
+        }
+
         private static MatchBeat Tag(string templateName, BeatControl control, int incoming)
         {
             var beat = Beat(templateName, control);
@@ -30,6 +37,74 @@ namespace WrestlingSim.Engine
         public static IReadOnlyList<MatchStructure> All { get; } = new List<MatchStructure>
         {
             // ── TV Formula ───────────────────────────────────────────────────
+
+            new MatchStructure
+            {
+                Name        = "Fatal Four-Way",
+                Description = "Four ways to win. Two pairs work at once, so nobody is spare — " +
+                              "smoother than a three-way and, for the same reason, less dramatic.",
+                SideCount   = 4,
+                Tags        = ["Multi-Man", "No DQ", "Spot"],
+                Beats       =
+                [
+                    Beat("Hot Start",         BeatControl.Even),
+                    Against(Beat("Disposal Spot", BeatControl.WrestlerA), BeatControl.SideD),
+                    Beat("Signature Cover",   BeatControl.WrestlerB),
+                    Beat("Shock Kickout",     BeatControl.WrestlerB),
+                    Against(Beat("Pin Break", BeatControl.SideC), BeatControl.WrestlerB),
+                    Against(Beat("Disposal Spot", BeatControl.WrestlerA), BeatControl.SideC),
+                    Beat("Hot Comeback",      BeatControl.WrestlerA),
+                    Against(Beat("Clean Victory", BeatControl.WrestlerA), BeatControl.WrestlerB)
+                ]
+            },
+
+            // ── Multi-man (doc 18 §2.5) ──────────────────────────────────────
+            //
+            // Both run the format's loop rather than a tag formula: establish all three,
+            // dispose of one, work the pair, near fall, break. The disposal is what makes the
+            // near falls mean anything — outside a disposal window every cover in a three-way
+            // is breakable and the crowd knows it.
+
+            new MatchStructure
+            {
+                Name        = "Triple Threat",
+                Description = "Three ways to win and no disqualification. Somebody is disposed of, " +
+                              "the other two work, and the fall is stolen off the back of it.",
+                SideCount   = 3,
+                Tags        = ["Multi-Man", "No DQ", "Spot"],
+                Beats       =
+                [
+                    Beat("Hot Start",   BeatControl.Even),
+                    Against(Beat("Disposal Spot", BeatControl.WrestlerB), BeatControl.SideC),
+                    Beat("Signature Cover", BeatControl.WrestlerB),
+                    Beat("Shock Kickout",      BeatControl.WrestlerB),
+                    Against(Beat("Pin Break",  BeatControl.SideC), BeatControl.WrestlerB),
+                    Against(Beat("Disposal Spot", BeatControl.SideC), BeatControl.WrestlerB),
+                    Beat("Hot Comeback",       BeatControl.WrestlerA),
+                    Against(Beat("Clean Victory", BeatControl.WrestlerA), BeatControl.SideC)
+                ]
+            },
+
+            new MatchStructure
+            {
+                Name        = "The Grudge Three-Way",
+                Description = "Two of them care more about each other than the match. They wreck " +
+                              "each other and the third steals it — the finish the format exists for.",
+                SideCount   = 3,
+                RequiresFeud = true,
+                Tags        = ["Multi-Man", "Story", "Feud"],
+                Beats       =
+                [
+                    Beat("Hot Start",   BeatControl.Even),
+                    Against(Beat("Disposal Spot", BeatControl.WrestlerA), BeatControl.SideC),
+                    Beat("Signature Cover", BeatControl.WrestlerA),
+                    Beat("Shock Kickout",      BeatControl.WrestlerA),
+                    Against(Beat("Spite Break", BeatControl.WrestlerB), BeatControl.WrestlerA),
+                    Against(Beat("Ignored Opportunity", BeatControl.WrestlerA), BeatControl.WrestlerB),
+                    Against(Beat("Mutual Destruction", BeatControl.WrestlerA), BeatControl.WrestlerB),
+                    Against(Beat("Roll-Up Steal", BeatControl.SideC), BeatControl.WrestlerA)
+                ]
+            },
 
             new MatchStructure
             {
@@ -349,6 +424,14 @@ namespace WrestlingSim.Engine
         /// a hot tag, and a tag match offered only singles structures never gets to be one.
         /// </summary>
         public static IEnumerable<MatchStructure> ForSideSize(int sideSize) =>
-            All.Where(s => s.SideSize == sideSize);
+            ForShape(2, sideSize);
+
+        /// <summary>
+        /// The structures written for a given match shape. Both dimensions matter: a
+        /// singles structure has no third side to name and a triple-threat structure's
+        /// finish names a side a two-sided match does not have.
+        /// </summary>
+        public static IEnumerable<MatchStructure> ForShape(int sideCount, int sideSize) =>
+            All.Where(s => s.SideCount == sideCount && s.SideSize == sideSize);
     }
 }

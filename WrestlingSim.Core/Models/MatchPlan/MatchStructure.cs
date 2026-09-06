@@ -20,6 +20,17 @@ namespace WrestlingSim.Models.MatchPlan
         /// </summary>
         public int SideSize { get; init; } = 1;
 
+        /// <summary>
+        /// How many *sides* this structure is written for. 2 for everything two-sided; 3 or 4
+        /// for a multi-man structure, whose beats name a third side and whose finish says who
+        /// takes the fall.
+        ///
+        /// Separate from <see cref="SideSize"/> for the reason doc 18 §2.5 gives: trios is six
+        /// people and two sides, a triple threat is three people and three sides, and a
+        /// structure written for one will not validate against the other.
+        /// </summary>
+        public int SideCount { get; init; } = 2;
+
         /// <summary>Tags for filtering (e.g. "Technical", "Brawl", "Feud").</summary>
         public IReadOnlyList<string> Tags { get; init; } = [];
 

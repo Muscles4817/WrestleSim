@@ -13,7 +13,12 @@ namespace WrestlingSim.Models
         /// <summary>Name of the structure preset this was built from, for display.</summary>
         public string StructureName { get; init; } = "Custom";
 
-        public string Name => $"{Plan.SideA.Name} vs {Plan.SideB.Name}";
+        /// <summary>
+        /// How the match is billed. Every side, not the first two — a triple threat billed
+        /// "A vs B" leaves out one of the people in it, which is wrong on the card, wrong on
+        /// the result screen, and wrong in the show report.
+        /// </summary>
+        public string Name => string.Join(" vs ", Plan.Sides.Select(s => s.Name));
 
         public CardItemKind Kind => CardItemKind.Match;
 

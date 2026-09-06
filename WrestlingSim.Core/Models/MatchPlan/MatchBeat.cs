@@ -41,8 +41,6 @@ namespace WrestlingSim.Models.MatchPlan
         /// instead of the win. One field rather than two because it is one idea: `Control`
         /// says who is doing it, this says to whom.
         ///
-        /// On a finish, specifically: which side takes the fall.
-        ///
         /// With two sides this is redundant — whoever did not win, lost — and stays null. With
         /// three it is the entire point of the format: doc 18 §2.5 says the reason to book a
         /// multi-man title match is that *the champion can be beaten without being beaten*,
@@ -118,7 +116,14 @@ namespace WrestlingSim.Models.MatchPlan
             Duration        = Duration,
             FeudalResonance = FeudalResonance,
             StyleHint       = StyleHint,
-            IncomingIndex   = IncomingIndex
+            IncomingIndex   = IncomingIndex,
+
+            // Every plan built from a preset goes through Clone, so a field missing here is
+            // a field silently dropped between the structure library and the booking. This
+            // one was: a triple-threat preset named who takes the fall, the clone did not
+            // carry it, and the plan failed validation with the message telling the player
+            // to say the thing the preset had already said.
+            Against         = Against
         };
     }
 }

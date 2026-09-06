@@ -42,6 +42,25 @@ round's fixes, the churn is the problem. Stop editing and merge.
 
 **Never review a review.** No agent whose task is to check another agent's findings.
 
+## A feature the player cannot reach is not finished
+
+**If the engine can do it, the booker can book it.** A mechanic that only a unit test can
+invoke is half a feature, and shipping it as though it were whole is a way of being wrong about
+what the game does.
+
+This is a default, not an absolute — the honest exceptions are things a player genuinely never
+touches (a save-format migration, a calibration constant). But "the model layer is in, the UI is
+a follow-up" is not one of them, and the multi-man work is why the rule is written down: three
+merged PRs added sides, beats, blame and a status discount, all of them green, none of them
+reachable from the match builder.
+
+So a feature is done when:
+
+- the engine does it,
+- the builder can book it,
+- the result is legible in the play-by-play or the show report, and
+- what is *not* built is written down rather than left to look finished.
+
 ## Delivering
 
 - If the user has said they are going away and want to wake to finished work, **finish it**.
