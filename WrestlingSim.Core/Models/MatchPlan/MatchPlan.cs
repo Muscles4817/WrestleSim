@@ -245,6 +245,14 @@ namespace WrestlingSim.Models.MatchPlan
                     "engine has no model for a numbers advantage yet, so a handicap match " +
                     "would be graded as a normal one.");
 
+            // And the mirror of it for the other direction. A pin break with nobody left to
+            // break the pin is not a beat with a missing target, it is a beat about a
+            // situation the match cannot be in.
+            foreach (var beat in Beats.Where(b => b.IsMultiManBeat))
+                if (!IsMultiMan)
+                    errors.Add($"{beat.Type} needs a third party in the match — there is " +
+                               "nobody to dispose of or steal from in a two-sided one.");
+
             // Every beat has to be workable by the side it is booked for. This is the rule
             // that actually protects the tag formula — a hot tag needs someone to tag, and
             // an isolation needs a corner to be kept away from. It subsumes the size check

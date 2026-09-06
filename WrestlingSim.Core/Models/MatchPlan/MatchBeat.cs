@@ -103,6 +103,19 @@ namespace WrestlingSim.Models.MatchPlan
         public bool IsTagChange => Type is BeatType.HotTag or BeatType.Tag or BeatType.BlindTag;
 
         /// <summary>
+        /// Beats that need a third party in the match.
+        ///
+        /// The same shape as <see cref="IsTagBeat"/> and for the same reason: nothing in the
+        /// tag formula works without somebody on the apron, and nothing here works without
+        /// somebody to dispose of or be stolen from. A disposal spot in a singles match
+        /// narrates "Alpha puts Bravo down hard on the outside — for now, this is one on
+        /// one" about a match that was already one on one.
+        /// </summary>
+        public bool IsMultiManBeat => Type is
+            BeatType.DisposalSpot or BeatType.PinBreak or BeatType.SpiteBreak or
+            BeatType.IgnoredOpportunity or BeatType.MutualDestruction;
+
+        /// <summary>
         /// Independent copy. Structures in MatchStructureLibrary are static singletons,
         /// so a plan built from a preset must clone its beats or editing the plan
         /// writes straight through into the library.

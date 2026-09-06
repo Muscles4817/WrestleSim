@@ -2064,3 +2064,50 @@ Two mutations killed, and the second is the interesting one:
 | M8 | names filtered, count still off `Sides.Count` | crowd brawl red |
 
 **625 tests passing.**
+
+## A multi-man beat needs somebody to use it on
+
+The last of the three items review round two logged. The five multi-man beats had no gate in
+`GateFor` and no rule in `Validate`, so they were offered enabled in a singles match, where a
+disposal spot narrates
+
+> Alpha puts Bravo down hard on the outside — for now, this is one on one.
+
+about a match that was already one on one. Nothing threw and the numbers were sane. It is a beat
+the booker can pick that means nothing, which is the mirror image of the rule in `CLAUDE.md`:
+the engine could not do the thing, and the booker could book it anyway.
+
+The tag formula has had exactly this gate all along — nothing in it works without somebody on
+the apron — so the fix is that rule pointed the other way, in the same three places:
+`MatchBeat.IsMultiManBeat` beside `IsTagBeat`, a `Validate` rule beside the tag one, and one
+line in `GateFor`. Gated beats are hidden rather than greyed, so in a singles match the count of
+"beats this match cannot use" goes from 12 to 17 and the five simply are not in the list.
+
+### The gate cost five beat types their commentary coverage, and a test said so
+
+`NoCommentaryLine_AssumesAWrestlersGender` books **every** beat type in the library by hand
+rather than trusting the presets, and asserts the coverage rather than hoping for it. Adding the
+gate made five of them unbookable in the two-sided plans it builds, and it failed with
+
+> 5 beat types never ran, so their commentary is unscanned: DisposalSpot, PinBreak, SpiteBreak,
+> IgnoredOpportunity, MutualDestruction
+
+That assertion is the most valuable line in the file and it is worth saying why: the natural
+version of this test scans whatever it happens to reach and reports zero offenders, which is
+green whether the coverage is total or nil. This one cannot be quietly narrowed. It caught a
+coverage regression introduced by a fix in an unrelated file, which is precisely the failure a
+suite normally absorbs in silence.
+
+The five now run as a three-way. Scanning went from 32 beat types to **37** — their commentary
+had never been checked for gendered language at all, because until this work nothing could book
+them in a plan the sweep built. `Scan` also records *why* it skipped a plan now, and prints the
+reason for any unreached beat type: "never reached" without a reason costs a round trip to
+diagnose, and I paid it.
+
+One mutation killed: disabling the `Validate` rule reddens all five refusal cases.
+
+Browser-verified, since the gate is an affordance: in a singles match the five are absent from
+the library and the blocked count reads 17; revealing them shows all five disabled and badged
+**needs a third party**; in a triple threat they are listed and bookable. No console errors.
+
+**625 tests passing.**

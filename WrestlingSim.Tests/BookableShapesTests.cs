@@ -241,6 +241,48 @@ namespace WrestlingSim.Tests
             Assert.Contains(errors, e => e.Contains("aimed at the side working it"));
         }
 
+        /// <summary>
+        /// **A multi-man beat needs a third party in the match.**
+        ///
+        /// The five of them had no gate and no validation rule, so they were offered enabled
+        /// in a singles match, where a disposal spot narrates *"Alpha puts Bravo down hard on
+        /// the outside — for now, this is one on one"* about a match that was already one on
+        /// one. Nothing threw and the numbers were sane; it was a beat the booker could pick
+        /// that meant nothing, which is the mirror image of the rule in CLAUDE.md.
+        ///
+        /// The tag formula has had exactly this gate all along — nothing in it works without
+        /// somebody on the apron — so this is that rule pointed the other way.
+        /// </summary>
+        [Theory]
+        [InlineData(BeatType.DisposalSpot)]
+        [InlineData(BeatType.PinBreak)]
+        [InlineData(BeatType.SpiteBreak)]
+        [InlineData(BeatType.IgnoredOpportunity)]
+        [InlineData(BeatType.MutualDestruction)]
+        public void AMultiManBeat_IsRefusedInATwoSidedMatch(BeatType type)
+        {
+            var singles = new MatchPlanModel
+            {
+                SideA = MatchSide.Of(W("Alpha")),
+                SideB = MatchSide.Of(W("Bravo")),
+                Beats =
+                [
+                    new() { Type = BeatType.HotOpening, Control = BeatControl.Even },
+                    new() { Type = type, Control = BeatControl.WrestlerA },
+                    new() { Type = BeatType.FinishClean, Control = BeatControl.WrestlerA }
+                ]
+            };
+
+            var errors = singles.Validate();
+            output.WriteLine($"  singles/{type}: {string.Join(" | ", errors)}");
+            Assert.Contains(errors, e => e.Contains("needs a third party"));
+
+            // And the same beat in a three-way is a perfectly good booking — the gate must
+            // refuse the shape, not the beat.
+            var threeWay = ThreeWay(new() { Type = type, Control = BeatControl.WrestlerA });
+            Assert.Empty(threeWay.Validate());
+        }
+
         /// <summary>A three-way carrying one beat under test, otherwise valid.</summary>
         private static MatchPlanModel ThreeWay(MatchBeat middle) => new()
         {
