@@ -113,8 +113,7 @@ namespace WrestlingSim.Models.MatchPlan
         /// </summary>
         public bool IsMultiManBeat => Type is
             BeatType.DisposalSpot or BeatType.PinBreak or BeatType.SpiteBreak or
-            BeatType.IgnoredOpportunity or BeatType.MutualDestruction or
-            BeatType.Elimination;
+            BeatType.IgnoredOpportunity or BeatType.MutualDestruction;
 
         /// <summary>
         /// A fall that takes somebody out without ending the match.
@@ -125,6 +124,17 @@ namespace WrestlingSim.Models.MatchPlan
         /// blow-off payoff — has to keep saying no to it.
         /// </summary>
         public bool IsElimination => Type == BeatType.Elimination;
+
+        /// <summary>
+        /// Beats that need a third *person* rather than a third *side*.
+        ///
+        /// The distinction the first version of this got wrong. A disposal spot needs
+        /// somebody to dispose of who is not in the pairing, so it needs another side — but
+        /// an elimination only needs somebody left to carry on against, and a Survivor
+        /// Series has that with two sides and four wrestlers each. Gating it on side count
+        /// refused the format the beat exists for.
+        /// </summary>
+        public bool NeedsAThirdPerson => Type == BeatType.Elimination;
 
         /// <summary>
         /// Independent copy. Structures in MatchStructureLibrary are static singletons,

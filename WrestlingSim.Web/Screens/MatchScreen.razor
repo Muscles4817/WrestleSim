@@ -124,11 +124,22 @@ else
                         </div>
                     </div>
                 }
+                @* Who was left. "Last one standing" is only true when one is — with a team
+                   still holding two or three it is the survivors that are the story, which
+                   is the whole reason a Survivor Series is called that. *@
                 <div class="beat-row is-finish">
                     <div class="beat-row__n">★</div>
                     <div class="beat-row__body">
-                        <span class="beat-row__name">@result.Winner.RingName</span>
-                        <span class="beat-row__sub">last one standing</span>
+                        <span class="beat-row__name">
+                            @(result.Survivors.Count > 0
+                                ? string.Join(" & ", result.Survivors.Select(w => w.RingName))
+                                : result.Winner.RingName)
+                        </span>
+                        <span class="beat-row__sub">
+                            @(result.Survivors.Count > 1
+                                ? $"{result.Survivors.Count} survivors"
+                                : "last one standing")
+                        </span>
                     </div>
                 </div>
             </div>

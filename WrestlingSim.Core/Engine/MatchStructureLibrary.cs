@@ -225,6 +225,42 @@ namespace WrestlingSim.Engine
                 ]
             },
 
+            // ── Survivor Series (doc 18 §2.5, the elimination bullet) ────────
+            //
+            // Four a side, tag rules, falls take out *people*. What makes it its own match
+            // rather than a long tag is that the numbers go lopsided partway through and
+            // stay that way — so the survivors spend the back half working a handicap match
+            // they arrived at rather than one anybody booked.
+            //
+            // Booked to leave two standing, because a clean sweep says the losing team was
+            // worthless and a sole survivor is a bigger card than most nights need.
+
+            new MatchStructure
+            {
+                Name        = "Survivor Series",
+                Description = "Four a side, tag rules, and a fall sends you to the back. The " +
+                              "story is who is left at the end — and whoever is outnumbered " +
+                              "in the meantime feels it.",
+                SideSize    = 4,
+                Tags        = ["Elimination", "Tag", "Survivor"],
+                Beats       =
+                [
+                    Beat("Standard Collar-and-Elbow", BeatControl.Even),
+                    Beat("Shine",           BeatControl.WrestlerA),
+                    Against(Beat("Elimination", BeatControl.WrestlerA), BeatControl.WrestlerB),
+                    Beat("Cut-Off",         BeatControl.WrestlerB),
+                    Against(Beat("Elimination", BeatControl.WrestlerB), BeatControl.WrestlerA),
+                    Beat("Face in Peril",   BeatControl.WrestlerB),
+                    Against(Beat("Elimination", BeatControl.WrestlerB), BeatControl.WrestlerA),
+                    Beat("Hot Tag",         BeatControl.WrestlerA),
+                    Against(Beat("Elimination", BeatControl.WrestlerA), BeatControl.WrestlerB),
+                    Beat("Double Team",     BeatControl.WrestlerA),
+                    Against(Beat("Elimination", BeatControl.WrestlerA), BeatControl.WrestlerB),
+                    Beat("Shock Kickout",   BeatControl.WrestlerB),
+                    Against(Beat("Clean Victory", BeatControl.WrestlerA), BeatControl.WrestlerB)
+                ]
+            },
+
             new MatchStructure
             {
                 Name        = "TV Formula",

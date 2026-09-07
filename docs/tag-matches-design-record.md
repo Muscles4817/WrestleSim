@@ -2572,3 +2572,105 @@ job… Roman Reigns made 2 of them work for it"** at 57% defiance. No console er
   half-finish here: the match models the statement, the career does not yet hear it.
 - **Three or more sides at uneven sizes**, refused rather than modelled, because doc 18
   describes no such match.
+
+## Survivor Series — the handicap match nobody booked
+
+The elimination work took out whole *sides*, which is right for a triple threat where a side
+is one wrestler. A Survivor Series is the same rule with bigger sides: teams, tag rules, and a
+fall sends you to the back rather than ending the match.
+
+Doc 18 has no section on it — only the elimination bullet — so the design came from what the
+format is rather than from a paragraph to implement. Which turned out to be the interesting
+part, because **the thing that makes it its own match had already been built**.
+
+### It needed one field and no new beat
+
+An elimination is aimed at a *side*, and who goes out is **whoever is legal** — which is who
+you can pin. With one wrestler a side that is the side, so the triple-threat behaviour is
+unchanged by construction; with four it is whoever is in the ring, and the team carries on a
+wrestler down. One beat, two formats, and the difference is entirely how many members a side
+has.
+
+`MatchEngineState` went member-level: `_eliminations` records `(side, member, beat)`, a side
+is out when `SurvivorsOf` hits zero, and `Tag` skips anybody already pinned — because in this
+format the next man round is often somebody who left ten minutes ago, and tagging in an
+eliminated wrestler is the same class of mistake as naming one in commentary, except this one
+would have them win the match.
+
+### The handicap term was already the answer
+
+Four against three **is** a handicap match. Not like one — it is one, arrived at rather than
+booked, and the wrestlers carrying it should feel exactly what a booked handicap does.
+
+`NumbersFatigue` shipped the day before reading `Plan.Numbers`, the booked side sizes. It reads
+live survivor counts now, and that single change is the whole of what makes a Survivor Series
+more than a long tag match: the back half of every one of them is a handicap match, and the
+short-handed team's offence weakens while the full-strength team's does not.
+
+That is the same correction elimination has now needed in four separate places — ask what is
+true *now*, not what the plan said at the top. It is worth naming as a pattern rather than
+fixing a fifth time: **in a format where people leave, every question about the field is a
+question about this moment.**
+
+### Two gates that had been drawn in the wrong place
+
+**The multi-man gate conflated sides and people.** Yesterday's rule said an elimination
+"needs a third party" and checked side count — so a Survivor Series, two sides and eight
+wrestlers, was refused outright. A disposal spot genuinely needs a third *side*, because there
+has to be somebody outside the pairing to dispose of. An elimination only needs a third
+*person*. `NeedsAThirdPerson` is the weaker rule for the beat that needs the weaker rule, and
+the only thing it still refuses is a singles match, where taking one wrestler out is a finish
+with a longer name.
+
+**The finish was not recording its fall.** In side elimination that never showed: the finish
+ends the match, and who lost is in `BookedLosingSide`. With teams it is the fall that empties
+the losing side, so the engine and `Validate` disagreed about the last wrestler — validation
+counted the finish towards emptying a side, correctly, and the engine never marked them out.
+A Survivor Series reported the losing team with one still standing.
+
+Fixing it changed `Eliminations` from "everybody who went out except the final loser" to
+"everybody who went out", which is the better contract and the necessary one here. It also
+introduced a bug in the same commit: `EliminationPacing` counts the finish as the last fall
+*itself*, so a list that now contained the finish counted it twice and reported a gap of zero
+at the end — a perfectly spaced match scoring as a scramble. The measure was right; the input
+had changed underneath it.
+
+### What the browser found and the tests did not
+
+Both of these passed every test and were obvious in about four seconds of looking:
+
+- **The eliminations panel read "2 left" six times running.** `Remaining` counted *sides*,
+  which is fine when a side is one wrestler and useless the moment it is four — both sides are
+  in until the last fall. It counts people now, and there is a test asserting `[5, 4, 3]`,
+  which no test had thought to look at.
+- **The result said "last one standing" with two survivors.** True in a triple threat, wrong
+  in the match that is named after its survivors.
+
+And the shipped preset tripped its own pacing warning, which turned out to be **correct** — I
+had booked the last elimination adjacent to the finish, two falls in a row at the end of the
+match. The measure was doing its job on the person who wrote it. A beat between them fixed the
+preset rather than the rule.
+
+The gendered-copy scanner also caught `"are a man down"` in a match of eight women, which is
+the phrase a commentator reaches for and this game does not get to use.
+
+Four mutations, all killed: elimination taking whole sides, `Tag` bringing back the
+eliminated, the numbers term reading booked sizes, and the finish recording no fall.
+
+Browser-verified at 390×844: eight wrestlers, the falls counting 7-6-5-4-3-2, the scoreboard
+after each one, **"That is the match! … take it with 2 still standing"**, and the panel closing
+on *2 survivors* rather than a winner. 4.41 stars, no console errors.
+
+**690 tests passing.**
+
+### Still not built
+
+- **Elimination in a multi-man match of teams** — three sides of three, say. The state
+  supports it and `Tag` does not: the tag rotation is `_legalA`/`_legalB`, two sides only, so a
+  third side's members cannot rotate. That is a real limit with a real fix, and not one to make
+  while pretending it is free.
+- **Battle royals and the Rumble**, still: over-the-top plus timed entry, and doc 18 says they
+  are judged on moments rather than work, so this engine would grade them on the wrong axis.
+- **What any of it costs afterwards.** Survivors, sole survivors and the wrestler who went out
+  first are all recorded and none of them changes a career. Same half-finish as the handicap
+  work, and the same place it belongs: the status and heat systems, not the match engine.

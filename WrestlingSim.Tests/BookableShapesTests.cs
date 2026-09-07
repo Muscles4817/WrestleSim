@@ -31,7 +31,7 @@ namespace WrestlingSim.Tests
         public static TheoryData<int, int, int> Shapes => new()
         {
             { 2, 1, 1 }, { 2, 2, 2 }, { 2, 3, 3 }, { 3, 1, 1 }, { 4, 1, 1 },
-            { 2, 1, 2 }, { 2, 1, 3 }
+            { 2, 1, 2 }, { 2, 1, 3 }, { 2, 4, 4 }
         };
 
         [Theory]

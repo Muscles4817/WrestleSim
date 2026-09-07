@@ -1055,7 +1055,8 @@
         new("Triple threat",   3, 1, "Three ways to win, no disqualification. Somebody has to be disposed of, and the fall has to say who took it."),
         new("Fatal four-way",  4, 1, "Four ways to win. Smoother than a three-way and less dramatic — nobody is the odd one out."),
         new("Handicap 1 v 2",  2, 1, "Two against one. Almost never a contest — it is a statement, and the statement is about whether the lone wrestler can take it.", SideB: 2),
-        new("Handicap 1 v 3",  2, 1, "Three against one. A squash unless he is given moments; book it short.", SideB: 3)
+        new("Handicap 1 v 3",  2, 1, "Three against one. A squash unless they are given moments; book it short.", SideB: 3),
+        new("Survivor Series", 2, 4, "Four a side, tag rules, and a fall sends you to the back. The story is who is left at the end.")
     ];
 
     private MatchType matchType = MatchType.Standard;
@@ -1608,6 +1609,12 @@
         // And nothing in the multi-man set works without a third party to use it on.
         if (!IsMultiMan && new MatchBeat { Type = t.Type }.IsMultiManBeat)
             return "needs a third party";
+
+        // An elimination is the one that needs a third *person* rather than a third side —
+        // a Survivor Series has two sides and eight wrestlers, and gating it the same way
+        // refused the format the beat is for.
+        if (Chosen.Count() <= 2 && new MatchBeat { Type = t.Type }.NeedsAThirdPerson)
+            return "needs somebody left after it";
 
         // The hot tag is bookable cold — it just lands at barely half. That is a booking
         // decision the player is allowed to make badly, so this warns rather than gates.

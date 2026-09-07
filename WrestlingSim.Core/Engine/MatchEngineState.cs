@@ -97,6 +97,14 @@ namespace WrestlingSim.Engine
                 ? i
                 : (current + 1) % Math.Max(1, memberCount);
 
+            // Skip anybody already pinned out. In a Survivor Series match the next man
+            // round is often somebody who left ten minutes ago, and tagging in a wrestler
+            // who has been eliminated is the same class of mistake as naming one in
+            // commentary — except this one would have him win the match.
+            int sideIndex = sideA ? 0 : 1;
+            for (int step = 0; step < memberCount && IsEliminated(sideIndex, next); step++)
+                next = (next + 1) % Math.Max(1, memberCount);
+
             if (sideA) _legalA = next; else _legalB = next;
 
             // Coming in fresh is the whole point of a tag, so the charge the isolation
@@ -213,7 +221,24 @@ namespace WrestlingSim.Engine
 
         // ── Elimination (doc 18 §2.5) ────────────────────────────────────────
 
-        private readonly List<(int Side, int Beat)> _eliminations = new();
+        // (side, member, beat). Member-level, because a Survivor Series match eliminates
+        // *people* and a side is out only when it has nobody left — where a triple threat
+        // eliminates whole sides because each side is one person. One rule, and the
+        // difference between the two formats is entirely how many members a side has.
+        private readonly List<(int Side, int Member, int Beat)> _eliminations = new();
+
+        // How many members each side started with, so "is this side out" is a comparison
+        // rather than an assumption. Set once, at the top of the match.
+        private int[] _sideSizes = [];
+
+        /// <summary>Records how big each side is. Called once before the first beat.</summary>
+        public void InitialiseSides(IReadOnlyList<int> memberCounts) =>
+            _sideSizes = memberCounts.ToArray();
+
+        /// <summary>How many of this side are still in.</summary>
+        public int SurvivorsOf(int sideIndex) =>
+            (sideIndex >= 0 && sideIndex < _sideSizes.Length ? _sideSizes[sideIndex] : 1)
+            - _eliminations.Count(e => e.Side == sideIndex);
 
         /// <summary>
         /// The sides that have been eliminated, in the order they went out.
@@ -239,7 +264,11 @@ namespace WrestlingSim.Engine
         /// disposed man is expected back and the commentary should be asking where he is;
         /// an eliminated man is gone and mentioning him is a mistake.
         /// </summary>
-        public bool IsEliminated(int sideIndex) => _eliminations.Any(e => e.Side == sideIndex);
+        public bool IsEliminated(int sideIndex) => SurvivorsOf(sideIndex) <= 0;
+
+        /// <summary>Whether this particular wrestler has been pinned out of the match.</summary>
+        public bool IsEliminated(int sideIndex, int memberIndex) =>
+            _eliminations.Any(e => e.Side == sideIndex && e.Member == memberIndex);
 
         /// <summary>True once anybody has been eliminated — this is an elimination match.</summary>
         public bool AnybodyEliminated => _eliminations.Count > 0;
@@ -252,16 +281,16 @@ namespace WrestlingSim.Engine
         /// same side twice is refused by <see cref="Models.MatchPlan.MatchPlan.Validate"/>
         /// and the engine should not be the thing that notices second.
         /// </summary>
-        public void Eliminate(int sideIndex)
+        public void Eliminate(int sideIndex, int memberIndex)
         {
-            if (IsEliminated(sideIndex)) return;
-            _eliminations.Add((sideIndex, BeatIndex));
+            if (IsEliminated(sideIndex, memberIndex)) return;
+            _eliminations.Add((sideIndex, memberIndex, BeatIndex));
 
             // Somebody who has just been eliminated is not also lying on the floor waiting
             // to come back. Leaving the window open would have the disposal filter hiding a
             // side that is already gone, and free the *next* beat to be aimed at somebody
             // who left the match.
-            if (DisposedSide == sideIndex)
+            if (DisposedSide == sideIndex && IsEliminated(sideIndex))
             {
                 DisposedSide      = null;
                 DisposedUntilBeat = -1;

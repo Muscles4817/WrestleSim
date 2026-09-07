@@ -110,7 +110,12 @@ namespace WrestlingSim.Tests
                 output.WriteLine($"  {g.Order}. {g.Wrestler.RingName} by {g.By.RingName} " +
                                  $"({g.Remaining} left)");
 
-            Assert.Equal(2, r.Eliminations.Count);
+            // Three, not two: the finish is the last fall and the engine records it as one,
+            // so `Eliminations` is everybody who went out rather than everybody except the
+            // final loser. Which is the more useful contract, and the necessary one in a
+            // Survivor Series — there the last fall is what empties the losing team.
+            Assert.Equal(3, r.Eliminations.Count);
+            Assert.Equal("Bravo", r.Eliminations[2].Wrestler.RingName);
 
             Assert.Equal("Delta",   r.Eliminations[0].Wrestler.RingName);
             Assert.Equal("Alpha",   r.Eliminations[0].By.RingName);
@@ -494,9 +499,14 @@ namespace WrestlingSim.Tests
         }
 
         /// <summary>
-        /// And an elimination needs a third party, like the rest of its category — a
-        /// two-sided elimination match is a match that ends when somebody is eliminated,
-        /// which is a normal finish with a longer name.
+        /// And an elimination needs somebody left in the match afterwards.
+        ///
+        /// This used to say "a third party, like the rest of its category", and gate on side
+        /// count — which was wrong, and Survivor Series is what proved it. A disposal spot
+        /// needs a third *side* because there has to be somebody outside the pairing to
+        /// dispose of; an elimination only needs a third *person*, and a four-a-side tag
+        /// match has seven of them. What it genuinely cannot be is a singles match, where
+        /// taking one wrestler out is just a finish with a longer name.
         /// </summary>
         [Fact]
         public void AnEliminationInASinglesMatch_IsRefused()
@@ -515,7 +525,7 @@ namespace WrestlingSim.Tests
 
             var errors = plan.Validate();
             output.WriteLine($"  {string.Join(" | ", errors)}");
-            Assert.Contains(errors, e => e.Contains("needs a third party"));
+            Assert.Contains(errors, e => e.Contains("needs somebody left in the match"));
         }
 
         // ── Bookable ─────────────────────────────────────────────────────────
@@ -526,8 +536,9 @@ namespace WrestlingSim.Tests
         /// this file is about rather than assumed.
         /// </summary>
         [Theory]
-        [InlineData("Triple Threat Elimination", 3, 1)]
-        [InlineData("Four-Way Elimination",      4, 2)]
+        // Eliminations booked, *plus the finish*, which is the last fall.
+        [InlineData("Triple Threat Elimination", 3, 2)]
+        [InlineData("Four-Way Elimination",      4, 3)]
         public void TheShippedPresetsRun(string name, int sides, int expectedEliminations)
         {
             var structure = MatchStructureLibrary.All.Single(s => s.Name == name);
@@ -546,7 +557,7 @@ namespace WrestlingSim.Tests
             Assert.DoesNotContain(r.Eliminations, g => g.Wrestler == r.Winner);
 
             // Everybody but the winner is out, which is what the format promises.
-            Assert.Equal(sides - 1, r.Eliminations.Count + 1);
+            Assert.Equal(sides - 1, r.Eliminations.Count);
         }
     }
 }
