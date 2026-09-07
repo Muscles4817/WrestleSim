@@ -226,6 +226,15 @@ namespace WrestlingSim.Engine
             };
         }
 
+        /// <summary>
+        /// What a near fall keeps when a third party is upright and free to break it.
+        ///
+        /// `multiMan` here means "more than two sides *still in*", not "the plan has more
+        /// than two sides" — see <see cref="Ctx.MultiManNow"/>. An elimination match that is
+        /// down to two has nobody left to break a cover, so its near falls are worth full
+        /// price, and that is the entire narrative payoff of the format: the crowd starts
+        /// believing counts again the moment the field is thin enough.
+        /// </summary>
         public static double MultiManNearFallFactor(bool multiMan, bool somebodyDisposed) =>
             multiMan && !somebodyDisposed ? CrowdedOutNearFall : 1.0;
 
@@ -273,13 +282,33 @@ namespace WrestlingSim.Engine
             public double Familiarity { get; init; } = 1.0;
 
             /// <summary>
-            /// The most connected performer in the match — whoever the room came for. Used
-            /// only by <see cref="AttentionShare"/>, and only when there are more than two
-            /// sides.
+            /// The most connected performer *still in the match* — whoever the room came
+            /// for. Used only by <see cref="AttentionShare"/>, and only while more than two
+            /// sides are left.
+            ///
+            /// Still in, because the alternative measures every remaining sequence against
+            /// somebody who has gone to the back: eliminate the biggest name first and the
+            /// survivors work the rest of the match at a permanent discount, in a match that
+            /// is now entirely theirs.
+            ///
+            /// It shows up in the crowd *reaction* vector, not in CrowdEnergyDelta — this
+            /// feeds `RecordReaction`, which runs after the energy is computed. Over
+            /// twenty-five seeds, with the field and the beats held identical and only the
+            /// identity of the eliminated wrestler changed, it is worth 0.32 investment
+            /// against 0.22.
             /// </summary>
-            public double TopConnection => Profiles.Count == 0
-                ? 0.0
-                : Profiles.Values.Max(p => p.Connection);
+            public double TopConnection
+            {
+                get
+                {
+                    double top = 0.0;
+                    foreach (var side in Remaining)
+                        foreach (var w in side.Members)
+                            if (Profiles.TryGetValue(w, out var p) && p.Connection > top)
+                                top = p.Connection;
+                    return top;
+                }
+            }
 
             /// <summary>Whoever is legal for side A right now.</summary>
             public Wrestler LegalA => Plan.SideA.Members[State.LegalA];
@@ -406,6 +435,21 @@ namespace WrestlingSim.Engine
             /// </summary>
             public IReadOnlyList<MatchSide> Remaining =>
                 Plan.Sides.Where((_, i) => !State.IsEliminated(i)).ToList();
+
+            /// <summary>
+            /// Whether this is a multi-man match *right now* — more than two sides still in.
+            ///
+            /// Distinct from <see cref="Models.MatchPlan.MatchPlan.IsMultiMan"/>, which is a
+            /// fact about the plan and stays true for the whole of an elimination match. The
+            /// two rules that ask "is the room split" and "can this cover be broken" are
+            /// asking about the ring, and a three-way that is down to two is not split and
+            /// has nobody left to break anything.
+            ///
+            /// The *structural* uses stay on the plan: `Opponent` and `LegalDefault` take
+            /// their two-sided shortcuts through `SideA`/`SideB` by index, which would name
+            /// an eliminated wrestler the moment the survivors are sides A and C.
+            /// </summary>
+            public bool MultiManNow => Remaining.Count > 2;
 
             /// <summary>
             /// Who a beat that named nobody is worked by.
@@ -1008,7 +1052,7 @@ namespace WrestlingSim.Engine
             // And in a multi-man match, how much of the room this beat has at all. The
             // share the beat does not hold does not vanish — it lands in the same place any
             // unheld attention lands, which is silence.
-            connection *= AttentionShare(connection, ctx.TopConnection, ctx.Plan.IsMultiMan);
+            connection *= AttentionShare(connection, ctx.TopConnection, ctx.MultiManNow);
 
             double attention = Math.Clamp((connection - 0.32) / 0.80, 0, 1);
 
@@ -1763,7 +1807,8 @@ namespace WrestlingSim.Engine
             // Which makes disposal → sequence → near fall the loop a good multi-man match
             // runs over and over, and gives the format its own reason to exist rather than
             // being a singles match with a spare body in it.
-            energyFactor *= MultiManNearFallFactor(ctx.Plan.IsMultiMan, state.SomebodyIsDisposed);
+            r.NearFallJeopardy = MultiManNearFallFactor(ctx.MultiManNow, state.SomebodyIsDisposed);
+            energyFactor *= r.NearFallJeopardy;
 
             // The drama is entirely about whether the crowd believes the other person can
             // survive — that is toughness and selling, on someone they care about.

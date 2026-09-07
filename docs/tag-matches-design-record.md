@@ -2230,6 +2230,61 @@ the difference.
 
 **650 tests passing.**
 
+### Review round one: two rules that asked the plan instead of the ring
+
+The review agent died on a rate limit before starting, so I ran the round myself. Every
+reachable booking I could construct ran without throwing — an elimination immediately after
+the opening, two back to back, one landing inside an open disposal window, one eliminating the
+side that was already on the floor, a whole tail of undirected beats afterwards — and
+`EliminationPacing` was clean at every edge I could find, including empty input, duplicates,
+unsorted input and a fall count larger than the beat count.
+
+What it did find was a pair of rules keyed off `Plan.IsMultiMan`, which is a fact about the
+*booking* and stays true for the whole of an elimination match. Both are questions about the
+ring:
+
+- **`TopConnection`** was the most connected performer in the match, including people who had
+  been eliminated. Take the biggest name out first and the survivors work the rest of the
+  match measured against somebody in the back — in a match that is now entirely theirs. Worth
+  0.32 investment against 0.22 with the field and beats held identical.
+- **The near-fall discount** exists because everybody knows a cover in a multi-man can be
+  broken. Down to two, nobody can break anything — so the crowd starts believing counts again,
+  which is the format's whole narrative payoff and was being withheld.
+
+Both now go through `Ctx.MultiManNow` — more than two sides *still in*. The structural uses of
+`Plan.IsMultiMan` stay as they are, deliberately: `Opponent` and `LegalDefault` take two-sided
+shortcuts through `SideA`/`SideB` **by index**, which would name an eliminated wrestler the
+moment the survivors happen to be sides A and C.
+
+### And I misattributed both of them first
+
+Worth writing down, because it is the same mistake twice in one review and the third time in a
+day.
+
+**The attention finding was measured on the wrong axis.** I compared crowd energy across a
+three-way and a singles match, found a 6.4% gap, and wrote "6.4% of the crowd term" into a code
+comment. Attention feeds `RecordReaction`, which runs *after* the energy is computed — the gap
+I measured was the near-fall rule, the other bug, in the same experiment. Two mechanisms, one
+number, confidently attributed to the wrong one. The comment is corrected and the test reads
+`Reaction.Investment`, which is what the rule actually moves.
+
+**The near-fall test then measured crowd build-up.** It compared a near fall before an
+elimination against one after it, reported a 2.1× swing, and **passed against a mutation that
+reverted the mechanism completely** — because an elimination pops the room, so the later near
+fall lands on a hotter crowd whatever the jeopardy rule says. The honest fix was not a cleverer
+comparison: two matches cannot be held equal enough. `BeatResult.NearFallJeopardy` records the
+factor, and the test asserts it directly — three sides in gives 0.60, two gives 1.00, and
+reverting the rule reddens it.
+
+The general lesson, sharper than "be careful": **when a fix and its measurement live in the
+same experiment, the experiment cannot tell you which one moved.** Isolating that needs either
+a variable held genuinely constant, or the mechanism made observable. Here it needed both.
+
+Two more mutations, both killed: `TopConnection` over every side again, and `MultiManNow`
+reverting to the plan's side count.
+
+**653 tests passing.**
+
 ### Still not built, and why
 
 - **Survivor Series elimination** — five a side, eliminating *individuals* rather than sides.

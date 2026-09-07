@@ -264,6 +264,147 @@ namespace WrestlingSim.Tests
             Assert.Empty(r.Eliminations);
         }
 
+        // ── What the ring is, versus what the plan says ──────────────────────
+        //
+        // Two rules ask "is the room split" and "can this cover be broken". Both were keyed
+        // off `Plan.IsMultiMan`, which is a fact about the booking and stays true for the
+        // whole of an elimination match — so both kept applying to a three-way that had
+        // become a one-on-one. Round one of this feature's own review found them.
+
+        /// <summary>
+        /// **Attention is measured against whoever is still in.**
+        ///
+        /// `TopConnection` was the most connected performer in the *match*, so eliminating
+        /// the biggest name first left the two who remained working the rest of the match at
+        /// a permanent discount — measured against somebody who had gone to the back, in a
+        /// match that was now entirely theirs.
+        ///
+        /// Isolating this is harder than it looks, and the first attempt got it wrong in the
+        /// way this codebase always gets it wrong. A three-way comparison — eliminate the
+        /// star, versus eliminate a mid-carder — changes two things at once: who is still in
+        /// (attention, the mechanism) *and* who the remaining beats are worked on (the
+        /// victim's connection, which also scales the crowd term). It reported the opposite
+        /// of the truth, confidently.
+        ///
+        /// Four sides fixes it. Star plus three mid-carders; the tail is controlled by MidOne
+        /// and aimed at MidTwo in both runs, three sides remain in both runs, and the only
+        /// difference is whether the Star or MidThree was the one eliminated.
+        /// </summary>
+        [Fact]
+        public void AttentionIsMeasuredAgainstWhoIsStillIn()
+        {
+            var star = TestRoster.Make("Star",     overness: 99, charisma: 5.0, skill: 4.0);
+            var mid1 = TestRoster.Make("MidOne",   overness: 55, charisma: 2.5, skill: 4.0);
+            var mid2 = TestRoster.Make("MidTwo",   overness: 55, charisma: 2.5, skill: 4.0);
+            var mid3 = TestRoster.Make("MidThree", overness: 55, charisma: 2.5, skill: 4.0);
+
+            // Sides: A = MidOne, B = MidTwo, C = MidThree, D = Star.
+            MatchPlanModel Build(BeatControl goesOutFirst, BeatControl takesTheFall) => new()
+            {
+                Sides = [MatchSide.Of(mid1), MatchSide.Of(mid2),
+                         MatchSide.Of(mid3), MatchSide.Of(star)],
+                Beats =
+                [
+                    Beat(BeatType.HotOpening, BeatControl.Even),
+                    Beat(BeatType.Elimination, BeatControl.WrestlerA, goesOutFirst),
+
+                    // Identical in both runs: MidOne works MidTwo.
+                    Beat(BeatType.HeatSegment, BeatControl.WrestlerA, BeatControl.WrestlerB),
+                    Beat(BeatType.HighSpot,    BeatControl.WrestlerA, BeatControl.WrestlerB),
+
+                    Beat(BeatType.Elimination, BeatControl.WrestlerA, BeatControl.WrestlerB),
+                    Beat(BeatType.FinishClean, BeatControl.WrestlerA, takesTheFall)
+                ]
+            };
+
+            // Measured on the crowd *reaction* vector, not CrowdEnergyDelta. Attention feeds
+            // `RecordReaction` — how much of a beat's noise the room actually gives it —
+            // and the energy delta is computed before it. My first pass at this test read
+            // the energy delta, found a 6.4% gap, and reported it as attention; the gap was
+            // the near-fall rule below. Two mechanisms, one measurement, wrong attribution.
+            double starGone = 0, starStillIn = 0;
+            for (int seed = 0; seed < 25; seed++)
+            {
+                // Star out first — MidOne is now the biggest name in the ring.
+                starGone += new MatchEngine(seed)
+                    .Execute(Build(BeatControl.SideD, BeatControl.SideC)).Reaction.Investment;
+
+                // MidThree out first — the star is still in and still owns the room.
+                starStillIn += new MatchEngine(seed)
+                    .Execute(Build(BeatControl.SideC, BeatControl.SideD)).Reaction.Investment;
+            }
+
+            output.WriteLine($"  MidOne works MidTwo, same two beats, three sides in, either way:");
+            output.WriteLine($"    star eliminated : {starGone / 25:F4} investment");
+            output.WriteLine($"    star still in   : {starStillIn / 25:F4} investment");
+
+            Assert.True(starGone > starStillIn,
+                $"the room was {starGone / 25:F4} invested with the star gone against " +
+                $"{starStillIn / 25:F4} with the star in — attention is still being measured " +
+                "against somebody who left through the curtain");
+        }
+
+        /// <summary>
+        /// **Down to two, a cover carries jeopardy again.**
+        ///
+        /// The near-fall discount exists because in a multi-man everybody knows the count can
+        /// be broken. Once elimination has taken the field to two, nobody is left to break
+        /// anything — so the crowd starts believing counts again, which is the entire
+        /// narrative payoff of the format and was being withheld, because the rule was keyed
+        /// off the plan's side count rather than off who was still in.
+        ///
+        /// Asserted on the recorded factor rather than on crowd energy, and that is the
+        /// point of the factor being recorded. The first version of this test compared a
+        /// near fall before an elimination against one after it and reported a 2.1× swing —
+        /// which was the crowd level the elimination had built, not the rule. It passed
+        /// against a mutation that reverted the mechanism completely. Two mechanisms, one
+        /// measurement, wrong attribution; the third time in a day, which is why the
+        /// mechanism is now observable instead of inferred.
+        /// </summary>
+        [Fact]
+        public void ANearFallDownToTwo_CarriesFullJeopardy()
+        {
+            // Four sides. The first elimination leaves three — still a field, still
+            // breakable. The second leaves two, and nobody can reach the cover.
+            var r = new MatchEngine(Seed).Execute(Plan(4,
+                Beat(BeatType.HotOpening, BeatControl.Even),
+                Beat(BeatType.Elimination, BeatControl.WrestlerA, BeatControl.SideD),
+                Beat(BeatType.NearFall, BeatControl.WrestlerA, BeatControl.WrestlerB),
+                Beat(BeatType.Elimination, BeatControl.WrestlerA, BeatControl.SideC),
+                Beat(BeatType.NearFall, BeatControl.WrestlerA, BeatControl.WrestlerB),
+                Beat(BeatType.FinishClean, BeatControl.WrestlerA, BeatControl.WrestlerB)));
+
+            var nearFalls = r.BeatResults.Where(x => x.BeatType == BeatType.NearFall).ToList();
+            output.WriteLine($"  three in : jeopardy {nearFalls[0].NearFallJeopardy:F2}");
+            output.WriteLine($"  two in   : jeopardy {nearFalls[1].NearFallJeopardy:F2}");
+
+            Assert.Equal(MatchEngine.CrowdedOutNearFall, nearFalls[0].NearFallJeopardy);
+            Assert.Equal(1.0, nearFalls[1].NearFallJeopardy);
+        }
+
+        /// <summary>
+        /// And a singles near fall is untouched — this rule has never applied to two sides
+        /// and must not start now that it counts survivors instead of the plan.
+        /// </summary>
+        [Fact]
+        public void ASinglesNearFall_AlwaysCarriesFullJeopardy()
+        {
+            var r = new MatchEngine(Seed).Execute(new MatchPlanModel
+            {
+                SideA = MatchSide.Of(W("Alpha")),
+                SideB = MatchSide.Of(W("Bravo")),
+                Beats =
+                [
+                    Beat(BeatType.HotOpening, BeatControl.Even),
+                    Beat(BeatType.NearFall, BeatControl.WrestlerA),
+                    Beat(BeatType.FinishClean, BeatControl.WrestlerA)
+                ]
+            });
+
+            Assert.Equal(1.0, r.BeatResults.Single(x => x.BeatType == BeatType.NearFall)
+                                           .NearFallJeopardy);
+        }
+
         // ── Validation ───────────────────────────────────────────────────────
 
         /// <summary>

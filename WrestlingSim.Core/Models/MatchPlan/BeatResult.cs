@@ -51,6 +51,19 @@ namespace WrestlingSim.Models.MatchPlan
         /// </summary>
         public double RepetitionFactor { get; set; } = 1.0;
 
+        /// <summary>
+        /// What a near fall kept because a third party was, or was not, free to break it.
+        /// 1.0 when the count carried real jeopardy; <see cref="Engine.MatchEngine
+        /// .CrowdedOutNearFall"/> when somebody upright could have broken it. Left at 1.0 on
+        /// every other beat type.
+        ///
+        /// Recorded rather than folded silently into the energy, because it could not be
+        /// tested otherwise: a test comparing two matches measures the crowd level the
+        /// eliminations built as much as the rule, which is how the first attempt at this
+        /// passed against a mutation that reverted the mechanism entirely.
+        /// </summary>
+        public double NearFallJeopardy { get; set; } = 1.0;
+
         // ── Display ──────────────────────────────────────────────────────────
 
         public string BeatLabel => BeatType switch
