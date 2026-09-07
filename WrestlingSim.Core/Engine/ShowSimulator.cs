@@ -95,6 +95,12 @@ namespace WrestlingSim.Engine
                     BookedMatch match => RunMatch(
                         match, itemResult, result, i, showDate, show.Name, starMaking),
                     Segment segment   => RunSegment(segment, itemResult, result, showDate),
+                    Models.Rumble.RumblePlan rumble => RunRumble(rumble, itemResult, result, index: i),
+
+                    // Deliberately still here, and deliberately still zero. A card item this
+                    // does not know how to run should score nothing rather than something
+                    // plausible — a Rumble fell through here scoring zero until it was given
+                    // an arm, which is exactly the failure the fallthrough is for surfacing.
                     _                 => 0
                 };
 
@@ -266,6 +272,46 @@ namespace WrestlingSim.Engine
         /// <summary>The chemistry of whichever plan side these people are, for the status economy.</summary>
         private static double ChemistryOf(Models.MatchPlan.MatchPlan plan, IReadOnlyList<Wrestler> members) =>
             members.Count > 0 && plan.SideA.Contains(members[0]) ? plan.SideA.Chemistry : plan.SideB.Chemistry;
+
+        /// <summary>
+        /// Runs a battle royal on a card.
+        ///
+        /// A sibling of <see cref="RunMatch"/> rather than a wrapper around it: the two share
+        /// the shape — run it, note it, move standing — and nothing else, because the thing
+        /// being run is graded on moments and the thing being moved is a whole field's
+        /// standing rather than two men's.
+        ///
+        /// No feud familiarity read, and that is a decision rather than an omission. A
+        /// battle royal is not a pairing, so there is no pairing for the crowd to be sick
+        /// of; running the same thirty people again next month is a different problem and
+        /// not one the staleness rule models.
+        /// </summary>
+        private double RunRumble(
+            Models.Rumble.RumblePlan rumble, CardItemResult itemResult, ShowResult showResult,
+            int index)
+        {
+            var result = new RumbleEngine(_seed.HasValue ? _seed.Value + index : Random.Shared.Next())
+                .Execute(rumble);
+
+            itemResult.RumbleResult = result;
+            itemResult.Notes.Add($"{result.Winner.RingName} wins the {rumble.Field.Count}-wrestler " +
+                                 $"{(rumble.IsBattleRoyal ? "battle royal" : "rumble")} — {result.StarRating:F2}★");
+
+            if (result.IronMan is { } iron && iron != result.Winner && result.IronManOutlasted > 0)
+                itemResult.Notes.Add($"{iron.RingName} outlasted {result.IronManOutlasted} of them.");
+
+            var outcome = HeatEconomy.ForRumble(
+                result.Winner, rumble.Wrestlers, result.StarRating,
+                result.IronMan, result.IronManShare);
+
+            foreach (var change in outcome.All)
+            {
+                HeatEconomy.Apply(change);
+                if (change.IsMeaningful) showResult.StatusChanges.Add(change);
+            }
+
+            return result.FinalScore;
+        }
 
         private double RunMatch(
             BookedMatch match, CardItemResult itemResult, ShowResult showResult,

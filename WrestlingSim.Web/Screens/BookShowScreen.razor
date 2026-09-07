@@ -176,6 +176,15 @@ else if (mode == Mode.AddSegment)
     </div>
     <SegmentBuilder OnDone="AddSegment" OnCancel="@(() => mode = Mode.Card)" ConfirmLabel="Add to card +" />
 }
+else if (mode == Mode.AddRumble)
+{
+    <div class="screen__head">
+        <div class="eyebrow">OVER THE TOP</div>
+        <h1 class="screen__title">Battle royal</h1>
+    </div>
+
+    <RumbleBuilder OnDone="AddRumble" OnCancel="@(() => mode = Mode.Card)" ConfirmLabel="Add to card +" />
+}
 else
 {
     @* ── Card sheet ──────────────────────────────────────────────────────── *@
@@ -316,6 +325,7 @@ else
         <div class="row mt">
             <button class="btn" @onclick="() => mode = Mode.AddMatch">+ Add a match</button>
             <button class="btn" @onclick="() => mode = Mode.AddSegment">+ Add a segment</button>
+            <button class="btn" @onclick="() => mode = Mode.AddRumble">+ Add a battle royal</button>
             <span class="spacer"></span>
             <button class="btn btn--primary" disabled="@(show.Card.Count == 0)" @onclick="() => Run(show)">
                 Run the show ★
@@ -339,7 +349,7 @@ else
 }
 
 @code {
-    private enum Mode { Card, AddMatch, AddSegment }
+    private enum Mode { Card, AddMatch, AddSegment, AddRumble }
 
     private Mode mode = Mode.Card;
 
@@ -363,6 +373,13 @@ else
     private async Task AddMatch(BookedMatch match)
     {
         State.ActiveShow?.Card.Add(match);
+        mode = Mode.Card;
+        await Persist();
+    }
+
+    private async Task AddRumble(WrestlingSim.Models.Rumble.RumblePlan rumble)
+    {
+        State.ActiveShow?.Card.Add(rumble);
         mode = Mode.Card;
         await Persist();
     }
