@@ -2391,3 +2391,56 @@ sentence is the claim, and on a value when the sentence is a proxy.** Nearly eve
 in the second category and written as though it were in the first.
 
 **653 tests passing**, and materially fewer of them need mutation to be believed.
+
+## The parameter fifteen handlers were handed and none could use
+
+Found while making beat resolution observable, logged rather than fixed in-flight, and done
+here on its own.
+
+`ExecuteBeat` resolved the opponent and threaded it into fifteen `Apply*` handlers. Every one
+of them ignored it and recomputed its own on the first line it touched the name.
+
+That is not redundancy, it is a trap, and the reason is the order of two lines:
+
+```csharp
+Wrestler? control = ctx.ControlLegal(beat);            // null on Even / Contested
+Wrestler other    = control != null ? ctx.Opponent(control) : ctx.LegalB;
+```
+
+`control` is null for `Even` and `Contested`, so `other` falls back to `LegalB` — the opponent
+of a controller that does not exist yet. Every handler then opens with `control ??=
+ctx.LegalDefault` and recomputes, which is the only reason the engine was ever right. The
+parameter was correct for beats booked to a side and quietly wrong for the ones nobody booked a
+side for, sitting in fifteen signatures looking available.
+
+Anyone tidying a handler by using the argument it was already given would have got the wrong
+wrestler on exactly the beats the multi-man work spent two review rounds fixing. It is gone
+now, and the dispatch-level resolution with it: each handler resolves its own after the
+fallback, which is what all fifteen already did.
+
+### Verified by byte-identity, not by the suite passing
+
+A refactor claiming no behaviour change should be made to prove it, and "653 tests still pass"
+is not that proof — the suite does not cover every structure at every seed, and a pure
+refactor is exactly the case where a subtle change hides in the gaps.
+
+So: every shipped structure, at every side size it supports, at twelve seeds — final score,
+star rating, winner, technical, storytelling, crowd peak, finish quality, and for every beat
+its crowd delta, advantage delta, resolved reaction and full commentary text. Dumped before and
+after and compared.
+
+**3,600 lines, 526,336 bytes, byte-identical.**
+
+The harness was deleted afterwards rather than committed, because as written it asserted
+nothing and a test that asserts nothing is the thing this documentation has spent a day
+complaining about. It is a five-minute rebuild from this paragraph when the next refactor wants
+it.
+
+### And the count in the last section was wrong
+
+The previous section says "all seventeen handlers". It is fifteen. The seventeen came from a
+`grep -c "Wrestler other"`, which counted the declaration in `ExecuteBeat` and a line in a
+comment alongside the real signatures — and I then repeated it into a code comment and a pull
+request without checking. A number produced by grep is a number about text, not about code;
+this one was wrong by two and nothing downstream depended on it, which is exactly why it
+survived being written down three times.
