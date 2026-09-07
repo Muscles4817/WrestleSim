@@ -144,16 +144,20 @@ namespace WrestlingSim.Tests
                 Beat(BeatType.FinishClean, BeatControl.WrestlerA, BeatControl.WrestlerB)));
 
             int gone = r.BeatResults.FindIndex(x => x.BeatType == BeatType.Elimination);
-            var after = r.BeatResults.Skip(gone + 1).SelectMany(x => x.Commentary).ToList();
+            var after = r.BeatResults.Skip(gone + 1).ToList();
 
-            foreach (var line in after) output.WriteLine($"  {line}");
+            foreach (var b in after)
+                output.WriteLine($"  {b.BeatType}: {b.Worker?.RingName} -> {b.Target?.RingName} " +
+                                 $"(billed {string.Join(", ", b.Billed.Select(w => w.RingName))})");
 
-            Assert.All(after, line => Assert.DoesNotContain("Charlie", line));
-
-            // Absence is not a pass: the beats after the elimination have to be narrating
-            // somebody, and it has to be the two who are left.
-            Assert.Contains(after, line => line.Contains("Alpha"));
-            Assert.Contains(after, line => line.Contains("Bravo"));
+            // Nobody works it, nobody is worked on, nobody is billed. Three ways for a
+            // wrestler who has left the building to reappear, and all three checked — where
+            // the old version checked only that a string was missing from a sentence, which
+            // a beat that emitted no line at all would also have satisfied.
+            Assert.All(after, b => Assert.NotEqual("Charlie", b.Worker?.RingName));
+            Assert.All(after, b => Assert.NotEqual("Charlie", b.Target?.RingName));
+            Assert.All(after, b => Assert.DoesNotContain(b.Billed, w => w.RingName == "Charlie"));
+            Assert.All(after, b => Assert.Equal(2, b.Billed.Count));
         }
 
         /// <summary>
@@ -166,18 +170,20 @@ namespace WrestlingSim.Tests
         {
             for (int seed = 0; seed < 40; seed++)
             {
-                var lines = new MatchEngine(seed).Execute(Plan(3,
+                var brawl = new MatchEngine(seed).Execute(Plan(3,
                     Beat(BeatType.HotOpening, BeatControl.Even),
                     Beat(BeatType.Elimination, BeatControl.WrestlerA, BeatControl.SideC),
                     Beat(BeatType.CrowdBrawl, BeatControl.WrestlerA),
                     Beat(BeatType.FinishClean, BeatControl.WrestlerA, BeatControl.WrestlerB)))
-                    .BeatResults.Single(x => x.BeatType == BeatType.CrowdBrawl).Commentary;
+                    .BeatResults.Single(x => x.BeatType == BeatType.CrowdBrawl);
 
-                if (seed == 0) foreach (var l in lines) output.WriteLine($"  {l}");
+                if (seed == 0)
+                {
+                    foreach (var l in brawl.Commentary) output.WriteLine($"  {l}");
+                    output.WriteLine($"  billed: {string.Join(", ", brawl.Billed.Select(w => w.RingName))}");
+                }
 
-                Assert.All(lines, l => Assert.DoesNotContain("all three", l));
-                Assert.All(lines, l => Assert.DoesNotContain("All three", l));
-                Assert.All(lines, l => Assert.DoesNotContain("Charlie", l));
+                Assert.Equal(["Alpha", "Bravo"], brawl.Billed.Select(w => w.RingName));
             }
         }
 

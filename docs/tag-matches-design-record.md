@@ -2298,3 +2298,96 @@ reverting to the plan's side count.
   by it would be scored on the wrong axis. That is a design problem before it is a
   code problem, and pretending otherwise would produce a feature that runs and lies.
 - **Handicap matches**, still: the engine has no numbers-advantage term.
+
+## Rules you can assert on without running a match
+
+A fair question, asked after the elimination review: *why are you mutating things instead of
+writing tests that cover this?*
+
+The answer is that mutation is not a substitute for the tests — it is a check on them, and I
+needed it because my tests kept passing on broken code. Three times in a day: an undirected-beat
+test that asserted the exact behaviour of the bug it was written against, a near-fall test that
+measured the crowd level an elimination had built, and two disposal tests whose doc comments
+claimed to cover a bug they never touched. Every one of them passed against the deletion of the
+mechanism it named.
+
+But the follow-up question is the better one. **Why were they so easy to get wrong?**
+
+### Seven mechanisms, and everything else
+
+`MatchEngine` is about 2,700 lines. Exactly seven things in it can be called directly:
+
+```
+AttentionShare  Billing  BlameHeat  BoredShare
+EliminationPacing  InvestmentFactor  MultiManNearFallFactor
+```
+
+Those have good tests, and none of them needed mutation to be believed. Everything else was
+observable only by running a whole match and reading a commentary string or a score — and a
+commentary line is moved by control resolution, the disposal window, eliminations, repetition
+decay, fatigue, attention and the RNG *at once*. Assert on one and you have asserted on all of
+them, which is precisely how the near-fall finding got attributed to the wrong rule: two rules
+were both moving the number, and the experiment could not say which.
+
+So the fix is not more mutation. It is more of the seven.
+
+### What the engine already knew and threw away
+
+`ExecuteBeat` works out, for every beat, who is working it, who it lands on, and who a room-wide
+line would name. It used all three and recorded none, which left the play-by-play as the only
+window onto them. `BeatResult` now carries them:
+
+| | |
+|---|---|
+| `Worker` | who the engine resolved as working the beat — *not* `Control`, which is the booking |
+| `Target` | who it lands on: the booked `Against`, or whoever the engine picked |
+| `Billed` | the legal wrestler of every side still in the exchange |
+
+`Billed` is recorded on **every** beat, not only the ones that use it, because the useful
+assertion is usually that somebody is *absent* — the man on the floor, the man who has been
+eliminated — and absence cannot be checked against a line that was never emitted.
+
+`Target` is resolved the way the handlers resolve it, not the way dispatch does. All seventeen
+handlers that take `other` recompute it from `control ??= ctx.LegalDefault`, so on an `Even` or
+`Contested` beat the dispatch value (computed while control was still null, falling back to
+`LegalB`) is not what the beat was about. Recording that would have shipped a field that is
+right for most beats and quietly wrong for the ones nobody booked a side for.
+
+### What the tests turned into
+
+Before and after, the same test:
+
+```csharp
+// was — moved by seven rules, passes if the line is never emitted
+Assert.Contains("Charlie", line);
+Assert.DoesNotContain("Bravo", line);
+
+// now — moved by one rule
+Assert.Equal("Charlie", disposal.Target?.RingName);
+```
+
+Ten assertions across `ThreeWayCommentaryTests`, `EliminationTests` and `MultiManBeatTests` made
+that move. Three of them dropped a seed sweep they only needed because a phrasing might not name
+anybody. One of them was `Assert.Contains("C", beat.Commentary.First())` — a **one-character
+substring**, satisfied by any sentence containing a capital C, which in a match whose wrestlers
+are called A, B and C is very nearly all of them. It asserted approximately nothing and had been
+green for weeks.
+
+All four of the original mutations still die: `Opponent` ignoring `Against`, `ControlLegal`
+knowing only A and B, `AllLegal` ignoring the disposal window, and `Remaining` returning every
+side. They die faster and against narrower tests.
+
+### What stays end-to-end, and why
+
+The collective-phrasing test — "these two" versus "all three" — keeps its text assertions and a
+forty-seed sweep, because there the sentence *is* the mechanism. The claim is about the words a
+commentator says and there is nothing behind them to assert instead. What it costs is a slower
+test, which is the honest price of a rule about phrasing. The count behind the wording is now
+asserted separately through `Billed`, so a failure says whether the field was counted wrong or
+merely worded wrong.
+
+That is the whole distinction this pass was after: **a test asserts on a sentence when the
+sentence is the claim, and on a value when the sentence is a proxy.** Nearly every test here was
+in the second category and written as though it were in the first.
+
+**653 tests passing**, and materially fewer of them need mutation to be believed.

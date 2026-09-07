@@ -816,6 +816,17 @@ namespace WrestlingSim.Engine
             Wrestler? control = ctx.ControlLegal(beat);
             Wrestler other    = control != null ? ctx.Opponent(control) : ctx.LegalB;
 
+            // Recorded, not just used — and resolved the way the handlers resolve it rather
+            // than the way dispatch does. All seventeen handlers that take `other` recompute
+            // it from `control ??= ctx.LegalDefault`, so on an Even or Contested beat the
+            // `other` above (computed while control was still null, and falling back to
+            // `LegalB`) is not what the beat was about. Recording that value would have
+            // shipped a field that is right for most beats and quietly wrong for the ones
+            // nobody booked a side for.
+            result.Worker = control ?? ctx.LegalDefault;
+            result.Target = ctx.Opponent(result.Worker);
+            result.Billed = ctx.AllLegal.ToList();
+
             // Technical work accumulates more legitimately than crowd reaction does —
             // limb work repeated is a story, a third identical brawl is not.
             double repCrowd = repetition * fade;
