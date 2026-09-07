@@ -809,20 +809,20 @@ namespace WrestlingSim.Engine
             double fade = FadeFactor(ctx);
 
             // Wrestler references for this beat — resolved *after* RegisterBeat, because
-            // every handler recomputes `other` from the context, and dispatch reading a
-            // different beat number than its handlers is how the same beat got two answers.
-            // BeatIndex is -1 until RegisterBeat makes it a beat number at all.
+            // `Opponent` reads the beat number and dispatch reading a different one than its
+            // handlers is how the same beat got two answers. BeatIndex is -1 until
+            // RegisterBeat makes it a beat number at all.
+            //
+            // Dispatch used to resolve the opponent here too and hand it to fifteen handlers,
+            // every one of which threw it away and recomputed its own — and had to, because
+            // this value is worked out while `control` may still be null, so on an Even or
+            // Contested beat it was the opponent of a controller that did not exist yet,
+            // falling back to `LegalB`. Right for most beats and quietly wrong for the ones
+            // nobody booked a side for. It is gone; each handler resolves its own after the
+            // `?? LegalDefault` fallback, which is what they all already did.
             ctx.CurrentBeat   = beat;
             Wrestler? control = ctx.ControlLegal(beat);
-            Wrestler other    = control != null ? ctx.Opponent(control) : ctx.LegalB;
 
-            // Recorded, not just used — and resolved the way the handlers resolve it rather
-            // than the way dispatch does. All seventeen handlers that take `other` recompute
-            // it from `control ??= ctx.LegalDefault`, so on an Even or Contested beat the
-            // `other` above (computed while control was still null, and falling back to
-            // `LegalB`) is not what the beat was about. Recording that value would have
-            // shipped a field that is right for most beats and quietly wrong for the ones
-            // nobody booked a side for.
             result.Worker = control ?? ctx.LegalDefault;
             result.Target = ctx.Opponent(result.Worker);
             result.Billed = ctx.AllLegal.ToList();
@@ -853,52 +853,52 @@ namespace WrestlingSim.Engine
                     break;
 
                 case BeatType.HeatSegment:
-                    ApplyHeatSegment(result, beat, ctx, control, other, iMod, dMod);
+                    ApplyHeatSegment(result, beat, ctx, control, iMod, dMod);
                     break;
 
                 case BeatType.Comeback:
-                    ApplyComeback(result, beat, ctx, control, other, iMod, dMod);
+                    ApplyComeback(result, beat, ctx, control, iMod, dMod);
                     break;
 
                 case BeatType.NearFall:
-                    ApplyNearFall(result, beat, ctx, control, other, iMod, feudMult, timesUsed);
+                    ApplyNearFall(result, beat, ctx, control, iMod, feudMult, timesUsed);
                     break;
 
                 case BeatType.Shine:
-                    ApplyShine(result, beat, ctx, control, other, iMod, dMod);
+                    ApplyShine(result, beat, ctx, control, iMod, dMod);
                     break;
 
                 case BeatType.Cutoff:
-                    ApplyCutoff(result, beat, ctx, control, other, iMod, dMod);
+                    ApplyCutoff(result, beat, ctx, control, iMod, dMod);
                     break;
 
                 case BeatType.Isolation:
-                    ApplyIsolation(result, beat, ctx, control, other, iMod, dMod);
+                    ApplyIsolation(result, beat, ctx, control, iMod, dMod);
                     break;
 
                 case BeatType.NearTag:
-                    ApplyNearTag(result, ctx, control, other, iMod, feudMult);
+                    ApplyNearTag(result, ctx, control, iMod, feudMult);
                     break;
 
                 case BeatType.HotTag:
-                    ApplyHotTag(result, beat, ctx, control, other, iMod);
+                    ApplyHotTag(result, beat, ctx, control, iMod);
                     break;
 
                 case BeatType.Tag:
                 case BeatType.BlindTag:
-                    ApplyTag(result, beat, ctx, control, other, iMod);
+                    ApplyTag(result, beat, ctx, control, iMod);
                     break;
 
                 case BeatType.DoubleTeam:
-                    ApplyDoubleTeam(result, beat, ctx, control, other, iMod, dMod);
+                    ApplyDoubleTeam(result, beat, ctx, control, iMod, dMod);
                     break;
 
                 case BeatType.Miscommunication:
-                    ApplyMiscommunication(result, ctx, control, other, iMod);
+                    ApplyMiscommunication(result, ctx, control, iMod);
                     break;
 
                 case BeatType.SaveBreakup:
-                    ApplySaveBreakup(result, ctx, control, other, iMod, timesUsed);
+                    ApplySaveBreakup(result, ctx, control, iMod, timesUsed);
                     break;
 
                 case BeatType.AllFourBrawl:
@@ -942,7 +942,7 @@ namespace WrestlingSim.Engine
                     break;
 
                 case BeatType.PsychologicalWarfare:
-                    ApplyPsychologicalWarfare(result, beat, ctx, control, other, iMod, feudMult);
+                    ApplyPsychologicalWarfare(result, beat, ctx, control, iMod, feudMult);
                     break;
 
                 case BeatType.FeudalEscalation:
@@ -950,7 +950,7 @@ namespace WrestlingSim.Engine
                     break;
 
                 case BeatType.RevengeSpot:
-                    ApplyRevengeSpot(result, beat, ctx, control, other, iMod, feudMult);
+                    ApplyRevengeSpot(result, beat, ctx, control, iMod, feudMult);
                     break;
 
                 case BeatType.ThirdPartyPullIn:
@@ -968,7 +968,7 @@ namespace WrestlingSim.Engine
                 case BeatType.FinishCountout:
                 case BeatType.FinishInterference:
                 case BeatType.FinishSuperFinisher:
-                    ApplyFinish(result, beat, ctx, control, other, iMod, feudMult);
+                    ApplyFinish(result, beat, ctx, control, iMod, feudMult);
                     break;
             }
 
@@ -1668,10 +1668,10 @@ namespace WrestlingSim.Engine
         }
 
         private void ApplyHeatSegment(BeatResult r, MatchBeat beat, Ctx ctx,
-            Wrestler? control, Wrestler other, double iMod, double dMod)
+            Wrestler? control, double iMod, double dMod)
         {
             control ??= ctx.LegalDefault;
-            other = ctx.Opponent(control);
+            var other = ctx.Opponent(control);
 
             var pControl = ctx.For(control);
             var pOther   = ctx.For(other);
@@ -1732,10 +1732,10 @@ namespace WrestlingSim.Engine
         }
 
         private void ApplyComeback(BeatResult r, MatchBeat beat, Ctx ctx,
-            Wrestler? control, Wrestler other, double iMod, double dMod)
+            Wrestler? control, double iMod, double dMod)
         {
             control ??= ctx.LegalDefault;
-            other = ctx.Opponent(control);
+            var other = ctx.Opponent(control);
 
             var state    = ctx.State;
             var pControl = ctx.For(control);
@@ -1792,10 +1792,10 @@ namespace WrestlingSim.Engine
         }
 
         private void ApplyNearFall(BeatResult r, MatchBeat beat, Ctx ctx,
-            Wrestler? control, Wrestler other, double iMod, double feudMult, int timesUsed)
+            Wrestler? control, double iMod, double feudMult, int timesUsed)
         {
             control ??= ctx.LegalDefault;
-            other = ctx.Opponent(control);
+            var other = ctx.Opponent(control);
 
             var state  = ctx.State;
             var pOther = ctx.For(other);
@@ -1954,10 +1954,10 @@ namespace WrestlingSim.Engine
         }
 
         private void ApplyPsychologicalWarfare(BeatResult r, MatchBeat beat, Ctx ctx,
-            Wrestler? control, Wrestler other, double iMod, double feudMult)
+            Wrestler? control, double iMod, double feudMult)
         {
             control ??= ctx.LegalDefault;
-            other = ctx.Opponent(control);
+            var other = ctx.Opponent(control);
 
             var pControl = ctx.For(control);
 
@@ -2031,10 +2031,10 @@ namespace WrestlingSim.Engine
         }
 
         private void ApplyRevengeSpot(BeatResult r, MatchBeat beat, Ctx ctx,
-            Wrestler? control, Wrestler other, double iMod, double feudMult)
+            Wrestler? control, double iMod, double feudMult)
         {
             control ??= ctx.LegalDefault;
-            other = ctx.Opponent(control);
+            var other = ctx.Opponent(control);
 
             var state    = ctx.State;
             var pControl = ctx.For(control);
@@ -2127,10 +2127,10 @@ namespace WrestlingSim.Engine
         /// them saved later.
         /// </summary>
         private void ApplyShine(BeatResult r, MatchBeat beat, Ctx ctx,
-            Wrestler? control, Wrestler other, double iMod, double dMod)
+            Wrestler? control, double iMod, double dMod)
         {
             control ??= ctx.LegalDefault;
-            other = ctx.Opponent(control);
+            var other = ctx.Opponent(control);
 
             var pControl = ctx.For(control);
             var side     = ctx.SideOf(control);
@@ -2169,10 +2169,10 @@ namespace WrestlingSim.Engine
         /// which is why it does not need to be clean to work.
         /// </summary>
         private void ApplyCutoff(BeatResult r, MatchBeat beat, Ctx ctx,
-            Wrestler? control, Wrestler other, double iMod, double dMod)
+            Wrestler? control, double iMod, double dMod)
         {
             control ??= ctx.LegalDefault;
-            other = ctx.Opponent(control);
+            var other = ctx.Opponent(control);
 
             var pControl = ctx.For(control);
             var pOther   = ctx.For(other);
@@ -2205,10 +2205,10 @@ namespace WrestlingSim.Engine
         /// worked over is their opponent's legal performer.
         /// </summary>
         private void ApplyIsolation(BeatResult r, MatchBeat beat, Ctx ctx,
-            Wrestler? control, Wrestler other, double iMod, double dMod)
+            Wrestler? control, double iMod, double dMod)
         {
             control ??= ctx.LegalDefault;
-            other = ctx.Opponent(control);
+            var other = ctx.Opponent(control);
 
             var pControl    = ctx.For(control);
             var pIsolated   = ctx.For(other);
@@ -2292,10 +2292,10 @@ namespace WrestlingSim.Engine
         /// would have made it (docs/wrestling-reference/16-crowd-psychology.md §2).
         /// </summary>
         private void ApplyNearTag(BeatResult r, Ctx ctx,
-            Wrestler? control, Wrestler other, double iMod, double feudMult)
+            Wrestler? control, double iMod, double feudMult)
         {
             control ??= ctx.LegalDefault;
-            other = ctx.Opponent(control);
+            var other = ctx.Opponent(control);
 
             var pDenied  = ctx.For(other);
             var deniedSide = ctx.SideOf(other);
@@ -2339,10 +2339,10 @@ namespace WrestlingSim.Engine
         /// from isolation beats and denied tags since this side last got someone fresh in.
         /// </summary>
         private void ApplyHotTag(BeatResult r, MatchBeat beat, Ctx ctx,
-            Wrestler? control, Wrestler other, double iMod)
+            Wrestler? control, double iMod)
         {
             control ??= ctx.LegalDefault;
-            other = ctx.Opponent(control);
+            var other = ctx.Opponent(control);
 
             var state = ctx.State;
             bool sideA = ctx.IsSideA(control);
@@ -2434,10 +2434,10 @@ namespace WrestlingSim.Engine
 
         /// <summary>A routine or blind tag. Changes who is legal without being a moment.</summary>
         private void ApplyTag(BeatResult r, MatchBeat beat, Ctx ctx,
-            Wrestler? control, Wrestler other, double iMod)
+            Wrestler? control, double iMod)
         {
             control ??= ctx.LegalDefault;
-            other = ctx.Opponent(control);
+            var other = ctx.Opponent(control);
 
             bool sideA = ctx.IsSideA(control);
             var side   = ctx.SideOf(control);
@@ -2469,10 +2469,10 @@ namespace WrestlingSim.Engine
         /// chemistry will attach to.
         /// </summary>
         private void ApplyDoubleTeam(BeatResult r, MatchBeat beat, Ctx ctx,
-            Wrestler? control, Wrestler other, double iMod, double dMod)
+            Wrestler? control, double iMod, double dMod)
         {
             control ??= ctx.LegalDefault;
-            other = ctx.Opponent(control);
+            var other = ctx.Opponent(control);
 
             var side   = ctx.SideOf(control);
             var pOther = ctx.For(other);
@@ -2517,10 +2517,10 @@ namespace WrestlingSim.Engine
         /// saying out loud rather than leaving to a sign convention.
         /// </summary>
         private void ApplyMiscommunication(BeatResult r, Ctx ctx,
-            Wrestler? control, Wrestler other, double iMod)
+            Wrestler? control, double iMod)
         {
             control ??= ctx.LegalDefault;
-            other = ctx.Opponent(control);
+            var other = ctx.Opponent(control);
 
             var side = ctx.SideOf(control);
             var pControl = ctx.For(control);
@@ -2561,10 +2561,10 @@ namespace WrestlingSim.Engine
         /// is being openly ignored.
         /// </summary>
         private void ApplySaveBreakup(BeatResult r, Ctx ctx,
-            Wrestler? control, Wrestler other, double iMod, int timesUsed)
+            Wrestler? control, double iMod, int timesUsed)
         {
             control ??= ctx.LegalDefault;
-            other = ctx.Opponent(control);
+            var other = ctx.Opponent(control);
 
             var side  = ctx.SideOf(control);
             var saver = SpotPartner(side, control, ctx.State.BeatIndex);
@@ -2615,10 +2615,10 @@ namespace WrestlingSim.Engine
         }
 
         private void ApplyFinish(BeatResult r, MatchBeat beat, Ctx ctx,
-            Wrestler? control, Wrestler other, double iMod, double feudMult)
+            Wrestler? control, double iMod, double feudMult)
         {
             control ??= ctx.LegalDefault;
-            other = ctx.Opponent(control);
+            var other = ctx.Opponent(control);
 
             var state    = ctx.State;
             var pControl = ctx.For(control);
