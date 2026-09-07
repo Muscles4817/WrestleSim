@@ -25,7 +25,8 @@ public enum Screen
     Exhibition,
     Match,
     Segment,
-    Show
+    Show,
+    Rumble
 }
 
 public enum AppMode { Landing, Career, Exhibition }

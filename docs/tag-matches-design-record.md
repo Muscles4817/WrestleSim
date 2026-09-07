@@ -2674,3 +2674,113 @@ on *2 survivors* rather than a winner. 4.41 stars, no console errors.
 - **What any of it costs afterwards.** Survivors, sole survivors and the wrestler who went out
   first are all recorded and none of them changes a career. Same half-finish as the handicap
   work, and the same place it belongs: the status and heat systems, not the match engine.
+
+## Battle royals and the Rumble — the format the engine could not grade
+
+Written down as not built twice, on the grounds that it is a design problem before a code
+problem. That held up on inspection, and it is worth stating precisely rather than as a
+feeling:
+
+> **The battle royal / Rumble.** Over-the-top elimination. Everyone starts together in a
+> battle royal; timed continuous entry is the Rumble variant, and it is the entries that make
+> the Rumble a story rather than a scramble. Barely a match: a vehicle for a spectacle, a
+> surprise return, and one story told in eliminations. **Judged on moments, not on work.**
+
+Two independent reasons the match engine cannot take this format, and both are load-bearing:
+
+- **It cannot be expressed.** `BeatControl` names four sides and `MatchPlan.Validate` caps a
+  plan at four. A thirty-person field has no way to say who a beat is for. That is not a limit
+  to widen — a booker does not author twenty-nine falls, and a format where they would have to
+  is a format the beat model is the wrong shape for.
+- **It cannot be graded.** The whole scoring model measures how well a match was *worked*, and
+  doc 18 says in as many words that this one is not judged that way. Running it through that
+  machinery would not be generous or harsh; it would answer a different question and print the
+  number anyway.
+
+So it has its own plan, its own engine and its own scoring, and none of them inherit from the
+match. That is the design, not a shortcut around one.
+
+### What a booker actually decides
+
+Who is in it, what order they come out, who wins, and a handful of moments. The eliminations
+in between are the engine's, because nobody books those in real life either.
+
+The moment vocabulary is deliberately six words long — a surprise return, an iron-man run, a
+showdown, a mass elimination, a betrayal, a near-elimination — because a format whose point is
+that a few things stand out is not improved by a longer list of things that can stand out.
+
+### Scoring, and the rule that stops it being gamed
+
+Moments are half the score, the field is a third, and the entry story and iron-man run split
+what is left. No technical component at all.
+
+The load-bearing rule is **repetition decay per kind, weighted so the cheap moments wear out
+fastest**. A second surprise return is still a surprise; a fourth near-elimination is the crowd
+waiting for it to end. Without that a booker pads a Rumble to five stars with hanging-on spots,
+which is the exact opposite of what the format is for. Measured: four near-eliminations score
+below two surprise returns, and four different moments beat four showdowns by more than a
+third.
+
+The total divides by a target of six rather than by the count, so booking more moments pays up
+to a point and then stops. A Rumble where every minute is a highlight has no highlights.
+
+### "It is the entries that make the Rumble a story rather than a scramble"
+
+That sentence is a claim, so it is a number here. `EntryStory` is what the winner's entry
+position was worth — linear from last to first, because there is nothing clever about it, the
+further back you started the longer you were out there — and it is **zero for a battle royal**.
+Not as a penalty: everybody started together, so there is no number to have a story about.
+
+The same field therefore scores lower as a battle royal than as a Rumble, and there is a test
+that fails if it does not. That is doc 18's sentence made falsifiable rather than repeated.
+
+### The same mistake, a fourth time in a day
+
+`TheBiggestNamesLastLongest` — a battle royal that dumps its biggest name at number four has
+spent the only thing it had, so who goes out is weighted against connection. The test ran a
+match and compared where the stars and the jobbers landed in the elimination order.
+
+**It passed with the weighting replaced by a bare random roll.**
+
+Entry position decides who is even *in the ring* to be picked, so an end-to-end test measures
+that and reports it as the weighting. The first version of the test was worse still — it put
+the stars at numbers 1–5 and reported them going out *first*, which was true and had nothing to
+do with connection.
+
+That one also found a real bug underneath: the ring was capped at two or three, so eliminations
+began at the third entrant and the only people available to be dumped were whoever came out
+earliest. Entering at number one was a death sentence — the precise opposite of the format's
+best story. A Rumble keeps six to ten in there, and it does now.
+
+The fix for the test is the one this codebase keeps arriving at: `RumbleScoring.EliminationRisk`
+is a pure function, asserted directly, and the end-to-end version is kept as a thirty-seed
+sanity sweep that is honest about being the weaker claim. Mutating the risk rule to a constant
+now reddens both.
+
+Four mutations, all killed: moments never wearing out, a battle royal having an entry story,
+the risk rule ignoring connection, and moments not being scored at all.
+
+### Bookable and legible
+
+Its own screen, because the match builder cannot express it: pick the format, build the field
+in entry order, tap somebody to make them the winner, add moments. An iron-man run is the one
+moment the chip row refuses to book — it is read off the match, from who came out early and was
+still there at the end, and taking the booker's word for it would be the format's best story
+handed over rather than earned.
+
+Browser-verified at 390×844: a ten-strong Rumble at twenty minutes, two moments booked, 3.60
+stars, the scorecard reading **The field / Moments / Entry story / Iron man** and no technical
+term anywhere. No console errors.
+
+**710 tests passing.**
+
+### Still not built
+
+- **A Rumble on a career card.** It is `ICardItem` and validates, and `ShowSimulator` has never
+  seen one — the show grader reads `BookedMatch` and would need to learn a second kind of
+  thing. Reachable from the exhibition menu, not yet from a show.
+- **Entry numbers as a booking asset.** Drawing number one is a thing that happens *to* a
+  wrestler in a storyline, and here the booker simply chooses the order. The interesting
+  version of this format is the one where the number is a consequence.
+- **What any of it costs.** Same half-finish as the last three: a Rumble win is the biggest
+  thing a card can hand somebody and it changes nothing about their career yet.
