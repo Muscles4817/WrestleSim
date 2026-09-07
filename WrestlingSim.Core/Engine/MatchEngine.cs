@@ -16,6 +16,12 @@ namespace WrestlingSim.Engine
         // the state deals in side indices, and the result has to name people.
         private readonly List<EliminatedSide> _eliminations = new();
 
+        // Doc 18 §2.5 grades a handicap match on what the lone man survived rather than on
+        // who won, so the count has to be kept as the match runs — it cannot be read back
+        // off the result.
+        private int _handicapBeats;
+        private int _handicapResistance;
+
         // Scale constants for the saturating normalisation of each raw accumulator.
         // A raw score equal to the scale reads as ~0.63 of the component; twice the
         // scale reads as ~0.86. Nothing ever reaches 1.0, so piling on beats has a
@@ -235,6 +241,74 @@ namespace WrestlingSim.Engine
         /// price, and that is the entire narrative payoff of the format: the crowd starts
         /// believing counts again the moment the field is thin enough.
         /// </summary>
+        // ── Handicap (doc 18 §2.5) ───────────────────────────────────────────
+        //
+        // "Two or more against one. Almost never a contest; it is a *statement*, and the
+        // statement is usually about the lone man's toughness rather than the outcome."
+        //
+        // Two claims, and the second one is the awkward one: a format whose point is not the
+        // result cannot be graded by an engine that grades results. So there are two
+        // mechanisms here rather than one — what the numbers actually do to the man carrying
+        // them, and what he earns for carrying them.
+
+        /// <summary>
+        /// What being outnumbered costs the side carrying it, as a multiplier on its output.
+        ///
+        /// Not a flat penalty for being outnumbered, because that is a fudge factor with a
+        /// story attached rather than a model. The real thing two-on-one does is deny you the
+        /// rest: `FadeFactor` already says a side wears down as the match goes long, and its
+        /// comment already argues the exception — "tagging out is literally how a team
+        /// resists fatigue, so a fresh partner should hold the match up late". A lone man has
+        /// nobody to tag. He works every beat of the match while the pair works half each.
+        ///
+        /// So the numbers show up as fatigue arriving faster, in proportion to how much of
+        /// the work you are doing that they are not: a man alone against two carries twice
+        /// the wear, against three, three times. It compounds over the match rather than
+        /// applying flat, which is why a short handicap match is a beating and a long one is
+        /// a slaughter — and why the way to book one well is to keep it short.
+        ///
+        /// Exactly 1.0 whenever the sides are even, which is every match that existed before
+        /// this. A term that is zero in the general case can be added without re-grading the
+        /// whole game.
+        /// </summary>
+        public static double NumbersFatigue(int mySize, int theirSize, int beatsBeyondFresh,
+                                            double conditioning)
+        {
+            if (mySize <= 0 || theirSize <= mySize || beatsBeyondFresh <= 0) return 1.0;
+
+            // The same per-beat wear FadeFactor uses, so the two are one rule at different
+            // strengths rather than two rules that happen to look alike.
+            double perBeat = Math.Clamp(0.855 + 0.115 * conditioning, 0.82, 0.99);
+
+            // Against twice your number you do twice the work, so you carry the extra once
+            // over; against three times, twice over.
+            double extraShare = (double)theirSize / mySize - 1.0;
+
+            return Math.Pow(perBeat, beatsBeyondFresh * extraShare);
+        }
+
+        /// <summary>
+        /// How much of a handicap match the outnumbered side spent fighting rather than being
+        /// beaten up, 0–1.
+        ///
+        /// This is the "statement" half, and it is what makes the format gradeable at all.
+        /// Doc 18 says the point is the lone man's toughness *rather than the outcome*, which
+        /// means the result cannot be the measure — a valiant loss is the format working and
+        /// a five-minute squash is the format failing, and both are losses.
+        ///
+        /// So what is counted is resistance: beats the outnumbered side worked, or survived
+        /// as a near fall it kicked out of, against every beat it was in. Nought is a squash
+        /// — he never had a moment — and that is a bad handicap match however cleanly it was
+        /// worked. It says nothing, which is the one thing this format cannot afford to do.
+        ///
+        /// Not the same question as winning, and deliberately so: a lone man who mounts three
+        /// comebacks and still loses scores well here, and one who wins off a single roll-up
+        /// having done nothing else scores badly. That is the right way round.
+        /// </summary>
+        public static double Defiance(int beatsWorkedOrSurvived, int beatsInTheMatch) =>
+            beatsInTheMatch <= 0 ? 0.0
+                                 : Math.Clamp((double)beatsWorkedOrSurvived / beatsInTheMatch, 0, 1);
+
         public static double MultiManNearFallFactor(bool multiMan, bool somebodyDisposed) =>
             multiMan && !somebodyDisposed ? CrowdedOutNearFall : 1.0;
 
@@ -450,6 +524,27 @@ namespace WrestlingSim.Engine
             /// an eliminated wrestler the moment the survivors are sides A and C.
             /// </summary>
             public bool MultiManNow => Remaining.Count > 2;
+
+            /// <summary>
+            /// What the numbers are costing the side this wrestler is on, right now.
+            ///
+            /// 1.0 in every even match, so this is inert everywhere it has always been
+            /// inert. The lone man's own conditioning is what is read, not the pair average
+            /// <see cref="FadeFactor"/> uses — the whole point is that he is the one doing
+            /// the work, so it is his gas tank the match is emptying.
+            /// </summary>
+            public double NumbersFatigueFor(Wrestler w)
+            {
+                if (Plan.Numbers is not { } n) return 1.0;
+
+                var mine = SideOf(w);
+                if (mine != n.Outnumbered) return 1.0;
+
+                return MatchEngine.NumbersFatigue(
+                    n.Outnumbered.Size, n.Larger.Size,
+                    Math.Max(0, State.BeatIndex - 4),
+                    For(w).Conditioning);
+            }
 
             /// <summary>
             /// Who a beat that named nobody is worked by.
@@ -827,10 +922,28 @@ namespace WrestlingSim.Engine
             result.Target = ctx.Opponent(result.Worker);
             result.Billed = ctx.AllLegal.ToList();
 
+            // What the numbers cost the man carrying them. Applied to the *working* side
+            // only, which is what makes it a numbers advantage rather than a slower match:
+            // the lone man's offence gets weaker as the beating goes on and the pair's does
+            // not, because they have been taking turns. Exactly 1.0 in every even match.
+            result.NumbersFatigue = ctx.NumbersFatigueFor(result.Worker!);
+
+            // Defiance, counted as it happens. A beat is resistance if the outnumbered side
+            // worked it, or survived it as a near fall — being the one who kicked out is a
+            // moment of toughness even though the other side had control.
+            if (plan.Numbers is { } numbers)
+            {
+                _handicapBeats++;
+                bool worked   = ctx.SideOf(result.Worker!) == numbers.Outnumbered;
+                bool survived = beat.Type == BeatType.NearFall
+                                && ctx.SideOf(result.Target!) == numbers.Outnumbered;
+                if (worked || survived) _handicapResistance++;
+            }
+
             // Technical work accumulates more legitimately than crowd reaction does —
             // limb work repeated is a story, a third identical brawl is not.
-            double repCrowd = repetition * fade;
-            double repTech  = Math.Sqrt(repetition) * fade;
+            double repCrowd = repetition * fade * result.NumbersFatigue;
+            double repTech  = Math.Sqrt(repetition) * fade * result.NumbersFatigue;
 
             result.RepetitionFactor = repetition;
 
@@ -2824,9 +2937,25 @@ namespace WrestlingSim.Engine
                 ? (eliminationPacing >= 1.0 ? 4.0 : (eliminationPacing - 1.0) * 12.0)
                 : 0.0;
 
+            // ── Defiance (doc 18 §2.5) ───────────────────────────────────────
+            //
+            // "Almost never a contest; it is a *statement*, and the statement is usually
+            // about the lone man's toughness rather than the outcome." So a handicap match
+            // is graded on what he survived, and a squash — no comebacks, no kickouts, no
+            // moment where he was anything but a body — is a bad handicap match however
+            // cleanly it was worked, because it says nothing.
+            //
+            // Centred at a third rather than a half: he is *supposed* to be losing most of
+            // it. A man alone who controls half the beats against two is not defiant, he is
+            // in a match the booking forgot was a handicap.
+            double defiance = Defiance(_handicapResistance, _handicapBeats);
+            double defianceNudge = plan.IsHandicap
+                ? Math.Clamp((defiance - 0.34) * 22.0, -7.0, 7.0)
+                : 0.0;
+
             double finalScore = Math.Clamp(
                 techComponent + storyComponent + crowdComponent + finishNudge + varietyNudge
-                    + coherenceNudge + pacingNudge,
+                    + coherenceNudge + pacingNudge + defianceNudge,
                 0, 100);
 
             double starRating = Math.Clamp(finalScore / 20.0, 0, 5);
@@ -2848,6 +2977,7 @@ namespace WrestlingSim.Engine
                 GrudgeMoments      = _grudges.ToList(),
                 Eliminations       = _eliminations.ToList(),
                 EliminationPacing  = eliminationPacing,
+                Defiance           = plan.IsHandicap ? defiance : 0.0,
                 TechnicalScore     = state.TechnicalScore,
                 StorytellingScore  = state.StorytellingScore,
                 CrowdPeakEnergy    = state.CrowdPeakEnergy,
@@ -2866,7 +2996,8 @@ namespace WrestlingSim.Engine
                     FinishNudge           = finishNudge,
                     VarietyNudge          = varietyNudge,
                     CoherenceNudge        = coherenceNudge,
-                    PacingNudge           = pacingNudge
+                    PacingNudge           = pacingNudge,
+                    DefianceNudge         = defianceNudge
                 },
                 FinalScore         = finalScore,
                 StarRating         = starRating

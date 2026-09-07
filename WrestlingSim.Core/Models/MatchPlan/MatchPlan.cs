@@ -78,6 +78,32 @@ namespace WrestlingSim.Models.MatchPlan
         /// <summary>True when any side has a partner on the apron.</summary>
         public bool IsTagMatch => Sides.Any(s => s.IsTag);
 
+        /// <summary>
+        /// Two or more against one — or any uneven split. Doc 18 §2.5.
+        ///
+        /// Derived from the sides rather than declared, for the same reason
+        /// <see cref="Format"/> is: a plan that could disagree with itself about how many
+        /// people are on each side would be a plan with two answers to the only question
+        /// this format asks.
+        /// </summary>
+        public bool IsHandicap => Sides.Select(s => s.Size).Distinct().Count() > 1;
+
+        /// <summary>
+        /// The side carrying the numbers, and the side carrying them against it. Null when
+        /// the sides are even, and when three or more sides make "outnumbered" ambiguous —
+        /// a 1 v 2 v 3 is a shape nothing in doc 18 describes and the engine does not model.
+        /// </summary>
+        public (MatchSide Outnumbered, MatchSide Larger)? Numbers
+        {
+            get
+            {
+                if (!IsHandicap || Sides.Count != 2) return null;
+                var small = Sides.OrderBy(s => s.Size).First();
+                var large = Sides.OrderByDescending(s => s.Size).First();
+                return (small, large);
+            }
+        }
+
         public List<MatchBeat> Beats { get; set; } = new();
 
         /// <summary>
@@ -234,16 +260,25 @@ namespace WrestlingSim.Models.MatchPlan
             // and a 1v4 grades identically to a 1v1. Meanwhile side-weighting means the
             // side with the *extra* man scores slightly worse. So a handicap match would
             // not be graded generously or harshly — it would be graded as something else
-            // entirely. A 2v1 also cannot be saved, because SaveSerializer refuses any
-            // plan where IsTagMatch is true.
+            // entirely.
             //
-            // The exit condition for this rule is a numbers term in the engine, not a
-            // decision that handicap is allowed.
-            if (Sides.Select(s => s.Size).Distinct().Count() > 1)
+            // That rule set its own exit condition: "a numbers term in the engine, not a
+            // decision that handicap is allowed." `MatchEngine.NumbersFatigue` is that term
+            // — being outnumbered denies you the rest, so fatigue arrives in proportion to
+            // how much of the work you are doing that they are not — and
+            // `MatchEngine.Defiance` is what the format is graded on instead of the result.
+            // So the rule is met rather than waived, and what is left is the shape the
+            // engine still has no reading of.
+            //
+            // (The rule also claimed a 2v1 could not be saved because the serializer refused
+            // any tag plan. That stopped being true when the save format moved to storing
+            // `Sides` as id lists; a handicap plan round-trips, and there is a test.)
+            if (IsHandicap && Sides.Count > 2)
                 errors.Add(
-                    $"Sides are uneven ({string.Join(" v ", Sides.Select(s => s.Size))}). The " +
-                    "engine has no model for a numbers advantage yet, so a handicap match " +
-                    "would be graded as a normal one.");
+                    $"Uneven sides in a {Sides.Count}-way ({string.Join(" v ", Sides.Select(s => s.Size))}). " +
+                    "Handicap is two or more against one — with three sides at different " +
+                    "sizes there is no single outnumbered man, and doc 18 describes no such " +
+                    "match.");
 
                 // ── Elimination (doc 18 §2.5) ────────────────────────────────
                 //

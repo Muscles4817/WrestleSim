@@ -156,6 +156,75 @@ namespace WrestlingSim.Engine
                 ]
             },
 
+            // ── Handicap (doc 18 §2.5) ───────────────────────────────────────
+            //
+            // "Almost never a contest; it is a *statement*, and the statement is usually
+            // about the lone man's toughness rather than the outcome." So neither of these
+            // is built to be won — they are built to give the lone wrestler moments, which
+            // is what the engine grades a handicap match on.
+            //
+            // Both are short on purpose. Being outnumbered compounds, so the longer one of
+            // these runs the less he has left, and a long handicap match is a slaughter
+            // whatever the booking intended.
+
+            new MatchStructure
+            {
+                Name        = "Two on One",
+                Description = "Nobody is winning this from underneath. What the match is for " +
+                              "is whether they make them work for it — two comebacks, and " +
+                              "neither one enough.",
+                SideSize    = 1,
+                SideSizeB   = 2,
+                Tags        = ["Handicap", "Story", "Statement"],
+                Beats       =
+                [
+                    Beat("Standard Collar-and-Elbow", BeatControl.Even),
+                    Beat("Power Beatdown",  BeatControl.WrestlerB),
+                    Beat("Hot Comeback",    BeatControl.WrestlerA),
+                    Beat("Methodical Grind", BeatControl.WrestlerB),
+                    Beat("Hot Comeback",    BeatControl.WrestlerA),
+                    Beat("Signature Cover", BeatControl.WrestlerB),
+                    Beat("Clean Victory",   BeatControl.WrestlerB)
+                ]
+            },
+
+            new MatchStructure
+            {
+                Name        = "Beat the Odds",
+                Description = "The upset, which costs the pair more than it gives the winner — " +
+                              "two people beaten by one is a bill somebody pays later.",
+                SideSize    = 1,
+                SideSizeB   = 2,
+                Tags        = ["Handicap", "Story", "Upset"],
+                Beats       =
+                [
+                    Beat("Standard Collar-and-Elbow", BeatControl.Even),
+                    Beat("Power Beatdown",  BeatControl.WrestlerB),
+                    Beat("Hot Comeback",    BeatControl.WrestlerA),
+                    Beat("Miscommunication", BeatControl.WrestlerB),
+                    Beat("Shock Kickout",   BeatControl.WrestlerA),
+                    Beat("Roll-Up Steal",   BeatControl.WrestlerA)
+                ]
+            },
+
+            new MatchStructure
+            {
+                Name        = "Three on One",
+                Description = "A statement rather than a match. Short, because being " +
+                              "outnumbered compounds and a long one is just a slaughter.",
+                SideSize    = 1,
+                SideSizeB   = 3,
+                Tags        = ["Handicap", "Squash", "Statement"],
+                Beats       =
+                [
+                    Beat("Standard Collar-and-Elbow", BeatControl.Even),
+                    Beat("Power Beatdown", BeatControl.WrestlerB),
+                    Beat("Hot Comeback",   BeatControl.WrestlerA),
+                    Beat("Power Beatdown", BeatControl.WrestlerB),
+                    Beat("Clean Victory",  BeatControl.WrestlerB)
+                ]
+            },
+
             new MatchStructure
             {
                 Name        = "TV Formula",
@@ -482,6 +551,15 @@ namespace WrestlingSim.Engine
         /// finish names a side a two-sided match does not have.
         /// </summary>
         public static IEnumerable<MatchStructure> ForShape(int sideCount, int sideSize) =>
-            All.Where(s => s.SideCount == sideCount && s.SideSize == sideSize);
+            ForShape(sideCount, sideSize, sideSize);
+
+        /// <summary>
+        /// The same, for a shape whose sides are different sizes. A handicap structure is
+        /// written against a specific imbalance — a plan for one against two does not work
+        /// for one against three, because how long the lone wrestler can plausibly hold out
+        /// is the whole of the booking.
+        /// </summary>
+        public static IEnumerable<MatchStructure> ForShape(int sideCount, int sizeA, int sizeB) =>
+            All.Where(s => s.SideCount == sideCount && s.SideSize == sizeA && s.SizeB == sizeB);
     }
 }
