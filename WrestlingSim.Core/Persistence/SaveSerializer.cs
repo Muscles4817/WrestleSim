@@ -10,6 +10,8 @@ using WrestlingSim.Models.World;
 // the namespace. Alias them so the code below can read naturally.
 using MatchPlanModel = WrestlingSim.Models.MatchPlan.MatchPlan;
 using SegmentModel = WrestlingSim.Models.Segment.Segment;
+using WrestlingSim.Models.Rumble;
+using RumblePlanModel = WrestlingSim.Models.Rumble.RumblePlan;
 using SegmentActionModel = WrestlingSim.Models.Segment.SegmentAction;
 
 namespace WrestlingSim.Persistence
@@ -273,6 +275,32 @@ namespace WrestlingSim.Persistence
                     BaseImpact     = a.BaseImpact,
                     Label          = a.Label
                 }).ToList()
+            },
+
+            // A battle royal keeps Kind = Match, because that is what it is to a crowd
+            // sitting through the card and the pacing rules read Kind. The sub-object is
+            // what tells the two apart on the way back in.
+            RumblePlanModel r => new CardItemDto
+            {
+                Kind = CardItemKind.Match,
+                Rumble = new RumbleDto
+                {
+                    Field = r.Field.Select(e => new RumbleEntrantDto
+                    {
+                        WrestlerId = e.Wrestler.Id,
+                        Number     = e.Number,
+                        IsSurprise = e.IsSurprise
+                    }).ToList(),
+                    EntryIntervalSeconds = r.EntryIntervalSeconds,
+                    WinnerId = r.Winner?.Id,
+                    Stakes   = r.Stakes,
+                    Moments  = r.Moments.Select(m => new RumbleMomentDto
+                    {
+                        Kind = m.Kind,
+                        Cast = m.Cast.Select(w => w.Id).ToList(),
+                        At   = m.At
+                    }).ToList()
+                }
             },
 
             _ => null
@@ -597,6 +625,45 @@ namespace WrestlingSim.Persistence
             CardItemDto dto, Dictionary<string, Wrestler> byId, FeudBook feudBook,
             TitleRegistry titles, List<TagTeam> teams)
         {
+            // Checked before the match branch, because a rumble is written with
+            // Kind = Match and would otherwise be read back as a match with no sides.
+            if (dto.Rumble is { } rumbleDto)
+            {
+                var field = rumbleDto.Field
+                    .Where(e => byId.ContainsKey(e.WrestlerId))
+                    .Select(e => new RumbleEntrant
+                    {
+                        Wrestler   = byId[e.WrestlerId],
+                        Number     = e.Number,
+                        IsSurprise = e.IsSurprise
+                    })
+                    .ToList();
+
+                // A card naming somebody the roster has lost is dropped whole rather than
+                // rebuilt a wrestler short — the same rule the match branch follows, and for
+                // the same reason: a thirty-strong Rumble quietly becoming a twenty-nine is
+                // a booking the player never made.
+                if (field.Count != rumbleDto.Field.Count) return null;
+                if (rumbleDto.WinnerId is null || !byId.TryGetValue(rumbleDto.WinnerId, out var champ))
+                    return null;
+
+                return new RumblePlanModel
+                {
+                    Field = field,
+                    EntryIntervalSeconds = rumbleDto.EntryIntervalSeconds,
+                    Winner = champ,
+                    Stakes = rumbleDto.Stakes,
+                    Moments = rumbleDto.Moments
+                        .Where(m => m.Cast.All(byId.ContainsKey))
+                        .Select(m => new RumbleMoment
+                        {
+                            Kind = m.Kind,
+                            Cast = m.Cast.Select(id => byId[id]).ToList(),
+                            At   = m.At
+                        }).ToList()
+                };
+            }
+
             if (dto.Kind == CardItemKind.Match)
             {
                 // v3 writes SideA/SideB; a v2 save has one wrestler per side instead.

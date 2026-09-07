@@ -2784,3 +2784,91 @@ term anywhere. No console errors.
   version of this format is the one where the number is a consequence.
 - **What any of it costs.** Same half-finish as the last three: a Rumble win is the biggest
   thing a card can hand somebody and it changes nothing about their career yet.
+
+## A battle royal on a show card
+
+The Rumble shipped reachable from the exhibition menu and nowhere else, which by this
+project's own rule is half a feature. It was worse than the usual half-feature, though, and
+worth writing down because the failure mode was invisible rather than absent:
+
+`ShowSimulator` dispatches card items with a `switch` ending in `_ => 0`. A Rumble added to a
+career card would have **run, scored zero, and dragged the show's rating down with a number
+that meant nothing.** Not a crash, not a blank — a plausible bad show. The fallthrough is worth
+keeping for exactly that reason, but only if somebody notices when a new kind of item starts
+falling through it.
+
+Three seams, and each had to be found rather than assumed.
+
+### The dispatch
+
+`RunRumble` is a sibling of `RunMatch` rather than a wrapper: the two share the shape — run it,
+note it, move standing — and nothing else, because what is being run is graded on moments and
+what is being moved is a whole field's standing rather than two people's.
+
+One deliberate omission: no feud familiarity is read. A battle royal is not a pairing, so there
+is no pairing for the crowd to be sick of. Running the same thirty people again next month is a
+real problem and not one the staleness rule models.
+
+### The status economy, which is genuinely different
+
+`HeatEconomy.ForRumble` is not `ForMatch` with more losers, and the difference is the reason
+bookers reach for this format at all.
+
+**Nobody in a battle royal was beaten.** Twenty-nine people went over the top rope in a
+scramble, and the audience has never treated that as a loss. So going out costs a tenth of what
+being pinned costs — measured, and asserted — because making it cost real standing would break
+the one thing the match is for: **elevating somebody without spending anybody.** It is the
+cheapest rub in wrestling and the engine should say so.
+
+The winner's rub reads the field's *standing*, not its size. Thirty enhancement wrestlers is
+not a bigger night than five main-eventers, and a booker who thinks otherwise is counting
+bodies. Size only scales it, with heavy diminishing returns — ten is most of the way to thirty,
+because past a point nobody is counting.
+
+And a genuine iron-man run pays somebody who did not win. That is the format's second rub and
+a real one: the wrestler who came out early and was still there at the end is made by the match
+whoever won it.
+
+### The save file, where it would have vanished
+
+`SaveSerializer.ToDto` returns null for a card item it does not recognise. A booked Rumble was
+written as nothing and was simply gone when the player came back — silent, and not the kind of
+thing anybody finds out about until the show they booked is missing its main event.
+
+It is a sub-object on `CardItemDto` rather than a new `CardItemKind`, deliberately: the Kind
+drives the show's pacing rules, and a Rumble **is** a match as far as an audience sitting
+through the card is concerned. It needs telling apart when reading a save, not when pacing a
+show. Null on every older save, so an existing file reads back as exactly what it was.
+
+The load path also drops a card naming somebody the roster has lost, rather than rebuilding it
+short — the rule the match branch already follows, and more obviously right here: a
+thirty-strong Rumble quietly becoming a twenty-nine is a booking the player never made.
+
+### And the builder became a component
+
+The screen written last time was a screen. `MatchBuilder` and `SegmentBuilder` are components
+with `OnDone`/`OnCancel`/`ConfirmLabel`, which is exactly how a thing gets booked in two places
+— the sandbox and a card slot. `RumbleBuilder` is that now, and both screens use it.
+
+That is the shape of the original miss: a format that could be *run* but not *booked* is a
+screen where there should have been a component, and it is visible in the file layout before it
+is visible in the game.
+
+Four mutations, all killed: the dispatch forgetting rumbles, going out costing a full loss, the
+rub counting bodies rather than standing, and the save forgetting rumbles.
+
+Browser-verified at 390×844: **+ Add a battle royal** beside the match and segment buttons, an
+eight-strong field at seventeen minutes added to a card, the show run, and the result reading
+*"Roman Reigns wins the 8-wrestler rumble — 3.29★"* with the eliminations listed. No console
+errors.
+
+**718 tests passing.**
+
+### Still not built
+
+- **Entry numbers as something that happens *to* a wrestler.** Drawing number one is a
+  storyline beat; here the booker picks the order outright. The interesting version of this
+  format is the one where the number is a consequence of something else.
+- **What a Rumble win entitles you to.** It moves standing now, which is the general currency,
+  but the thing a Rumble win *is* in wrestling is a title shot at the biggest show of the year
+  — and the calendar has no notion of a booked future match.

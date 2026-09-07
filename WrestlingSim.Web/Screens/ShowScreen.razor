@@ -75,6 +75,47 @@
         </div>
     }
 
+    @* A battle royal reports differently because it is graded differently — no play by
+       play, because there are no beats, and the eliminations and the iron man instead. *@
+    @foreach (var item in result.Items.Where(i => i.RumbleResult is not null))
+    {
+        var rumble = item.RumbleResult!;
+        <div class="panel">
+            <div class="panel__title">@item.Label</div>
+
+            @if (rumble.IronMan is { } iron && rumble.IronManOutlasted > 0 && iron != rumble.Winner)
+            {
+                <div class="notice notice--info">
+                    <strong>@iron.RingName</strong> outlasted @rumble.IronManOutlasted of them
+                    without winning it — the format's other rub, and a real one.
+                </div>
+            }
+
+            <div class="stack">
+                @foreach (var e in rumble.Eliminations)
+                {
+                    <div class="beat-row">
+                        <div class="beat-row__n">@e.Order</div>
+                        <div class="beat-row__body">
+                            <span class="beat-row__name">@e.Wrestler.RingName</span>
+                            <span class="beat-row__sub">
+                                @(e.By is null ? "in the pile-up" : $"by {e.By.RingName}")
+                                · @e.Remaining left
+                            </span>
+                        </div>
+                    </div>
+                }
+                <div class="beat-row is-finish">
+                    <div class="beat-row__n">★</div>
+                    <div class="beat-row__body">
+                        <span class="beat-row__name">@rumble.Winner.RingName</span>
+                        <span class="beat-row__sub">last one standing</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
     <div class="wizard-bar">
         <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Exhibition)">← Main menu</button>
         <span class="wizard-bar__spacer"></span>
@@ -96,6 +137,14 @@ else if (mode == Mode.AddSegment)
         <h1 class="screen__title">Add a Segment</h1>
     </div>
     <SegmentBuilder OnDone="AddSegment" OnCancel="@(() => mode = Mode.Card)" ConfirmLabel="Add to card +" />
+}
+else if (mode == Mode.AddRumble)
+{
+    <div class="screen__head">
+        <div class="screen__eyebrow">Adding to @show.Name</div>
+        <h1 class="screen__title">Add a Battle Royal</h1>
+    </div>
+    <RumbleBuilder OnDone="AddRumble" OnCancel="@(() => mode = Mode.Card)" ConfirmLabel="Add to card +" />
 }
 else
 {
@@ -186,6 +235,7 @@ else
         <div class="row mt">
             <button class="btn" @onclick="() => mode = Mode.AddMatch">+ Add a match</button>
             <button class="btn" @onclick="() => mode = Mode.AddSegment">+ Add a segment</button>
+            <button class="btn" @onclick="() => mode = Mode.AddRumble">+ Add a battle royal</button>
             <span class="spacer"></span>
             <button class="btn btn--primary" disabled="@(show.Card.Count == 0)" @onclick="RunShow">
                 Run the show ★
@@ -215,7 +265,7 @@ else
 }
 
 @code {
-    private enum Mode { Card, AddMatch, AddSegment }
+    private enum Mode { Card, AddMatch, AddSegment, AddRumble }
 
     private Mode mode = Mode.Card;
     private Show show = NewShow();
@@ -236,6 +286,12 @@ else
     private void AddMatch(BookedMatch match)
     {
         show.Card.Add(match);
+        mode = Mode.Card;
+    }
+
+    private void AddRumble(WrestlingSim.Models.Rumble.RumblePlan rumble)
+    {
+        show.Card.Add(rumble);
         mode = Mode.Card;
     }
 

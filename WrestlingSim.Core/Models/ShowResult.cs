@@ -106,6 +106,14 @@ namespace WrestlingSim.Models
         /// <summary>Full engine output when this item was a match.</summary>
         public MatchEngineResult? MatchResult { get; set; }
 
+        /// <summary>
+        /// What a battle royal did, when the item was one. Separate from
+        /// <see cref="MatchResult"/> because the two are graded on different things and
+        /// share no fields worth pretending are the same — a Rumble has no technical score
+        /// and a match has no iron man.
+        /// </summary>
+        public Rumble.RumbleResult? RumbleResult { get; set; }
+
         /// <summary>Full simulator output when this item was a segment.</summary>
         public SegResult? SegmentResult { get; set; }
 

@@ -1,5 +1,6 @@
 using WrestlingSim.Enums;
 using WrestlingSim.Models;
+using WrestlingSim.Models.Rumble;
 
 // ImplicitUsings pulls in System.IO, which also defines a MatchType.
 using MatchType = WrestlingSim.Enums.MatchType;
@@ -309,6 +310,19 @@ namespace WrestlingSim.Persistence
         public string? TitleId { get; set; }
 
         /// <summary>
+        /// Present when this card slot is a battle royal rather than an ordinary match.
+        ///
+        /// A sub-object rather than a new <see cref="CardItemKind"/>, deliberately: the Kind
+        /// drives the show's pacing rules — three matches in a row is a slog — and a Rumble
+        /// *is* a match as far as an audience sitting through the card is concerned. It
+        /// needs to be told apart when reading a save, not when pacing a show.
+        ///
+        /// Null on every save written before this existed, so an older file reads back as
+        /// exactly what it was.
+        /// </summary>
+        public RumbleDto? Rumble { get; set; }
+
+        /// <summary>
         /// Whether the booker declared this the blow-off. Absent from pre-A3 saves, which
         /// read as false — correct, since no save written before A3 could have declared one.
         /// </summary>
@@ -370,4 +384,31 @@ namespace WrestlingSim.Persistence
 
         public List<string> Notes { get; set; } = new();
     }
+
+    /// <summary>A battle royal on a card. Ids, so a wrestler is bound once on load.</summary>
+    public class RumbleDto
+    {
+        /// <summary>The field, in entry order.</summary>
+        public List<RumbleEntrantDto> Field { get; set; } = new();
+
+        public int EntryIntervalSeconds { get; set; } = 90;
+        public string? WinnerId { get; set; }
+        public string? Stakes { get; set; }
+        public List<RumbleMomentDto> Moments { get; set; } = new();
+    }
+
+    public class RumbleEntrantDto
+    {
+        public string WrestlerId { get; set; } = "";
+        public int Number { get; set; } = 1;
+        public bool IsSurprise { get; set; }
+    }
+
+    public class RumbleMomentDto
+    {
+        public RumbleMomentKind Kind { get; set; }
+        public List<string> Cast { get; set; } = new();
+        public double At { get; set; } = 0.5;
+    }
+
 }
