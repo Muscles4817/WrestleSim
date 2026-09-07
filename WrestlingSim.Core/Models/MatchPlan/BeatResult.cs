@@ -112,6 +112,17 @@ namespace WrestlingSim.Models.MatchPlan
         /// </summary>
         public double NearFallJeopardy { get; set; } = 1.0;
 
+        /// <summary>
+        /// What being outnumbered cost the side working this beat, as a multiplier on its
+        /// output. 1.0 on every beat of every even match, and on the larger side's beats in
+        /// a handicap match — only the outnumbered side carries it.
+        ///
+        /// See <see cref="Engine.MatchEngine.NumbersFatigue"/>. Recorded for the same reason
+        /// the near-fall jeopardy is: a rule that can only be seen through a score is a rule
+        /// whose test is measuring twenty other things at the same time.
+        /// </summary>
+        public double NumbersFatigue { get; set; } = 1.0;
+
         // ── Display ──────────────────────────────────────────────────────────
 
         public string BeatLabel => BeatType switch

@@ -42,7 +42,7 @@
             @foreach (var shape in Shapes)
             {
                 var pick = shape;
-                <button class="pick @(sideCount == pick.Sides && sideSize == pick.Size ? "is-selected" : "")"
+                <button class="pick @(sideCount == pick.Sides && SizeOf(0) == pick.Size && SizeOf(1) == pick.SizeB ? "is-selected" : "")"
                         @onclick="() => SetShape(pick)">
                     <span class="pick__body">
                         <span class="pick__name">@pick.Name</span>
@@ -91,7 +91,7 @@
                     <div class="lineup__vs">vs</div>
                 }
                 <div class="lineup__side">
-                    @for (int i = 0; i < sideSize; i++)
+                    @for (int i = 0; i < SizeOf(s); i++)
                     {
                         var lineupSlot = new SlotRef(s, i);
                         @Slot(lineupSlot, SlotLabel(lineupSlot), SlotHolder(lineupSlot))
@@ -590,7 +590,7 @@
     <div class="panel">
         <div class="panel__title">Match structure</div>
         <div class="picks">
-            @foreach (var s in MatchStructureLibrary.ForShape(sideCount, SideSize))
+            @foreach (var s in MatchStructureLibrary.ForShape(sideCount, SizeOf(0), SizeOf(1)))
             {
                 var blocked = s.RequiresFeud && feud is null;
                 <button class="pick @(structureName == s.Name ? "is-selected" : "")"
@@ -850,8 +850,22 @@
     /// </summary>
     private readonly List<List<Wrestler?>> sides = [new(), new(), new(), new()];
 
-    /// <summary>People per side. 1 singles, 2 tag, 3 trios.</summary>
-    private int sideSize = 1;
+    /// <summary>
+    /// People per side — one entry each, because they need not match.
+    ///
+    /// This was a single `sideSize` for the whole match, which is the same shape of
+    /// assumption `SlotRef(bool IsA, …)` was: fine until the format it cannot express turns
+    /// up. A handicap match is two sides of *different* sizes, and one number cannot say
+    /// that, which is exactly why the engine could be taught a numbers term and the builder
+    /// still could not offer one.
+    /// </summary>
+    private readonly int[] sideSizes = [1, 1, 1, 1];
+
+    /// <summary>The size of one side.</summary>
+    private int SizeOf(int side) => sideSizes[Math.Clamp(side, 0, sideSizes.Length - 1)];
+
+    /// <summary>The largest side, for the questions that are about the match rather than a side.</summary>
+    private int sideSize => Enumerable.Range(0, sideCount).Max(SizeOf);
 
     /// <summary>
     /// How many sides. 2 for anything two-sided; 3 or 4 for a multi-man match, which
@@ -859,7 +873,6 @@
     /// </summary>
     private int sideCount = 2;
 
-    private int SideSize => sideSize;
     private bool IsTeamMatch => sideSize > 1;
     private bool IsMultiMan  => sideCount > 2;
 
@@ -875,11 +888,11 @@
     /// caps at the side size.
     /// </summary>
     private bool SidesComplete =>
-        Enumerable.Range(0, sideCount).All(i => Members(i).Count() == sideSize);
+        Enumerable.Range(0, sideCount).All(i => Members(i).Count() == SizeOf(i));
 
     /// <summary>Whoever is actually booked on a side, nulls dropped and capped at its size.</summary>
     private IEnumerable<Wrestler> Members(int side) =>
-        side < sides.Count ? sides[side].Take(sideSize).Where(w => w is not null)! : [];
+        side < sides.Count ? sides[side].Take(SizeOf(side)).Where(w => w is not null)! : [];
 
     private IEnumerable<Wrestler> MembersA => Members(0);
     private IEnumerable<Wrestler> MembersB => Members(1);
@@ -903,7 +916,7 @@
     /// <summary>Every slot in the lineup, in booking order.</summary>
     private IEnumerable<SlotRef> AllSlots =>
         Enumerable.Range(0, sideCount)
-                  .SelectMany(side => Enumerable.Range(0, sideSize)
+                  .SelectMany(side => Enumerable.Range(0, SizeOf(side))
                                                 .Select(i => new SlotRef(side, i)));
 
     /// <summary>What a side is called on screen.</summary>
@@ -912,15 +925,15 @@
     /// <summary>The short label on the slot button itself.</summary>
     private string SlotLabel(SlotRef slot) =>
         slot.IsStarter
-            ? (IsTeamMatch ? $"Side {SideName(slot.Side)} — starts" : $"Corner {SideName(slot.Side)}")
-            : sideSize > 2
+            ? (SizeOf(slot.Side) > 1 ? $"Side {SideName(slot.Side)} — starts" : $"Corner {SideName(slot.Side)}")
+            : SizeOf(slot.Side) > 2
                 ? $"{SideName(slot.Side)}'s partner {slot.Index}"
                 : $"{SideName(slot.Side)}'s partner";
 
     private string SlotTitle(SlotRef slot) =>
         slot.IsStarter
-            ? (IsTeamMatch ? $"Side {SideName(slot.Side)} — who starts" : $"Corner {SideName(slot.Side)}")
-            : sideSize > 2
+            ? (SizeOf(slot.Side) > 1 ? $"Side {SideName(slot.Side)} — who starts" : $"Corner {SideName(slot.Side)}")
+            : SizeOf(slot.Side) > 2
                 ? $"{SideName(slot.Side)}'s partner {slot.Index}"
                 : $"{SideName(slot.Side)}'s partner";
 
@@ -964,7 +977,7 @@
         for (int side = 0; side < sideCount; side++)
         {
             int i = sides[side].IndexOf(w);
-            if (i >= 0 && i < sideSize) return new SlotRef(side, i);
+            if (i >= 0 && i < SizeOf(side)) return new SlotRef(side, i);
         }
         return null;
     }
@@ -981,9 +994,9 @@
 
     private IEnumerable<TeamPanel> TeamPanels()
     {
-        if (MembersA.Count() == sideSize)
+        if (MembersA.Count() == SizeOf(0))
             yield return new TeamPanel(true, "Side A", ExistingTeamA, formTeamA);
-        if (MembersB.Count() == sideSize)
+        if (MembersB.Count() == SizeOf(1))
             yield return new TeamPanel(false, "Side B", ExistingTeamB, formTeamB);
     }
 
@@ -1021,7 +1034,18 @@
     /// side" could not express the second, so the engine could run three-ways and nobody
     /// could book one.
     /// </summary>
-    private readonly record struct MatchShape(string Name, int Sides, int Size, string Blurb);
+    /// <summary>
+    /// A bookable shape: how many sides, how big each is, and what it is for.
+    ///
+    /// `SizeB` defaults to `Size`, so every even shape reads exactly as it did — it exists
+    /// because a handicap match is the one shape whose sides differ, and a single size
+    /// cannot say that. The engine could be taught a numbers term while the builder still
+    /// had no way to express the match it applies to.
+    /// </summary>
+    private readonly record struct MatchShape(string Name, int Sides, int Size, string Blurb, int? SideB = null)
+    {
+        public int SizeB => SideB ?? Size;
+    }
 
     private static readonly MatchShape[] Shapes =
     [
@@ -1029,7 +1053,9 @@
         new("Tag team",        2, 2, "Two a side, with a corner to be kept away from."),
         new("Trios",           2, 3, "Three a side. Three fresh opponents on whoever is cut off, and a fresh partner to finish."),
         new("Triple threat",   3, 1, "Three ways to win, no disqualification. Somebody has to be disposed of, and the fall has to say who took it."),
-        new("Fatal four-way",  4, 1, "Four ways to win. Smoother than a three-way and less dramatic — nobody is the odd one out.")
+        new("Fatal four-way",  4, 1, "Four ways to win. Smoother than a three-way and less dramatic — nobody is the odd one out."),
+        new("Handicap 1 v 2",  2, 1, "Two against one. Almost never a contest — it is a statement, and the statement is about whether the lone wrestler can take it.", SideB: 2),
+        new("Handicap 1 v 3",  2, 1, "Three against one. A squash unless he is given moments; book it short.", SideB: 3)
     ];
 
     private MatchType matchType = MatchType.Standard;
@@ -1048,7 +1074,12 @@
             // this check every tag booking was offered all three vacant singles belts and
             // only found out at the final click, three steps later, that none of them was
             // legal.
-            .Where(t => t.SideSize == SideSize)
+            // Every side has to be able to field the title's size, not just "the" side size
+            // — which is a distinction that only exists once sides can differ. In a handicap
+            // match no side count matches on both sides, so no belt is offered, and that
+            // agrees with `Validate`: a singles title cannot be defended in a match that is
+            // a tag match on one side, and a tag title needs two on both.
+            .Where(t => Enumerable.Range(0, sideCount).All(i => SizeOf(i) == t.SideSize))
             // And the holders have to be *in* it — all of them, not just whoever happens to
             // be listed first or starting.
             .Where(t => t.IsVacant || t.Champions.All(Chosen.Contains))
@@ -1229,7 +1260,7 @@
         get
         {
             for (int i = 0; i < sideCount; i++)
-                if (Members(i).Count() < sideSize) return i;
+                if (Members(i).Count() < SizeOf(i)) return i;
             return null;
         }
     }
@@ -1237,14 +1268,14 @@
     private string? Blocker() => step switch
     {
         0 when FirstEmptySide is { } side
-            => sideSize == 1
+            => SizeOf(side) == 1
                 ? $"Pick corner {SideName(side)}"
                 : Members(side).Any()
-                    ? (sideSize > 2 ? $"Side {SideName(side)} needs two partners"
+                    ? (SizeOf(side) > 2 ? $"Side {SideName(side)} needs two partners"
                                     : $"Pick {SideName(side)}'s partner")
                     : $"Pick who starts for side {SideName(side)}",
-        0 when MembersB.Count() < sideSize
-            => sideSize > 2 ? "Side B needs two partners" : "Pick B's partner",
+        0 when MembersB.Count() < SizeOf(1)
+            => SizeOf(1) > 2 ? "Side B needs two partners" : "Pick B's partner",
         4 when beats.Count == 0 => "A match needs at least one beat",
         _ => null
     };
@@ -1327,10 +1358,10 @@
     /// </summary>
     private void SetShape(MatchShape shape)
     {
-        if (sideCount == shape.Sides && sideSize == shape.Size) return;
+        if (sideCount == shape.Sides && SizeOf(0) == shape.Size && SizeOf(1) == shape.SizeB) return;
 
         sideCount = shape.Sides;
-        sideSize  = shape.Size;
+        for (int i = 0; i < sideSizes.Length; i++) sideSizes[i] = i == 1 ? shape.SizeB : shape.Size;
 
         // Everything downstream is about the people who were in it. Changing the shape
         // changes who they are, so the lineup, the teams and the beat sheet all reset —
@@ -1445,10 +1476,10 @@
         side.IsTag ? State.Career?.TeamFor(side.Members) : null;
 
     private TagTeam? ExistingTeamA =>
-        IsTeamMatch && MembersA.Count() == sideSize ? State.Career?.TeamFor(MembersA) : null;
+        SizeOf(0) > 1 && MembersA.Count() == SizeOf(0) ? State.Career?.TeamFor(MembersA) : null;
 
     private TagTeam? ExistingTeamB =>
-        IsTeamMatch && MembersB.Count() == sideSize ? State.Career?.TeamFor(MembersB) : null;
+        SizeOf(1) > 1 && MembersB.Count() == SizeOf(1) ? State.Career?.TeamFor(MembersB) : null;
 
     private TagTeam FormTeam(MatchSide side, string name)
     {

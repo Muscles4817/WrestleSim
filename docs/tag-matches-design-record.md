@@ -2444,3 +2444,131 @@ comment alongside the real signatures — and I then repeated it into a code com
 request without checking. A number produced by grep is a number about text, not about code;
 this one was wrong by two and nothing downstream depended on it, which is exactly why it
 survived being written down three times.
+
+## Handicap — a format that is not about who wins
+
+Doc 18 §2.5, in full:
+
+> **Handicap.** Two or more against one. Almost never a contest; it is a *statement*, and the
+> statement is usually about the lone man's toughness rather than the outcome.
+
+Two sentences, and the second is a problem before it is a feature: **an engine that grades
+results cannot grade a format whose point is explicitly not the result.** Everything this
+simulator does converges on a score for how well a match was worked and who it sent home
+happy, and doc 18 says that for this one match those are the wrong questions.
+
+So there are two mechanisms rather than one — what the numbers cost the wrestler carrying
+them, and what they earn for carrying them.
+
+### The rule it inherited wrote its own exit condition
+
+The old `Validate` refused uneven sides, and said exactly why:
+
+> The exit condition for this rule is a numbers term in the engine, not a decision that
+> handicap is allowed.
+
+That is a better note than most, because it makes the rule falsifiable — it names what would
+have to be true to lift it, so lifting it is a thing that can be *earned* rather than argued
+for. `NumbersFatigue` is that term. The rule is met, not waived.
+
+(It also claimed a 2v1 could not be saved, because the serializer refused any tag plan. That
+stopped being true when the save format moved to storing `Sides` as id lists. A stale
+justification inside a live rule is worth noticing: the rule was still right, and one of its
+two reasons had quietly expired.)
+
+### What the numbers do
+
+Not a penalty multiplier for being outnumbered. That is a fudge factor with a story attached,
+and it would have been an hour's work and a lie.
+
+What two-on-one actually does is deny you the rest. `FadeFactor` already says a side wears
+down as a match goes long, and its comment already argues the exception — *"tagging out is
+literally how a team resists fatigue, so a fresh partner should hold the match up late"*. A
+lone wrestler has nobody to tag. He works every beat while the pair works half each.
+
+So the numbers arrive as fatigue, in proportion to how much of the work you are doing that
+they are not: against twice your number you carry the wear once over, against three times,
+twice over. It **compounds**, which produces the right advice without anyone writing the
+advice down — a short handicap match is a beating and a long one is a slaughter, so the way to
+book one is to keep it short.
+
+| | at beat 6 | at beat 14 |
+|---|---|---|
+| one against two | 0.833 | 0.400 |
+| one against three | — | 0.160 |
+
+It applies to the **working** side only, which is what makes it a numbers advantage rather than
+a slower match: the lone wrestler's offence weakens as the beating goes on and theirs does not,
+because they have been taking turns. And it is exactly 1.0 whenever the sides are even, so it
+is inert in every match that existed before it — which matters more than it sounds, because
+`MatchEngine.TypicalInvestment` is a *measured median of this roster* and a term that moved
+every match would have moved that too, silently.
+
+### What he earns
+
+`Defiance` is the share of a handicap match the outnumbered side spent fighting rather than
+being beaten up — beats it worked, plus near falls it kicked out of, because being the one who
+kicks out is a moment of toughness even when the other side has control.
+
+Centred at a third rather than a half, deliberately: he is *supposed* to be losing most of it.
+A lone wrestler controlling half the beats against two is not defiant, he is in a match the
+booking forgot was a handicap.
+
+The measure is what the format is graded on, and it is the half that makes doc 18's claim into
+a rule rather than a comment. Two plans, same length, same people, both **lost by the lone
+wrestler** — one with two comebacks in it and one without:
+
+> the valiant loss scored higher in **25/25** seeds, mean gap **6.51 points**
+
+A third of a star, from nothing but whether he ever got a moment. A squash is a bad handicap
+match however cleanly it was worked, because it says nothing, which is the one thing this
+format cannot afford to do.
+
+### One number could not describe two-against-one
+
+The builder had a single `sideSize` for the whole match, and `MatchStructure` a single
+`SideSize`. Neither can express a shape whose sides differ — so the engine could have been
+taught the numbers term and the booker still could not have offered a match to apply it to.
+That is the same shape of assumption as `SlotRef(bool IsA, …)` and `a`/`b`/`partnersA`: fine
+until the format it cannot express turns up.
+
+`sideSizes` is per side now, `MatchStructure.SideSizeB` is the second side when it differs, and
+`ForShape` takes both. Two new shapes (1 v 2, 1 v 3), three presets — Two on One, Beat the
+Odds, Three on One — all short, because being outnumbered compounds.
+
+A side effect worth keeping: the title picker asked `t.SideSize == SideSize`, which has no
+answer when sides differ. It asks whether *every* side can field the title's size now, which is
+both more correct and agrees with `Validate` — no belt is offered in a handicap match, and none
+would have been legal.
+
+### Caught by the tests I did not write
+
+Two of the guards from earlier work fired on this without being asked:
+
+- **The gendered-copy scanner** caught my own preset descriptions — *"He is not winning this…
+  whether he makes them work for it"*. Doc 18 says "the lone man"; the game's copy does not get
+  to. Both rewritten.
+- **Three tests asserted the rule I was deliberately lifting**, which is exactly what they were
+  for. They were rewritten to the new contract rather than deleted — and one of them still
+  refuses its case, for a different reason: uneven sides across *three* sides is still no match,
+  because handicap means two or more against **one** and a 1 v 2 v 3 has no single outnumbered
+  wrestler for the term to be about.
+
+Four mutations, all killed: `NumbersFatigue` returning 1.0, the term landing on both sides,
+defiance measured but not scored, and defiance counting every beat rather than only resistance.
+
+Browser-verified at 390×844: both handicap shapes offered, the lineup rendering one slot
+against two, only the handicap presets shown, and the result reading **"A loss that did its
+job… Roman Reigns made 2 of them work for it"** at 57% defiance. No console errors.
+
+**677 tests passing.**
+
+### Still not built
+
+- **What it should cost, afterwards.** The result screen says a win against the numbers is "a
+  bill somebody pays later", and no bill is actually sent — two people beaten by one should
+  damage them, and enduring a beating should be worth something to the man who took it. That
+  lives in the status and heat systems rather than the match engine, and it is the honest
+  half-finish here: the match models the statement, the career does not yet hear it.
+- **Three or more sides at uneven sizes**, refused rather than modelled, because doc 18
+  describes no such match.

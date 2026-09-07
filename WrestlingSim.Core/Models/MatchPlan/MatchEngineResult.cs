@@ -60,6 +60,17 @@ namespace WrestlingSim.Models.MatchPlan
         /// </summary>
         public double EliminationPacing { get; init; } = 1.0;
 
+        /// <summary>
+        /// In a handicap match, how much of it the outnumbered side spent fighting rather
+        /// than being beaten up, 0–1. Zero in every other match.
+        ///
+        /// The measure the format is actually graded on, because doc 18 §2.5 says the
+        /// statement is about the lone wrestler's toughness rather than the outcome — so a
+        /// valiant loss reads well here and a squash reads badly, which is the right way
+        /// round and not something the winner can tell you.
+        /// </summary>
+        public double Defiance { get; init; }
+
         // Accumulated scores (raw, pre-normalisation)
         public double TechnicalScore     { get; init; }
         public double StorytellingScore  { get; init; }
@@ -195,6 +206,9 @@ namespace WrestlingSim.Models.MatchPlan
         /// <summary>What the spacing of the eliminations was worth. Zero in every other match.</summary>
         public double PacingNudge    { get; init; }
 
+        /// <summary>What the lone wrestler's resistance was worth. Zero outside a handicap match.</summary>
+        public double DefianceNudge  { get; init; }
+
         /// <summary>What investment was worth, in points of the final score.</summary>
         public double InvestmentPoints => Crowd - CrowdBeforeInvestment;
 
@@ -208,7 +222,8 @@ namespace WrestlingSim.Models.MatchPlan
                 ("Finish",       FinishNudge),
                 ("Variety",      VarietyNudge),
                 ("Match type",   CoherenceNudge),
-                ("Fall spacing", PacingNudge)
+                ("Fall spacing", PacingNudge),
+                ("Defiance",     DefianceNudge)
             }
             .Where(x => Math.Abs(x.Item2) > 0.005)
             .OrderByDescending(x => Math.Abs(x.Item2));

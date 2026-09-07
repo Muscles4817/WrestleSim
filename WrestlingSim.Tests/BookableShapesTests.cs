@@ -21,16 +21,26 @@ namespace WrestlingSim.Tests
     {
         private static Wrestler W(string n) => TestRoster.Make(n, overness: 70);
 
-        /// <summary>The shapes the builder's step 0 offers, as (sides, a side).</summary>
-        public static TheoryData<int, int> Shapes => new() { { 2, 1 }, { 2, 2 }, { 2, 3 }, { 3, 1 }, { 4, 1 } };
+        /// <summary>
+        /// The shapes the builder's step 0 offers, as (sides, size of A, size of B).
+        ///
+        /// Three numbers rather than two, because handicap is the shape whose sides differ
+        /// — and this data being one number short is precisely how the builder came to be
+        /// unable to express a match the engine could run.
+        /// </summary>
+        public static TheoryData<int, int, int> Shapes => new()
+        {
+            { 2, 1, 1 }, { 2, 2, 2 }, { 2, 3, 3 }, { 3, 1, 1 }, { 4, 1, 1 },
+            { 2, 1, 2 }, { 2, 1, 3 }
+        };
 
         [Theory]
         [MemberData(nameof(Shapes))]
-        public void EveryShapeTheBuilderOffers_HasAPresetThatValidates(int sideCount, int sideSize)
+        public void EveryShapeTheBuilderOffers_HasAPresetThatValidates(int sideCount, int sideSize, int sizeB)
         {
-            var structures = MatchStructureLibrary.ForShape(sideCount, sideSize).ToList();
+            var structures = MatchStructureLibrary.ForShape(sideCount, sideSize, sizeB).ToList();
 
-            output.WriteLine($"  {sideCount} sides × {sideSize}: " +
+            output.WriteLine($"  {sideCount} sides, {sideSize} v {sizeB}: " +
                              (structures.Count == 0 ? "NO PRESETS"
                                                     : string.Join(", ", structures.Select(s => s.Name))));
 
@@ -38,7 +48,7 @@ namespace WrestlingSim.Tests
 
             foreach (var structure in structures)
             {
-                var plan = Build(sideCount, sideSize, structure);
+                var plan = Build(sideCount, sideSize, structure, sizeB);
                 var errors = plan.Validate();
                 if (errors.Count > 0)
                     output.WriteLine($"    {structure.Name}: {string.Join(" | ", errors)}");
@@ -50,11 +60,11 @@ namespace WrestlingSim.Tests
         /// <summary>And each one runs, producing the winner and the pinned side it booked.</summary>
         [Theory]
         [MemberData(nameof(Shapes))]
-        public void EveryPreset_RunsAndProducesTheBookedResult(int sideCount, int sideSize)
+        public void EveryPreset_RunsAndProducesTheBookedResult(int sideCount, int sideSize, int sizeB)
         {
-            foreach (var structure in MatchStructureLibrary.ForShape(sideCount, sideSize))
+            foreach (var structure in MatchStructureLibrary.ForShape(sideCount, sideSize, sizeB))
             {
-                var plan = Build(sideCount, sideSize, structure);
+                var plan = Build(sideCount, sideSize, structure, sizeB);
                 var r = new MatchEngine(20260906).Execute(plan);
 
                 output.WriteLine($"  {structure.Name,-22} {r.Winner!.RingName} beat " +
@@ -103,12 +113,15 @@ namespace WrestlingSim.Tests
                              $"{s.Name} books a {beat.Type} in a match with no disqualification.");
         }
 
-        private static MatchPlanModel Build(int sideCount, int sideSize, MatchStructure structure)
+        private static MatchPlanModel Build(int sideCount, int sideSize, MatchStructure structure,
+                                            int sizeB = 0)
         {
+            int SizeOf(int side) => side == 1 && sizeB > 0 ? sizeB : sideSize;
+
             var plan = new MatchPlanModel
             {
                 Sides = Enumerable.Range(0, sideCount)
-                    .Select(side => MatchSide.Of(Enumerable.Range(0, sideSize)
+                    .Select(side => MatchSide.Of(Enumerable.Range(0, SizeOf(side))
                         .Select(i => W($"{(char)('A' + side)}{i + 1}")).ToArray()))
                     .ToList(),
                 Beats = structure.Beats.Select(b => b.Clone()).ToList()
@@ -130,10 +143,10 @@ namespace WrestlingSim.Tests
         /// </summary>
         [Theory]
         [MemberData(nameof(Shapes))]
-        public void AMatchIsBilledWithEverybodyInIt(int sideCount, int sideSize)
+        public void AMatchIsBilledWithEverybodyInIt(int sideCount, int sideSize, int sizeB)
         {
-            var structure = MatchStructureLibrary.ForShape(sideCount, sideSize).First();
-            var booked = new BookedMatch { Plan = Build(sideCount, sideSize, structure) };
+            var structure = MatchStructureLibrary.ForShape(sideCount, sideSize, sizeB).First();
+            var booked = new BookedMatch { Plan = Build(sideCount, sideSize, structure, sizeB) };
 
             output.WriteLine($"  {sideCount}×{sideSize}: {booked.Name}");
 

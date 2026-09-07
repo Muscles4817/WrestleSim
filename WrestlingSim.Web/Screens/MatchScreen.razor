@@ -57,6 +57,51 @@ else
         }
     </div>
 
+    @* ── What the handicap match was for ──────────────────────────────────
+       Doc 18 §2.5: "almost never a contest; it is a *statement*, and the statement is
+       usually about the lone wrestler's toughness rather than the outcome". So the result
+       screen has to report the statement, or it reports the one thing the format says is
+       not the point. *@
+    @if (booked.Plan.Numbers is { } numbers)
+    {
+        <div class="panel">
+            <div class="panel__title">Against the numbers</div>
+            <div class="stack">
+                <Meter Label="@($"{string.Join(" & ", numbers.Outnumbered.Members.Select(w => w.RingName))} — defiance")"
+                       Value="@(result.Defiance * 100)" Max="100"
+                       Variant="@(result.Defiance < 0.2 ? "heel" : "gold")" />
+            </div>
+
+            @if (result.Defiance < 0.2)
+            {
+                <div class="notice notice--warn mt">
+                    <strong>That was a squash, not a statement.</strong>
+                    @(string.Join(" & ", numbers.Outnumbered.Members.Select(w => w.RingName)))
+                    never had a moment in it. A handicap match is booked to say something
+                    about whether somebody can take a beating — book comebacks and kickouts,
+                    or book a different match.
+                </div>
+            }
+            else if (result.Winner is { } w && numbers.Outnumbered.Members.Contains(w))
+            {
+                <div class="notice notice--info mt">
+                    <strong>They beat the odds.</strong> Which costs the other
+                    @(numbers.Larger.Size) more than it gives @w.RingName — two people beaten
+                    by one is a bill somebody pays later.
+                </div>
+            }
+            else
+            {
+                <div class="notice notice--info mt">
+                    <strong>A loss that did its job.</strong> The statement was never the
+                    result — it was that
+                    @(string.Join(" & ", numbers.Outnumbered.Members.Select(x => x.RingName)))
+                    made @(numbers.Larger.Size) of them work for it.
+                </div>
+            }
+        </div>
+    }
+
     @* ── The order of eliminations ────────────────────────────────────────
        Doc 18 §2.5 puts the drama of this format in the order rather than the fall, so a
        result screen that reported only the winner would be showing the least interesting

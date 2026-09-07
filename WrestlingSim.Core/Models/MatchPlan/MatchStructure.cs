@@ -31,6 +31,19 @@ namespace WrestlingSim.Models.MatchPlan
         /// </summary>
         public int SideCount { get; init; } = 2;
 
+        /// <summary>
+        /// How big the *second* side is, when it differs. Null means "the same as
+        /// <see cref="SideSize"/>", which is every structure but a handicap one.
+        ///
+        /// A handicap match is the only shape whose sides are different sizes, so it is the
+        /// only thing that needs this — and it needs it for the same reason the builder did:
+        /// one number cannot describe two-against-one.
+        /// </summary>
+        public int? SideSizeB { get; init; }
+
+        /// <summary>The second side's size, resolved.</summary>
+        public int SizeB => SideSizeB ?? SideSize;
+
         /// <summary>Tags for filtering (e.g. "Technical", "Brawl", "Feud").</summary>
         public IReadOnlyList<string> Tags { get; init; } = [];
 
