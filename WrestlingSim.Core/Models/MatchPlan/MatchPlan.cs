@@ -245,6 +245,68 @@ namespace WrestlingSim.Models.MatchPlan
                     "engine has no model for a numbers advantage yet, so a handicap match " +
                     "would be graded as a normal one.");
 
+                // ── Elimination (doc 18 §2.5) ────────────────────────────────
+                //
+                // Simulated in booking order, because every rule here is about *when*: a
+                // side can be eliminated once, cannot work a beat afterwards, and cannot be
+                // the target of one. The engine keeps the same running set at run time; this
+                // is the same walk done ahead of it so the player is told rather than the
+                // play-by-play going strange.
+                if (Beats.Any(b => b.IsElimination))
+                {
+                    var out_ = new HashSet<int>();
+
+                    foreach (var (beat, i) in Beats.Select((b, i) => (b, i)))
+                    {
+                        if (SideIndex(beat.Control) is { } ci && out_.Contains(ci))
+                            errors.Add($"Beat {i + 1} is booked for a side that has already " +
+                                       "been eliminated.");
+
+                        if (beat.Against is { } tgt && SideIndex(tgt) is { } ti && out_.Contains(ti))
+                            errors.Add($"Beat {i + 1} is aimed at a side that has already " +
+                                       "been eliminated.");
+
+                        if (!beat.IsElimination) continue;
+
+                        if (beat.Against is not { } against)
+                        {
+                            errors.Add($"Beat {i + 1} is an elimination and has to say who " +
+                                       "goes out.");
+                            continue;
+                        }
+
+                        if (SideIndex(against) is not { } ai || ai >= Sides.Count)
+                        {
+                            errors.Add($"Beat {i + 1} eliminates somebody who is not in " +
+                                       "this match.");
+                            continue;
+                        }
+
+                        if (SideIndex(beat.Control) == ai)
+                            errors.Add($"Beat {i + 1} has a side eliminating itself.");
+
+                        out_.Add(ai);
+                    }
+
+                    // The format's one structural promise: it runs until one is left. A plan
+                    // that eliminates one of four and then books a finish has not had an
+                    // elimination match, it has had a four-way with a spare beat in it — and
+                    // the two are graded differently, so the difference has to be real.
+                    var finishBeat = Beats.LastOrDefault(b => b.IsFinish);
+                    if (finishBeat?.Against is { } fin && SideIndex(fin) is { } fi)
+                        out_.Add(fi);
+
+                    if (out_.Count != Sides.Count - 1)
+                        errors.Add($"An elimination match runs until one side is left: " +
+                                   $"{Sides.Count} sides needs {Sides.Count - 1} of them out, " +
+                                   $"and this plan takes out {out_.Count}.");
+
+                    if (finishBeat is not null
+                        && SideIndex(finishBeat.Control) is { } wi && out_.Contains(wi)
+                        && !(finishBeat.Against is { } fa && SideIndex(fa) == wi))
+                        errors.Add("The side booked to win has already been eliminated.");
+                }
+
             // And the mirror of it for the other direction. A pin break with nobody left to
             // break the pin is not a beat with a missing target, it is a beat about a
             // situation the match cannot be in.

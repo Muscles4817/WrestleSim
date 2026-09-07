@@ -262,9 +262,15 @@
             @if (IsMultiMan)
             {
                 <div class="field mt">
-                    <span class="field__label">@(edit.IsFinish ? "Who takes the fall" : "Who it is against")</span>
+                    <span class="field__label">
+                        @(edit.IsFinish ? "Who takes the fall"
+                          : edit.IsElimination ? "Who goes out"
+                          : "Who it is against")
+                    </span>
                     <div class="chips">
-                        @if (!edit.IsFinish)
+                        @* An elimination has to name somebody, same as a finish: "whoever is
+                           standing goes out" is not a booking, and Validate refuses it. *@
+                        @if (!edit.IsFinish && !edit.IsElimination)
                         {
                             <button class="chip @(edit.Against is null ? "is-active" : "")"
                                     @onclick="() => { edit.Against = null; }">Whoever is standing</button>
@@ -280,6 +286,10 @@
                         @if (edit.IsFinish)
                         {
                             @("The one who loses the fall, which need not be the one who loses the belt. That is the reason to book this match.")
+                        }
+                        else if (edit.IsElimination)
+                        {
+                            @("Out of the match for good. Leave work between the falls — the order is the story, and three in a row is a scramble.")
                         }
                         else
                         {

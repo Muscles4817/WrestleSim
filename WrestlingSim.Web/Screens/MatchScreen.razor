@@ -57,6 +57,48 @@ else
         }
     </div>
 
+    @* ── The order of eliminations ────────────────────────────────────────
+       Doc 18 §2.5 puts the drama of this format in the order rather than the fall, so a
+       result screen that reported only the winner would be showing the least interesting
+       thing about the match it just ran. Read top to bottom it is the field thinning. *@
+    @if (result.Eliminations.Count > 0)
+    {
+        <div class="panel">
+            <div class="panel__title">Eliminations</div>
+            <div class="stack">
+                @foreach (var gone in result.Eliminations)
+                {
+                    <div class="beat-row">
+                        <div class="beat-row__n">@gone.Order</div>
+                        <div class="beat-row__body">
+                            <span class="beat-row__name">@gone.Wrestler.RingName</span>
+                            <span class="beat-row__sub">
+                                eliminated by @gone.By.RingName ·
+                                @(gone.Remaining == 1 ? "wins it" : $"{gone.Remaining} left")
+                            </span>
+                        </div>
+                    </div>
+                }
+                <div class="beat-row is-finish">
+                    <div class="beat-row__n">★</div>
+                    <div class="beat-row__body">
+                        <span class="beat-row__name">@result.Winner.RingName</span>
+                        <span class="beat-row__sub">last one standing</span>
+                    </div>
+                </div>
+            </div>
+
+            @if (result.EliminationPacing < 0.65)
+            {
+                <div class="notice notice--warn mt">
+                    <strong>The falls came too close together.</strong> The order is what an
+                    elimination match has instead of a single dramatic fall, and it only reads
+                    as an order if there is work between the falls. Spread them out.
+                </div>
+            }
+        </div>
+    }
+
     <FeudUpdates Updates="@feudUpdates" />
 
     <div class="panel">

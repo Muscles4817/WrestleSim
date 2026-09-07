@@ -123,6 +123,21 @@ namespace WrestlingSim.Enums
         /// </summary>
         MutualDestruction,
 
+        /// <summary>
+        /// A fall that removes somebody from the match instead of ending it.
+        ///
+        /// Doc 18 §2.5: elimination "solves the third-man problem by construction, which is
+        /// why it scales where a four-way does not" — you cannot ask where the fourth man
+        /// went once he has been pinned and sent to the back. What it costs is the thing a
+        /// three-way's whole tension rests on, that any fall could be the last, and what it
+        /// buys instead is the order: "the drama moves from the fall to the *order* of
+        /// eliminations".
+        ///
+        /// So this beat is not a finish. It is worked, it takes somebody out, and the match
+        /// carries on with fewer people in it.
+        /// </summary>
+        Elimination,
+
         // Finishes
         FinishClean,
         FinishRollup,

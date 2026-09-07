@@ -211,6 +211,63 @@ namespace WrestlingSim.Engine
             DisposedUntilBeat = BeatIndex + beats;
         }
 
+        // ── Elimination (doc 18 §2.5) ────────────────────────────────────────
+
+        private readonly List<(int Side, int Beat)> _eliminations = new();
+
+        /// <summary>
+        /// The sides that have been eliminated, in the order they went out.
+        ///
+        /// The order, not the set, because doc 18 §2.5 is explicit that in an elimination
+        /// match "the drama moves from the fall to the *order* of eliminations". A set would
+        /// answer who won and lose the entire story — which of the favourites went first,
+        /// who outlasted whom, whether the winner had to go through everybody or inherited
+        /// a ring somebody else emptied.
+        /// </summary>
+        public IReadOnlyList<int> EliminationOrder =>
+            _eliminations.Select(e => e.Side).ToList();
+
+        /// <summary>The beat each elimination landed on, in the same order.</summary>
+        public IReadOnlyList<int> EliminationBeats =>
+            _eliminations.Select(e => e.Beat).ToList();
+
+        /// <summary>
+        /// Whether this side is out of the match for good.
+        ///
+        /// Distinct from <see cref="DisposedSide"/>, and the distinction is the point:
+        /// disposal is a window somebody comes back from and elimination is not. A
+        /// disposed man is expected back and the commentary should be asking where he is;
+        /// an eliminated man is gone and mentioning him is a mistake.
+        /// </summary>
+        public bool IsEliminated(int sideIndex) => _eliminations.Any(e => e.Side == sideIndex);
+
+        /// <summary>True once anybody has been eliminated — this is an elimination match.</summary>
+        public bool AnybodyEliminated => _eliminations.Count > 0;
+
+        /// <summary>How many eliminations have happened.</summary>
+        public int EliminationCount => _eliminations.Count;
+
+        /// <summary>
+        /// Records an elimination. Idempotent per side, because a plan that eliminates the
+        /// same side twice is refused by <see cref="Models.MatchPlan.MatchPlan.Validate"/>
+        /// and the engine should not be the thing that notices second.
+        /// </summary>
+        public void Eliminate(int sideIndex)
+        {
+            if (IsEliminated(sideIndex)) return;
+            _eliminations.Add((sideIndex, BeatIndex));
+
+            // Somebody who has just been eliminated is not also lying on the floor waiting
+            // to come back. Leaving the window open would have the disposal filter hiding a
+            // side that is already gone, and free the *next* beat to be aimed at somebody
+            // who left the match.
+            if (DisposedSide == sideIndex)
+            {
+                DisposedSide      = null;
+                DisposedUntilBeat = -1;
+            }
+        }
+
         /// <summary>Total near falls executed so far; drives near-fall specific commentary.</summary>
         public int NearFallCount => TimesUsed(BeatType.NearFall);
 

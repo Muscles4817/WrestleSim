@@ -113,7 +113,18 @@ namespace WrestlingSim.Models.MatchPlan
         /// </summary>
         public bool IsMultiManBeat => Type is
             BeatType.DisposalSpot or BeatType.PinBreak or BeatType.SpiteBreak or
-            BeatType.IgnoredOpportunity or BeatType.MutualDestruction;
+            BeatType.IgnoredOpportunity or BeatType.MutualDestruction or
+            BeatType.Elimination;
+
+        /// <summary>
+        /// A fall that takes somebody out without ending the match.
+        ///
+        /// Deliberately not folded into <see cref="IsFinish"/>. A finish is the last beat
+        /// and closes the plan; this one is worked mid-match and the plan continues, so
+        /// every rule keyed off "is this the end" — ordering, the one-finish check, the
+        /// blow-off payoff — has to keep saying no to it.
+        /// </summary>
+        public bool IsElimination => Type == BeatType.Elimination;
 
         /// <summary>
         /// Independent copy. Structures in MatchStructureLibrary are static singletons,

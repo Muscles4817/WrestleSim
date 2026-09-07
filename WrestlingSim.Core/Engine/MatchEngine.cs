@@ -12,6 +12,10 @@ namespace WrestlingSim.Engine
         /// <summary>Grudge moments this execution produced; see <see cref="GrudgeMoment"/>.</summary>
         private readonly List<GrudgeMoment> _grudges = new();
 
+        // Collected here rather than in MatchEngineState for the same reason as the grudges:
+        // the state deals in side indices, and the result has to name people.
+        private readonly List<EliminatedSide> _eliminations = new();
+
         // Scale constants for the saturating normalisation of each raw accumulator.
         // A raw score equal to the scale reads as ~0.63 of the component; twice the
         // scale reads as ~0.86. Nothing ever reaches 1.0, so piling on beats has a
@@ -222,6 +226,15 @@ namespace WrestlingSim.Engine
             };
         }
 
+        /// <summary>
+        /// What a near fall keeps when a third party is upright and free to break it.
+        ///
+        /// `multiMan` here means "more than two sides *still in*", not "the plan has more
+        /// than two sides" — see <see cref="Ctx.MultiManNow"/>. An elimination match that is
+        /// down to two has nobody left to break a cover, so its near falls are worth full
+        /// price, and that is the entire narrative payoff of the format: the crowd starts
+        /// believing counts again the moment the field is thin enough.
+        /// </summary>
         public static double MultiManNearFallFactor(bool multiMan, bool somebodyDisposed) =>
             multiMan && !somebodyDisposed ? CrowdedOutNearFall : 1.0;
 
@@ -269,13 +282,33 @@ namespace WrestlingSim.Engine
             public double Familiarity { get; init; } = 1.0;
 
             /// <summary>
-            /// The most connected performer in the match — whoever the room came for. Used
-            /// only by <see cref="AttentionShare"/>, and only when there are more than two
-            /// sides.
+            /// The most connected performer *still in the match* — whoever the room came
+            /// for. Used only by <see cref="AttentionShare"/>, and only while more than two
+            /// sides are left.
+            ///
+            /// Still in, because the alternative measures every remaining sequence against
+            /// somebody who has gone to the back: eliminate the biggest name first and the
+            /// survivors work the rest of the match at a permanent discount, in a match that
+            /// is now entirely theirs.
+            ///
+            /// It shows up in the crowd *reaction* vector, not in CrowdEnergyDelta — this
+            /// feeds `RecordReaction`, which runs after the energy is computed. Over
+            /// twenty-five seeds, with the field and the beats held identical and only the
+            /// identity of the eliminated wrestler changed, it is worth 0.32 investment
+            /// against 0.22.
             /// </summary>
-            public double TopConnection => Profiles.Count == 0
-                ? 0.0
-                : Profiles.Values.Max(p => p.Connection);
+            public double TopConnection
+            {
+                get
+                {
+                    double top = 0.0;
+                    foreach (var side in Remaining)
+                        foreach (var w in side.Members)
+                            if (Profiles.TryGetValue(w, out var p) && p.Connection > top)
+                                top = p.Connection;
+                    return top;
+                }
+            }
 
             /// <summary>Whoever is legal for side A right now.</summary>
             public Wrestler LegalA => Plan.SideA.Members[State.LegalA];
@@ -359,24 +392,64 @@ namespace WrestlingSim.Engine
             /// </summary>
             public MatchSide OtherSide(MatchSide? mine)
             {
+                // A booked target is honoured — unless it has been eliminated, which the
+                // booking cannot do and the plan is refused for, so this only catches a plan
+                // built in code. An eliminated side is *gone*: naming it is not a wrong
+                // emphasis, it is a wrestler who left through the curtain two beats ago.
                 if (CurrentBeat is { } beat
                     && Models.MatchPlan.MatchPlan.SideIndex(beat.Against ?? BeatControl.Even) is { } i
-                    && i < Plan.Sides.Count && Plan.Sides[i] != mine)
+                    && i < Plan.Sides.Count && Plan.Sides[i] != mine
+                    && !State.IsEliminated(i))
                     return Plan.Sides[i];
 
-                var upright = Plan.Sides
-                    .Where(side => side != mine)
+                var candidates = Remaining.Where(side => side != mine).ToList();
+
+                var upright = candidates
                     .Where(side => !State.SomebodyIsDisposed
                                    || Plan.Sides.IndexOf(side) != State.DisposedSide)
                     .ToList();
 
+                // Disposal is a window and elimination is not, so the two filters fall back
+                // differently: a beat with nobody upright left to aim at settles for
+                // somebody who is down, and a beat with nobody *remaining* has run out of
+                // match. The last fallback is unreachable from a validated plan and exists
+                // so a bad one gets a wrong name rather than an exception.
+                var pool = upright.Count > 0 ? upright
+                         : candidates.Count > 0 ? candidates
+                         : Plan.Sides.Where(side => side != mine).ToList();
+
                 // Math.Max because BeatIndex is -1 before RegisterBeat has run, and C# gives
                 // -1 % 2 == -1 rather than 1. Callers are meant to be inside a registered
                 // beat; an index out of range is a crash, which is worse than a wrong name.
-                return upright.Count > 0
-                    ? upright[Math.Max(0, State.BeatIndex) % upright.Count]
-                    : Plan.Sides.FirstOrDefault(side => side != mine) ?? Plan.SideB;
+                return pool.Count > 0
+                    ? pool[Math.Max(0, State.BeatIndex) % pool.Count]
+                    : Plan.SideB;
             }
+
+            /// <summary>
+            /// The sides still in the match, in side order.
+            ///
+            /// One notion of "still in", because this filter has now been wanted in four
+            /// places and each independent copy of a side predicate in this engine has been
+            /// wrong at least once.
+            /// </summary>
+            public IReadOnlyList<MatchSide> Remaining =>
+                Plan.Sides.Where((_, i) => !State.IsEliminated(i)).ToList();
+
+            /// <summary>
+            /// Whether this is a multi-man match *right now* — more than two sides still in.
+            ///
+            /// Distinct from <see cref="Models.MatchPlan.MatchPlan.IsMultiMan"/>, which is a
+            /// fact about the plan and stays true for the whole of an elimination match. The
+            /// two rules that ask "is the room split" and "can this cover be broken" are
+            /// asking about the ring, and a three-way that is down to two is not split and
+            /// has nobody left to break anything.
+            ///
+            /// The *structural* uses stay on the plan: `Opponent` and `LegalDefault` take
+            /// their two-sided shortcuts through `SideA`/`SideB` by index, which would name
+            /// an eliminated wrestler the moment the survivors are sides A and C.
+            /// </summary>
+            public bool MultiManNow => Remaining.Count > 2;
 
             /// <summary>
             /// Who a beat that named nobody is worked by.
@@ -394,13 +467,16 @@ namespace WrestlingSim.Engine
             {
                 get
                 {
-                    if (!Plan.IsMultiMan || !State.SomebodyIsDisposed) return LegalA;
+                    if (!Plan.IsMultiMan) return LegalA;
+                    if (!State.SomebodyIsDisposed && !State.AnybodyEliminated) return LegalA;
 
-                    var upright = Plan.Sides
+                    var upright = Remaining
                         .Where(side => Plan.Sides.IndexOf(side) != State.DisposedSide)
                         .ToList();
 
-                    return LegalOf(upright.Count > 0 ? upright[0] : Plan.SideA);
+                    return LegalOf(upright.Count > 0 ? upright[0]
+                                 : Remaining.Count > 0 ? Remaining[0]
+                                 : Plan.SideA);
                 }
             }
 
@@ -424,13 +500,14 @@ namespace WrestlingSim.Engine
             {
                 get
                 {
-                    if (!State.SomebodyIsDisposed) return Plan.Sides.Select(LegalOf).ToList();
+                    var remaining = Remaining;
+                    if (!State.SomebodyIsDisposed) return remaining.Select(LegalOf).ToList();
 
-                    var upright = Plan.Sides
+                    var upright = remaining
                         .Where(side => Plan.Sides.IndexOf(side) != State.DisposedSide)
                         .ToList();
 
-                    return (upright.Count >= 2 ? upright : Plan.Sides).Select(LegalOf).ToList();
+                    return (upright.Count >= 2 ? upright : remaining).Select(LegalOf).ToList();
                 }
             }
 
@@ -837,6 +914,10 @@ namespace WrestlingSim.Engine
                     ApplyMutualDestruction(result, beat, ctx, control, iMod, dMod);
                     break;
 
+                case BeatType.Elimination:
+                    ApplyElimination(result, beat, ctx, control, iMod, dMod);
+                    break;
+
                 case BeatType.HighSpot:
                     ApplyHighSpot(result, beat, ctx, control, iMod);
                     break;
@@ -971,7 +1052,7 @@ namespace WrestlingSim.Engine
             // And in a multi-man match, how much of the room this beat has at all. The
             // share the beat does not hold does not vanish — it lands in the same place any
             // unheld attention lands, which is silence.
-            connection *= AttentionShare(connection, ctx.TopConnection, ctx.Plan.IsMultiMan);
+            connection *= AttentionShare(connection, ctx.TopConnection, ctx.MultiManNow);
 
             double attention = Math.Clamp((connection - 0.32) / 0.80, 0, 1);
 
@@ -1130,6 +1211,106 @@ namespace WrestlingSim.Engine
                 $"{control.RingName} sends {victim.RingName} through the timekeeper's area — and that is one of them dealt with!",
                 $"{victim.RingName} is dumped to the floor and stays there. {control.RingName} has bought some room.",
                 $"{control.RingName} puts {victim.RingName} down hard on the outside — for now, this is one on one."));
+        }
+
+        /// <summary>
+        /// A fall that takes somebody out and leaves the match running.
+        ///
+        /// The beat pays more than a near fall and less than a finish, which is the whole
+        /// shape of the format: something real just happened and the match is not over. Doc
+        /// 18 §2.5 calls elimination the thing that "solves the third-man problem by
+        /// construction" — nobody has to ask where the fourth man went once he has been
+        /// pinned — and says the drama moves to the *order*, which is why what this records
+        /// matters as much as what it scores.
+        ///
+        /// The last elimination before the finish is the loudest, because it is the one that
+        /// sets the final pairing, and the crowd knows what a two-man ring means.
+        /// </summary>
+        private void ApplyElimination(BeatResult r, MatchBeat beat, Ctx ctx,
+            Wrestler? control, double iMod, double dMod)
+        {
+            control ??= ctx.LegalDefault;
+            var target = TargetOf(beat, ctx, control);
+            var victim = ctx.LegalOf(target);
+            var state  = ctx.State;
+
+            state.Eliminate(ctx.Plan.Sides.IndexOf(target));
+
+            int left = ctx.Remaining.Count;
+
+            _eliminations.Add(new EliminatedSide
+            {
+                Wrestler  = victim,
+                By        = control,
+                Order     = state.EliminationCount,
+                Remaining = left
+            });
+
+            // Down to two is the loudest one: it is not another fall, it is the moment the
+            // match becomes the singles match everybody has been waiting for.
+            double weight = left <= 2 ? 1.35 : 1.0;
+
+            r.CrowdEnergyDelta = Rng(11, 19) * iMod * weight
+                                 * PerformerProfile.Blend(ctx.For(victim).Connection, 0.55);
+            r.AdvantageDelta = ControlSign(ctx, control) * Rng(6, 13) * iMod;
+            r.TechnicalContribution = 3.0 * iMod;
+            r.StorytellingContribution = 6.0 * dMod * weight;
+
+            r.Commentary.Add(Pick(
+                $"{control.RingName} pins {victim.RingName} — and {victim.RingName} is GONE!",
+                $"That is it for {victim.RingName}! {control.RingName} takes them out of this match!",
+                $"{victim.RingName} has been eliminated — {control.RingName} did it!"));
+
+            // The count is the story in this format, so it is said out loud rather than left
+            // for the viewer to keep in their head.
+            r.Commentary.Add(left <= 2
+                ? $"And then there were two. {Billing(ctx.AllLegal.Select(w => w.RingName))} — one of them wins this."
+                : $"{left} left in this match.");
+        }
+
+        /// <summary>
+        /// How well the falls in an elimination match are spaced.
+        ///
+        /// Doc 18 §2.5 puts the drama in the *order* of eliminations, and the failure that
+        /// wrecks the order is falls landing on top of each other: three eliminations in
+        /// four minutes is a scramble, and nobody remembers who went second. What makes it a
+        /// story is work between the falls, so that each one is a thing the match arrived at
+        /// rather than a thing that happened while you were reading the last one.
+        ///
+        /// Measured as the smallest gap against the gap an evenly-spaced match would have.
+        /// The minimum rather than the mean deliberately: one bunched pair spoils the run,
+        /// and averaging lets a long stretch of work pay for two falls back to back.
+        ///
+        /// 1.0 is even or better; 0.0 is falls with nothing at all between them. Returns 1.0
+        /// for a match with no eliminations in it, which has no pacing to get wrong.
+        ///
+        /// A dead-even match only reaches exactly 1.0 when the fall count divides the beat
+        /// count — ten beats and three falls cannot be split evenly, so the best a booker
+        /// can do there is 0.9. That is a property of counting in whole beats rather than a
+        /// penalty, and it is small enough not to be worth rounding away.
+        /// </summary>
+        public static double EliminationPacing(IReadOnlyList<int> fallBeats, int totalBeats)
+        {
+            if (fallBeats.Count == 0 || totalBeats <= 0) return 1.0;
+
+            var falls = fallBeats.Where(b => b >= 0).OrderBy(b => b).ToList();
+            if (falls.Count == 0) return 1.0;
+
+            // The finish is a fall too — it is the last one — so the run being spaced is
+            // every fall including the end of the match.
+            double ideal = (double)totalBeats / (falls.Count + 1);
+            if (ideal <= 0) return 0.0;
+
+            int previous = -1;
+            double smallest = double.MaxValue;
+            foreach (int fall in falls)
+            {
+                smallest = Math.Min(smallest, fall - previous);
+                previous = fall;
+            }
+            smallest = Math.Min(smallest, totalBeats - 1 - previous);
+
+            return Math.Clamp(smallest / ideal, 0.0, 1.0);
         }
 
         /// <summary>
@@ -1626,7 +1807,8 @@ namespace WrestlingSim.Engine
             // Which makes disposal → sequence → near fall the loop a good multi-man match
             // runs over and over, and gives the format its own reason to exist rather than
             // being a singles match with a spare body in it.
-            energyFactor *= MultiManNearFallFactor(ctx.Plan.IsMultiMan, state.SomebodyIsDisposed);
+            r.NearFallJeopardy = MultiManNearFallFactor(ctx.MultiManNow, state.SomebodyIsDisposed);
+            energyFactor *= r.NearFallJeopardy;
 
             // The drama is entirely about whether the crowd believes the other person can
             // survive — that is toughness and selling, on someone they care about.
@@ -2615,8 +2797,25 @@ namespace WrestlingSim.Engine
                 ? 0.0
                 : Math.Clamp((coherence - 0.55) * 16.0, -8.0, 8.0);
 
+            // ── Elimination pacing ───────────────────────────────────────────
+            //
+            // Doc 18 §2.5 says the drama of this format is the *order* of the eliminations,
+            // and a measure that is recorded but never scored is not a claim about the
+            // format, it is a number on a screen. So spacing pays.
+            //
+            // Asymmetric on purpose, and the asymmetry is the honest bit: even spacing is
+            // what the format is *supposed* to do, so it earns little, while falls landing
+            // on top of each other genuinely wreck it — three eliminations in four minutes
+            // is a scramble and nobody remembers who went second. Worth about a fifth of a
+            // star at its best and three fifths at its worst.
+            double eliminationPacing = EliminationPacing(state.EliminationBeats, plan.Beats.Count);
+            double pacingNudge = state.AnybodyEliminated
+                ? (eliminationPacing >= 1.0 ? 4.0 : (eliminationPacing - 1.0) * 12.0)
+                : 0.0;
+
             double finalScore = Math.Clamp(
-                techComponent + storyComponent + crowdComponent + finishNudge + varietyNudge + coherenceNudge,
+                techComponent + storyComponent + crowdComponent + finishNudge + varietyNudge
+                    + coherenceNudge + pacingNudge,
                 0, 100);
 
             double starRating = Math.Clamp(finalScore / 20.0, 0, 5);
@@ -2636,6 +2835,8 @@ namespace WrestlingSim.Engine
                 LosingSide         = losingSide.Members.ToList(),
                 BeatResults        = beatResults,
                 GrudgeMoments      = _grudges.ToList(),
+                Eliminations       = _eliminations.ToList(),
+                EliminationPacing  = eliminationPacing,
                 TechnicalScore     = state.TechnicalScore,
                 StorytellingScore  = state.StorytellingScore,
                 CrowdPeakEnergy    = state.CrowdPeakEnergy,
@@ -2653,7 +2854,8 @@ namespace WrestlingSim.Engine
                     InvestmentFactor      = investmentFactor,
                     FinishNudge           = finishNudge,
                     VarietyNudge          = varietyNudge,
-                    CoherenceNudge        = coherenceNudge
+                    CoherenceNudge        = coherenceNudge,
+                    PacingNudge           = pacingNudge
                 },
                 FinalScore         = finalScore,
                 StarRating         = starRating

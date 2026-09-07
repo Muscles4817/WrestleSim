@@ -106,6 +106,56 @@ namespace WrestlingSim.Engine
                 ]
             },
 
+            // ── Elimination (doc 18 §2.5) ────────────────────────────────────
+            //
+            // "Falls remove people; last one standing wins... The drama moves from the fall
+            // to the *order* of eliminations." So both of these are built around the order
+            // rather than the finish, and both leave work between the falls — which the
+            // engine measures, because a scramble of three falls in a row is the way this
+            // format goes wrong.
+
+            new MatchStructure
+            {
+                Name        = "Triple Threat Elimination",
+                Description = "No stolen fall and nobody left unaccounted for — one goes out, " +
+                              "and what is left is the singles match the crowd has been waiting for.",
+                SideCount   = 3,
+                Tags        = ["Multi-Man", "Elimination", "No DQ"],
+                Beats       =
+                [
+                    Beat("Hot Start",       BeatControl.Even),
+                    Against(Beat("Disposal Spot", BeatControl.WrestlerB), BeatControl.SideC),
+                    Beat("Signature Cover", BeatControl.WrestlerB),
+                    Against(Beat("Elimination", BeatControl.WrestlerB), BeatControl.SideC),
+                    Beat("Methodical Grind", BeatControl.WrestlerB),
+                    Beat("Shock Kickout",    BeatControl.WrestlerA),
+                    Beat("Hot Comeback",     BeatControl.WrestlerA),
+                    Against(Beat("Clean Victory", BeatControl.WrestlerA), BeatControl.WrestlerB)
+                ]
+            },
+
+            new MatchStructure
+            {
+                Name        = "Four-Way Elimination",
+                Description = "Three falls, spread out, and the field thins around the two who " +
+                              "were always going to be there at the end.",
+                SideCount   = 4,
+                Tags        = ["Multi-Man", "Elimination", "No DQ"],
+                Beats       =
+                [
+                    Beat("Hot Start",       BeatControl.Even),
+                    Against(Beat("Disposal Spot", BeatControl.WrestlerA), BeatControl.SideD),
+                    Beat("Signature Cover", BeatControl.WrestlerB),
+                    Against(Beat("Elimination", BeatControl.WrestlerB), BeatControl.SideD),
+                    Beat("Methodical Grind", BeatControl.WrestlerB),
+                    Against(Beat("Pin Break", BeatControl.WrestlerA), BeatControl.WrestlerB),
+                    Against(Beat("Elimination", BeatControl.WrestlerA), BeatControl.SideC),
+                    Beat("Shock Kickout",   BeatControl.WrestlerB),
+                    Beat("Hot Comeback",    BeatControl.WrestlerA),
+                    Against(Beat("Clean Victory", BeatControl.WrestlerA), BeatControl.WrestlerB)
+                ]
+            },
+
             new MatchStructure
             {
                 Name        = "TV Formula",
