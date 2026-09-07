@@ -1,5 +1,6 @@
 using Xunit.Abstractions;
 using WrestlingSim.Engine;
+using WrestlingSim.Enums;
 using WrestlingSim.Models;
 using WrestlingSim.Models.Rumble;
 
@@ -108,6 +109,163 @@ namespace WrestlingSim.Tests
         [InlineData(15, 30, 0.52)]
         public void WinningFromEarlyIsABiggerStory(int number, int field, double expected) =>
             Assert.Equal(expected, RumbleScoring.EntryStory(number, field, battleRoyal: false), 1);
+
+        /// <summary>
+        /// **The low number stopped being universally correct**, which is the whole point of
+        /// this rule existing.
+        ///
+        /// The first version of `EntryStory` rewarded an early number and nothing else, and
+        /// the booker picks the order freely — so "the winner enters at two" was a dominant
+        /// strategy with no cost, and a mechanic with one right answer is not a mechanic. A
+        /// heel's best number is now the opposite of a face's, so the booker is choosing who
+        /// they are making rather than ticking a box.
+        /// </summary>
+        [Fact]
+        public void TheBestNumberDependsOnWhoDrewIt()
+        {
+            double faceEarly = RumbleScoring.EntryStory(2,  30, false, Alignment.Face);
+            double faceLate  = RumbleScoring.EntryStory(29, 30, false, Alignment.Face);
+            double heelEarly = RumbleScoring.EntryStory(2,  30, false, Alignment.Heel);
+            double heelLate  = RumbleScoring.EntryStory(29, 30, false, Alignment.Heel);
+
+            output.WriteLine($"  face  — #2 {faceEarly:F2}, #29 {faceLate:F2}");
+            output.WriteLine($"  heel  — #2 {heelEarly:F2}, #29 {heelLate:F2}");
+
+            // A face is made by going the distance.
+            Assert.True(faceEarly > faceLate);
+
+            // A heel is made by stealing it, which is the opposite booking.
+            Assert.True(heelLate > heelEarly);
+
+            // And that is the dominant strategy gone: there is no number that is best for
+            // everybody, so picking one is a decision about the wrestler.
+            Assert.True(faceEarly > heelEarly, "an early number was as good for a heel as a face");
+            Assert.True(heelLate  > faceLate,  "a late number was as good for a face as a heel");
+        }
+
+        /// <summary>
+        /// **A face going the distance is the biggest single thing this format produces**, and
+        /// bigger than a heel's steal — outrage is a smaller currency than admiration, even
+        /// though both are engagement.
+        /// </summary>
+        [Fact]
+        public void AFacesIronManRunOutscoresAHeelsSteal() =>
+            Assert.True(RumbleScoring.EntryStory(1, 30, false, Alignment.Face)
+                      > RumbleScoring.EntryStory(30, 30, false, Alignment.Heel));
+
+        /// <summary>
+        /// **Conditioning gates whether the crowd buys the run.** A wrestler with no gas tank
+        /// outlasting twenty-eight people is not an underdog story, it is a booking that can
+        /// be seen through — so the rub is what the room will accept rather than what the
+        /// number says.
+        ///
+        /// It does not gate the heel's steal at all: arriving fresh and last requires nothing.
+        /// </summary>
+        [Fact]
+        public void ConditioningGatesTheRunButNotTheSteal()
+        {
+            double fit   = RumbleScoring.EntryStory(1, 30, false, Alignment.Face, conditioning: 1.2);
+            double unfit = RumbleScoring.EntryStory(1, 30, false, Alignment.Face, conditioning: 0.2);
+
+            double heelFit   = RumbleScoring.EntryStory(30, 30, false, Alignment.Heel, conditioning: 1.2);
+            double heelUnfit = RumbleScoring.EntryStory(30, 30, false, Alignment.Heel, conditioning: 0.2);
+
+            output.WriteLine($"  face from #1  — fit {fit:F2}, unfit {unfit:F2}");
+            output.WriteLine($"  heel from #30 — fit {heelFit:F2}, unfit {heelUnfit:F2}");
+
+            Assert.True(fit > unfit * 1.3,
+                "an unconditioned wrestler's hour-long run was believed just as readily");
+            Assert.Equal(heelFit, heelUnfit, 6);
+        }
+
+        // ── The draw ─────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// **Every number is drawn exactly once.** A draw that can hand two wrestlers the same
+        /// number, or skip one, is not a draw — and `Validate` would catch the duplicate but
+        /// only after the booker had been shown it.
+        /// </summary>
+        [Theory]
+        [InlineData(6)]
+        [InlineData(30)]
+        public void TheDrawAssignsEveryNumberExactlyOnce(int size)
+        {
+            var plan = Rumble(size);
+            plan.DrawNumbers(seed: 7);
+
+            var numbers = plan.Field.Select(e => e.Number).OrderBy(n => n).ToList();
+            output.WriteLine($"  {string.Join(", ", plan.Field.Select(e => $"{e.Number}:{e.Wrestler.RingName}").Take(6))}…");
+
+            Assert.Equal(Enumerable.Range(1, size), numbers);
+            Assert.Equal(size, plan.Field.Select(e => e.Wrestler).Distinct().Count());
+            Assert.Empty(plan.Validate());
+        }
+
+        /// <summary>And the field comes back in entry order, because that is how it is read.</summary>
+        [Fact]
+        public void TheDrawLeavesTheFieldInEntryOrder()
+        {
+            var plan = Rumble(20);
+            plan.DrawNumbers(seed: 3);
+            Assert.Equal(plan.Field.Select(e => e.Number).OrderBy(n => n),
+                         plan.Field.Select(e => e.Number));
+        }
+
+        /// <summary>
+        /// **Somebody can be put in at number one on purpose**, because that is a booking act
+        /// — an authority figure handing out the worst draw in the match is one of the
+        /// format's oldest angles, and refusing to allow it would be modelling a fantasy.
+        /// </summary>
+        [Fact]
+        public void PinnedNumbersSurviveTheDraw()
+        {
+            var plan = Rumble(20);
+            var victim = plan.Field[0].Wrestler;      // already at #1
+
+            plan.DrawNumbers(seed: 11, pinned: [victim]);
+
+            output.WriteLine($"  {victim.RingName} is at #{plan.Field.Single(e => e.Wrestler == victim).Number}");
+
+            Assert.Equal(1, plan.Field.Single(e => e.Wrestler == victim).Number);
+            Assert.Equal(Enumerable.Range(1, 20), plan.Field.Select(e => e.Number).OrderBy(n => n));
+        }
+
+        /// <summary>Same seed, same draw — as with everything else here.</summary>
+        [Fact]
+        public void TheDrawIsDeterministic()
+        {
+            var a = Rumble(20); a.DrawNumbers(seed: 99);
+            var b = Rumble(20); b.DrawNumbers(seed: 99);
+
+            Assert.Equal(a.Field.Select(e => e.Wrestler.RingName), b.Field.Select(e => e.Wrestler.RingName));
+        }
+
+        /// <summary>
+        /// And it is a shuffle rather than a shuffle-shaped thing: across many draws every
+        /// wrestler should land near every position. An `OrderBy` on a random key — the usual
+        /// shortcut — is not uniform, so this is worth checking rather than assuming.
+        /// </summary>
+        [Fact]
+        public void TheDrawIsActuallyUniform()
+        {
+            const int size = 10, draws = 400;
+            var totals = new double[size];
+
+            for (int seed = 0; seed < draws; seed++)
+            {
+                var plan = Rumble(size);
+                plan.DrawNumbers(seed);
+                foreach (var e in plan.Field)
+                    totals[int.Parse(e.Wrestler.RingName[1..]) - 1] += e.Number;
+            }
+
+            var means = totals.Select(t => t / draws).ToList();
+            output.WriteLine("  mean drawn number per wrestler: " +
+                             string.Join(", ", means.Select(m => m.ToString("F2"))));
+
+            // With ten wrestlers the expected mean is 5.5 for everybody.
+            Assert.All(means, m => Assert.InRange(m, 4.9, 6.1));
+        }
 
         /// <summary>
         /// **And a battle royal has no entry story at all** — not as a penalty, but because

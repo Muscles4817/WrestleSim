@@ -1,3 +1,4 @@
+using WrestlingSim.Enums;
 using WrestlingSim.Models;
 using WrestlingSim.Models.Rumble;
 
@@ -68,9 +69,18 @@ namespace WrestlingSim.Engine
                         inRing.Add(e.Wrestler);
 
                         if (!plan.IsBattleRoyal)
-                            commentary.Add(e.IsSurprise
-                                ? $"That music is NOT on the sheet — and it is {e.Wrestler.RingName} at number {e.Number}!"
-                                : $"Number {e.Number}: {e.Wrestler.RingName}.");
+                            commentary.Add(
+                                e.IsSurprise
+                                    ? $"That music is NOT on the sheet — and it is {e.Wrestler.RingName} at number {e.Number}!"
+                                : e.Number <= 2
+                                    // The draw is the story, so the bad one gets said. Coming
+                                    // out at two is a long night that has not started yet.
+                                    ? $"Number {e.Number}: {e.Wrestler.RingName} — and that is " +
+                                      "about the worst number you can draw."
+                                : e.Number >= totalEntries
+                                    ? $"Number {e.Number}: {e.Wrestler.RingName}, last in and " +
+                                      "the freshest man in this match by a distance."
+                                    : $"Number {e.Number}: {e.Wrestler.RingName}.");
                     }
                 }
 
@@ -157,8 +167,10 @@ namespace WrestlingSim.Engine
             if (share > 0.6) kinds.Add(RumbleMomentKind.IronMan);
 
             double moments = RumbleScoring.MomentScore(kinds);
-            double entry   = RumbleScoring.EntryStory(
-                enteredAt[winner], totalEntries, plan.IsBattleRoyal);
+            double entry = RumbleScoring.EntryStory(
+                enteredAt[winner], totalEntries, plan.IsBattleRoyal,
+                winner.Gimmick?.NaturalAlignment ?? Alignment.Face,
+                profiles[winner].Conditioning);
 
             return new RumbleResult
             {

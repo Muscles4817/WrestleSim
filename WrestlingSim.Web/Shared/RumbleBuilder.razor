@@ -64,7 +64,29 @@
         </div>
     }
 
-    <button class="btn mt" @onclick="() => picking = true">+ Add to the field</button>
+    <div class="chips mt">
+        <button class="btn" @onclick="() => picking = true">+ Add to the field</button>
+
+        @* The draw. Doc 18 says the entries are what make this a story rather than a
+           scramble, and a number the booker simply handed out is a setting rather than a
+           story — so the honest version is one tap away instead of something you have to
+           decline to do. Rigging it afterwards is still allowed, because bookers do. *@
+        @if (field.Count >= 4 && interval > 0)
+        {
+            <button class="btn" @onclick="DrawNumbers">🎲 Draw the numbers</button>
+        }
+    </div>
+
+    @if (drawn)
+    {
+        <div class="notice notice--info mt">
+            Numbers drawn. @DrawNote
+            <span class="small muted">
+                Reorder by hand from here if the booking calls for it — an authority figure
+                putting somebody in at one on purpose is an angle, not a bug.
+            </span>
+        </div>
+    }
 </div>
 
 <div class="panel">
@@ -150,6 +172,8 @@
     private Wrestler? winner;
     private int interval = 90;
     private bool picking;
+    private bool drawn;
+    private string DrawNote = "";
 
     private RumblePlan Plan => new()
     {
@@ -176,6 +200,30 @@
         field.Remove(w);
         moments.RemoveAll(m => m.Cast.Contains(w));
         if (winner == w) winner = field.FirstOrDefault();
+    }
+
+    /// <summary>
+    /// Draws the field into entry order. The winner is left where the draw puts them —
+    /// deliberately, because a draw that protects whoever is booked to win is not a draw,
+    /// and the number they end up with is supposed to be the thing they have to live with.
+    /// </summary>
+    private void DrawNumbers()
+    {
+        var plan = Plan;
+        plan.DrawNumbers(Random.Shared.Next());
+
+        field.Clear();
+        field.AddRange(plan.Field.Select(e => e.Wrestler));
+
+        drawn = true;
+
+        int at = field.IndexOf(winner!) + 1;
+        DrawNote = winner is null ? ""
+            : at <= 2 ? $"{winner.RingName} drew number {at} — a long night, and the biggest " +
+                        "story this match can tell if they survive it."
+            : at >= field.Count ? $"{winner.RingName} drew number {at}, last in. A fix the " +
+                        "crowd can see, which is worth something if they are meant to be hated."
+            : $"{winner.RingName} drew number {at}.";
     }
 
     private void Move(int i, int by)

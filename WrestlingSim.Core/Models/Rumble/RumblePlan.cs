@@ -71,6 +71,57 @@ namespace WrestlingSim.Models.Rumble
 
         public IReadOnlyList<Wrestler> Wrestlers => Field.Select(e => e.Wrestler).ToList();
 
+        /// <summary>
+        /// Draws entry numbers for the field.
+        ///
+        /// **The number is supposed to happen to you.** Doc 18 says the entries are what
+        /// make this a story rather than a scramble, and a number the booker simply handed
+        /// out is not a story — it is a setting. Drawing number two is bad luck a wrestler
+        /// then has to survive, and that is the thing the crowd is watching.
+        ///
+        /// A booker can still rig it afterwards by reordering the field, because bookers do
+        /// and refusing to let them would be modelling a fantasy. What the draw changes is
+        /// the default: the honest version is one keystroke away rather than something you
+        /// have to decline to do.
+        ///
+        /// <paramref name="pinned"/> keeps specific wrestlers on the numbers they already
+        /// have — the authority figure putting somebody in at one on purpose, which is a
+        /// booking act and a heat-generating one.
+        /// </summary>
+        public void DrawNumbers(int seed, IReadOnlyCollection<Wrestler>? pinned = null)
+        {
+            var rng = new Random(seed);
+            pinned ??= [];
+
+            var held = Field.Where(e => pinned.Contains(e.Wrestler)).ToList();
+            var taken = held.Select(e => e.Number).ToHashSet();
+
+            var free = Enumerable.Range(1, Field.Count).Where(n => !taken.Contains(n)).ToList();
+
+            // Fisher-Yates, so every arrangement of the unpinned is equally likely. An
+            // OrderBy on a random key is the usual shortcut and is not a shuffle.
+            for (int i = free.Count - 1; i > 0; i--)
+            {
+                int j = rng.Next(i + 1);
+                (free[i], free[j]) = (free[j], free[i]);
+            }
+
+            int next = 0;
+            var drawn = Field
+                .Select(e => pinned.Contains(e.Wrestler)
+                    ? e
+                    : new RumbleEntrant
+                    {
+                        Wrestler   = e.Wrestler,
+                        Number     = free[next++],
+                        IsSurprise = e.IsSurprise
+                    })
+                .OrderBy(e => e.Number)
+                .ToList();
+
+            Field = drawn;
+        }
+
         /// <summary>What is wrong with this booking, in words a booker can act on.</summary>
         public List<string> Validate()
         {
