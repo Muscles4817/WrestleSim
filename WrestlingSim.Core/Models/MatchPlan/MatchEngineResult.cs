@@ -61,6 +61,16 @@ namespace WrestlingSim.Models.MatchPlan
         public double EliminationPacing { get; init; } = 1.0;
 
         /// <summary>
+        /// Who was still standing when it ended, on the winning side.
+        ///
+        /// The Survivor Series payoff, and the reason that match has a name of its own: the
+        /// story is not that a team won, it is *who was left*. A sole survivor is a made
+        /// wrestler; four survivors is a squash of the other team. Empty outside an
+        /// elimination match of teams.
+        /// </summary>
+        public List<Wrestler> Survivors { get; init; } = new();
+
+        /// <summary>
         /// In a handicap match, how much of it the outnumbered side spent fighting rather
         /// than being beaten up, 0–1. Zero in every other match.
         ///
@@ -241,7 +251,14 @@ namespace WrestlingSim.Models.MatchPlan
         /// <summary>Which elimination this was, 1-based. The order is the story.</summary>
         public int Order { get; init; }
 
-        /// <summary>How many sides were still in *after* this one went out.</summary>
+        /// <summary>
+        /// How many wrestlers were still in the match after this one went out.
+        ///
+        /// People, not sides. Sides was right for a triple threat, where a side is one
+        /// wrestler — and useless the moment teams arrived: in a Survivor Series both sides
+        /// are in until the last fall, so the eliminations panel counted "2 left" six times
+        /// running and told the reader nothing.
+        /// </summary>
         public int Remaining { get; init; }
     }
 

@@ -511,6 +511,16 @@ namespace WrestlingSim.Engine
                 Plan.Sides.Where((_, i) => !State.IsEliminated(i)).ToList();
 
             /// <summary>
+            /// How many wrestlers are still in the match, across every side.
+            ///
+            /// Distinct from <see cref="Remaining"/>, which counts sides — and the two only
+            /// diverge once a side can be more than one person, which is exactly when the
+            /// difference starts to matter.
+            /// </summary>
+            public int PeopleLeft =>
+                Enumerable.Range(0, Plan.Sides.Count).Sum(State.SurvivorsOf);
+
+            /// <summary>
             /// Whether this is a multi-man match *right now* — more than two sides still in.
             ///
             /// Distinct from <see cref="Models.MatchPlan.MatchPlan.IsMultiMan"/>, which is a
@@ -526,22 +536,32 @@ namespace WrestlingSim.Engine
             public bool MultiManNow => Remaining.Count > 2;
 
             /// <summary>
-            /// What the numbers are costing the side this wrestler is on, right now.
+            /// What the numbers are costing the side this wrestler is on, **right now**.
             ///
-            /// 1.0 in every even match, so this is inert everywhere it has always been
-            /// inert. The lone man's own conditioning is what is read, not the pair average
+            /// Counted from who is still in rather than from how the sides were booked,
+            /// which is the same correction elimination needed twice already — and here it
+            /// is not a fix but the point. A Survivor Series match that has gone 4-on-2 *is*
+            /// a handicap match, arrived at rather than booked, and the wrestlers left
+            /// carrying it should feel exactly what a booked handicap does. One rule serves
+            /// both because being outnumbered is being outnumbered.
+            ///
+            /// 1.0 while the sides are level, so it stays inert in every even match. This
+            /// wrestler's own conditioning is what is read, not the pair average
             /// <see cref="FadeFactor"/> uses — the whole point is that he is the one doing
             /// the work, so it is his gas tank the match is emptying.
             /// </summary>
             public double NumbersFatigueFor(Wrestler w)
             {
-                if (Plan.Numbers is not { } n) return 1.0;
+                if (Plan.Sides.Count != 2) return 1.0;
 
-                var mine = SideOf(w);
-                if (mine != n.Outnumbered) return 1.0;
+                int mine = Plan.Sides.IndexOf(SideOf(w));
+                if (mine < 0) return 1.0;
+
+                int mySurvivors    = State.SurvivorsOf(mine);
+                int theirSurvivors = State.SurvivorsOf(1 - mine);
 
                 return MatchEngine.NumbersFatigue(
-                    n.Outnumbered.Size, n.Larger.Size,
+                    mySurvivors, theirSurvivors,
                     Math.Max(0, State.BeatIndex - 4),
                     For(w).Conditioning);
             }
@@ -775,6 +795,7 @@ namespace WrestlingSim.Engine
 
             var state = new MatchEngineState();
             state.InitialiseLegal(plan.SideA.StartingIndex, plan.SideB.StartingIndex);
+            state.InitialiseSides(plan.Sides.Select(s => s.Members.Count).ToList());
 
             var ctx = new Ctx
             {
@@ -1358,7 +1379,17 @@ namespace WrestlingSim.Engine
             var victim = ctx.LegalOf(target);
             var state  = ctx.State;
 
-            state.Eliminate(ctx.Plan.Sides.IndexOf(target));
+            // The *legal* wrestler on the target side goes out, because that is who you can
+            // pin — and it is what makes one beat serve two formats. With one wrestler a
+            // side that is the side, which is a triple-threat elimination; with five it is
+            // whoever is in the ring, which is a Survivor Series.
+            int targetSide = ctx.Plan.Sides.IndexOf(target);
+            state.Eliminate(targetSide, target.Members.IndexOf(victim));
+
+            // Whoever is left on that side is in now. Nobody tags in a Survivor Series
+            // elimination — the next man is already through the ropes.
+            if (!state.IsEliminated(targetSide) && targetSide <= 1)
+                state.Tag(targetSide == 0, target.Members.Count);
 
             int left = ctx.Remaining.Count;
 
@@ -1367,7 +1398,7 @@ namespace WrestlingSim.Engine
                 Wrestler  = victim,
                 By        = control,
                 Order     = state.EliminationCount,
-                Remaining = left
+                Remaining = ctx.PeopleLeft
             });
 
             // Down to two is the loudest one: it is not another fall, it is the moment the
@@ -1387,9 +1418,43 @@ namespace WrestlingSim.Engine
 
             // The count is the story in this format, so it is said out loud rather than left
             // for the viewer to keep in their head.
-            r.Commentary.Add(left <= 2
-                ? $"And then there were two. {Billing(ctx.AllLegal.Select(w => w.RingName))} — one of them wins this."
-                : $"{left} left in this match.");
+            // What is worth saying depends on the format. Sides left is the count in a
+            // three-way; in a Survivor Series it is people, and the survivor count on each
+            // side is the whole scoreboard.
+            bool teams = ctx.Plan.Sides.Any(x => x.Members.Count > 1);
+
+            r.Commentary.Add(teams
+                ? SurvivorLine(ctx, target)
+                : left <= 2
+                    ? $"And then there were two. {Billing(ctx.AllLegal.Select(w => w.RingName))} — one of them wins this."
+                    : $"{left} left in this match.");
+        }
+
+        /// <summary>
+        /// The scoreboard after an elimination in a match of teams — which is the whole of
+        /// what a Survivor Series is about, and unreadable if the viewer has to keep it in
+        /// their head across eight falls.
+        /// </summary>
+        private static string SurvivorLine(Ctx ctx, MatchSide justLost)
+        {
+            var counts = ctx.Plan.Sides
+                .Select((side, i) => (Side: side, Left: ctx.State.SurvivorsOf(i)))
+                .ToList();
+
+            if (counts.Any(c => c.Left == 0))
+            {
+                var standing = counts.First(c => c.Left > 0);
+                return standing.Left == 1
+                    ? $"That is the match — and the sole survivor is " +
+                      $"{ctx.LegalOf(standing.Side).RingName}!"
+                    : $"That is the match! {standing.Side.Name} take it with " +
+                      $"{standing.Left} still standing.";
+            }
+
+            // "a man down" is the phrase a commentator reaches for and the one this game
+            // does not get to use — the scanner caught it in a match of eight women.
+            return string.Join("  ", counts.Select(c => $"{c.Side.Name}: {c.Left}"))
+                   + $" — {justLost.Name} are down to {ctx.State.SurvivorsOf(ctx.Plan.Sides.IndexOf(justLost))}.";
         }
 
         /// <summary>
@@ -2737,6 +2802,37 @@ namespace WrestlingSim.Engine
             var pControl = ctx.For(control);
             var pOther   = ctx.For(other);
 
+            // The finish is a fall too, and in an elimination match it is the last one — so
+            // it takes somebody out like any other. Without this the engine and
+            // `MatchPlan.Validate` disagreed about the final wrestler: validation counted
+            // the finish towards emptying a side (correctly, it is what ends the match) and
+            // the engine never recorded it, so a Survivor Series reported the losing team
+            // with one still standing.
+            //
+            // Only in a match that has already had an elimination in it, or every singles
+            // finish in the game would start recording one.
+            if (state.AnybodyEliminated)
+            {
+                var beaten = ctx.SideOf(other);
+                state.Eliminate(ctx.Plan.Sides.IndexOf(beaten), beaten.Members.IndexOf(other));
+
+                _eliminations.Add(new EliminatedSide
+                {
+                    Wrestler  = other,
+                    By        = control,
+                    Order     = state.EliminationCount,
+                    Remaining = ctx.PeopleLeft
+                });
+
+                // And the payoff line, which is the entire reason this match has a name of
+                // its own. Every elimination along the way gets a scoreboard; the last one
+                // gets the thing the crowd came to hear. Without it the play-by-play counts
+                // the field down and then says "it's over", which is the one moment a
+                // Survivor Series cannot afford to be vague about.
+                if (ctx.Plan.Sides.Any(x => x.Members.Count > 1))
+                    r.Commentary.Add(SurvivorLine(ctx, beaten));
+            }
+
             // Was the finish earned? Advantage should favour the winner
             bool advantageFavours = (beat.Control == BeatControl.WrestlerA && state.Advantage > 0)
                                 || (beat.Control == BeatControl.WrestlerB && state.Advantage < 0);
@@ -2932,7 +3028,14 @@ namespace WrestlingSim.Engine
             // on top of each other genuinely wreck it — three eliminations in four minutes
             // is a scramble and nobody remembers who went second. Worth about a fifth of a
             // star at its best and three fifths at its worst.
-            double eliminationPacing = EliminationPacing(state.EliminationBeats, plan.Beats.Count);
+            // The falls *before* the finish. `EliminationPacing` counts the finish itself as
+            // the last fall — that is in its contract — so handing it a list that already
+            // contains the finish counts it twice and reports a gap of zero at the end,
+            // which is a perfectly-spaced match scoring as a scramble. It only started
+            // containing the finish when `ApplyFinish` learned to record one.
+            double eliminationPacing = EliminationPacing(
+                state.EliminationBeats.Where(b => b < plan.Beats.Count - 1).ToList(),
+                plan.Beats.Count);
             double pacingNudge = state.AnybodyEliminated
                 ? (eliminationPacing >= 1.0 ? 4.0 : (eliminationPacing - 1.0) * 12.0)
                 : 0.0;
@@ -2976,6 +3079,11 @@ namespace WrestlingSim.Engine
                 BeatResults        = beatResults,
                 GrudgeMoments      = _grudges.ToList(),
                 Eliminations       = _eliminations.ToList(),
+                Survivors          = state.AnybodyEliminated && plan.Sides.Any(x => x.Members.Count > 1)
+                    ? plan.BookedWinningSide!.Members
+                          .Where((_, i) => !state.IsEliminated(plan.Sides.IndexOf(plan.BookedWinningSide!), i))
+                          .ToList()
+                    : [],
                 EliminationPacing  = eliminationPacing,
                 Defiance           = plan.IsHandicap ? defiance : 0.0,
                 TechnicalScore     = state.TechnicalScore,

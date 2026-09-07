@@ -289,15 +289,21 @@ namespace WrestlingSim.Models.MatchPlan
                 // play-by-play going strange.
                 if (Beats.Any(b => b.IsElimination))
                 {
-                    var out_ = new HashSet<int>();
+                    // How many falls each side has taken so far, walking in booking order —
+                    // a side is only "eliminated" once it has taken as many as it has
+                    // members, which is the whole difference between a triple threat and a
+                    // Survivor Series.
+                    var taken_ = new int[Sides.Count];
+                    bool IsOut(int side) => taken_[side] >= Sides[side].Size;
 
                     foreach (var (beat, i) in Beats.Select((b, i) => (b, i)))
                     {
-                        if (SideIndex(beat.Control) is { } ci && out_.Contains(ci))
+                        if (SideIndex(beat.Control) is { } ci && ci < Sides.Count && IsOut(ci))
                             errors.Add($"Beat {i + 1} is booked for a side that has already " +
                                        "been eliminated.");
 
-                        if (beat.Against is { } tgt && SideIndex(tgt) is { } ti && out_.Contains(ti))
+                        if (beat.Against is { } tgt && SideIndex(tgt) is { } ti
+                            && ti < Sides.Count && IsOut(ti))
                             errors.Add($"Beat {i + 1} is aimed at a side that has already " +
                                        "been eliminated.");
 
@@ -320,26 +326,48 @@ namespace WrestlingSim.Models.MatchPlan
                         if (SideIndex(beat.Control) == ai)
                             errors.Add($"Beat {i + 1} has a side eliminating itself.");
 
-                        out_.Add(ai);
+                        taken_[ai]++;
                     }
 
-                    // The format's one structural promise: it runs until one is left. A plan
-                    // that eliminates one of four and then books a finish has not had an
-                    // elimination match, it has had a four-way with a spare beat in it — and
-                    // the two are graded differently, so the difference has to be real.
+                    // The format's one structural promise: it runs until one side is left.
+                    //
+                    // Counted in *people*, because an elimination beat takes out whoever is
+                    // legal rather than a whole side. With one wrestler a side those are the
+                    // same number and this is the triple-threat rule unchanged; with five
+                    // they are not, and a Survivor Series match ends when one team has
+                    // nobody left — with however many survivors the booker chose to leave
+                    // standing, which is the format's actual payoff and not something to
+                    // pin to one.
                     var finishBeat = Beats.LastOrDefault(b => b.IsFinish);
-                    if (finishBeat?.Against is { } fin && SideIndex(fin) is { } fi)
-                        out_.Add(fi);
+                    var falls = Beats.Where(b => b.IsElimination)
+                                     .Concat(finishBeat is null ? [] : [finishBeat])
+                                     .Select(b => b.Against)
+                                     .Where(a => a is not null)
+                                     .Select(a => SideIndex(a!.Value))
+                                     .Where(i => i is not null)
+                                     .Select(i => i!.Value)
+                                     .ToList();
 
-                    if (out_.Count != Sides.Count - 1)
-                        errors.Add($"An elimination match runs until one side is left: " +
-                                   $"{Sides.Count} sides needs {Sides.Count - 1} of them out, " +
-                                   $"and this plan takes out {out_.Count}.");
+                    var wipedOut = new List<int>();
+                    for (int side = 0; side < Sides.Count; side++)
+                    {
+                        int taken = falls.Count(f => f == side);
+                        if (taken > Sides[side].Size)
+                            errors.Add($"Side {(char)('A' + side)} has {Sides[side].Size} in it " +
+                                       $"and the plan takes {taken} falls from them.");
+                        else if (taken == Sides[side].Size)
+                            wipedOut.Add(side);
+                    }
+
+                    if (wipedOut.Count != Sides.Count - 1)
+                        errors.Add("An elimination match runs until one side is left: " +
+                                   $"of {Sides.Count} sides this plan empties {wipedOut.Count}, " +
+                                   $"and it needs to empty {Sides.Count - 1}.");
 
                     if (finishBeat is not null
-                        && SideIndex(finishBeat.Control) is { } wi && out_.Contains(wi)
-                        && !(finishBeat.Against is { } fa && SideIndex(fa) == wi))
-                        errors.Add("The side booked to win has already been eliminated.");
+                        && SideIndex(finishBeat.Control) is { } wi && wi < Sides.Count
+                        && wipedOut.Contains(wi))
+                        errors.Add("The side booked to win is emptied by this plan.");
                 }
 
             // And the mirror of it for the other direction. A pin break with nobody left to
@@ -349,6 +377,15 @@ namespace WrestlingSim.Models.MatchPlan
                 if (!IsMultiMan)
                     errors.Add($"{beat.Type} needs a third party in the match — there is " +
                                "nobody to dispose of or steal from in a two-sided one.");
+
+            // And the weaker version of the same rule, for the beat that needs a third
+            // *person* rather than a third *side*. An elimination only needs somebody left
+            // to carry on against, which a four-a-side tag match has and a singles match
+            // does not — gating it on side count refused the Survivor Series outright.
+            foreach (var beat in Beats.Where(b => b.NeedsAThirdPerson))
+                if (AllParticipants.Count() <= 2)
+                    errors.Add($"{beat.Type} needs somebody left in the match afterwards. " +
+                               "With two wrestlers in it, taking one out is just a finish.");
 
             // Every beat has to be workable by the side it is booked for. This is the rule
             // that actually protects the tag formula — a hot tag needs someone to tag, and
