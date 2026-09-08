@@ -23,6 +23,14 @@ namespace WrestlingSim.Models.Rumble
     /// </summary>
     public class RumblePlan : ICardItem
     {
+        /// <summary>
+        /// Identity, so something on another show can point at this one. A
+        /// <see cref="RumbleDraw"/> is booked on the go-home television and draws for the
+        /// match on the pay-per-view, and a save file reads one card at a time — an id is
+        /// what survives that trip where an object reference does not.
+        /// </summary>
+        public string Id { get; set; } = Guid.NewGuid().ToString("N");
+
         /// <summary>Everybody in it, in the order they come out.</summary>
         public List<RumbleEntrant> Field { get; set; } = new();
 
@@ -122,6 +130,9 @@ namespace WrestlingSim.Models.Rumble
             Field = drawn;
         }
 
+        /// <summary>The numbers the crowd already knows, because a drawing told them.</summary>
+        public IEnumerable<RumbleEntrant> Announced => Field.Where(e => e.NumberAnnounced);
+
         /// <summary>What is wrong with this booking, in words a booker can act on.</summary>
         public List<string> Validate()
         {
@@ -178,5 +189,16 @@ namespace WrestlingSim.Models.Rumble
         /// things this format is a vehicle for.
         /// </summary>
         public bool IsSurprise { get; init; }
+
+        /// <summary>
+        /// The building was told this number in advance, at a <see cref="RumbleDraw"/> on an
+        /// earlier show.
+        ///
+        /// Settable rather than <c>init</c>, and the asymmetry with <see cref="Number"/> is
+        /// the point: the number is a booking, and this is something that happened to it on
+        /// television. A redraw clears it, because a number drawn again is a number the
+        /// crowd was told wrong.
+        /// </summary>
+        public bool NumberAnnounced { get; set; }
     }
 }

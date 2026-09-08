@@ -154,6 +154,46 @@ else if (show.HasRun)
         </div>
     }
 
+    @* A drawing has no beats and no eliminations, so what it reports is what was said and
+       what the numbers came out as — plus how much of the drum anybody believed. *@
+    @foreach (var item in result.Items.Where(i => i.DrawResult is not null))
+    {
+        var draw = item.DrawResult!;
+        <div class="panel">
+            <div class="panel__title">
+                @item.Label
+                <span class="spacer"></span>
+                <span class="small muted">
+                    numbers @((draw.Reaction * 100).ToString("F0"))% ·
+                    believed @((draw.Credibility * 100).ToString("F0"))%
+                </span>
+            </div>
+
+            <div class="stack">
+                @foreach (var pull in draw.Pulls)
+                {
+                    <div class="beat-row @(pull.Rigged ? "is-flagged" : "")">
+                        <div class="beat-row__n">@pull.Number</div>
+                        <div class="beat-row__body">
+                            <span class="beat-row__name">@pull.Wrestler.RingName</span>
+                            <span class="beat-row__sub">
+                                @(pull.Rigged ? "handed it" : "drew it")
+                                · worth @((pull.Reaction * 100).ToString("F0"))%
+                            </span>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="mt">
+                @foreach (var line in draw.Commentary)
+                {
+                    <div class="pbp__line">@line</div>
+                }
+            </div>
+        </div>
+    }
+
     <div class="wizard-bar">
         <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Dashboard)">← Dashboard</button>
         <span class="wizard-bar__spacer"></span>
@@ -184,6 +224,20 @@ else if (mode == Mode.AddRumble)
     </div>
 
     <RumbleBuilder OnDone="AddRumble" OnCancel="@(() => mode = Mode.Card)" ConfirmLabel="Add to card +" />
+}
+else if (mode == Mode.AddDraw)
+{
+    <div class="screen__head">
+        <div class="eyebrow">THE DRUM</div>
+        <h1 class="screen__title">The draw</h1>
+        <p class="screen__lede">
+            The numbers, pulled in front of a crowd, for a match booked later. What it buys is
+            a building that has had a week to argue about who has to go the distance.
+        </p>
+    </div>
+
+    <DrawBuilder Show="show" OnDone="AddDraw" OnCancel="@(() => mode = Mode.Card)"
+                 ConfirmLabel="Add to card +" />
 }
 else
 {
@@ -326,6 +380,13 @@ else
             <button class="btn" @onclick="() => mode = Mode.AddMatch">+ Add a match</button>
             <button class="btn" @onclick="() => mode = Mode.AddSegment">+ Add a segment</button>
             <button class="btn" @onclick="() => mode = Mode.AddRumble">+ Add a battle royal</button>
+            @* Offered only when there is something to draw for. A drawing has to precede the
+               match it draws for, so with nothing booked later the button would open onto an
+               empty state and a dead end. *@
+            @if (HasSomethingToDrawFor(career, show))
+            {
+                <button class="btn" @onclick="() => mode = Mode.AddDraw">+ Add a number drawing</button>
+            }
             <span class="spacer"></span>
             <button class="btn btn--primary" disabled="@(show.Card.Count == 0)" @onclick="() => Run(show)">
                 Run the show ★
@@ -349,7 +410,7 @@ else
 }
 
 @code {
-    private enum Mode { Card, AddMatch, AddSegment, AddRumble }
+    private enum Mode { Card, AddMatch, AddSegment, AddRumble, AddDraw }
 
     private Mode mode = Mode.Card;
 
@@ -391,9 +452,38 @@ else
         await Persist();
     }
 
+    private async Task AddDraw(WrestlingSim.Models.Rumble.RumbleDraw draw)
+    {
+        State.ActiveShow?.Card.Add(draw);
+        mode = Mode.Card;
+        await Persist();
+    }
+
+    /// <summary>
+    /// Whether any Rumble with timed entries is booked on a later date. The drawing builder
+    /// asks the same question of the calendar; asking it here too is what keeps the button
+    /// from opening onto a dead end.
+    /// </summary>
+    private static bool HasSomethingToDrawFor(Career career, ScheduledShow show) =>
+        career.Shows.Any(s => !s.HasRun && s.Date > show.Date
+                              && s.Card.OfType<WrestlingSim.Models.Rumble.RumblePlan>()
+                                       .Any(r => !r.IsBattleRoyal));
+
+    /// <summary>
+    /// Takes an item off the card — and, when it is a Rumble, any drawing on any show that
+    /// was drawing for it. A drawing pointing at a match that is no longer booked is not a
+    /// segment, and leaving it on a sheet to fail on the night would be worse than removing
+    /// it while the booker is looking at the thing they removed.
+    /// </summary>
     private async Task Remove(ICardItem item)
     {
         State.ActiveShow?.Card.Remove(item);
+
+        if (item is WrestlingSim.Models.Rumble.RumblePlan rumble && State.Career is { } career)
+            foreach (var s in career.Shows.Where(s => !s.HasRun))
+                s.Card.RemoveAll(i => i is WrestlingSim.Models.Rumble.RumbleDraw d
+                                      && d.Rumble == rumble);
+
         await Persist();
     }
 

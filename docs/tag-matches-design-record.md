@@ -2937,9 +2937,141 @@ that is about the worst number you can draw."* No console errors.
 
 ### Still not built
 
-- **The draw as an event on the card.** It is a button in the match builder, so it happens at
-  booking time rather than on a show — where in wrestling the draw is a segment, with an
-  authority figure and a running order somebody can be furious about.
+- ~~**The draw as an event on the card.**~~ Built — see *The drum goes on television* below.
 - **What a Rumble win entitles you to**, still: it moves standing, but what a Rumble win *is*
   in wrestling is a title shot at the biggest show of the year, and the calendar has no notion
   of a booked future match.
+
+## The drum goes on television
+
+The drawing shipped as a 🎲 in the match builder. It was honest and it was completely
+invisible: the numbers moved, and no crowd ever saw it happen. Doc 18 §2.5 says it is the
+entries that make the Rumble a story rather than a scramble, and a story the audience is not
+told is not a story — it is a setting with good prose around it.
+
+So `RumbleDraw` is a card item. It goes on a show *before* the one holding the match, which is
+what a go-home show is for, and it is the only thing on a card that reaches forward: the
+numbers it draws are written onto a `RumblePlan` booked on a later date.
+
+### What it buys and what it costs
+
+Three prices, and all three had to be real or the drawing is free — and a free thing is a
+thing everybody books, which is not a decision.
+
+**It buys anticipation.** `RumbleScoring.Anticipation` is worth up to 0.5, applied as a
+multiplier on the entry story, and most of it (0.35) rides on the *winner's* number being one
+of the announced ones. "Can they go the distance from two" is the story, and it is only a
+story if the building has had a week to argue about it. Announcing more of the field on top
+adds 0.15 at most: a drawing is worth booking for one number, not for breadth.
+
+It is **zero when nothing was announced**, deliberately. A Rumble booked without a drawing
+scores exactly what it scored before this existed. The alternative — discounting an
+unannounced number — silently rebalances every Rumble in every existing save, and dresses a
+new feature up as a tax on not having it.
+
+**It costs a card slot** and its runtime, like anything else worth booking. It is
+`CardItemKind.Segment`, so it takes the fatigue penalty when it follows one. A drawing after a
+promo is two people talking.
+
+**It costs the surprise.** Somebody whose number was read out on television cannot walk out to
+a shocked building, so a wrestler flagged `IsSurprise` or booked into a `SurpriseReturn` moment
+cannot be in the cast. That is a validation error rather than a quiet scoring cut, because it
+is a booking decision and the booker should meet it while they are making it rather than read
+about it in the show report.
+
+### Rigging, and why the fix has to be on camera
+
+The obvious hole: book a drawing, hand your winner number two, collect the anticipation. That
+is the dominant strategy the entry-number work was written to kill, walking back in through a
+new door.
+
+`Rigged` is the only way to keep a number once the drum is on television — the engine calls
+`DrawNumbers` on the night, so an order arranged by hand in the match builder is overwritten.
+And rigging is priced: `DrawCredibility` takes 60% of the drum away as the share of handed-out
+numbers goes to one, flooring at 0.4 because a crowd that knows the fix is in is still watching
+the fix. The wrestler it was done to gets a `PersonalInsult` with whoever did it.
+
+The rule that makes the price stick is that **rigged ⊆ cast**. Fixing a number for somebody who
+never comes out to collect it would cost nothing, so it is a booking error. There is no
+off-camera fix.
+
+### A number read from the other end
+
+`PullReaction` is `EntryStory`'s asymmetry, read from the drawing instead of the match. In the
+match, a number is worth what the winner can do with it; at the drawing it is worth what the
+building does the second it hears it.
+
+|         | early                              | late                          |
+|---------|------------------------------------|-------------------------------|
+| Face    | 1.00 — the sentence, and the crowd gets behind it | 0.45 — relief is not a reaction |
+| Heel    | 0.80 — the cheap pop, and a real one | 1.00 — the injustice, which is the point |
+| Tweener | 0.60                               | 0.60                          |
+
+Split from `NumberDrama` — the symmetrical U that says number one and number thirty are both
+something and number fifteen is nothing — so either can be asserted without the other. A
+drawing's crowd score is `DrawCrowd`: 65% the best pull of the night, 35% the mean, so parading
+four more people past the drum to hear four middling numbers makes the segment worse rather
+than longer.
+
+Momentum only, and no overness. A drawing is not a rub — nobody's standing moves because of a
+number. What moves is whether they are the story of the week.
+
+### Two shows, one save file
+
+The only cross-show reference on a card, and a save reads one card at a time: the December
+television is deserialised before the January pay-per-view exists. So `RumblePlan` gained an
+`Id`, the drawing holds it, and `SaveSerializer.ResolveDraws` binds them in a second pass once
+every card is built. A drawing whose match is gone is dropped rather than left on a sheet
+pointing at nothing — and removing a Rumble from a card removes any drawing for it, at the
+moment the booker is looking at the thing they removed.
+
+`ShowSimulator.RunDraw` reports a dangling reference rather than throwing, and that is the one
+place it differs from every other card item. A missing match is a state something outside this
+card can create; every other way a drawing can be wrong is something the builder will not let
+you book.
+
+### Verified
+
+Eleven mutations, all killed:
+
+1. `PullReaction` ignores alignment (all weights 1.00)
+2. `DrawCredibility` always returns 1.0
+3. `Anticipation` ignores whether it was the winner's number
+4. `DrawCrowd` is the maximum alone, with no mean to drag it
+5. `NumberDrama` linear — earlier is simply better
+6. the drawing does not draw, it reads the numbers already set
+7. the drawing never sets `NumberAnnounced`
+8. a fixed number generates no grievance
+9. the match never applies the anticipation it was handed
+10. a surprise can be announced after all
+11. the reload never runs the second pass
+
+Browser-verified at 390×844, through the whole loop: an eight-strong Rumble booked on the
+31 January premium event, a drawing booked on the 5 January television, three of them out to
+pull, Roman Reigns handed number one and Kevin Owens running it. The builder read *"1 of 3
+numbers handed out — the drum is worth 80% of an honest one"*; the night reported *"Kevin
+Owens hands Roman Reigns number 1. No drum, no draw, no pretence"*, *"Number 8 for Rhea
+Ripley — last in, and they are loving it"*, and *"That did not look like luck, and the crowd
+is telling them so"*; the feud panel showed **Roman Reigns vs Kevin Owens +3.1 heat ·
+PersonalInsult**. Running the premium event afterwards, the Rumble read the numbers back. No
+console errors.
+
+One layout bug found by looking rather than by testing: `.beat-row` is a three-column grid
+(mark, body, tools), so the two new rows that omitted the mark put their body in the 28px
+column and wrapped every word onto its own line. Fixed by giving them marks — ★ for the match
+being drawn for, 🎤 for whoever is running it.
+
+**743 tests passing.**
+
+### Still not built
+
+- **A career Rumble's eliminations are not shown.** `ShowScreen` renders them for an exhibition
+  card; `BookShowScreen` shows only the item notes and the winner. Pre-existing, surfaced by
+  putting a drawing's play-by-play next to a Rumble that has none.
+- **A drawing on a show run *after* the match** is not prevented. The builder only offers
+  Rumbles on later dates, but a player who runs shows out of calendar order can strand one.
+  It scores normally and writes numbers nobody will read.
+- **The order the numbers are revealed in is the cast order**, not something the booker sets.
+  Building to the big number is a real piece of segment craft and this does not model it.
+- **What a Rumble win entitles you to**, still. Unchanged: the calendar has no notion of a
+  booked future match.

@@ -285,11 +285,13 @@ namespace WrestlingSim.Persistence
                 Kind = CardItemKind.Match,
                 Rumble = new RumbleDto
                 {
+                    Id = r.Id,
                     Field = r.Field.Select(e => new RumbleEntrantDto
                     {
-                        WrestlerId = e.Wrestler.Id,
-                        Number     = e.Number,
-                        IsSurprise = e.IsSurprise
+                        WrestlerId      = e.Wrestler.Id,
+                        Number          = e.Number,
+                        IsSurprise      = e.IsSurprise,
+                        NumberAnnounced = e.NumberAnnounced
                     }).ToList(),
                     EntryIntervalSeconds = r.EntryIntervalSeconds,
                     WinnerId = r.Winner?.Id,
@@ -300,6 +302,22 @@ namespace WrestlingSim.Persistence
                         Cast = m.Cast.Select(w => w.Id).ToList(),
                         At   = m.At
                     }).ToList()
+                }
+            },
+
+            // A drawing keeps Kind = Segment for the same reason a Rumble keeps Match: it is
+            // what a crowd sits through, and the pacing rules read Kind. The match it draws
+            // for lives on another show, so it is held by id and bound in a second pass.
+            RumbleDraw d => new CardItemDto
+            {
+                Kind = CardItemKind.Segment,
+                Draw = new RumbleDrawDto
+                {
+                    RumbleId    = d.Rumble?.Id ?? d.RumbleId,
+                    RumbleLabel = d.RumbleLabel,
+                    Cast        = d.Cast.Select(w => w.Id).ToList(),
+                    HostId      = d.Host?.Id,
+                    Rigged      = d.Rigged.Select(w => w.Id).ToList()
                 }
             },
 
@@ -451,6 +469,8 @@ namespace WrestlingSim.Persistence
 
             foreach (var s in dto.Shows)
                 career.Shows.Add(FromDto(s, byId, career.FeudBook, career.Titles, career.Teams));
+
+            ResolveDraws(career);
 
             return career;
         }
@@ -608,6 +628,31 @@ namespace WrestlingSim.Persistence
         }
 
         /// <summary>
+        /// Binds every <see cref="RumbleDraw"/> to the match it draws for.
+        ///
+        /// A second pass because the two live on different shows and a card is read one at a
+        /// time: the drawing on the December television is deserialised before the January
+        /// pay-per-view exists. A drawing whose match is gone — the card was deleted, or it
+        /// named a wrestler the roster has lost and was dropped whole — is dropped too,
+        /// rather than left on the sheet pointing at nothing.
+        /// </summary>
+        private static void ResolveDraws(Career career)
+        {
+            var rumbles = career.Shows
+                .SelectMany(s => s.Card)
+                .OfType<RumblePlanModel>()
+                .ToDictionary(r => r.Id, r => r);
+
+            foreach (var show in career.Shows)
+                show.Card.RemoveAll(item =>
+                {
+                    if (item is not RumbleDraw draw) return false;
+                    draw.Rumble = rumbles.GetValueOrDefault(draw.RumbleId);
+                    return draw.Rumble is null;
+                });
+        }
+
+        /// <summary>
         /// Resolves a saved side against the live roster, or null if anybody is missing.
         /// </summary>
         private static List<Wrestler>? Bind(List<string> ids, Dictionary<string, Wrestler> byId)
@@ -633,9 +678,10 @@ namespace WrestlingSim.Persistence
                     .Where(e => byId.ContainsKey(e.WrestlerId))
                     .Select(e => new RumbleEntrant
                     {
-                        Wrestler   = byId[e.WrestlerId],
-                        Number     = e.Number,
-                        IsSurprise = e.IsSurprise
+                        Wrestler        = byId[e.WrestlerId],
+                        Number          = e.Number,
+                        IsSurprise      = e.IsSurprise,
+                        NumberAnnounced = e.NumberAnnounced
                     })
                     .ToList();
 
@@ -649,6 +695,9 @@ namespace WrestlingSim.Persistence
 
                 return new RumblePlanModel
                 {
+                    Id = string.IsNullOrEmpty(rumbleDto.Id)
+                        ? Guid.NewGuid().ToString("N")
+                        : rumbleDto.Id,
                     Field = field,
                     EntryIntervalSeconds = rumbleDto.EntryIntervalSeconds,
                     Winner = champ,
@@ -661,6 +710,31 @@ namespace WrestlingSim.Persistence
                             Cast = m.Cast.Select(id => byId[id]).ToList(),
                             At   = m.At
                         }).ToList()
+                };
+            }
+
+            // Checked before the segment branch for the same reason the rumble branch is
+            // checked before the match branch: a drawing is written with Kind = Segment and
+            // would otherwise be read back as a promo with no actions.
+            if (dto.Draw is { } drawDto)
+            {
+                var cast = drawDto.Cast.Where(byId.ContainsKey).Select(id => byId[id]).ToList();
+
+                // Same rule as everywhere else on a card: a booking naming somebody the
+                // roster has lost is dropped whole rather than quietly run one short.
+                if (cast.Count != drawDto.Cast.Count || cast.Count == 0) return null;
+                if (drawDto.HostId is { } hostId && !byId.ContainsKey(hostId)) return null;
+
+                // Rumble stays null here. It lives on another show, which this pass has not
+                // necessarily read yet — ResolveDraws binds it once every card is built, and
+                // drops the drawing if the match it draws for is gone.
+                return new RumbleDraw
+                {
+                    RumbleId    = drawDto.RumbleId,
+                    RumbleLabel = drawDto.RumbleLabel,
+                    Cast        = cast,
+                    Host        = drawDto.HostId is null ? null : byId[drawDto.HostId],
+                    Rigged      = drawDto.Rigged.Where(byId.ContainsKey).Select(id => byId[id]).ToList()
                 };
             }
 

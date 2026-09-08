@@ -118,6 +118,13 @@ namespace WrestlingSim.Models
         public SegResult? SegmentResult { get; set; }
 
         /// <summary>
+        /// What a number drawing did, when the item was one. Its own field for the same
+        /// reason a Rumble has one: a drawing has no actions, no botch and no location, and
+        /// the thing it produced is a list of numbers rather than a list of performances.
+        /// </summary>
+        public Rumble.RumbleDrawResult? DrawResult { get; set; }
+
+        /// <summary>
         /// The match's star rating. Normally derived from <see cref="MatchResult"/>, but
         /// settable so a loaded save can restore it: the full engine result is deliberately
         /// not persisted, so without this a reloaded show's card rendered with no stars.

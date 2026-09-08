@@ -72,6 +72,12 @@ namespace WrestlingSim.Engine
                             commentary.Add(
                                 e.IsSurprise
                                     ? $"That music is NOT on the sheet — and it is {e.Wrestler.RingName} at number {e.Number}!"
+                                : e.NumberAnnounced
+                                    // The building has had a week with this one. That is the
+                                    // whole return on having televised the drawing, and it
+                                    // gets said rather than only scored.
+                                    ? $"Number {e.Number}: {e.Wrestler.RingName} — the number " +
+                                      "this building has been talking about all week."
                                 : e.Number <= 2
                                     // The draw is the story, so the bad one gets said. Coming
                                     // out at two is a long night that has not started yet.
@@ -172,6 +178,21 @@ namespace WrestlingSim.Engine
                 winner.Gimmick?.NaturalAlignment ?? Alignment.Face,
                 profiles[winner].Conditioning);
 
+            // What a televised drawing bought. Zero unless one happened, so a Rumble booked
+            // without one scores exactly what it always did — the drawing is a thing to gain
+            // rather than a tax on not having it.
+            bool winnerAnnounced = order.First(e => e.Wrestler == winner).NumberAnnounced;
+            int  announced       = order.Count(e => e.NumberAnnounced);
+            double anticipation  = plan.IsBattleRoyal
+                ? 0.0
+                : RumbleScoring.Anticipation(winnerAnnounced, announced, totalEntries);
+
+            if (winnerAnnounced)
+                commentary.Add($"They have known {winner.RingName}'s number since the drawing, " +
+                               "and they have been arguing about it ever since.");
+
+            entry *= 1 + anticipation;
+
             return new RumbleResult
             {
                 Winner           = winner,
@@ -183,6 +204,7 @@ namespace WrestlingSim.Engine
                 MomentScore      = moments,
                 FieldStarPower   = Math.Clamp(fieldStarPower, 0, 1),
                 EntryStory       = entry,
+                Anticipation     = anticipation,
                 IronManShare     = plan.IsBattleRoyal ? 0.0 : share,
                 FinalScore       = RumbleScoring.FinalScore(
                     moments, Math.Clamp(fieldStarPower, 0, 1),
