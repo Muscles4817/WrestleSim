@@ -1,3 +1,4 @@
+using WrestlingSim.Enums;
 using WrestlingSim.Models.Rumble;
 
 namespace WrestlingSim.Engine
@@ -90,22 +91,62 @@ namespace WrestlingSim.Engine
         /// <summary>
         /// What the winner's entry number is worth as a story, 0–1.
         ///
-        /// Going the distance from number two is the format's signature achievement; winning
-        /// from twenty-nine is a coronation and everybody knows the difference. Linear from
-        /// last to first, because there is nothing clever going on — the further back you
-        /// started, the longer you were out there.
+        /// **Not simply "earlier is better", and the first version's being exactly that was a
+        /// design hole rather than a simplification.** A booker who picks the order freely
+        /// and is rewarded for a low number has no decision to make: every winner enters at
+        /// two, the format's best story becomes a box to tick, and a mechanic with one right
+        /// answer is not a mechanic.
         ///
-        /// **Zero for a battle royal**, and not as a penalty. Everybody starts together, so
-        /// there is no entry number to have a story about — which is doc 18's "it is the
-        /// entries that make the Rumble a story rather than a scramble", stated as a
-        /// number instead of a sentence.
+        /// What a number is worth depends on who drew it, which is how it works in the ring:
+        ///
+        ///   • A **face** who comes out early and outlasts the field is the format's biggest
+        ///     rub. Thirty minutes of surviving is the whole story, and the crowd is counting.
+        ///   • A **heel** who comes out early gets far less for it. Nobody wants to admire a
+        ///     heel's endurance; the sympathy the run generates is the wrong currency for them.
+        ///   • A **heel** who swans out last and steals it is worth the most they can be worth
+        ///     here — a fix everybody can see, and the fury is the point. Heat is engagement
+        ///     (A5), and for a heel it is the goal rather than the cost.
+        ///   • A **face** winning from last is the flat one: a coronation nobody bought.
+        ///
+        /// So the low number stops being universally correct and becomes a question about who
+        /// you are making tonight.
+        ///
+        /// **Conditioning gates the face's version**, because going the distance from number
+        /// two has to be believable. A wrestler with no gas tank outlasting twenty-eight
+        /// people is not an underdog story, it is a booking the crowd can see through. It
+        /// does not gate the heel's steal at all — arriving fresh and last requires nothing.
+        ///
+        /// **Zero for a battle royal**, and not as a penalty. Everybody started together, so
+        /// there is no number to have a story about — which is doc 18's "it is the entries
+        /// that make the Rumble a story rather than a scramble", stated as a number instead
+        /// of a sentence.
         /// </summary>
-        public static double EntryStory(int winnerNumber, int fieldSize, bool battleRoyal)
+        public static double EntryStory(int winnerNumber, int fieldSize, bool battleRoyal,
+                                        Alignment alignment = Alignment.Face,
+                                        double conditioning = 1.0)
         {
             if (battleRoyal || fieldSize <= 1) return 0.0;
 
             int number = Math.Clamp(winnerNumber, 1, fieldSize);
-            return (double)(fieldSize - number) / (fieldSize - 1);
+
+            // How much of the field they were out there for, and its complement.
+            double early = (double)(fieldSize - number) / (fieldSize - 1);
+            double late  = 1.0 - early;
+
+            return alignment switch
+            {
+                // Believability is the whole of it: an unconditioned wrestler cannot sell
+                // having lasted an hour, so the rub is what the crowd will accept.
+                Alignment.Face => early * Math.Clamp(0.45 + conditioning * 0.55, 0, 1),
+
+                // The steal. Worth less at its best than a face's iron-man run at its best,
+                // because outrage is a smaller currency than admiration — but it peaks at the
+                // opposite end, which is the point.
+                Alignment.Heel => late * 0.8,
+
+                // Nobody is quite sure how to feel, so neither reading pays in full.
+                _ => Math.Max(early * 0.6, late * 0.4)
+            };
         }
 
         /// <summary>

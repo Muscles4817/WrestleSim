@@ -2872,3 +2872,74 @@ errors.
 - **What a Rumble win entitles you to.** It moves standing now, which is the general currency,
   but the thing a Rumble win *is* in wrestling is a title shot at the biggest show of the year
   — and the calendar has no notion of a booked future match.
+
+## The number is drawn, and it means opposite things to opposite people
+
+Written down as not built at the end of the Rumble work: *"drawing number one is a storyline
+beat; here the booker picks the order outright."* There was a concrete design hole behind that
+sentence, and it is worth naming precisely because it is the kind that hides inside a feature
+that works.
+
+**`EntryStory` rewarded a low number, and the booker chose the order with no friction.** So the
+optimal play was always "the winner enters at two". A dominant strategy is not a difficulty
+setting, it is a decision the game has already made for the player — and the format's best
+story became a box to tick.
+
+### What a number is worth depends on who drew it
+
+That is not a balance patch, it is how the format works in the ring:
+
+| | early number | late number |
+|---|---|---|
+| **face** | the biggest rub the format produces — outlasted the field | a coronation nobody bought |
+| **heel** | little; nobody wants to admire a heel's endurance | the steal, and the fury is the point |
+
+Heat is engagement and engagement is good (A5), so a heel swanning out last and stealing it is
+a legitimate thing to book rather than a failure to protect somebody. What it is *not* is the
+same booking as a face going the distance, and the old rule could not tell them apart.
+
+A face's iron-man run still out-scores a heel's steal at its best, because admiration is a
+bigger currency than outrage — but they peak at opposite ends, which is what turns picking a
+number back into a decision about who you are making tonight.
+
+**Conditioning gates the face's version and not the heel's.** A wrestler with no gas tank
+outlasting twenty-eight people is not an underdog story, it is a booking the crowd can see
+through; arriving fresh and last requires nothing of anybody. So the low number is not merely a
+choice, it is a choice that needs the right wrestler in it.
+
+### And the number happens to you
+
+`RumblePlan.DrawNumbers` assigns entry positions at random, and the builder offers it as one
+tap. The booker can still reorder by hand afterwards — an authority figure putting somebody in
+at number one on purpose is one of the format's oldest angles, and refusing to allow it would
+be modelling a fantasy — but the honest version is now the default rather than something you
+have to decline to do. `pinned` keeps named wrestlers on the numbers they already hold, which
+is that angle expressed rather than worked around.
+
+It is a Fisher–Yates shuffle, and there is a test that would catch it not being one. The usual
+shortcut — `OrderBy` on a random key — is not uniform, and a draw that is quietly biased is
+exactly the sort of thing that never fails visibly. Four hundred draws, ten wrestlers, every
+mean position inside 4.9–6.1 against an expected 5.5.
+
+The draw is also *said*: number one and number two get told they have drawn the worst number in
+the match, and the last entrant is called the freshest man in it. A number nobody mentions is a
+setting rather than a story.
+
+Four mutations, all killed: alignment ignored so early is always best, conditioning not gating
+the run, the draw done as an `OrderBy`, and pinned numbers redrawn anyway.
+
+Browser-verified at 390×844: eight in the field, **🎲 Draw the numbers**, the order visibly
+changing, the note reading *"Roman Reigns drew number 1 — a long night, and the biggest story
+this match can tell if they survive it"*, and the call opening *"Number 1: Roman Reigns — and
+that is about the worst number you can draw."* No console errors.
+
+**727 tests passing.**
+
+### Still not built
+
+- **The draw as an event on the card.** It is a button in the match builder, so it happens at
+  booking time rather than on a show — where in wrestling the draw is a segment, with an
+  authority figure and a running order somebody can be furious about.
+- **What a Rumble win entitles you to**, still: it moves standing, but what a Rumble win *is*
+  in wrestling is a title shot at the biggest show of the year, and the calendar has no notion
+  of a booked future match.
