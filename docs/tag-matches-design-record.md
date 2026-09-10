@@ -3075,3 +3075,142 @@ being drawn for, 🎤 for whoever is running it.
   Building to the big number is a real piece of segment craft and this does not model it.
 - **What a Rumble win entitles you to**, still. Unchanged: the calendar has no notion of a
   booked future match.
+
+
+## The gimmick match, defined as what it takes away
+
+**The spec is not doc 18.** Every format built so far — multi-man, elimination, handicap,
+Survivor Series, the battle royal — comes out of doc 18 §2.5, and all of them change *who is
+in the match* or *how a fall works*. A stipulation is neither. It lives in **doc 20 §6**,
+inside "The blow-off", and doc 04 §5 lists it in the booker's toolkit beside the turn and the
+title change. Doc 20 is explicit: "the stipulation must match the escalation. A cage match for
+a feud that never got past words…"
+
+So this is a feud mechanic, and the vocabulary is deliberately the rungs of doc 20 §6.2's
+ladder that can be stated as **which finishes are legal**. Doc 04 prices the screwjob finish
+as "protects both, sells the rematch". Every rung is the removal of exactly that, and one
+sentence covers the whole feature:
+
+> In a gimmick match you can no longer lose cheaply.
+
+`StipulationRules.Allows` makes it literal: **every rung forbids the disqualification and the
+count-out**, which are the two finishes that let somebody lose without being beaten. Asserted
+across the whole enum rather than rung by rung, so a rung added later cannot quietly opt out of
+the only rule they all share.
+
+### The one line that does the most work
+
+In a No-DQ match a run-in is a *clean* loss. Interference reads as `Protected` because it is
+against the rules, and the audience forgives a loss it can blame on a rule being broken;
+announce that there are no rules and there is nothing left to blame. `StipulationRules.Weigh`
+promotes exactly that one cell.
+
+`TitleEconomy.ChangesHands(finish) => finish != Protected` then does the rest with no change of
+its own — so **a belt moves on a run-in once the match is No DQ**, which is the classic, and
+the reason a booker who needs a title off somebody who will not lose clean reaches for a
+stipulation. The same promotion makes a blow-off *settle* under a stipulation when the same
+finish would have left it open (`SettlesAFeud`, doc 20 §6.1) — which is doc 20's argument for
+reaching for a stipulation at the end of a feud, arrived at as arithmetic rather than restated.
+
+### Two prices, and an asymmetry between them
+
+Without both of these it is a free rating bonus with no counter — the shape closed twice
+already on the Rumble.
+
+**It has to be earned.** `Escalation` grades the booking against the feud's intensity: No DQ
+wants Building, a cage or Last Man Standing wants Hot, I Quit wants Nuclear. Below that it goes
+**negative** rather than merely to zero, because announcing stakes the room can see were not
+earned is an active statement that the promotion has run out of ideas. Above it there is no
+extra credit — the heat that got the feud there is already paying out through
+`Feud.StartingEnergyBonus`, and crediting it twice would make a nuclear feud's cage worth more
+than the nuclear feud.
+
+**It has to be rare.** `StipulationBook` is the promotion-level counter doc 20 §9 asks for by
+name, and doc 17 §4.1 sets the period: one to two per year. Promotion-level and not per feud,
+because the audience's sense that a cage is special is a fact about the show — two different
+feuds running cages a fortnight apart devalue each other exactly as much as one feud doing it
+twice.
+
+**Scarcity multiplies the reward and not the penalty.** This is the load-bearing line. If a
+long gap softened an unearned stipulation, the way to book an unearned cage would be to *wait*
+— which is not a lesson about wrestling. Being overdue can make a good idea better; it cannot
+make a bad one good.
+
+### Falls Count Anywhere is deliberately absent
+
+In a model whose entire vocabulary is which finishes are legal, it is indistinguishable from No
+DQ: what it actually removes is the ring as a boundary, and the engine has no notion of
+location. A menu entry that is a mechanical duplicate of the one above it is a menu that lies,
+so it is not offered. The same reasoning excludes Hell in a Cell, Ladder/TLC and the permanent
+stakes — those are paid for with bodies and with roster departures, and there is neither a
+match injury model nor a way to write somebody off.
+
+### The interaction worth knowing
+
+A multi-man match already forbids the disqualification and the count-out by its own rule (doc
+18 §2.5, "first fall wins"). So a stipulation on a three-way removes strictly less than the
+same stipulation removes in a singles match — the cage takes away the run-in and nothing else,
+because the escape routes were already gone. That is correct rather than a gap, and it is why a
+gimmick match reads as a bigger deal in a singles blow-off than anywhere else.
+
+### Verified
+
+Twelve mutations, all killed:
+
+1. the cheap loss survives — DQ still legal under a stipulation
+2. the run-in stays an excuse — no promotion to Decisive
+3. an unearned stipulation costs nothing instead of costing
+4. scarcity softens the penalty as well as the reward
+5. no cooldown — everything always fresh
+6. the cage lets the run-in in
+7. the plan never checks its own stipulation
+8. the engine never puts the stipulation in the room
+9. the show never records that it ran one
+10. the show weighs the finish under the rules regardless
+11. the cooldown is not saved
+12. the booked stipulation is not saved
+
+**Number 10 survived the first pass**, and it is the finding. `StipulationRules.Weigh` was
+asserted directly and thoroughly; nothing checked that `ShowSimulator` actually *called* it. So
+the headline consequence of the whole feature — the belt moving on a run-in — was resting on
+nothing, and the mutation that reverted the wiring passed thirteen green tests. The fix is a
+paired end-to-end assertion: same booking, same seed, same finish, and the only difference is
+whether the match was announced as No DQ. This is the same lesson in a new shape: extracting a
+rule so it can be asserted does not, on its own, prove anything is using it.
+
+The same pass moved the blow-off resolution check out of `MatchScreen.razor` and
+`MatchBookingFlow.cs` — where it was written twice and tested in neither — into
+`StipulationRules.SettlesAFeud`.
+
+Browser-verified at 390×844. The builder's stipulation panel reads *"Steel Cage · needs Hot+ ·
+Nobody escapes, nobody interferes. No DQ, count-out, interference · never run"*; booking one on
+a feud that does not exist warns *"The story has not got there… it is worth −11.0 crowd energy,
+which is worse than booking nothing"*; the beat palette shows **DQ Finish** and **Count-Out**
+disabled with the badge *"not in a Steel Cage"*; and the show report says *"Steel Cage — the
+story had not got there yet. The room knew (−11.0 crowd energy)."* No console errors.
+
+Three copy defects found by looking rather than by testing: `.pick__desc` is inline, so two of
+them ran onto one line; `.pick__meta` is `white-space: pre-line`, so a `<br />` in the string
+was escaped rather than rendered; and lower-casing the forbidden-finish list turned "DQ" into
+"dq".
+
+**758 tests passing.**
+
+### Still not built
+
+- **The escalation level doc 20 §9 asks for.** `Demands` grades against `Feud.Intensity`, which
+  is derived from heat — so it measures how *much* has happened, not *what*. Doc 20 wants a
+  feud that has reached "injury" to unlock different beats and stipulations from one at
+  "words", with skipping levels penalised. The history tags are the foundation for it and
+  nothing reads them that way yet. `Demands` is the one function to move when it exists.
+- **Falls Count Anywhere**, until the engine has a notion of where a match is happening.
+- **Hell in a Cell and Ladder/TLC**, until a match can injure somebody. A spectacle stipulation
+  that costs nothing is a rating multiplier, which is the thing the two prices above exist to
+  prevent.
+- **Career, Mask, Hair, Loser Leaves Town**, until there is a way to write somebody off the
+  roster with a story.
+- **War Games**, which is a format rather than a stipulation — staggered entry into a cage, and
+  much closer to the Rumble than to this.
+- **The cage keeping anybody out.** There are no managers, seconds or stables, so the most
+  famous reason a cage match exists has nobody to exclude. `SteelCage` bans the interference
+  finish, which is the closest this codebase can currently get.

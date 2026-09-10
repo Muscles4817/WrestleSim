@@ -158,6 +158,18 @@ namespace WrestlingSim.Models.MatchPlan
         public MatchType MatchType { get; set; } = MatchType.Standard;
 
         /// <summary>
+        /// The gimmick, or <see cref="Stipulation.None"/> for a match under the rules.
+        ///
+        /// Separate from <see cref="MatchType"/>, which is the *style* being worked, and
+        /// separate from the format the sides describe. A stipulation is neither: doc 20
+        /// §6 puts it inside the blow-off, and what it changes is which finishes are legal
+        /// — see <see cref="Engine.StipulationRules"/>. A No-DQ technical singles match and
+        /// a No-DQ spotfest tag are both coherent bookings, which is the test that these
+        /// are genuinely different axes rather than one axis wearing two names.
+        /// </summary>
+        public Stipulation Stipulation { get; set; } = Stipulation.None;
+
+        /// <summary>
         /// The championship on the line, or null for a non-title match.
         ///
         /// A title creates automatic stakes for any match involving it
@@ -497,6 +509,16 @@ namespace WrestlingSim.Models.MatchPlan
                 // actually in the match.
                 errors.Add($"Finish beat must be controlled by one of the {Sides.Count} sides " +
                            "— a finish decides who wins.");
+
+            // ── Stipulation ──────────────────────────────────────────────────
+            // The whole of what a gimmick match is, enforced where the booking is made.
+            // A stipulation the builder announces and then lets you finish with a
+            // disqualification is not a stipulation, it is a label.
+            if (Stipulation != Stipulation.None && finishBeats.Count == 1
+                && !Engine.StipulationRules.Allows(Stipulation, finishBeats[0].Type))
+                errors.Add(
+                    $"A {Engine.StipulationRules.Label(Stipulation)} match cannot end that " +
+                    $"way. {Engine.StipulationRules.Says(Stipulation)}");
 
             // ── Title ────────────────────────────────────────────────────────
             if (TitleAtStake is { } title)

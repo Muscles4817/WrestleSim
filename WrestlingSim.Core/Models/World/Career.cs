@@ -55,6 +55,12 @@ namespace WrestlingSim.Models.World
         public BrandSplit Brands { get; set; } = new();
 
         /// <summary>
+        /// When the promotion last ran each gimmick match. Doc 20 §9 asks for stipulation
+        /// scarcity "as a promotion-level counter", and this is that counter.
+        /// </summary>
+        public Engine.StipulationBook Stipulations { get; set; } = new();
+
+        /// <summary>
         /// Standing tag teams. A pair booked together without a team here is two singles
         /// wrestlers on the same side, which is a real and different thing — see
         /// <see cref="TagTeam"/>.

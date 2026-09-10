@@ -456,7 +456,8 @@ public class GameState
             ? new BrandContext(Career.Brands, Career.BrandOfShow(show))
             : null;
 
-        var result = new ShowSimulator(Career.FeudBook, titles: Career.Titles, brands: brands)
+        var result = new ShowSimulator(Career.FeudBook, titles: Career.Titles, brands: brands,
+                                       stipulations: Career.Stipulations)
             .Simulate(show.ToShow());
         show.Result = result;
 

@@ -103,6 +103,10 @@ namespace WrestlingSim.Persistence
             }).ToList(),
 
             Brands = ToDto(career.Brands),
+            Stipulations = career.Stipulations.LastUsed
+                .Select(kv => new StipulationUseDto { Stipulation = kv.Key, LastUsed = kv.Value })
+                .OrderBy(u => u.Stipulation)
+                .ToList(),
 
             Teams = career.Teams.Select(t => new TagTeamDto
             {
@@ -241,6 +245,7 @@ namespace WrestlingSim.Persistence
                 StartingIndexA = m.Plan.SideA.StartingIndex,
                 StartingIndexB = m.Plan.SideB.StartingIndex,
                 MatchType      = m.Plan.MatchType,
+                Stipulation    = m.Plan.Stipulation,
                 StructureName  = m.StructureName,
                 TitleId        = m.Plan.TitleAtStake?.Id,
                 IsBlowOff      = m.Plan.IsBlowOff,
@@ -411,6 +416,9 @@ namespace WrestlingSim.Persistence
             }
 
             if (dto.Brands is { } brands) career.Brands = FromDto(brands, byId);
+
+            foreach (var use in dto.Stipulations)
+                career.Stipulations.Restore(use.Stipulation, use.LastUsed);
 
             foreach (var f in dto.Feuds)
             {
@@ -771,6 +779,7 @@ namespace WrestlingSim.Persistence
                         Team          = teams.FirstOrDefault(t => t.Id == dto.TeamBId)
                     },
                     MatchType = dto.MatchType,
+                    Stipulation = dto.Stipulation,
                     // Re-bind to the live feud so a reloaded card reads current heat.
                     //
                     // Keyed on the two SIDES. Looking it up by the two starters found
