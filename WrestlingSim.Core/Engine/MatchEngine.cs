@@ -1184,6 +1184,14 @@ namespace WrestlingSim.Engine
                     ApplyPinBreak(result, beat, ctx, control, iMod, timesUsed);
                     break;
 
+                case BeatType.Alliance:
+                    ApplyAlliance(result, beat, ctx, control, iMod, dMod);
+                    break;
+
+                case BeatType.Betrayal:
+                    ApplyBetrayal(result, beat, ctx, control, iMod, dMod);
+                    break;
+
                 case BeatType.SpiteBreak:
                     ApplySpiteBreak(result, beat, ctx, control, iMod);
                     break;
@@ -1678,6 +1686,118 @@ namespace WrestlingSim.Engine
         /// decision, it is a character decision, and a booking that never pays for it is
         /// not telling the story it thinks it is.
         /// </summary>
+        /// <summary>
+        /// **Two of them work the third.**
+        ///
+        /// Doc 18 §2.5 calls the temporary alliance "the format's single best story", and
+        /// this is the half of it the engine had no way to express. Every multi-man beat it
+        /// carried was about removing somebody — disposal, break, elimination — and none of
+        /// them could say two people were working together.
+        ///
+        /// It scores like a heat segment with two workers on it and a crowd that knows it
+        /// cannot last. The advantage goes hard against the victim, because it is two on
+        /// one; the storytelling is high, because everybody in the building is waiting for
+        /// one of the two to move first.
+        ///
+        /// **The victim is not disposed of.** That is the whole difference between this and
+        /// the disposal spot: they are the most involved person in the ring, being worked
+        /// over by both of the others, and the format's characteristic failure — a third man
+        /// nobody can account for — is solved rather than deferred.
+        /// </summary>
+        private void ApplyAlliance(BeatResult r, MatchBeat beat, Ctx ctx,
+            Wrestler? control, double iMod, double dMod)
+        {
+            control ??= ctx.LegalDefault;
+            var target = TargetOf(beat, ctx, control);
+            var victim = ctx.LegalOf(target);
+
+            // Whoever is neither the named worker nor the victim is the other half of it.
+            var partner = ctx.AllLegal.FirstOrDefault(w => w != control && w != victim);
+
+            // Two people working is worth more than one, but not twice as much: they are
+            // getting in each other's way and neither of them wants the other to score.
+            double pair = partner is null
+                ? 1.0
+                : 1.35 + 0.25 * PerformerProfile.Blend(ctx.For(partner).Workrate, 0.4);
+
+            r.CrowdEnergyDelta = Rng(8, 15) * iMod * pair
+                                 * PerformerProfile.Blend(ctx.For(victim).Connection, 0.55);
+
+            r.AdvantageDelta = -ControlSign(ctx, ctx.LegalOf(target)) * Rng(7, 15) * iMod * pair;
+
+            r.TechnicalContribution    = 3.0 * iMod * pair;
+            r.StorytellingContribution = 8.0 * dMod * pair;
+
+            r.Reaction = ReactionKind.Tension;
+
+            r.Commentary.Add(partner is null
+                ? Pick(
+                    $"{control.RingName} has {victim.RingName} isolated and there is nobody coming.",
+                    $"{victim.RingName} is being taken apart and has no way out of it.")
+                : Pick(
+                    $"{control.RingName} and {partner.RingName} have the same idea — and {victim.RingName} is in trouble!",
+                    $"An understanding between {control.RingName} and {partner.RingName}, and {victim.RingName} is paying for it!",
+                    $"Two on one! {victim.RingName} cannot fight both of them — and how long does this last?",
+                    $"{control.RingName} and {partner.RingName} are working together, and every soul in this building knows how that ends."));
+        }
+
+        /// <summary>
+        /// **The alliance breaks, and whoever moves first has the advantage.**
+        ///
+        /// Doc 18 §2.5: "the moment it breaks is the peak." It is priced like one — the
+        /// biggest crowd beat in a multi-man match that is not a finish.
+        ///
+        /// Unlike a <see cref="BeatType.SpiteBreak"/>, this *pays* the person who does it.
+        /// A spite break costs the spiter their position and is a character decision rather
+        /// than a good one; a betrayal is both, which is exactly why the audience spends the
+        /// whole alliance waiting for it and why the anticipation is worth something on its
+        /// own. Modelling them the same way would flatten the difference between the beat
+        /// somebody regrets and the beat somebody planned.
+        /// </summary>
+        private void ApplyBetrayal(BeatResult r, MatchBeat beat, Ctx ctx,
+            Wrestler? control, double iMod, double dMod)
+        {
+            control ??= ctx.LegalDefault;
+            var betrayed = ctx.LegalOf(TargetOf(beat, ctx, control));
+
+            // A betrayal between two people with history is a chapter; between strangers it
+            // is a wrestling move. The feud is not required — a three-way alliance is
+            // temporary by construction and everyone knows it — but it is worth a great deal.
+            var feud = ctx.Plan.FeudBetween(control, betrayed);
+            double grudge = feud?.IntensityMultiplier ?? 0.0;
+            r.FeudalResonanceActivated = feud is not null;
+            if (feud is not null)
+                _grudges.Add(new GrudgeMoment(control, betrayed, BeatType.Betrayal));
+
+            double weight = 1.0 + 0.5 * Math.Clamp(grudge, 0, 1.6) / 1.6;
+
+            r.CrowdEnergyDelta = Rng(14, 24) * iMod * weight
+                                 * PerformerProfile.Blend(ctx.For(control).Connection, 0.5);
+
+            // To the betrayer. They moved first, which is the whole of what this beat is.
+            r.AdvantageDelta = ControlSign(ctx, control) * Rng(8, 16) * iMod;
+
+            r.TechnicalContribution    = 1.5 * iMod;
+            r.StorytellingContribution = 11.0 * dMod * weight
+                                         * PerformerProfile.Blend(ctx.For(control).RingPsych, 0.45);
+
+            // A pop, not a new reaction kind. The crowd reaction vector is calibrated and
+            // a betrayal is a sudden cheer for something they wanted — which is what Pop
+            // already means. Inventing a Shock to sit beside it would be a sixth column
+            // nothing else knows how to weigh.
+            r.Reaction = ReactionKind.Pop;
+
+            r.Commentary.Add(feud is not null
+                ? Pick(
+                    $"THERE IT IS! {control.RingName} turns on {betrayed.RingName} — and after everything between these two, who is surprised?",
+                    $"{control.RingName} strikes first! That alliance was never going to survive what these two have been through!",
+                    $"The truce is over — {control.RingName} was waiting for that, and {betrayed.RingName} should have known it!")
+                : Pick(
+                    $"And there it goes! {control.RingName} turns on {betrayed.RingName} — every alliance in this match had an expiry date!",
+                    $"{control.RingName} moves first! {betrayed.RingName} never saw it coming!",
+                    $"The truce lasted exactly as long as it was useful — {control.RingName} makes sure of that!"));
+        }
+
         private void ApplySpiteBreak(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, double iMod)
         {
@@ -3254,6 +3374,30 @@ namespace WrestlingSim.Engine
                 ? 0.0
                 : Math.Clamp((coherence - 0.55) * 16.0, -8.0, 8.0);
 
+            // ── What the match promised, and whether it delivered ────────────
+            //
+            // The other half of the coherence question, and the half the booker does not
+            // declare. Doc 18 §3.2 and doc 16: a crowd arrives wanting something, decided by
+            // who is in the ring, what the feud has been, what the rules are and what is at
+            // stake. Giving them it pays. Giving them something else costs, unless these two
+            // are good enough to win the room round — which is a question about the
+            // performers, not about the plan.
+            //
+            // Only for a plan booked from a brief. A hand-built plan made no promise, so
+            // there is nothing here to keep or break and the term is zero.
+            double expectationNudge = 0.0;
+            Expectation? promised = null;
+
+            if (plan.Brief is { } brief)
+            {
+                var reading = MatchExpectation.Of(
+                    plan.Sides, plan.Feud, plan.Stipulation, plan.TitleAtStake is not null);
+
+                promised = reading;
+                expectationNudge = MatchExpectation.Reward(
+                    reading, brief.Story, MatchExpectation.CanCarryIt(plan.Sides));
+            }
+
             // ── Elimination pacing ───────────────────────────────────────────
             //
             // Doc 18 §2.5 says the drama of this format is the *order* of the eliminations,
@@ -3295,7 +3439,7 @@ namespace WrestlingSim.Engine
 
             double finalScore = Math.Clamp(
                 techComponent + storyComponent + crowdComponent + finishNudge + varietyNudge
-                    + coherenceNudge + pacingNudge + defianceNudge,
+                    + coherenceNudge + pacingNudge + defianceNudge + expectationNudge,
                 0, 100);
 
             double starRating = Math.Clamp(finalScore / 20.0, 0, 5);
@@ -3329,6 +3473,8 @@ namespace WrestlingSim.Engine
                 CrowdAverageEnergy = state.CrowdAverage,
                 FinishQuality      = state.FinishQuality,
                 MatchTypeCoherence = coherence,
+                Promised           = promised,
+                ExpectationNudge   = expectationNudge,
                 Reaction           = state.Reaction,
                 Familiarity        = ctx.Familiarity,
                 Stipulation        = ctx.Plan.Stipulation,

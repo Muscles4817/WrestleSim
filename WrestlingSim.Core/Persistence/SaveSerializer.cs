@@ -251,6 +251,7 @@ namespace WrestlingSim.Persistence
                 MatchType      = m.Plan.MatchType,
                 Stipulation    = m.Plan.Stipulation,
                 StructureName  = m.StructureName,
+                Brief          = ToDto(m.Plan.Brief),
                 TitleId        = m.Plan.TitleAtStake?.Id,
                 IsBlowOff      = m.Plan.IsBlowOff,
                 Beats = m.Plan.Beats.Select(b => new BeatDto
@@ -671,6 +672,54 @@ namespace WrestlingSim.Persistence
                 });
         }
 
+        private static BriefDto? ToDto(Models.MatchPlan.MatchBrief? brief) =>
+            brief is null ? null : new BriefDto
+            {
+                Story       = brief.Story,
+                Length      = brief.Length,
+                Finish      = brief.Finish,
+                WinningSide = brief.WinningSide,
+                Outside     = brief.Outside,
+                Draft       = brief.Draft,
+                Alliance    = brief.Alliance is { } pact ? [pact.First, pact.Second] : null,
+                AllianceBreaks = brief.AllianceBreaks,
+                Bookings    = brief.Bookings.ToDictionary(
+                                  kv => kv.Key.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                                  kv => kv.Value)
+            };
+
+        /// <summary>
+        /// A brief whose side keys cannot be read is dropped rather than half-restored: a
+        /// booking that says the wrong side goes over is worse than one that says nothing.
+        /// </summary>
+        private static Models.MatchPlan.MatchBrief? FromDto(BriefDto? dto)
+        {
+            if (dto is null) return null;
+
+            var brief = new Models.MatchPlan.MatchBrief
+            {
+                Story       = dto.Story,
+                Length      = dto.Length,
+                Finish      = dto.Finish,
+                WinningSide = dto.WinningSide,
+                Outside     = dto.Outside,
+                Draft       = dto.Draft,
+
+                // Two entries or nothing. A malformed pair is dropped rather than half-read:
+                // an alliance missing one of its members would generate a beat aimed at a
+                // side that is not in it.
+                Alliance    = dto.Alliance is { Count: 2 } pair ? (pair[0], pair[1]) : null,
+                AllianceBreaks = dto.AllianceBreaks
+            };
+
+            foreach (var (key, booking) in dto.Bookings)
+                if (int.TryParse(key, System.Globalization.NumberStyles.Integer,
+                                 System.Globalization.CultureInfo.InvariantCulture, out int side))
+                    brief.Bookings[side] = booking;
+
+            return brief;
+        }
+
         private static InjuryDto? ToDto(Models.Person.Injury? injury) =>
             injury is null ? null : new InjuryDto
             {
@@ -823,6 +872,7 @@ namespace WrestlingSim.Persistence
                         Team          = teams.FirstOrDefault(t => t.Id == dto.TeamBId)
                     },
                     MatchType = dto.MatchType,
+                    Brief     = FromDto(dto.Brief),
                     Stipulation = dto.Stipulation,
                     // Re-bind to the live feud so a reloaded card reads current heat.
                     //

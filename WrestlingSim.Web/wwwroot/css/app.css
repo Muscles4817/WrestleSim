@@ -1145,3 +1145,78 @@ table.data tr:last-child td { border-bottom: 0; }
 @media (max-width: 420px) { .rcard__meters { grid-template-columns: 1fr; gap: 6px; } }
 .rcard__out     { margin-top: 8px; font-size: var(--t-sm); color: var(--heel); font-weight: 700; }
 .rcard__history { margin-top: 6px; font-size: var(--t-xs); color: var(--faint); }
+
+/* ── The brief ────────────────────────────────────────────────────────────
+   The booking as a sentence, with every decision a tap target inside it. The
+   alternative was five labelled dropdowns, which is the same information and
+   none of the meaning: "Becky goes over clean" reads as a booking and
+   "Winner: Becky / Finish: Clean" reads as a form. */
+
+.expect__wants {
+  font-size: var(--t-lg); font-weight: 800; color: var(--gold-2);
+}
+/* Sentence case, not title case. `capitalize` renders "An Even Contest", which reads as
+   a proper noun for something that is a description. */
+.expect__wants::first-letter { text-transform: uppercase; }
+.expect__reading { margin-top: 4px; color: var(--ink-2); line-height: 1.5; }
+
+.chip__hint {
+  margin-left: 6px; font-size: var(--t-xs); font-weight: 600;
+  color: var(--gold-2); letter-spacing: 0;
+}
+
+.brief {
+  margin: 0; line-height: 2.1; font-size: var(--t-md); color: var(--ink-2);
+}
+
+/* Inline in the sentence, so it has to sit on the text baseline rather than
+   as a block. 44px would break the line rhythm badly at this size, so the tap
+   target is widened with padding instead and the row height carries the rest. */
+.brief__slot {
+  appearance: none; cursor: pointer; font: inherit;
+  font-weight: 800; color: var(--ink);
+  background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: 8px; padding: 6px 10px; margin: 0 2px;
+  transition: background .13s, border-color .13s;
+}
+@media (hover: hover) and (pointer: fine) {
+  .brief__slot:hover { background: var(--panel-3); border-color: var(--line-strong, var(--line)); }
+}
+.brief__slot.is-open {
+  background: rgba(245, 185, 59, .13);
+  border-color: rgba(245, 185, 59, .45);
+  color: var(--gold-2);
+}
+.brief__slot:focus-visible { outline: none; box-shadow: var(--ring); }
+
+.picks--tight .pick { padding: 10px 12px; }
+
+/* ── The written sheet ──────────────────────────────────────────────────── */
+
+.panel__meta {
+  float: right; font-weight: 600; letter-spacing: .04em;
+  color: var(--faint); text-transform: none;
+}
+
+.written { display: grid; gap: 2px; }
+.written__row {
+  display: grid; grid-template-columns: 74px 1fr auto; gap: 10px;
+  align-items: baseline;
+  padding: 9px 0; border-bottom: 1px solid var(--line-soft);
+}
+.written__row:last-child { border-bottom: 0; }
+.written__phase {
+  font-size: var(--t-xs); font-weight: 800; letter-spacing: .1em;
+  color: var(--muted);
+}
+.written__beat { font-weight: 700; color: var(--ink); }
+.written__why  { font-size: var(--t-sm); color: var(--faint); margin-top: 2px; line-height: 1.45; }
+.written__meta { font-size: var(--t-sm); color: var(--ink-2); text-align: right; }
+
+@media (max-width: 420px) {
+  /* 76px, not 62: "COMEBACK" is the longest label and at 62 it ran under the beat
+     name. Sized to the worst case rather than to the common one. */
+  .written__row { grid-template-columns: 76px 1fr; }
+  .written__phase { letter-spacing: .06em; }
+  .written__meta { grid-column: 2; text-align: left; font-size: var(--t-xs); }
+}

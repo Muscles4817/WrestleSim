@@ -126,6 +126,19 @@ namespace WrestlingSim.Models.MatchPlan
         public Stipulation Stipulation { get; init; } = Stipulation.None;
 
         /// <summary>
+        /// What the crowd came for, derived rather than declared, or null when the plan was
+        /// built by hand and so promised nothing.
+        /// </summary>
+        public Engine.Expectation? Promised { get; init; }
+
+        /// <summary>
+        /// What serving or defying that promise was worth, in final-score points. Positive
+        /// for the match they came for, negative for one they did not — discounted by
+        /// whether these two could carry it.
+        /// </summary>
+        public double ExpectationNudge { get; init; }
+
+        /// <summary>
         /// Anybody the match hurt, reported rather than applied. The show layer writes
         /// these down; the engine only says what happened, which is why a match can be
         /// simulated twice without maiming somebody twice.

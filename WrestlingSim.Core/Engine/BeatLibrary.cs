@@ -651,6 +651,61 @@ namespace WrestlingSim.Engine
                 BookerTip        = "One beat before the survivor crawls over. Nobody gains an advantage — that is the beat.",
                 Tags             = ["Multi-Man", "Story", "Feud"]
             },
+            // ── The alliance, and the moment it breaks ───────────────────────
+            //
+            // Doc 18 §2.5 calls this "the format's single best story", and until now the
+            // engine had no beat for either half of it. Every multi-man beat it carried was
+            // about removing somebody from the picture; none could say that two of them were
+            // working together, which is what a three-way opens with and turns on.
+
+            new BeatTemplate
+            {
+                Name             = "Two On One",
+                Description      = "Two of them decide the third is the problem and work them over together.",
+                Category         = CatMultiMan,
+                Type             = BeatType.Alliance,
+                DefaultIntensity = BeatIntensity.High,
+                DefaultDuration  = BeatDuration.Short,
+                BookerTip        = "The answer to the odd one out that is not a disposal — all three are busy.",
+                Tags             = ["Multi-Man", "Story", "Teamwork"]
+            },
+
+            new BeatTemplate
+            {
+                Name             = "Uneasy Truce",
+                Description      = "They work together and neither of them trusts it for a second.",
+                Category         = CatMultiMan,
+                Type             = BeatType.Alliance,
+                DefaultIntensity = BeatIntensity.Medium,
+                DefaultDuration  = BeatDuration.Short,
+                BookerTip        = "The slower version. Buys more from the betrayal when it comes.",
+                Tags             = ["Multi-Man", "Story", "Tension"]
+            },
+
+            new BeatTemplate
+            {
+                Name             = "The Betrayal",
+                Description      = "One of them turns on the other, and whoever moved first has the advantage.",
+                Category         = CatMultiMan,
+                Type             = BeatType.Betrayal,
+                DefaultIntensity = BeatIntensity.High,
+                DefaultDuration  = BeatDuration.Brief,
+                BookerTip        = "Doc 18 §2.5: the moment it breaks is the peak. Needs an alliance in front of it.",
+                Tags             = ["Multi-Man", "Story", "Betrayal"]
+            },
+
+            new BeatTemplate
+            {
+                Name             = "Cheap Shot",
+                Description      = "No speech and no warning — one of them just takes their shot while the other is busy.",
+                Category         = CatMultiMan,
+                Type             = BeatType.Betrayal,
+                DefaultIntensity = BeatIntensity.Medium,
+                DefaultDuration  = BeatDuration.Brief,
+                BookerTip        = "The opportunist's version. Smaller moment, same consequence.",
+                Tags             = ["Multi-Man", "Heel", "Surprise"]
+            },
+
             new BeatTemplate
             {
                 Name             = "Elimination",

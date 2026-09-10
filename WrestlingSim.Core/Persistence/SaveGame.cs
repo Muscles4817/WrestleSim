@@ -332,6 +332,17 @@ namespace WrestlingSim.Persistence
         public Stipulation Stipulation { get; set; }
 
         public string StructureName { get; set; } = "Custom";
+
+        /// <summary>
+        /// What the booker asked for, when this match was written from a brief.
+        ///
+        /// Saved because the engine grades a match against it: a card booked tonight and run
+        /// next week would otherwise reload with no promise attached and be scored as though
+        /// nobody had said what it was for. Null on a hand-built plan and on every save
+        /// written before briefs existed.
+        /// </summary>
+        public BriefDto? Brief { get; set; }
+
         public List<BeatDto> Beats { get; set; } = new();
 
         /// <summary>The championship on the line, by <see cref="TitleDto.Id"/>. Null if none.</summary>
@@ -420,6 +431,29 @@ namespace WrestlingSim.Persistence
         public double? StarRating { get; set; }
 
         public List<string> Notes { get; set; } = new();
+    }
+
+    /// <summary>What a match was booked to be.</summary>
+    public class BriefDto
+    {
+        public MatchStory Story  { get; set; }
+        public MatchScale Length { get; set; }
+        public FinishKind Finish { get; set; }
+        public int WinningSide   { get; set; }
+        public OutsideFactor Outside { get; set; }
+        public int Draft { get; set; }
+
+        /// <summary>
+        /// The two sides who work together, as a two-element list, or null for a match where
+        /// nobody does. A list rather than a tuple because a tuple round-trips through JSON
+        /// as `Item1`/`Item2`, which is a shape nobody wants to read in a save file.
+        /// </summary>
+        public List<int>? Alliance { get; set; }
+
+        public bool AllianceBreaks { get; set; } = true;
+
+        /// <summary>How each side comes out, keyed by side index as a string for JSON.</summary>
+        public Dictionary<string, Booking> Bookings { get; set; } = new();
     }
 
     /// <summary>One injury, on a wrestler's sheet or in their history.</summary>
