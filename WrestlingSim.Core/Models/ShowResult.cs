@@ -11,6 +11,9 @@ namespace WrestlingSim.Models
 
         public List<CardItemResult> Items { get; set; } = new();
 
+        /// <summary>Anybody the night took off the roster.</summary>
+        public List<InjuryReport> Injuries { get; set; } = new();
+
         /// <summary>Every feud that moved as a result of this show.</summary>
         public List<FeudUpdate> FeudUpdates { get; set; } = new();
 
@@ -83,6 +86,16 @@ namespace WrestlingSim.Models
         public double ExclusivityBonus { get; init; }
 
         public bool WasExclusive => Crossovers.Count == 0;
+    }
+
+    /// <summary>Somebody the night hurt, for the show report.</summary>
+    public class InjuryReport
+    {
+        public required Wrestler Wrestler { get; init; }
+        public required Person.Injury Injury { get; init; }
+
+        /// <summary>They have done this one before. Doc 15's strongest single predictor.</summary>
+        public bool Repeat { get; init; }
     }
 
     public class CardItemResult

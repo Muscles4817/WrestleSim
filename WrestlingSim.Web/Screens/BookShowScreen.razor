@@ -129,8 +129,26 @@ else if (show.HasRun)
         }
     </div>
 
+    @* Above everything else on the report. A rating is a number; somebody being out for
+       six months is the thing that changes next month's booking. *@
+    @if (result.Injuries.Count > 0)
+    {
+        <div class="notice notice--error mt">
+            <strong>Hurt tonight.</strong>
+            @foreach (var hurt in result.Injuries)
+            {
+                <div>
+                    @hurt.Wrestler.RingName — @hurt.Injury.Reason(show.Date)
+                    @if (hurt.Repeat) { <text> · not the first time</text> }
+                </div>
+            }
+        </div>
+    }
+
     @* Status movement, feud movement and play-by-play exist only for a show run this
-       session — a reloaded save keeps the result summary, not the beat-by-beat detail. *@
+       session — a reloaded save keeps the result summary, not the beat-by-beat detail.
+       Injuries above are the exception that matters: those are written onto the wrestler,
+       so a reloaded save still knows who is out even when this block has gone. *@
     @if (result.TitleUpdates.Count > 0)
     {
         <TitleChanges Updates="@result.TitleUpdates" />
@@ -376,6 +394,22 @@ else
             </div>
         }
 
+    @* The builder refuses to book somebody who is already hurt, but a career books a month
+       ahead: the wrestler on next month's card was fit when you booked him and got hurt on
+       tonight's show. That is the ordinary case, not the edge one, so the card is checked
+       again on the night — and this one stops the show rather than warning about it. *@
+    @if (HurtOnCard(show) is { Count: > 0 } unfit)
+    {
+        <div class="notice notice--error mt">
+            <strong>@unfit.Count on this card cannot work.</strong>
+            @foreach (var (w, injury) in unfit)
+            {
+                <div>@w.RingName — @injury.Reason(show.Date)</div>
+            }
+            Take them off the card before running it.
+        </div>
+    }
+
         <div class="row mt">
             <button class="btn" @onclick="() => mode = Mode.AddMatch">+ Add a match</button>
             <button class="btn" @onclick="() => mode = Mode.AddSegment">+ Add a segment</button>
@@ -388,7 +422,9 @@ else
                 <button class="btn" @onclick="() => mode = Mode.AddDraw">+ Add a number drawing</button>
             }
             <span class="spacer"></span>
-            <button class="btn btn--primary" disabled="@(show.Card.Count == 0)" @onclick="() => Run(show)">
+            <button class="btn btn--primary"
+                    disabled="@(show.Card.Count == 0 || HurtOnCard(show).Count > 0)"
+                    @onclick="() => Run(show)">
                 Run the show ★
             </button>
         </div>
@@ -421,6 +457,17 @@ else
     }
 
     /// <summary>Everyone booked on this card who does not belong on this show.</summary>
+    /// <summary>
+    /// Everybody on this card who is injured on the night it runs, deduplicated — somebody
+    /// booked into two matches is one problem, not two.
+    /// </summary>
+    private static List<(Wrestler W, WrestlingSim.Models.Person.Injury Injury)> HurtOnCard(ScheduledShow show) =>
+        show.Card.SelectMany(item => item.Wrestlers)
+            .Distinct()
+            .Where(w => w.Injury?.KeepsOut(show.Date) == true)
+            .Select(w => (w, w.Injury!))
+            .ToList();
+
     private static List<Crossover> Crossovers(Career career, ScheduledShow show) =>
         BrandIntegrity.Detect(show.Card, career.Brands, career.BrandOfShow(show)).ToList();
 

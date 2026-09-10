@@ -1143,3 +1143,5 @@ table.data tr:last-child td { border-bottom: 0; }
 .rcard__meters { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
 .rcard__warn   { margin-top: 8px; font-size: var(--t-sm); color: var(--heel); }
 @media (max-width: 420px) { .rcard__meters { grid-template-columns: 1fr; gap: 6px; } }
+.rcard__out     { margin-top: 8px; font-size: var(--t-sm); color: var(--heel); font-weight: 700; }
+.rcard__history { margin-top: 6px; font-size: var(--t-xs); color: var(--faint); }

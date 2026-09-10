@@ -9,6 +9,18 @@ namespace WrestlingSim.Engine
     {
         private readonly Random _rand;
 
+        /// <summary>
+        /// A second stream, for injury rolls only.
+        ///
+        /// **Injuries must not perturb the match.** They are drawn per wrestler per beat,
+        /// so taking them off <see cref="_rand"/> would shift every subsequent draw the
+        /// narrative makes and silently re-roll every seeded expectation in the game — the
+        /// measured medians this repo calibrates against included. The physical cost of a
+        /// match and the story it tells are independent questions; they get independent
+        /// dice.
+        /// </summary>
+        private readonly Random _injuryRand;
+
         /// <summary>Grudge moments this execution produced; see <see cref="GrudgeMoment"/>.</summary>
         private readonly List<GrudgeMoment> _grudges = new();
 
@@ -334,6 +346,11 @@ namespace WrestlingSim.Engine
         public MatchEngine(int? seed = null)
         {
             _rand = seed.HasValue ? new Random(seed.Value) : Random.Shared;
+
+            // Derived from the same seed so a seeded match is still reproducible end to
+            // end, and offset so the two streams are not the same numbers in the same order.
+            _injuryRand = seed.HasValue ? new Random(unchecked(seed.Value * 31 + 7))
+                                        : Random.Shared;
         }
 
         // ── Per-match context ────────────────────────────────────────────────
@@ -793,7 +810,8 @@ namespace WrestlingSim.Engine
         /// a plan the player never runs should not carry a stale reading around with it.
         /// </summary>
         public MatchEngineResult Execute(MatchPlan plan, double familiarity = 1.0,
-                                         int? daysSinceStipulation = null)
+                                         int? daysSinceStipulation = null,
+                                         PromotionTier tier = PromotionTier.Established)
         {
             var errors = plan.Validate();
             if (errors.Any())
@@ -823,19 +841,112 @@ namespace WrestlingSim.Engine
             InitialiseState(ctx);
 
             var beatResults = new List<BeatResult>();
+            var hurt = new List<InjuryRoll>();
 
             foreach (var beat in plan.Beats)
             {
                 var result = ExecuteBeat(beat, ctx);
                 beatResults.Add(result);
 
+                // Rolled per beat rather than once per match, because doc 15 §3.1's most
+                // specific claim is about *when*: "poor conditioning sharply increases
+                // late-match injury risk". A roll at the end could not tell the tenth
+                // minute from the second.
+                RollForInjury(beat, ctx, tier, hurt);
+
                 // Natural energy decay between beats (except after the finish)
                 if (!beat.IsFinish)
                     ctx.State.ApplyDecay();
             }
 
-            return BuildResult(ctx, beatResults);
+            return BuildResult(ctx, beatResults, hurt);
         }
+
+        /// <summary>
+        /// One beat's worth of physical risk, for everybody working it.
+        ///
+        /// **Reported, never applied.** The engine says who got hurt and the show layer
+        /// writes it down — the same split every other consequence in here uses, and the
+        /// reason a match can be simulated twice without maiming somebody twice.
+        ///
+        /// Nothing about the roll reads the rating. An injury is not a penalty for booking
+        /// a bad match; it is the physical cost of having had one.
+        /// </summary>
+        private void RollForInjury(MatchBeat beat, Ctx ctx, PromotionTier tier,
+                                   List<InjuryRoll> hurt)
+        {
+            var legal = ctx.AllLegal;
+            for (int i = 0; i < legal.Count; i++)
+            {
+                var wrestler = legal[i];
+
+                // Somebody already hurt tonight is not rolled again — a match produces at
+                // most one injury per wrestler, and the first one is the story.
+                if (AlreadyHurt(hurt, wrestler)) continue;
+
+                var part = PickBodyPart(wrestler);
+
+                double risk = InjuryRisk.PerBeat(
+                    wrestler, beat.Intensity, ctx.State.BeatIndex,
+                    ctx.For(wrestler).BaseConditioning,
+                    ctx.Opponent(wrestler), tier, part);
+
+                if (_injuryRand.NextDouble() >= risk) continue;
+
+                var (low, high) = InjuryRisk.WeeksOut(part);
+                hurt.Add(new InjuryRoll(wrestler, part, _injuryRand.Next(low, high + 1)));
+            }
+        }
+
+        private static bool AlreadyHurt(List<InjuryRoll> hurt, Wrestler w)
+        {
+            for (int i = 0; i < hurt.Count; i++)
+                if (hurt[i].Wrestler == w) return true;
+            return false;
+        }
+
+        private static readonly BodyPart[] Parts = Enum.GetValues<BodyPart>();
+
+        /// <summary>
+        /// The weight table for one kind of body, built once.
+        ///
+        /// This is called for every wrestler on every beat of every match, which the first
+        /// version did with <c>Enum.GetValues</c> and three LINQ passes — reflection and
+        /// four allocations per wrestler per beat, and measurably slower across a card. The
+        /// table only depends on style and size, and there are thirty of those.
+        /// </summary>
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<
+            (WrestlingStyle Style, int Size), (double[] Weights, double Total)> BodyOdds = new();
+
+        private static (double[] Weights, double Total) OddsFor(WrestlingStyle style, int size) =>
+            BodyOdds.GetOrAdd((style, size), key =>
+            {
+                var weights = new double[Parts.Length];
+                double total = 0;
+                for (int i = 0; i < Parts.Length; i++)
+                {
+                    weights[i] = InjuryRisk.Likelihood(Parts[i], key.Style, key.Size);
+                    total += weights[i];
+                }
+                return (weights, total);
+            });
+
+        /// <summary>Which injury this wrestler is most likely to pick up, weighted per doc 15 §2.1.</summary>
+        private BodyPart PickBodyPart(Wrestler wrestler)
+        {
+            var (weights, total) = OddsFor(wrestler.Style, wrestler.Physical?.Size ?? 3);
+
+            double roll = _injuryRand.NextDouble() * total;
+            for (int i = 0; i < weights.Length; i++)
+            {
+                roll -= weights[i];
+                if (roll <= 0) return Parts[i];
+            }
+            return Parts[^1];
+        }
+
+        /// <summary>An injury the match produced, before the show layer writes it down.</summary>
+        public readonly record struct InjuryRoll(Wrestler Wrestler, BodyPart Part, int WeeksOut);
 
         // ── State initialisation ─────────────────────────────────────────────
 
@@ -3080,7 +3191,8 @@ namespace WrestlingSim.Engine
 
         // ── Final rating ─────────────────────────────────────────────────────
 
-        private MatchEngineResult BuildResult(Ctx ctx, List<BeatResult> beatResults)
+        private MatchEngineResult BuildResult(Ctx ctx, List<BeatResult> beatResults,
+                                              List<InjuryRoll> hurt)
         {
             var plan  = ctx.Plan;
             var state = ctx.State;
@@ -3220,6 +3332,7 @@ namespace WrestlingSim.Engine
                 Reaction           = state.Reaction,
                 Familiarity        = ctx.Familiarity,
                 Stipulation        = ctx.Plan.Stipulation,
+                Injuries           = hurt,
                 StipulationStakes  = ctx.StipulationStakes,
                 Breakdown          = new ScoreBreakdown
                 {

@@ -31,6 +31,13 @@ namespace WrestlingSim.Engine
         /// </summary>
         private readonly StipulationBook? _stipulations;
 
+        /// <summary>
+        /// The promotion's tier, which doc 15 §3.1 uses for one thing here: ring quality.
+        /// "A hard or badly-maintained ring is a genuine injury multiplier; indie rings are
+        /// frequently much worse."
+        /// </summary>
+        private readonly PromotionTier _tier;
+
         /// <summary>Most a card can lose for running past its allotted runtime.</summary>
         private const double MaxOverrunPenalty = 0.35;
 
@@ -39,8 +46,10 @@ namespace WrestlingSim.Engine
             int? seed = null,
             TitleRegistry? titles = null,
             BrandContext? brands = null,
-            StipulationBook? stipulations = null)
+            StipulationBook? stipulations = null,
+            PromotionTier tier = PromotionTier.Established)
         {
+            _tier         = tier;
             _feudBook     = feudBook;
             _seed         = seed;
             _titles       = titles;
@@ -486,11 +495,37 @@ namespace WrestlingSim.Engine
             int? sinceStipulation = _stipulations?.DaysSince(match.Plan.Stipulation, showDate);
 
             var engineResult = new MatchEngine(_seed.HasValue ? _seed + index : null)
-                .Execute(match.Plan, familiarity, sinceStipulation);
+                .Execute(match.Plan, familiarity, sinceStipulation, _tier);
 
             _stipulations?.Record(match.Plan.Stipulation, showDate);
 
             itemResult.MatchResult = engineResult;
+
+            // Written down here rather than in the engine — see MatchEngineResult.Injuries.
+            foreach (var roll in engineResult.Injuries)
+            {
+                var injury = new Models.Person.Injury
+                {
+                    Part      = roll.Part,
+                    Sustained = showDate,
+                    ClearedOn = showDate.AddDays(roll.WeeksOut * 7),
+                    WeeksOut  = roll.WeeksOut
+                };
+
+                roll.Wrestler.Injury = injury;
+                roll.Wrestler.InjuryHistory.Add(injury);
+
+                itemResult.Notes.Add(
+                    $"{roll.Wrestler.RingName} is hurt — {Models.Person.Injury.Label(roll.Part).ToLowerInvariant()}, " +
+                    $"out {roll.WeeksOut} week{(roll.WeeksOut == 1 ? "" : "s")}.");
+
+                showResult.Injuries.Add(new InjuryReport
+                {
+                    Wrestler = roll.Wrestler,
+                    Injury   = injury,
+                    Repeat   = roll.Wrestler.InjuryHistory.Count(i => i.Part == roll.Part) > 1
+                });
+            }
             itemResult.Notes.Add($"{engineResult.Winner.RingName} def. {engineResult.Loser.RingName} — {engineResult.StarDisplay}");
             if (engineResult.StalenessNote is { } stale) itemResult.Notes.Add(stale);
 

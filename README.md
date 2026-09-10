@@ -698,8 +698,10 @@ Weapon Shot, Run-In, Turn on a Partner.
   Backstage ×0.85, GMOffice ×0.80.
 - **Scripted vs unscripted** is a trade-off: unscripted gets a ×1.15 rawness bonus
   but risks a botch, resisted by Psychology. A botch costs impact, heat, *and* popularity.
-- **Injuries** come from physical actions and are resisted by the target's Toughness.
-  An injury stamps `InjuryAngle` on the feud.
+- **Storyline injuries** come from physical actions and are resisted by the target's
+  Toughness. One stamps `InjuryAngle` on the feud. These are angles, not medicine — the
+  real injury model that takes a wrestler off the roster lives in `InjuryRisk` and only
+  matches can cause it.
 - **Heat** = action heat + charisma-scaled verbal heat + half the crowd reaction.
   A turn generates the most of anything in the game.
 

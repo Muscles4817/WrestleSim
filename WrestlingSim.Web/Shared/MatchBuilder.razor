@@ -29,6 +29,20 @@
    time over several minutes and the reading you saw on the pick sheet is easy to have
    scrolled past. It sat inside the beats step first, which meant it only appeared once
    every other decision had already been made. *@
+@* Being hurt is not advice. Everything else in this builder warns and lets you book it
+   anyway; this one refuses, because a wrestler who is in a sling cannot have a match and
+   a game that lets you book one is lying about its own injury model. *@
+@if (Unavailable.Count > 0)
+{
+    <div class="notice notice--error mb">
+        <strong>Cannot be booked.</strong>
+        @foreach (var (w, note) in Unavailable)
+        {
+            <div>@w.RingName — @note</div>
+        }
+    </div>
+}
+
 @if (Cooked.Count > 0)
 {
     <div class="notice notice--warn mb">
@@ -1217,9 +1231,24 @@
             : "never run";
     }
 
-    /// <summary>Everybody in this match with something worth saying about their condition.</summary>
+    /// <summary>Today, as the booking sees it — the show's date in a career, else the clock.</summary>
+    private DateOnly BookingDay =>
+        State.ActiveShow?.Date ?? State.Career?.CurrentDate ?? DateOnly.MinValue;
+
+    /// <summary>Anybody in this match who is hurt on the night it happens.</summary>
+    private List<(Wrestler W, string Note)> Unavailable =>
+        Chosen.Where(w => w.Injury?.KeepsOut(BookingDay) == true)
+              .Select(w => (w, w.Injury!.Reason(BookingDay)))
+              .ToList();
+
+    /// <summary>
+    /// Everybody with something worth saying about their condition, excluding anybody
+    /// already refused above — a wrestler in a sling does not also need telling he is
+    /// tired.
+    /// </summary>
     private List<(Wrestler W, string Note)> Cooked =>
-        Chosen.Select(w => (W: w, Note: RingCondition.WarningFor(w)))
+        Chosen.Where(w => w.Injury?.KeepsOut(BookingDay) != true)
+              .Select(w => (W: w, Note: RingCondition.WarningFor(w)))
               .Where(x => x.Note is not null)
               .Select(x => (x.W, x.Note!))
               .ToList();
@@ -1857,6 +1886,10 @@
         };
 
         errors = plan.Validate();
+
+        foreach (var (w, note) in Unavailable)
+            errors.Add($"{w.RingName} cannot work this show — {note}.");
+
         if (errors.Count > 0) return;
 
         await OnDone.InvokeAsync(new BookedMatch { Plan = plan, StructureName = structureName });

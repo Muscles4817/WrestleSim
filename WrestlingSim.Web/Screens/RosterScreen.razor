@@ -1,3 +1,4 @@
+@using WrestlingSim.Models.Person
 @inject GameState State
 
 <div class="screen__head">
@@ -76,9 +77,27 @@
                            ValueText="@($"{w.Sharpness:F0} / 100")"
                            Variant="@(w.Sharpness <= RingCondition.RustyThreshold ? "heel" : "gold")" />
                 </div>
-                @if (RingCondition.WarningFor(w) is { } condition)
+                @* Injury outranks the meters: it is a fact rather than advice, and a
+                   wrestler in a sling does not also need telling he is tired. *@
+                @if (w.Injury is { } injury && injury.KeepsOut(Today))
+                {
+                    <div class="rcard__out">🩹 @injury.Describe(Today)</div>
+                }
+                else if (RingCondition.WarningFor(w) is { } condition)
                 {
                     <div class="rcard__warn">⚠ @condition</div>
+                }
+
+                @if (w.InjuryHistory.Count > 0)
+                {
+                    <div class="rcard__history">
+                        History: @string.Join(", ",
+                            w.InjuryHistory.GroupBy(i => i.Part)
+                                .OrderByDescending(g => g.Count())
+                                .Select(g => g.Count() > 1
+                                    ? $"{Injury.Label(g.Key).ToLowerInvariant()} ×{g.Count()}"
+                                    : Injury.Label(g.Key).ToLowerInvariant()))
+                    </div>
                 }
 
                 <button class="rcard__toggle" @onclick="() => Toggle(w.RingName)">
@@ -214,6 +233,10 @@
 </div>
 
 @code {
+    /// <summary>The career's clock, or today in exhibition — injuries are read against a date.</summary>
+    private DateOnly Today =>
+        State.Career?.CurrentDate ?? DateOnly.FromDateTime(DateTime.Today);
+
     private string query = "";
     private Division? division;
     private readonly HashSet<string> expanded = new();
