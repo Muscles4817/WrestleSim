@@ -377,7 +377,6 @@
     </div>
 }
 
-
 @* ── 3. Championship ──────────────────────────────────────────────────── *@
 @if (step == 2)
 {
@@ -582,6 +581,81 @@
             </div>
         }
     </div>
+
+    @* ── The stipulation ────────────────────────────────────────────────────
+       On the feud step, and after it, because that is what a stipulation is. Doc 20 §6
+       puts it inside the blow-off and says it "must match the escalation" — so its price
+       cannot be read until the story it escalates from has been chosen.
+
+       It was on the match-type step in the first version, which put it three steps before
+       `feud` is assigned. Every rung was therefore badged "needs Hot+" and quoted its full
+       negative on the forward path, while the engine graded the same booking off the feud
+       that did exist and applied a large positive. A panel that advertises −11 and delivers
+       +11 is worse than no panel.
+
+       `PendingIntensity` rather than `feud`, for the same reason: `feud` is assigned when
+       this step is *left*, and this panel is read while the player is still standing on it. *@
+    <div class="panel">
+        <div class="panel__title">The stipulation</div>
+        <div class="picks">
+            @foreach (var st in Enum.GetValues<Stipulation>())
+            {
+                var stip = st;
+                var earned = StipulationRules.Escalation(stip, FeudReached) >= 0;
+                <button class="pick @(stipulation == stip ? "is-selected" : "")"
+                        @onclick="() => stipulation = stip">
+                    <span class="pick__body">
+                        <span class="pick__name">
+                            @StipulationRules.Label(stip)
+                            @if (stip != Stipulation.None && !earned)
+                            {
+                                <span class="badge badge--heel">needs @StipulationRules.Demands(stip)+</span>
+                            }
+                        </span>
+                        @* One span, because .pick__desc is inline and a second one runs on
+                           the end of the first rather than under it. *@
+                        <span class="pick__desc">
+                            @StipulationRules.Says(stip) @Forbids(stip)
+                        </span>
+                    </span>
+                    <span class="pick__meta">@FreshnessLabel(stip)</span>
+                </button>
+            }
+        </div>
+
+        @if (stipulation != Stipulation.None)
+        {
+            @if (StipulationRules.Escalation(stipulation, FeudReached) < 0)
+            {
+                <div class="notice notice--warn mt">
+                    <strong>The story has not got there.</strong>
+                    @StipulationRules.Label(stipulation) wants a @StipulationRules.Demands(stipulation)
+                    feud and this one is @FeudReached. A stipulation nobody earned tells the room
+                    the promotion has run out of ideas — it is worth
+                    <strong>@StipulationStakes.ToString("F1") crowd energy</strong>, which is worse
+                    than booking nothing.
+                </div>
+            }
+            else if (Freshness(stipulation) < 0.9)
+            {
+                <div class="notice notice--warn mt">
+                    <strong>This was on recently.</strong> Worth
+                    @((Freshness(stipulation) * 100).ToString("F0"))% of a rare one
+                    (+@StipulationStakes.ToString("F1")). A cage match is special once a year;
+                    run monthly it devalues every cage match you will ever book.
+                </div>
+            }
+            else
+            {
+                <div class="notice notice--info mt">
+                    Earned, and it has been a while — worth
+                    <strong>+@StipulationStakes.ToString("F1") crowd energy</strong>.
+                    Every stipulation takes away the disqualification and the count-out, so
+                    nobody in this match can lose cheaply.
+                </div>
+            }
+        }
+    </div>
 }
 
 @* ── 5. Structure ─────────────────────────────────────────────────────── *@
@@ -676,6 +750,20 @@
     @if (HotTagWarning() is { } hotTagAdvice)
     {
         <div class="notice notice--advice mb">@hotTagAdvice</div>
+    }
+
+    @* Live rather than only at Validate. Picking the stipulation happens three steps
+       before the beat sheet, so a finish that was legal when it was booked can be
+       outlawed later — and finding that out on the confirm button is finding out too
+       late to know which of the two choices to change. *@
+    @if (IllegalFinish is { } outlawed)
+    {
+        <div class="notice notice--error mb">
+            <strong>@BeatTypeName(outlawed.Type) cannot end a
+            @StipulationRules.Label(stipulation) match.</strong>
+            @StipulationRules.Says(stipulation)
+            Change the finish, or drop back and change the stipulation.
+        </div>
     }
 
     <div class="panel">
@@ -1060,6 +1148,72 @@
     ];
 
     private MatchType matchType = MatchType.Standard;
+    private Stipulation stipulation = Stipulation.None;
+
+    /// <summary>
+    /// How far the story has escalated, as settled *on the feud step itself*.
+    ///
+    /// <see cref="PendingIntensity"/> and not <c>feud</c>: `feud` is assigned by
+    /// <see cref="ResolveFeud"/> when the step is left, so reading it here gave null — and
+    /// therefore <see cref="FeudIntensity.None"/> — for every booking on the forward path,
+    /// while the engine graded the same match off the feud that did exist. The panel and
+    /// the engine have to be reading the same thing or the panel is worse than nothing.
+    /// </summary>
+    private FeudIntensity FeudReached => PendingIntensity;
+
+    /// <summary>
+    /// The night this match happens, which is what the freshness of a stipulation is
+    /// measured against.
+    ///
+    /// Not <see cref="Career.CurrentDate"/>: the clock only advances when a show is run, so
+    /// a card booked two months out was being quoted the staleness of *today* while
+    /// <see cref="ShowSimulator"/> priced it off the show date. Booking a cage for a
+    /// pay-per-view eight weeks away is exactly how a booker gets a stale one fresh again,
+    /// and the panel was hiding that.
+    /// </summary>
+    private DateOnly PricedOn =>
+        State.ActiveShow?.Date ?? State.Career?.CurrentDate ?? DateOnly.MinValue;
+
+    /// <summary>How rare this rung still is on the night. 1.0 in exhibition, where nothing has happened.</summary>
+    private double Freshness(Stipulation stip) =>
+        State.Career is { } career ? career.Stipulations.FreshnessOf(stip, PricedOn) : 1.0;
+
+    private int? DaysSince(Stipulation stip) =>
+        State.Career is { } career ? career.Stipulations.DaysSince(stip, PricedOn) : null;
+
+    private double StipulationStakes =>
+        StipulationRules.StakesBonus(stipulation, FeudReached, DaysSince(stipulation));
+
+    private string FreshnessLabel(Stipulation stip)
+    {
+        if (stip == Stipulation.None) return "";
+        // \n rather than <br />: .pick__meta is white-space: pre-line and honours the
+        // line breaks its callers supply, where markup in a string would be escaped.
+        return DaysSince(stip) is { } days
+            ? $"{days}d ago\n{Freshness(stip) * 100:F0}% fresh"
+            : "never run";
+    }
+
+    /// <summary>The booked finish, when the chosen stipulation has outlawed it.</summary>
+    private MatchBeat? IllegalFinish =>
+        beats.LastOrDefault(b => b.IsFinish) is { } f
+        && !StipulationRules.Allows(stipulation, f.Type) ? f : null;
+
+    /// <summary>The escape routes this rung removes, named so the cost is visible up front.</summary>
+    private static string Forbids(Stipulation stip)
+    {
+        var gone = Enum.GetValues<BeatType>()
+            .Where(b => new MatchBeat { Type = b }.IsFinish)
+            .Where(b => !StipulationRules.Allows(stip, b))
+            .Select(BeatTypeName)
+            .Select(n => n.Replace("Finish: ", ""))
+            // Lower-cased so it reads as a sentence, except DQ, which is an abbreviation
+            // and looks like a typo in lower case.
+            .Select(n => n == "DQ" ? n : n.ToLowerInvariant())
+            .ToList();
+
+        return gone.Count == 0 ? "" : "No " + string.Join(", ", gone) + "." ;
+    }
     private Title? title;
 
     private DateOnly Today => State.Career?.CurrentDate ?? DateOnly.FromDateTime(DateTime.Today);
@@ -1616,6 +1770,12 @@
         if (Chosen.Count() <= 2 && new MatchBeat { Type = t.Type }.NeedsAThirdPerson)
             return "needs somebody left after it";
 
+        // The stipulation, enforced where the beat is chosen rather than only at Validate.
+        // A builder that offers a DQ finish inside a cage match and then refuses the
+        // booking has told the player about the rule one step too late.
+        if (!StipulationRules.Allows(stipulation, t.Type))
+            return $"not in a {StipulationRules.Label(stipulation)}";
+
         // The hot tag is bookable cold — it just lands at barely half. That is a booking
         // decision the player is allowed to make badly, so this warns rather than gates.
         return null;
@@ -1655,6 +1815,7 @@
         {
             Sides        = built,
             MatchType    = matchType,
+            Stipulation  = stipulation,
             IsBlowOff    = isBlowOff && feudChoice != FeudChoice.None,
             // Every live story among the people in the ring, not only the billed one. In a
             // three-way the rivalry that decides the finish is often between two people who

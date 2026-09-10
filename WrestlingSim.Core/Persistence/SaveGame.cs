@@ -58,6 +58,13 @@ namespace WrestlingSim.Persistence
         /// <summary>The brand split, or null for a promotion that has never divided.</summary>
         public BrandSplitDto? Brands { get; set; }
 
+        /// <summary>
+        /// When the promotion last ran each gimmick match. Absent from every save written
+        /// before stipulations existed, which reads back as "never run" — correct, because
+        /// no save written then could have run one.
+        /// </summary>
+        public List<StipulationUseDto> Stipulations { get; set; } = new();
+
         /// <summary>Standing tag teams. Absent in v2 saves; an empty list is correct there.</summary>
         public List<TagTeamDto> Teams { get; set; } = new();
     }
@@ -303,6 +310,10 @@ namespace WrestlingSim.Persistence
         public string? WrestlerA { get; set; }
         public string? WrestlerB { get; set; }
         public MatchType MatchType { get; set; }
+
+        /// <summary>The gimmick. Absent on older saves, which read back as None.</summary>
+        public Stipulation Stipulation { get; set; }
+
         public string StructureName { get; set; } = "Custom";
         public List<BeatDto> Beats { get; set; } = new();
 
@@ -392,6 +403,13 @@ namespace WrestlingSim.Persistence
         public double? StarRating { get; set; }
 
         public List<string> Notes { get; set; } = new();
+    }
+
+    /// <summary>One gimmick match type and the last date the promotion ran it.</summary>
+    public class StipulationUseDto
+    {
+        public Stipulation Stipulation { get; set; }
+        public DateOnly LastUsed { get; set; }
     }
 
     /// <summary>A battle royal on a card. Ids, so a wrestler is bound once on load.</summary>

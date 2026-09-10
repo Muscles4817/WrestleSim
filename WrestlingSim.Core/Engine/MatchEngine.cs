@@ -356,6 +356,12 @@ namespace WrestlingSim.Engine
             public double Familiarity { get; init; } = 1.0;
 
             /// <summary>
+            /// Crowd energy the gimmick puts in the room — negative when the story did not
+            /// earn it. See <see cref="StipulationRules.StakesBonus"/>.
+            /// </summary>
+            public double StipulationStakes { get; init; }
+
+            /// <summary>
             /// The most connected performer *still in the match* — whoever the room came
             /// for. Used only by <see cref="AttentionShare"/>, and only while more than two
             /// sides are left.
@@ -786,7 +792,8 @@ namespace WrestlingSim.Engine
         /// must be graded against how stale the pairing is when it actually goes on, and
         /// a plan the player never runs should not carry a stale reading around with it.
         /// </summary>
-        public MatchEngineResult Execute(MatchPlan plan, double familiarity = 1.0)
+        public MatchEngineResult Execute(MatchPlan plan, double familiarity = 1.0,
+                                         int? daysSinceStipulation = null)
         {
             var errors = plan.Validate();
             if (errors.Any())
@@ -802,7 +809,15 @@ namespace WrestlingSim.Engine
                 Plan        = plan,
                 State       = state,
                 Profiles    = plan.AllParticipants.ToDictionary(w => w, w => new PerformerProfile(w)),
-                Familiarity = Math.Clamp(familiarity, 0.0, 1.5)
+                Familiarity = Math.Clamp(familiarity, 0.0, 1.5),
+
+                // Computed here rather than passed in as a number, so the whole rule lives
+                // in one pure function and the engine reads it. The caller supplies the one
+                // fact only the world knows: how long since the promotion last ran this.
+                StipulationStakes = StipulationRules.StakesBonus(
+                    plan.Stipulation,
+                    plan.Feud?.Intensity ?? FeudIntensity.None,
+                    daysSinceStipulation)
             };
 
             InitialiseState(ctx);
@@ -852,6 +867,13 @@ namespace WrestlingSim.Engine
             // adds almost nothing, which is the whole point of tracking prestige at all.
             double titleBonus = plan.TitleAtStake?.StakesBonus ?? 0;
 
+            // The gimmick, priced. It sits beside the title rather than inside it because
+            // it is the same kind of thing — stakes the crowd brings with them — and it is
+            // the only one of the three that can be *negative*: a cage nobody earned tells
+            // the room the promotion has run out of ideas, which is worse than announcing
+            // nothing at all (doc 20 §6).
+            double stipulationBonus = ctx.StipulationStakes;
+
             // How loud this pairing can ever get. A card full of people the audience has
             // no investment in tops out well short of a main-event reaction, which is what
             // stops crowd score from being a constant across every match on the show.
@@ -888,12 +910,12 @@ namespace WrestlingSim.Engine
             // can be deader than one they simply do not know.
             double roomForThisPairing =
                 40.0 + pairConnection * 46.0 + (pairCraft - 1.0) * 20.0
-                     - staminaPenalty + titleBonus * 0.45;
+                     - staminaPenalty + titleBonus * 0.45 + stipulationBonus * 0.45;
 
             state.CrowdCeiling = Math.Clamp(roomForThisPairing * ctx.Familiarity, 22, 100);
 
             state.CrowdEnergy = Math.Clamp(
-                (baseEnergy + feudBonus + titleBonus) * ctx.Familiarity,
+                (baseEnergy + feudBonus + titleBonus + stipulationBonus) * ctx.Familiarity,
                 8, Math.Min(90, state.CrowdCeiling));
             state.Advantage    = 0;
             state.CrowdPeakEnergy = state.CrowdEnergy;
@@ -3094,6 +3116,8 @@ namespace WrestlingSim.Engine
                 MatchTypeCoherence = coherence,
                 Reaction           = state.Reaction,
                 Familiarity        = ctx.Familiarity,
+                Stipulation        = ctx.Plan.Stipulation,
+                StipulationStakes  = ctx.StipulationStakes,
                 Breakdown          = new ScoreBreakdown
                 {
                     Technical             = techComponent,

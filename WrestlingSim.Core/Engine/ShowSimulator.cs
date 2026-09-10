@@ -24,6 +24,13 @@ namespace WrestlingSim.Engine
         /// </summary>
         private readonly TitleRegistry? _titles;
 
+        /// <summary>
+        /// When the promotion last ran each gimmick match, or null in exhibition — where
+        /// there is no calendar, nothing has happened before, and every stipulation is
+        /// therefore as fresh as it will ever be.
+        /// </summary>
+        private readonly StipulationBook? _stipulations;
+
         /// <summary>Most a card can lose for running past its allotted runtime.</summary>
         private const double MaxOverrunPenalty = 0.35;
 
@@ -31,12 +38,14 @@ namespace WrestlingSim.Engine
             FeudBook feudBook,
             int? seed = null,
             TitleRegistry? titles = null,
-            BrandContext? brands = null)
+            BrandContext? brands = null,
+            StipulationBook? stipulations = null)
         {
-            _feudBook = feudBook;
-            _seed     = seed;
-            _titles   = titles;
-            _brands   = brands;
+            _feudBook     = feudBook;
+            _seed         = seed;
+            _titles       = titles;
+            _brands       = brands;
+            _stipulations = stipulations;
         }
 
         public ShowResult Simulate(Show show)
@@ -357,6 +366,30 @@ namespace WrestlingSim.Engine
             return result.FinalScore;
         }
 
+        /// <summary>
+        /// What the gimmick did, in a line the booker can act on.
+        ///
+        /// Says *why* rather than only how much: an unearned stipulation and an overused one
+        /// are different mistakes with different fixes — build the feud, or wait — and a
+        /// report that only printed a number would leave the player to guess which.
+        /// </summary>
+        private static string StipulationNote(
+            Stipulation stipulation, double stakes, int? daysSince)
+        {
+            string label = StipulationRules.Label(stipulation);
+
+            if (stakes < 0)
+                return $"{label} — the story had not got there yet. The room knew " +
+                       $"({stakes:F1} crowd energy).";
+
+            double freshness = StipulationRules.Scarcity(daysSince);
+            if (freshness < 0.9 && daysSince is { } days)
+                return $"{label} — last one was {days} days ago, so it was worth " +
+                       $"{freshness * 100:F0}% of a rare one (+{stakes:F1}).";
+
+            return $"{label} — earned, and it has been a while (+{stakes:F1}).";
+        }
+
         private double RunMatch(
             BookedMatch match, CardItemResult itemResult, ShowResult showResult,
             int index, DateOnly showDate, string showName, double starMaking)
@@ -376,20 +409,33 @@ namespace WrestlingSim.Engine
             var feud = _feudBook.GetOrCreate(sideA, sideB);
             double familiarity = feud.Familiarity(showDate);
 
+            // Read before this match is recorded, so a card running two cages does not let
+            // the first one launder the second — the second is the one a day old.
+            int? sinceStipulation = _stipulations?.DaysSince(match.Plan.Stipulation, showDate);
+
             var engineResult = new MatchEngine(_seed.HasValue ? _seed + index : null)
-                .Execute(match.Plan, familiarity);
+                .Execute(match.Plan, familiarity, sinceStipulation);
+
+            _stipulations?.Record(match.Plan.Stipulation, showDate);
 
             itemResult.MatchResult = engineResult;
             itemResult.Notes.Add($"{engineResult.Winner.RingName} def. {engineResult.Loser.RingName} — {engineResult.StarDisplay}");
             if (engineResult.StalenessNote is { } stale) itemResult.Notes.Add(stale);
 
+            if (match.Plan.Stipulation != Stipulation.None)
+                itemResult.Notes.Add(StipulationNote(
+                    match.Plan.Stipulation, engineResult.StipulationStakes, sinceStipulation));
+
             // ── Status ───────────────────────────────────────────────────────
             // The result is not just a rating. A win moves standing, and how much depends
             // on who was beaten and how decisively — see HeatEconomy.
+            // Weighed under the rules the match was worked under. In a No-DQ match a run-in
+            // is not an excuse, so the loss is a clean one — and, through
+            // TitleEconomy.ChangesHands and without a line of code there, the belt moves.
             var finishBeat = match.Plan.Beats.LastOrDefault(b => b.IsFinish);
             var weight = finishBeat is null
                 ? FinishWeight.Decisive
-                : HeatEconomy.WeightOf(finishBeat.Type);
+                : StipulationRules.Weigh(match.Plan.Stipulation, finishBeat.Type);
 
             // In a tag match the fall is between two men, but the statement is between two
             // teams: the pool is set by each side's standing, and then the man who scored

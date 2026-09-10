@@ -1,3 +1,5 @@
+using WrestlingSim.Enums;
+
 namespace WrestlingSim.Models.MatchPlan
 {
     public class MatchEngineResult
@@ -111,6 +113,17 @@ namespace WrestlingSim.Models.MatchPlan
         /// deserved — docs/wrestling-reference/20-storylines-and-feuds.md §9.1.
         /// </summary>
         public double Familiarity { get; init; } = 1.0;
+
+        /// <summary>
+        /// Crowd energy the gimmick put in the room, negative when the story had not earned
+        /// it. Recorded rather than only applied, because a rule that can be seen only
+        /// through a whole match's rating is a rule no test can hold — this codebase's
+        /// standing lesson, learned four separate times.
+        /// </summary>
+        public double StipulationStakes { get; init; }
+
+        /// <summary>The gimmick this was worked under.</summary>
+        public Stipulation Stipulation { get; init; } = Stipulation.None;
 
         /// <summary>A plain-English reading of <see cref="Familiarity"/>, or null when fresh.</summary>
         public string? StalenessNote => Familiarity switch

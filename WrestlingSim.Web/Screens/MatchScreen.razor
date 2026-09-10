@@ -216,8 +216,10 @@ else
         {
             // A blow-off booked to a DQ or a count-out resolves nothing — doc 20 §6.1.
             var finish = booked.Plan.Beats.LastOrDefault(x => x.IsFinish);
-            bool settled = finish is null
-                        || HeatEconomy.WeightOf(finish.Type) != FinishWeight.Protected;
+            // Doc 20 §6.1: a blow-off has to resolve, and whether a given finish does
+                // depends on the rules it happened under — see StipulationRules.SettlesAFeud.
+                bool settled = finish is null
+                            || StipulationRules.SettlesAFeud(booked.Plan.Stipulation, finish.Type);
 
             if (settled) declared.BlowOff(today);
             else declared.RecordBrokenPromise();
