@@ -58,14 +58,15 @@ namespace WrestlingSim.Engine
         /// <param name="sides">The sides, in plan order. Their styles steer beat choice.</param>
         public static WrittenMatch Write(MatchBrief brief, IReadOnlyList<MatchSide> sides)
         {
-            var shape  = PhaseGrammar.Shape(brief, sides.Count);
+            int sideSize = sides.Count == 0 ? 1 : sides.Max(s => s.Members.Count);
+            var shape  = PhaseGrammar.Shape(brief, sides.Count, sideSize);
             var rand   = new Random(SeedFor(brief, sides));
             var used   = new List<BeatType>();
             var phases = new List<WrittenPhase>(shape.Count);
 
             foreach (var slot in shape)
             {
-                var template = Choose(slot, brief, sides, used, rand);
+                var template = Choose(slot, brief, sides, used, rand, sideSize);
                 used.Add(template.Type);
 
                 // The slot's intensity and duration win over the template's defaults. The
@@ -76,6 +77,9 @@ namespace WrestlingSim.Engine
 
                 // Who it is aimed at, where the grammar knows and the beat cannot guess.
                 if (slot.Against is { } target && target != slot.Control) beat.Against = target;
+
+                // Which partner comes in, for the beats that rotate a side.
+                if (slot.Incoming is { } partner) beat.IncomingIndex = partner;
 
                 phases.Add(new WrittenPhase
                 {
@@ -106,9 +110,9 @@ namespace WrestlingSim.Engine
 
         private static BeatTemplate Choose(
             PhaseSlot slot, MatchBrief brief, IReadOnlyList<MatchSide> sides,
-            IReadOnlyList<BeatType> used, Random rand)
+            IReadOnlyList<BeatType> used, Random rand, int sideSize)
         {
-            var pool = Pool(slot.Phase, brief).ToList();
+            var pool = Pool(slot.Phase, brief, sideSize).ToList();
 
             // Never an empty pool. A phase with nothing legal in it is a grammar bug and
             // should surface as one rather than as a silently dropped beat.
@@ -135,13 +139,57 @@ namespace WrestlingSim.Engine
         }
 
         /// <summary>Which beat types can fill a phase at all.</summary>
-        private static IEnumerable<BeatTemplate> Pool(MatchPhase phase, MatchBrief brief)
+        private static IEnumerable<BeatTemplate> Pool(MatchPhase phase, MatchBrief brief, int sideSize)
         {
-            var types = TypesFor(phase, brief);
+            var types = TypesFor(phase, brief, sideSize);
             return BeatLibrary.All.Where(t => types.Contains(t.Type));
         }
 
-        private static IReadOnlyList<BeatType> TypesFor(MatchPhase phase, MatchBrief brief) => phase switch
+        /// <summary>
+        /// Which beat types can fill a phase at all.
+        ///
+        /// **Side size changes the furniture, not the skeleton.** A tag match's heat is an
+        /// isolation because what is being denied is a corner rather than a comeback; its
+        /// hope spot is a near tag; its comeback is a hot tag. Doc 18 §2.3's stages are the
+        /// same stages, which is the argument for one grammar rather than a second structure
+        /// library for tags.
+        ///
+        /// The exception is lucha, and doc 25 §3.3 is explicit that it is a different match
+        /// rather than a variant: three a side is the *default* there, the rules allow
+        /// constant motion, and there is no long isolation to deny anybody. So a spectacle
+        /// worked by teams keeps the singles furniture and gets the tags instead.
+        /// </summary>
+        private static IReadOnlyList<BeatType> TypesFor(MatchPhase phase, MatchBrief brief, int sideSize = 1)
+        {
+            bool tag   = sideSize > 1;
+            bool lucha = tag && brief.Story == MatchStory.Spectacle;
+
+            if (tag && !lucha)
+            {
+                switch (phase)
+                {
+                    case MatchPhase.Heat:     return [BeatType.Isolation];
+                    case MatchPhase.HopeSpot: return [BeatType.NearTag];
+                    case MatchPhase.Comeback: return [BeatType.HotTag];
+                }
+            }
+
+            // A lucha trios has no isolation and no hot tag to build to, so its "heat" is
+            // the other team simply having the better of it.
+            if (lucha && phase == MatchPhase.Heat) return [BeatType.DoubleTeam, BeatType.HighSpot];
+
+            switch (phase)
+            {
+                case MatchPhase.Rotation: return [BeatType.Tag, BeatType.BlindTag];
+                case MatchPhase.Tandem:   return [BeatType.DoubleTeam];
+                case MatchPhase.AllFour:  return [BeatType.AllFourBrawl];
+                case MatchPhase.Save:     return [BeatType.SaveBreakup];
+            }
+
+            return SinglesTypesFor(phase, brief);
+        }
+
+        private static IReadOnlyList<BeatType> SinglesTypesFor(MatchPhase phase, MatchBrief brief) => phase switch
         {
             MatchPhase.Opening => brief.Story switch
             {
@@ -226,10 +274,11 @@ namespace WrestlingSim.Engine
             var types = new HashSet<BeatType>();
 
             foreach (MatchScale scale in Enum.GetValues<MatchScale>())
+            foreach (int sideSize in new[] { 1, 2, 3 })
             {
                 var brief = new MatchBrief { Story = story, Length = scale };
                 foreach (MatchPhase phase in Enum.GetValues<MatchPhase>())
-                    foreach (var type in TypesFor(phase, brief))
+                    foreach (var type in TypesFor(phase, brief, sideSize))
                         types.Add(type);
             }
 

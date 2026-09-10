@@ -689,14 +689,14 @@
     <div class="panel">
         <div class="panel__title">Start from</div>
         <div class="chips">
-            @foreach (var preset in BriefPresets.For(sideCount))
+            @foreach (var preset in BriefPresets.For(sideCount, sideSize))
             {
                 var p = preset;
-                <button class="chip @(BriefPresets.Matching(brief) == p.Name ? "is-selected" : "")"
+                <button class="chip @(BriefPresets.Matching(brief, sideCount, sideSize) == p.Name ? "is-selected" : "")"
                         title="@p.Description"
                         @onclick="() => ApplyPreset(p)">
                     @p.Name
-                    @if (p.Name == BriefPresets.SuggestedFor(Promised))
+                    @if (p.Name == BriefPresets.SuggestedFor(Promised, sideSize))
                     {
                         <span class="chip__hint">suits them</span>
                     }
@@ -1746,7 +1746,7 @@
 
         written        = BriefDirector.Write(brief, BriefSides);
         beats          = written.Beats.Select(b => b.Clone()).ToList();
-        structureName  = BriefPresets.Matching(brief) ?? BriefCritique.Name(brief.Story);
+        structureName  = BriefPresets.Matching(brief, sideCount, sideSize) ?? BriefCritique.Name(brief.Story);
     }
 
     private static string PhaseLabel(MatchPhase phase) => phase switch
