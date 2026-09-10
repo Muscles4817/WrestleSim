@@ -3,6 +3,7 @@ using WrestlingSim.Engine;
 using WrestlingSim.Enums;
 using WrestlingSim.Models;
 using WrestlingSim.Models.MatchPlan;
+using WrestlingSim.Persistence;
 
 namespace WrestlingSim.Tests
 {
@@ -263,26 +264,48 @@ namespace WrestlingSim.Tests
             var notes = Critique(brief, sides);
             Show(notes);
 
-            Assert.DoesNotContain(notes, n => n.Text.Contains("never in it"));
+            Assert.DoesNotContain(notes, n => n.Text.Contains("were ever in it"));
         }
 
-        /// <summary>The winner is not checked for this. Winning is the thing they were given.</summary>
+        /// <summary>
+        /// **The winner is not asked to prove they were in it. Winning is the thing they
+        /// were given.**
+        ///
+        /// The case has to be constructed carefully or it proves nothing, which the first
+        /// version of this test did not do: it elevated the winner of a showcase, and the
+        /// grammar hands the protagonist a comeback in every shape, so the guard was never
+        /// reached and removing it failed nothing.
+        ///
+        /// This is the one booking where the winner genuinely gets neither. Protecting the
+        /// winner and elevating the loser makes the *loser* the protagonist, so the comeback
+        /// goes to them; an opener has no near falls at all; and the winner is left holding
+        /// only the fall. Which is the point.
+        /// </summary>
         [Fact]
         public void TheWinnerIsNotAskedToProveTheyWereInIt()
         {
             var sides = Sides();
             var brief = new MatchBrief
             {
-                Story       = MatchStory.Showcase,
+                Story       = MatchStory.FaceInPeril,
                 Length      = MatchScale.Opener,
                 WinningSide = 0,
-                Bookings    = { [0] = Booking.Elevated }
+                Bookings    = { [0] = Booking.Protected, [1] = Booking.Elevated }
             };
 
-            var notes = Critique(brief, sides);
+            var written = BriefDirector.Write(brief, sides).Beats;
+            foreach (var beat in written)
+                output.WriteLine($"    {beat.Type,-18} {beat.Control}");
+
+            // The winner really does have neither, so the guard is the only thing keeping
+            // them out of the warning.
+            Assert.DoesNotContain(written, b => b.Control == BeatControl.WrestlerA
+                                             && b.Type is BeatType.Comeback or BeatType.NearFall);
+
+            var notes = Critique(brief, sides, written);
             Show(notes);
 
-            Assert.DoesNotContain(notes, n => n.Text.Contains("never in it"));
+            Assert.DoesNotContain(notes, n => n.Text.Contains("Alpha") && n.Text.Contains("were ever in it"));
         }
 
         // ── The unearned comeback ────────────────────────────────────────────
@@ -382,6 +405,121 @@ namespace WrestlingSim.Tests
 
             brief.Length = MatchScale.Epic;
             Assert.NotEqual("Face-in-Peril", BriefPresets.Matching(brief));
+        }
+
+        // ── Through a save ───────────────────────────────────────────────────
+
+        /// <summary>
+        /// **A brief survives a save and a reload.**
+        ///
+        /// A card is often booked one week and run the next, and the engine grades a match
+        /// against what it was booked to be. Without this a reloaded card comes back with no
+        /// promise attached and is scored as though nobody had said what it was for — the
+        /// booking silently stops counting somewhere between two sessions, which is the
+        /// worst kind of bug to notice.
+        /// </summary>
+        [Fact]
+        public void ABriefSurvivesASaveAndReload()
+        {
+            var brief = new MatchBrief
+            {
+                Story       = MatchStory.DavidAndGoliath,
+                Length      = MatchScale.BigMatch,
+                Finish      = FinishKind.Submission,
+                WinningSide = 1,
+                Outside     = OutsideFactor.Manager,
+                Draft       = 7,
+                Bookings    = { [0] = Booking.Elevated, [1] = Booking.Diminished }
+            };
+
+            var reloaded = RoundTrip(brief);
+
+            output.WriteLine($"  {reloaded.Story} / {reloaded.Length} / {reloaded.Finish}, " +
+                             $"side {reloaded.WinningSide} over, draft {reloaded.Draft}");
+
+            Assert.Equal(brief.Story,       reloaded.Story);
+            Assert.Equal(brief.Length,      reloaded.Length);
+            Assert.Equal(brief.Finish,      reloaded.Finish);
+            Assert.Equal(brief.WinningSide, reloaded.WinningSide);
+            Assert.Equal(brief.Outside,     reloaded.Outside);
+            Assert.Equal(brief.Draft,       reloaded.Draft);
+            Assert.Equal(Booking.Elevated,   reloaded.BookingOf(0));
+            Assert.Equal(Booking.Diminished, reloaded.BookingOf(1));
+        }
+
+        /// <summary>
+        /// And the draft surviving means the sheet regenerates identically, which is the
+        /// point of saving it at all: a booker who reopens a card should see the match they
+        /// booked rather than a fresh roll of the same brief.
+        /// </summary>
+        [Fact]
+        public void TheReloadedBriefRegeneratesTheSameSheet()
+        {
+            var sides = Sides();
+            var brief = new MatchBrief { Story = MatchStory.Grudge, Length = MatchScale.Workhorse, Draft = 4 };
+
+            var before = BriefDirector.Write(brief, sides);
+            var after  = BriefDirector.Write(RoundTrip(brief), sides);
+
+            Assert.Equal(before.Phases.Select(p => p.Name), after.Phases.Select(p => p.Name));
+        }
+
+        /// <summary>A save written before briefs existed reads back as no promise, not a broken one.</summary>
+        [Fact]
+        public void AnOlderSaveHasNoBriefRatherThanAWrongOne()
+        {
+            var career = new WrestlingSim.Models.World.Career
+            {
+                Promotion   = new WrestlingSim.Models.World.Promotion { Name = "Old Save" },
+                StartDate   = new DateOnly(2026, 1, 5),
+                CurrentDate = new DateOnly(2026, 1, 5),
+                Roster      = Sides().SelectMany(s => s.Members).ToList()
+            };
+
+            var show = career.Schedule("Night", career.CurrentDate, ShowType.Television);
+            show.Card.Add(new BookedMatch
+            {
+                Plan = new MatchPlan
+                {
+                    Sides = Sides(),
+                    Beats = BriefDirector.Write(new MatchBrief(), Sides()).Beats.ToList()
+                    // No Brief, as a plan built beat by beat would have.
+                }
+            });
+
+            var reloaded = SaveSerializer.FromJson(SaveSerializer.ToJson(career), career.Roster)!;
+            var match = (BookedMatch)reloaded.Shows[0].Card[0];
+
+            Assert.Null(match.Plan.Brief);
+        }
+
+        /// <summary>Saves a career carrying one briefed match and reads the brief back out.</summary>
+        private MatchBrief RoundTrip(MatchBrief brief)
+        {
+            var sides = Sides();
+            var career = new WrestlingSim.Models.World.Career
+            {
+                Promotion   = new WrestlingSim.Models.World.Promotion { Name = "Ring Kings" },
+                StartDate   = new DateOnly(2026, 1, 5),
+                CurrentDate = new DateOnly(2026, 1, 5),
+                Roster      = sides.SelectMany(s => s.Members).ToList()
+            };
+
+            var show = career.Schedule("Night", career.CurrentDate, ShowType.Television);
+            show.Card.Add(new BookedMatch
+            {
+                Plan = new MatchPlan
+                {
+                    Sides = sides,
+                    Beats = BriefDirector.Write(brief, sides).Beats.ToList(),
+                    Brief = brief
+                }
+            });
+
+            var reloaded = SaveSerializer.FromJson(SaveSerializer.ToJson(career), career.Roster)!;
+            var match = (BookedMatch)reloaded.Shows[0].Card[0];
+
+            return Assert.IsType<MatchBrief>(match.Plan.Brief);
         }
 
         /// <summary>
