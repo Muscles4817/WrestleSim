@@ -194,6 +194,27 @@ namespace WrestlingSim.Engine
             return string.Join(" · ", parts);
         }
 
+        /// <summary>
+        /// The class a band's heading and reason line are painted with.
+        ///
+        /// The reason line is the row's argument for itself, and it was `--muted` for all of
+        /// them — so "there is a story here", which is the single most useful thing the
+        /// picker can say, was the same grey as the wrestling style beside it.
+        ///
+        /// Only three of the six are coloured, and that is the point rather than an omission.
+        /// A story is the reason to book somebody, a worn-out pairing is the reason not to,
+        /// and a name already in the match is not a candidate at all. The rest are the
+        /// ordinary case, and colouring the ordinary case is how a palette stops meaning
+        /// anything — the app has been here before with twenty-six amber notices.
+        /// </summary>
+        public static string Tone(SuggestionBand band) => band switch
+        {
+            SuggestionBand.Story   => "band--story",
+            SuggestionBand.WornOut => "band--worn",
+            SuggestionBand.Booked  => "band--booked",
+            _                      => ""
+        };
+
         /// <summary>The band's heading, for display.</summary>
         public static string Heading(SuggestionBand band, Wrestler w) => band switch
         {

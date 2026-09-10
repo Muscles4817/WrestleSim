@@ -261,7 +261,7 @@ else
                         </div>
                     </div>
                     <div class="editor-row__tools">
-                        <strong class="tabnum gold">@show.Result!.OverallRating.ToString("F1")</strong>
+                        <strong class="tabnum @Grades.OfScore(show.Result!.OverallRating).Tone()">@show.Result!.OverallRating.ToString("F1")</strong>
                         <button class="btn btn--sm btn--ghost" @onclick="() => State.OpenShow(show)">Review</button>
                     </div>
                 </div>

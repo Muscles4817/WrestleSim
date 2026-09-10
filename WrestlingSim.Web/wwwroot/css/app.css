@@ -593,6 +593,11 @@ table.data tr:last-child td { border-bottom: 0; }
   font-variant-numeric: tabular-nums; color: var(--muted);
   font-size: 13px; font-weight: 700;
 }
+/* The band in words. Colour is the fast channel and the word is the reliable one. */
+.stars__verdict {
+  font-size: var(--t-xs); font-weight: 800;
+  letter-spacing: var(--track-label); text-transform: uppercase;
+}
 
 .score-hero {
   display: flex; align-items: center; justify-content: space-between;
@@ -750,6 +755,31 @@ table.data tr:last-child td { border-bottom: 0; }
 .gold  { color: var(--gold); }
 .small { font-size: 12.5px; }
 .tabnum { font-variant-numeric: tabular-nums; }
+
+/* ── How good it was ───────────────────────────────────────────────────────
+   Every rating in the app was gold: a two-star match and a five-star one drew
+   different glyph counts in the same triumphant colour, and the score beside
+   them was gold at 42 and gold at 95. Unlike the overness ramp this does not
+   fade out at the bottom — a low reading on a wrestler is a jobber doing their
+   job, and a low reading on a match is a mistake the booker made. */
+.grade--classic { color: var(--gold-2); }
+.grade--great   { color: #7fe3c4; }
+.grade--good    { color: var(--ink-2); }
+.grade--fine    { color: var(--muted); }
+.grade--poor    { color: var(--heel); }
+/* The glow is the thing that made every rating look like a triumph. It stays on
+   the one band that has earned it. */
+.stars__glyphs { text-shadow: none; }
+.stars__glyphs.grade--classic { text-shadow: 0 0 18px rgba(245, 185, 59, .35); }
+
+/* ── How hard a beat goes ──────────────────────────────────────────────────
+   A beat sheet is a shape, and the shape is what the intensities do down the
+   page. In one colour it is a list of words. */
+.heat--extreme { color: var(--heel); }
+.heat--high    { color: var(--gold); }
+.heat--medium  { color: var(--ink-2); }
+.heat--low     { color: var(--muted); }
+
 
 /* Why a name the booker knows is on the roster is not in the list. A filter the sheet
    applied for them needs saying once; one they applied themselves does not. */
@@ -1094,6 +1124,19 @@ table.data tr:last-child td { border-bottom: 0; }
 .prow__name  { grid-area: name; font-weight: 700; font-size: 15px;
                display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .prow__why   { grid-area: why; font-size: var(--t-sm); color: var(--muted); }
+
+/* ── Why a name is being offered ───────────────────────────────────────────
+   Three of the six bands, not six. A story is the reason to book somebody, a
+   worn-out pairing is the reason not to, and a name already in the match is
+   not a candidate. The other three are the ordinary case, and painting the
+   ordinary case is how a palette stops meaning anything — this app has been
+   there already, with twenty-six amber notices doing four different jobs.
+
+   Below `.prow__why` on purpose: both are one class, so the later one wins, and
+   above it these rules lost silently to the grey they exist to replace. */
+.band--story  { color: var(--gold-2); }
+.band--worn   { color: #ffb27a; }
+.band--booked { color: var(--faint); }
 .prow__pop   { grid-area: pop; color: var(--ink-2); align-self: center; font-weight: 700; }
 
 /* ── How over somebody is, in colour ───────────────────────────────────────

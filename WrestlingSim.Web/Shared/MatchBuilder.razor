@@ -347,7 +347,7 @@
                 <div class="chips">
                     @foreach (var v in Enum.GetValues<BeatIntensity>())
                     {
-                        <button class="chip @(edit.Intensity == v ? "is-active" : "")"
+                        <button class="chip @v.Tone() @(edit.Intensity == v ? "is-active" : "")"
                                 @onclick="() => { edit.Intensity = v; }">@v</button>
                     }
                 </div>
@@ -832,7 +832,7 @@
         @if (feud is not null)
         {
             <div class="notice notice--tip mt">
-                <strong>@feud.Intensity feud</strong> — @feud.Heat.ToString("F0") heat,
+                <strong class="@feud.Intensity.Badge()">@feud.Intensity feud</strong> — @feud.Heat.ToString("F0") heat,
                 +@feud.StartingEnergyBonus starting crowd energy.
                 @if (feud.History.Count > 0)
                 {

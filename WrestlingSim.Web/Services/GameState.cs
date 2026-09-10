@@ -108,6 +108,38 @@ public class GameState
     public int ActiveFeudCount => FeudBook.All.Count;
     public IEnumerable<Wrestler> RosterByOverness => Roster.OrderByDescending(w => w.Overness);
 
+    // ── What the booking suggestions need ────────────────────────────────────
+    //
+    // Both of these were private to RosterPicker, which meant the segment builder could not
+    // rank its cast the way the match builder ranks a corner without copying them. They are
+    // questions about the career rather than about a component, so they live here and there
+    // is one of each.
+
+    /// <summary>Whoever this wrestler has a standing tag team with, or null.</summary>
+    public Wrestler? StandingPartnerOf(Wrestler w) =>
+        Career?.Teams.FirstOrDefault(t => t.IsActive && t.Contains(w))
+              ?.Members.FirstOrDefault(m => m != w);
+
+    private HashSet<Wrestler>? _lastCardCast;
+
+    /// <summary>
+    /// Who was on the most recent completed card.
+    ///
+    /// Cached, because the picker re-ranks the whole roster on every keystroke and this walks
+    /// a show's card to answer. <see cref="Notify"/> drops the cache, which is the one place
+    /// anything in the career changes.
+    /// </summary>
+    public IReadOnlySet<Wrestler> RecentlyBooked =>
+        _lastCardCast ??= Career is { } career
+            ? career.Completed
+                    .OrderByDescending(s => s.Date)
+                    .Take(1)
+                    .SelectMany(s => s.Card)
+                    .OfType<BookedMatch>()
+                    .SelectMany(m => m.Plan.AllParticipants)
+                    .ToHashSet()
+            : [];
+
     // ── Brands ───────────────────────────────────────────────────────────────
 
     /// <summary>The split, or an inert one outside a career so screens can read it safely.</summary>
@@ -645,5 +677,10 @@ public class GameState
         Notify();
     }
 
-    public void Notify() => Changed?.Invoke();
+    public void Notify()
+    {
+        // Anything at all may have moved, so the derived caches go.
+        _lastCardCast = null;
+        Changed?.Invoke();
+    }
 }

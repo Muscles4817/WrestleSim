@@ -87,7 +87,7 @@
                whatever a future ranking does. *@
             @foreach (var band in bands)
             {
-                <div class="group-label">@band.Key</div>
+                <div class="group-label @BookingSuggestions.Tone(band.First().Band)">@band.Key</div>
                 @foreach (var row in band)
                 {
                     var w = row.Wrestler;
@@ -136,7 +136,7 @@
                                 <span class="badge badge--sm badge--cost">crossover −@BrandIntegrity.CostOf(w).ToString("F1")</span>
                             }
                         </span>
-                        <span class="prow__why">@row.Reason</span>
+                        <span class="prow__why @BookingSuggestions.Tone(row.Band)">@row.Reason</span>
                         @* Said where the booker is choosing, not three steps later on the
                            confirm button. A tired or rusty wrestler is still bookable — this
                            is a reading, not a gate. *@
@@ -345,34 +345,11 @@
                  .Where(w => includeCrossover || !State.IsCrossover(w))
                  .Where(w => division is null || w.Division == division)
                  .Where(w => Matches(w, query)),
-            Against, State.FeudBook, UsedAs, StandingPartnerOf, RecentlyBooked(), Today);
+            Against, State.FeudBook, UsedAs, State.StandingPartnerOf, State.RecentlyBooked, Today);
 
     private static bool Matches(Wrestler w, string q) =>
         string.IsNullOrWhiteSpace(q)
         || (w.RingName?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false)
         || (w.RealName?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false);
 
-    private Wrestler? StandingPartnerOf(Wrestler w) =>
-        State.Career?.Teams.FirstOrDefault(t => t.IsActive && t.Contains(w))
-             ?.Members.FirstOrDefault(m => m != w);
-
-    private HashSet<Wrestler>? _recent;
-
-    /// <summary>Who was on the last card. Cheap, cached for the lifetime of the sheet.</summary>
-    private HashSet<Wrestler> RecentlyBooked()
-    {
-        if (_recent is not null) return _recent;
-
-        _recent = State.Career is { } career
-            ? career.Completed
-                    .OrderByDescending(s => s.Date)
-                    .Take(1)
-                    .SelectMany(s => s.Card)
-                    .OfType<BookedMatch>()
-                    .SelectMany(m => m.Plan.AllParticipants)
-                    .ToHashSet()
-            : [];
-
-        return _recent;
-    }
 }

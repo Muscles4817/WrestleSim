@@ -163,6 +163,135 @@ namespace WrestlingSim.Tests
                 Assert.False(string.IsNullOrWhiteSpace(d.Label()));
         }
 
+        // ── How good it was ─────────────────────────────────────────────────
+
+        /// <summary>
+        /// **The score and the stars never disagree.**
+        ///
+        /// `MatchEngine` defines the star rating as the final score over twenty, and the two
+        /// are shown side by side on the show report. Giving the 0–100 view its own thresholds
+        /// would let a score painted "very good" sit next to stars painted for a good one, on
+        /// the one screen whose job is saying how the show went. The whole range is walked
+        /// rather than sampled, because a disagreement at one value is the failure.
+        /// </summary>
+        [Fact]
+        public void TheScoreAndTheStarsAlwaysLandInTheSameBand()
+        {
+            for (int score = 0; score <= 100; score++)
+                Assert.Equal(Grades.OfStars(score / 20.0), Grades.OfScore(score));
+        }
+
+        /// <summary>
+        /// The bands climb. A better match is never painted as a worse one, which is the only
+        /// thing a booker actually reads off the colour.
+        /// </summary>
+        [Fact]
+        public void ABetterMatchIsNeverGradedLower()
+        {
+            var previous = Grades.OfStars(0);
+
+            for (double stars = 0; stars <= 5.0001; stars += 0.05)
+            {
+                var grade = Grades.OfStars(stars);
+                Assert.True(grade >= previous, $"{stars:F2} stars graded below the rating under it");
+                previous = grade;
+            }
+
+            output.WriteLine($"0.0 → {Grades.OfStars(0).Label()}, 5.0 → {Grades.OfStars(5).Label()}");
+            Assert.Equal(Grade.Poor,    Grades.OfStars(0));
+            Assert.Equal(Grade.Classic, Grades.OfStars(5));
+        }
+
+        /// <summary>Every band is reached by some rating, or it is a band that does not exist.</summary>
+        [Fact]
+        public void EveryGradeIsReachable()
+        {
+            var seen = new HashSet<Grade>();
+            for (double stars = 0; stars <= 5.0001; stars += 0.05) seen.Add(Grades.OfStars(stars));
+
+            Assert.Equal(Enum.GetValues<Grade>().Length, seen.Count);
+        }
+
+        /// <summary>
+        /// **The bottom band is the warning colour, not a faded one.**
+        ///
+        /// This is where the grade ramp and the overness ramp part company, and the difference
+        /// is the point of having two. A wrestler with a low reading is an enhancement talent
+        /// doing the job they are on the card to do; a match with a low reading is a mistake
+        /// the booker made, and the screen should say so.
+        /// </summary>
+        [Fact]
+        public void APoorMatchIsNotJustAQuietOne()
+        {
+            Assert.Equal("grade--poor", Grade.Poor.Tone());
+            Assert.NotEqual(CardPosition.Enhancement.Tone(), Grade.Poor.Tone());
+
+            foreach (Grade g in Enum.GetValues<Grade>())
+            {
+                Assert.StartsWith("grade--", g.Tone());
+                Assert.False(string.IsNullOrWhiteSpace(g.Label()));
+            }
+        }
+
+        /// <summary>Every grade has its own colour, or two of them are one band.</summary>
+        [Fact]
+        public void NoTwoGradesShareATone()
+        {
+            var tones = Enum.GetValues<Grade>().Select(g => g.Tone()).ToList();
+
+            Assert.Equal(tones.Count, tones.Distinct().Count());
+        }
+
+        // ── The rest of the palette ─────────────────────────────────────────
+
+        /// <summary>
+        /// Beat intensity climbs through four distinct colours. A beat sheet is a shape, and
+        /// the shape is what the intensities do down the page.
+        /// </summary>
+        [Fact]
+        public void EveryBeatIntensityIsItsOwnColour()
+        {
+            var tones = Enum.GetValues<BeatIntensity>().Select(i => i.Tone()).ToList();
+
+            Assert.Equal(tones.Count, tones.Distinct().Count());
+            Assert.All(tones, t => Assert.StartsWith("heat--", t));
+        }
+
+        /// <summary>
+        /// **Only three suggestion bands are painted.**
+        ///
+        /// A story is the reason to book somebody, a worn-out pairing is the reason not to,
+        /// and a name already in the match is not a candidate. The rest are the ordinary case,
+        /// and this app has already learned what happens when the ordinary case gets a colour:
+        /// twenty-six amber notices doing four different jobs, and amber meaning nothing.
+        /// </summary>
+        [Fact]
+        public void OnlyTheBandsWorthActingOnArePainted()
+        {
+            var painted = Enum.GetValues<BookingSuggestions.SuggestionBand>()
+                              .Where(b => BookingSuggestions.Tone(b).Length > 0)
+                              .ToList();
+
+            output.WriteLine(string.Join(", ", painted));
+
+            Assert.Equal(3, painted.Count);
+            Assert.Contains(BookingSuggestions.SuggestionBand.Story,   painted);
+            Assert.Contains(BookingSuggestions.SuggestionBand.WornOut, painted);
+            Assert.Contains(BookingSuggestions.SuggestionBand.Booked,  painted);
+        }
+
+        /// <summary>
+        /// A feud at nuclear is painted as a warning rather than as a prize. Doc 20 §6 has it
+        /// as the state with a clock on it — something to be paid off soon, not sat in.
+        /// </summary>
+        [Fact]
+        public void NuclearHeatReadsAsAWarning()
+        {
+            Assert.Equal("badge--heel", FeudIntensity.Nuclear.Badge());
+            Assert.Equal("badge--gold", FeudIntensity.Hot.Badge());
+            Assert.NotEqual(FeudIntensity.Hot.Badge(), FeudIntensity.Building.Badge());
+        }
+
         /// <summary>And the two divisions are told apart, which is the whole ask.</summary>
         [Fact]
         public void TheDivisionsDoNotShareALabelOrAColour()
