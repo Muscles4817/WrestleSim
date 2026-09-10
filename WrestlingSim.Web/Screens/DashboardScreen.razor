@@ -147,7 +147,7 @@ else
                         <div class="row" style="padding:2px 0">
                             <span>@w.RingName</span>
                             <span class="spacer"></span>
-                            <span class="muted tabnum">@w.OvernessDisplay</span>
+                            <span class="tabnum @w.CardPosition.Tone()">@w.OvernessDisplay</span>
                             <Trend Momentum="w.Momentum" />
                         </div>
                     }

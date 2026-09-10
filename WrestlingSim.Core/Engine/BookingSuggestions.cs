@@ -178,9 +178,12 @@ namespace WrestlingSim.Engine
         /// <summary>A name with no story attached still has to say something usable.</summary>
         private static string Plain(Wrestler w, DateOnly? today)
         {
+            // Not the alignment. It used to be appended here, in grey, at the end of a line
+            // whose job is "why is this name in front of me" — and it is now a coloured badge
+            // beside the ring name, which is where a booker looks for it. Said in both places
+            // the row read "Powerhouse · heel" under a HEEL badge, and the reason line is the
+            // half that has to fit on a phone.
             var parts = new List<string> { w.Style.ToString() };
-            if (w.Gimmick?.NaturalAlignment is { } alignment)
-                parts.Add(alignment.ToString().ToLowerInvariant());
 
             if (today is { } date && w.LastAppearance is { } seen)
             {

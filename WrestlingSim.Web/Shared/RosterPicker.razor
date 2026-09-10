@@ -56,8 +56,15 @@
     }
 
     <div class="sheet__filters">
+        @if (divisionUntouched && division is { } opened)
+        {
+            <div class="sheet__default">
+                Filtered to the @(opened == Division.Womens ? "women's" : "men's") division, to
+                match who is already booked. Tap <strong>All</strong> for an intergender match.
+            </div>
+        }
         <CastFilter Query="@query" QueryChanged="@OnQuery"
-                    Division="@division" DivisionChanged="@(v => { division = v; cursor = 0; })"
+                    Division="@division" DivisionChanged="@(v => { division = v; divisionUntouched = false; cursor = 0; })"
                     HomeBrand="@State.BookingBrand"
                     IncludeCrossover="@includeCrossover"
                     IncludeCrossoverChanged="@(v => { includeCrossover = v; cursor = 0; })"
@@ -106,10 +113,27 @@
                             @onfocus="() => cursor = index">
                         <span class="prow__name">
                             @w.RingName
-                            @if (row.BookedAs is { } role) { <span class="badge badge--dim">@role</span> }
+                            @* Face or heel, on every row, because it is half of what makes a
+                               pairing work and the list showed no trace of it. A word as well
+                               as a colour: red and green are the two hues most likely to be
+                               the same hue to whoever is reading. *@
+                            @if (w.Gimmick is { } g)
+                            {
+                                <span class="badge badge--sm @g.NaturalAlignment.Badge()">@g.NaturalAlignment.Label()</span>
+                            }
+                            @* And which division, but only while the list holds both. Once the
+                               filter is on one of them the badge is on every row and says
+                               nothing — a label that never varies is furniture. *@
+                            @if (division is null)
+                            {
+                                <span class="badge badge--sm @w.Division.Badge()">@w.Division.Label()</span>
+                            }
+                            @* `badge--dim` was never defined in the stylesheet, so this rendered
+                               as a bare outline for the entire life of the picker. *@
+                            @if (row.BookedAs is { } role) { <span class="badge badge--sm badge--muted">@role</span> }
                             @if (State.IsCrossover(w))
                             {
-                                <span class="badge badge--heel">crossover −@BrandIntegrity.CostOf(w).ToString("F1")</span>
+                                <span class="badge badge--sm badge--cost">crossover −@BrandIntegrity.CostOf(w).ToString("F1")</span>
                             }
                         </span>
                         <span class="prow__why">@row.Reason</span>
@@ -120,7 +144,7 @@
                         {
                             <span class="prow__cond">⚠ @condition</span>
                         }
-                        <span class="prow__pop tabnum">@w.OvernessDisplay</span>
+                        <span class="prow__pop tabnum @w.CardPosition.Tone()">@w.OvernessDisplay</span>
                         <Trend Momentum="@w.Momentum" ShowLabel="false" />
                     </button>
                 }
@@ -149,6 +173,15 @@
     /// </summary>
     [Parameter] public IReadOnlyList<Wrestler> Against { get; set; } = [];
 
+    /// <summary>
+    /// Which division the sheet opens filtered to, or null for the whole roster.
+    ///
+    /// A *default*, not a gate: the division chips sit right above the list and override it,
+    /// so an intergender match is one tap rather than something the picker has decided
+    /// against. <see cref="RosterFilters.DivisionFor"/> is the rule that chooses it.
+    /// </summary>
+    [Parameter] public Division? DefaultDivision { get; set; }
+
     [Parameter] public EventCallback<Wrestler> Picked { get; set; }
     [Parameter] public EventCallback Cancelled { get; set; }
 
@@ -157,6 +190,25 @@
 
     private string query = "";
     private Division? division;
+
+    /// <summary>
+    /// Whether the division filter is still the one the sheet opened with. Drives the one
+    /// line of explanation below the chips — a filter the booker did not set is one they
+    /// have to be told about, or a name they know is on the roster is simply missing and the
+    /// picker looks broken.
+    /// </summary>
+    private bool divisionUntouched = true;
+
+    /// <summary>
+    /// The sheet is a fresh component every time it opens, so this runs once per open and
+    /// the filter cannot carry over from the slot before it.
+    /// </summary>
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        division = DefaultDivision;
+    }
+
     private bool includeCrossover;
     private int cursor;
 

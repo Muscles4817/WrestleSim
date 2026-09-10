@@ -114,9 +114,15 @@
                         <span class="pick__body">
                             <span class="pick__name">
                                 @w.RingName
+                                @if (w.Gimmick is { } g)
+                                {
+                                    <span class="badge badge--sm @g.NaturalAlignment.Badge()">@g.NaturalAlignment.Label()</span>
+                                }
+                                @* A price, not a villain — this was the heel colour, which now
+                                   means the wrestler is one. *@
                                 @if (State.IsCrossover(w))
                                 {
-                                    <span class="badge badge--heel">crossover −@BrandIntegrity.CostOf(w).ToString("F1")</span>
+                                    <span class="badge badge--sm badge--cost">crossover −@BrandIntegrity.CostOf(w).ToString("F1")</span>
                                 }
                             </span>
                             <span class="pick__desc">@w.CharismaLabel · @w.CardPosition.Label()</span>
@@ -150,9 +156,13 @@
                                 <span class="pick__body">
                                     <span class="pick__name">
                                         @w.RingName
+                                        @if (w.Gimmick is { } g)
+                                        {
+                                            <span class="badge badge--sm @g.NaturalAlignment.Badge()">@g.NaturalAlignment.Label()</span>
+                                        }
                                         @if (State.IsCrossover(w))
                                         {
-                                            <span class="badge badge--heel">crossover</span>
+                                            <span class="badge badge--sm badge--cost">crossover</span>
                                         }
                                     </span>
                                     <span class="pick__desc">@w.CharismaLabel · @w.CardPosition.Label()</span>
