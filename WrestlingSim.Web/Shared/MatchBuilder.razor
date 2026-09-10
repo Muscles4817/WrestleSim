@@ -388,34 +388,8 @@
                   Cancelled="@(() => openSlot = null)" />
 }
 
-@* ── 2. Match type ────────────────────────────────────────────────────── *@
-@if (step == 1)
-{
-    <div class="panel">
-        <div class="panel__title">Match type</div>
-        <div class="picks">
-            @foreach (var t in Enum.GetValues<MatchType>())
-            {
-                <button class="pick @(matchType == t ? "is-selected" : "")" @onclick="() => matchType = t">
-                    <span class="pick__body">
-                        <span class="pick__name">@t</span>
-                        <span class="pick__desc">@TypeBlurb(t)</span>
-                    </span>
-                    <span class="pick__meta">@TypeWeights(t)</span>
-                </button>
-            }
-        </div>
-        <div class="notice notice--tip mt">
-            The type you declare shifts how the match is graded <em>and</em> what it is graded
-            against. Book a plan that delivers what you advertised and you are paid for it;
-            declare a technical classic and book a brawl and you are not.
-            <strong>Standard</strong> promises nothing specific — the safe choice, never the free one.
-        </div>
-    </div>
-}
-
-@* ── 3. Championship ──────────────────────────────────────────────────── *@
-@if (step == 2)
+@* ── 2. Championship ──────────────────────────────────────────────────── *@
+@if (step == TitleStep)
 {
     <div class="panel">
         <div class="panel__title">Championship</div>
@@ -484,8 +458,8 @@
     </div>
 }
 
-@* ── 4. Feud ──────────────────────────────────────────────────────────── *@
-@if (step == 3)
+@* ── 3. Feud and the stipulation ───────────────────────────────────────── *@
+@if (step == FeudStep)
 {
     <div class="panel">
         <div class="panel__title">Feud</div>
@@ -695,41 +669,128 @@
     </div>
 }
 
-@* ── 5. Structure ─────────────────────────────────────────────────────── *@
-@if (step == 4)
+@* ── 4. The brief ─────────────────────────────────────────────────────── *@
+@if (step == BriefStep)
 {
+    @* What the match already promises, before a beat of it is booked. This is the reading
+       the old "match type" step was silently grading against — derived here rather than
+       asked for, because who is in the ring and what the story has been is not something a
+       booker declares. *@
     <div class="panel">
-        <div class="panel__title">Match structure</div>
-        <div class="picks">
-            @foreach (var s in MatchStructureLibrary.ForShape(sideCount, SizeOf(0), SizeOf(1)))
+        <div class="panel__title">What they came for</div>
+        <div class="expect">
+            <div class="expect__wants">@BriefCritique.Name(Promised.Wants)</div>
+            <div class="expect__reading">@MatchExpectation.Say(Promised)</div>
+        </div>
+    </div>
+
+    @* One tap for the common cases. These are the old structure list, kept by name, and
+       every field stays adjustable after one is picked. *@
+    <div class="panel">
+        <div class="panel__title">Start from</div>
+        <div class="chips">
+            @foreach (var preset in BriefPresets.All)
             {
-                var blocked = s.RequiresFeud && feud is null;
-                <button class="pick @(structureName == s.Name ? "is-selected" : "")"
-                        disabled="@blocked"
-                        @onclick="() => PickStructure(s)">
-                    <span class="pick__body">
-                        <span class="pick__name">
-                            @s.Name
-                            @if (blocked) { <span class="badge badge--heel">needs a feud</span> }
-                        </span>
-                        <span class="pick__desc">@s.Description</span>
-                    </span>
-                    <span class="pick__meta">@s.Beats.Count beats</span>
+                var p = preset;
+                <button class="chip @(BriefPresets.Matching(brief) == p.Name ? "is-selected" : "")"
+                        title="@p.Description"
+                        @onclick="() => ApplyPreset(p)">
+                    @p.Name
+                    @if (p.Name == BriefPresets.SuggestedFor(Promised))
+                    {
+                        <span class="chip__hint">suits them</span>
+                    }
                 </button>
             }
+        </div>
+    </div>
 
-            <button class="pick @(structureName == "Custom" ? "is-selected" : "")" @onclick="PickCustom">
-                <span class="pick__body">
-                    <span class="pick__name">Build from scratch</span>
-                    <span class="pick__desc">An opening and a finish, pre-loaded. Add the rest yourself.</span>
-                </span>
-                <span class="pick__meta">2 beats</span>
+    @* The brief as a sentence. Every bold fragment opens its own chooser below, so there
+       is no modal to trap focus in and nothing scrolls out from under a tap. *@
+    <div class="panel">
+        <div class="panel__title">The brief</div>
+
+        <p class="brief">
+            <button class="brief__slot @Lit(BriefField.Length)" @onclick="() => Open(BriefField.Length)">@BriefCritique.Name(brief.Length)</button>
+            built as
+            <button class="brief__slot @Lit(BriefField.Story)" @onclick="() => Open(BriefField.Story)">@BriefCritique.Name(brief.Story)</button>.
+            <br />
+            <button class="brief__slot @Lit(BriefField.Winner)" @onclick="() => Open(BriefField.Winner)">@NameOfSide(brief.WinningSide)</button>
+            goes over
+            <button class="brief__slot @Lit(BriefField.Finish)" @onclick="() => Open(BriefField.Finish)">@BriefCritique.Name(brief.Finish)</button>.
+            <br />
+            @for (int i = 0; i < sideCount; i++)
+            {
+                int side = i;
+                <text>@NameOfSide(side) comes out </text>
+                <button class="brief__slot @Lit(BriefField.Booking, side)"
+                        @onclick="() => Open(BriefField.Booking, side)">@BriefCritique.Name(brief.BookingOf(side))</button><text>@(side == sideCount - 1 ? "." : "; ")</text>
+            }
+            <br />
+            <button class="brief__slot @Lit(BriefField.Outside)" @onclick="() => Open(BriefField.Outside)">@OutsideLabel()</button>
+        </p>
+
+        @if (openField is { } field)
+        {
+            <div class="picks picks--tight mt">
+                @foreach (var (label, description, apply) in ChoicesFor(field))
+                {
+                    var act = apply;
+                    <button class="pick" @onclick="() => Choose(act)">
+                        <span class="pick__body">
+                            <span class="pick__name">@label</span>
+                            <span class="pick__desc">@description</span>
+                        </span>
+                    </button>
+                }
+            </div>
+        }
+    </div>
+
+    @* The sheet, grouped by phase, with the reason each stage is there. *@
+    <div class="panel">
+        <div class="panel__title">
+            The match
+            <span class="panel__meta">@beats.Count beats · @RuntimeMinutes min</span>
+        </div>
+
+        @if (written is null)
+        {
+            <div class="notice notice--info">Nothing written yet.</div>
+        }
+        else
+        {
+            @* `written`, not `sheet` — that class is the beat editor's fixed bottom sheet
+               and reusing it rendered this list over the top of the whole page. *@
+            <div class="written">
+                @foreach (var phase in written.Phases)
+                {
+                    <div class="written__row">
+                        <div class="written__phase">@PhaseLabel(phase.Phase)</div>
+                        <div>
+                            <div class="written__beat">@phase.Name</div>
+                            <div class="written__why">@phase.Why</div>
+                        </div>
+                        <div class="written__meta">@WorkerLabel(phase.Beat.Control)</div>
+                    </div>
+                }
+            </div>
+        }
+
+        <div class="row mt">
+            <button class="btn" @onclick="WriteTheMatch">
+                @(written is null ? "Write the match ★" : "Re-roll")
             </button>
         </div>
     </div>
+
+    @foreach (var note in Notes)
+    {
+        <div class="notice @NoteClass(note.Weight) mt">@note.Text</div>
+    }
 }
 
-@* ── 6. Beat editor ───────────────────────────────────────────────────── *@
+@* ── 5. Beat editor ───────────────────────────────────────────────────── *@
 @if (step == BeatsStep)
 {
     <div class="panel">
@@ -932,15 +993,29 @@
 
     private enum FeudChoice { UseExisting, Declare, None }
 
+    /// <summary>
+    /// The wizard, in order.
+    ///
+    /// Two steps went and one arrived. "Type" asked the booker to declare a style so the
+    /// engine could grade them against the declaration, which is not a decision a booker
+    /// has — see <see cref="Engine.MatchExpectation"/> for where that question moved to.
+    /// "Structure" offered a fixed list of beat sheets, which is why every Face-in-Peril in
+    /// a career was the same eleven beats.
+    ///
+    /// The brief replaces both, and sits *after* the title and the feud because it needs
+    /// them: what a match promises is read off who is in it, what the story has been, what
+    /// the rules are and what is at stake, and the booker should see that before deciding
+    /// what to book against it.
+    /// </summary>
     private static readonly (int Index, string Label)[] StepLabels =
     [
-        (0, "Wrestlers"), (1, "Type"), (2, "Title"), (3, "Feud"), (4, "Structure"), (5, "Beats")
+        (0, "Wrestlers"), (1, "Title"), (2, "Feud"), (3, "The brief"), (4, "Beats")
     ];
 
     private static readonly int LastStep = StepLabels[^1].Index;
 
     /// <summary>The beat sheet's step. Was the literal 5 in the markup and nowhere else.</summary>
-    private const int BeatsStep = 5;
+    private const int BeatsStep = 4;
 
     /// <summary>
     /// Belt and braces on the scroll lock, and this time it is actually both: `Next()`,
@@ -1184,7 +1259,6 @@
         new("Survivor Series", 2, 4, "Four a side, tag rules, and a fall sends you to the back. The story is who is left at the end.")
     ];
 
-    private MatchType matchType = MatchType.Standard;
     private Stipulation stipulation = Stipulation.None;
 
     /// <summary>
@@ -1400,6 +1474,250 @@
     private List<MatchBeat> beats = new();
     private bool showAddBeat;
 
+    // ── The brief ────────────────────────────────────────────────────────
+    //
+    // Two wizard steps collapsed into this one. "Type" asked the booker to declare a style
+    // so the engine could grade them against the declaration, and "Structure" handed out a
+    // frozen beat list. What is here instead is what a booker actually decides, and the
+    // sheet is written from it.
+
+    private MatchBrief brief = new();
+
+    /// <summary>The sheet as written, kept so the review can show why each stage is there.</summary>
+    private WrittenMatch? written;
+
+    /// <summary>Which fragment of the sentence has its chooser open.</summary>
+    private enum BriefField { Story, Length, Winner, Finish, Booking, Outside }
+
+    private BriefField? openField;
+    private int openFieldSide;
+
+    private void Open(BriefField field, int side = 0)
+    {
+        // Tapping the open one closes it, so the sentence is never stuck behind a list.
+        if (openField == field && openFieldSide == side) { openField = null; return; }
+        openField     = field;
+        openFieldSide = side;
+    }
+
+    private string Lit(BriefField field, int side = 0) =>
+        openField == field && openFieldSide == side ? "is-open" : "";
+
+    private void Choose(Action apply)
+    {
+        apply();
+        openField = null;
+
+        // Re-write immediately. A brief whose sheet is one edit stale is a review screen
+        // describing a match that is not the one that would run.
+        if (written is not null) WriteTheMatch(reroll: false);
+    }
+
+    /// <summary>What each fragment offers, in the order a booker would think of them.</summary>
+    private IEnumerable<(string Label, string Description, Action Apply)> ChoicesFor(BriefField field)
+    {
+        switch (field)
+        {
+            case BriefField.Story:
+                foreach (MatchStory story in Enum.GetValues<MatchStory>())
+                {
+                    var pick = story;
+                    yield return (BriefCritique.Name(pick), StoryBlurb(pick), () => brief.Story = pick);
+                }
+                break;
+
+            case BriefField.Length:
+                foreach (MatchScale scale in Enum.GetValues<MatchScale>())
+                {
+                    var pick = scale;
+                    yield return (BriefCritique.Name(pick), LengthBlurb(pick), () => brief.Length = pick);
+                }
+                break;
+
+            case BriefField.Winner:
+                for (int i = 0; i < sideCount; i++)
+                {
+                    int pick = i;
+                    yield return (NameOfSide(pick), "Goes over.", () => brief.WinningSide = pick);
+                }
+                break;
+
+            case BriefField.Finish:
+                foreach (FinishKind finish in Enum.GetValues<FinishKind>())
+                {
+                    var pick = finish;
+                    yield return (BriefCritique.Name(pick), FinishBlurb(pick), () => brief.Finish = pick);
+                }
+                break;
+
+            case BriefField.Booking:
+                int side = openFieldSide;
+                foreach (Booking booking in Enum.GetValues<Booking>())
+                {
+                    var pick = booking;
+                    yield return (BriefCritique.Name(pick), BookingBlurb(pick),
+                                  () => brief.Bookings[side] = pick);
+                }
+                break;
+
+            case BriefField.Outside:
+                yield return ("Nobody outside it", "The match is between the people in it.",
+                              () => brief.Outside = OutsideFactor.None);
+                yield return ("A manager at ringside", "A second, in position to matter.",
+                              () => brief.Outside = OutsideFactor.Manager);
+                yield return ("A run-in", "Somebody who was not booked in this arrives.",
+                              () => brief.Outside = OutsideFactor.RunIn);
+                yield return ("A referee bump", "The referee goes down and the rules go with him.",
+                              () => brief.Outside = OutsideFactor.RefereeBump);
+                break;
+        }
+    }
+
+    private static string StoryBlurb(MatchStory story) => story switch
+    {
+        MatchStory.EvenContest         => "Two people who could each beat the other. Control changes hands.",
+        MatchStory.FaceInPeril         => "Shine, cut-off, a long beating, and a comeback that has been paid for.",
+        MatchStory.Grudge              => "They care more about hurting each other than about winning.",
+        MatchStory.TechnicalExhibition => "Mat work, limb targeting, a submission payoff. Slower to start.",
+        MatchStory.DavidAndGoliath     => "One of them should not survive this. The drama is whether he lasts.",
+        MatchStory.Spectacle           => "High spots from the bell. Moves carry the crowd, not psychology.",
+        MatchStory.Showcase            => "One-sided by design. Somebody is being made to look unbeatable.",
+        _                              => ""
+    };
+
+    private static string LengthBlurb(MatchScale scale) => scale switch
+    {
+        MatchScale.Opener     => "Five to eight minutes. One idea, worked properly.",
+        MatchScale.Television => "The weekly standard. One full heat and comeback.",
+        MatchScale.Workhorse  => "Ten to fifteen. A proper valley and a finishing stretch.",
+        MatchScale.BigMatch   => "Fifteen to twenty-five. A second cycle and a real stretch.",
+        MatchScale.Epic       => "Thirty plus. Needs two people the crowd will watch that long.",
+        _                     => ""
+    };
+
+    private static string FinishBlurb(FinishKind finish) => finish switch
+    {
+        FinishKind.Clean            => "Pinned in the middle. The full statement.",
+        FinishKind.Dominant         => "The finisher, and nothing left in doubt.",
+        FinishKind.Submission       => "They gave up. The only finish the loser chose.",
+        FinishKind.Stolen           => "Out of nowhere. They were not beaten, exactly.",
+        FinishKind.Interference     => "Somebody else decided it.",
+        FinishKind.Disqualification => "Nobody is beaten and the story keeps running.",
+        FinishKind.CountOut         => "The cheapest ending there is.",
+        _                           => ""
+    };
+
+    private static string BookingBlurb(Booking booking) => booking switch
+    {
+        Booking.Elevated   => "Better leaving than arriving. Extra shine and near falls.",
+        Booking.Protected  => "Nothing taken off them, even in defeat.",
+        Booking.Even       => "No thumb on the scale.",
+        Booking.Diminished => "Taken down a peg. No shine, no near falls.",
+        _                  => ""
+    };
+
+    private string OutsideLabel() =>
+        brief.Outside.HasFlag(OutsideFactor.RefereeBump) ? "with a referee bump"
+      : brief.Outside.HasFlag(OutsideFactor.RunIn)       ? "with a run-in"
+      : brief.Outside.HasFlag(OutsideFactor.Manager)     ? "with a manager at ringside"
+      : "Nobody outside it gets involved";
+
+    private string NameOfSide(int side)
+    {
+        var names = Members(side).Select(w => w.RingName).ToList();
+        return names.Count > 0 ? string.Join(" & ", names) : $"Side {SideName(side)}";
+    }
+
+    /// <summary>The sides as the generator needs them.</summary>
+    private List<MatchSide> BriefSides =>
+        Enumerable.Range(0, sideCount)
+                  .Select(i => new MatchSide { Members = Members(i).ToList() })
+                  .ToList();
+
+    /// <summary>What this match promises, before anybody books a beat of it.</summary>
+    private Expectation Promised =>
+        SidesComplete
+            ? MatchExpectation.Of(BriefSides, feud ?? existingFeud, stipulation, title is not null)
+            : Expectation.Nothing;
+
+    /// <summary>Everything worth saying about the booking as it currently stands.</summary>
+    private IReadOnlyList<BookingNote> Notes =>
+        written is null || !SidesComplete
+            ? []
+            : BriefCritique.Of(brief, beats, BriefSides, Promised, RuntimeLeft);
+
+    /// <summary>
+    /// Runtime left in the slot, or null in exhibition where there is no card to fit into.
+    /// The match being built is not yet on the card, so nothing has to be subtracted.
+    /// </summary>
+    private int? RuntimeLeft => State.ActiveShow?.RemainingMinutes;
+
+    private static string NoteClass(NoteWeight weight) => weight switch
+    {
+        NoteWeight.Costly   => "notice--error",
+        NoteWeight.Warning  => "notice--warn",
+        _                   => "notice--advice"
+    };
+
+    private void ApplyPreset(BriefPreset preset)
+    {
+        // The cast-dependent fields survive a preset, because they are about these two
+        // people rather than about the shape: swapping to "Epic" should not silently hand
+        // the match to the other corner.
+        var kept = brief;
+        brief = preset.Brief.Clone();
+        brief.WinningSide = kept.WinningSide;
+        brief.Bookings    = new Dictionary<int, Booking>(kept.Bookings);
+        brief.Outside     = kept.Outside;
+
+        WriteTheMatch(reroll: false);
+    }
+
+    private void WriteTheMatch() => WriteTheMatch(reroll: true);
+
+    /// <summary>
+    /// Writes the sheet from the brief.
+    ///
+    /// <paramref name="reroll"/> bumps the draft, which is what makes the button a re-roll
+    /// rather than a no-op: the brief seeds the generator, so writing the same brief twice
+    /// gives the same sheet on purpose.
+    /// </summary>
+    private void WriteTheMatch(bool reroll)
+    {
+        if (!SidesComplete) return;
+
+        if (reroll) brief.Draft++;
+
+        written        = BriefDirector.Write(brief, BriefSides);
+        beats          = written.Beats.Select(b => b.Clone()).ToList();
+        structureName  = BriefPresets.Matching(brief) ?? BriefCritique.Name(brief.Story);
+    }
+
+    private static string PhaseLabel(MatchPhase phase) => phase switch
+    {
+        MatchPhase.Opening    => "OPENING",
+        MatchPhase.Shine      => "SHINE",
+        MatchPhase.Cutoff     => "CUT-OFF",
+        MatchPhase.Heat       => "HEAT",
+        MatchPhase.HopeSpot   => "HOPE",
+        MatchPhase.Rest       => "REST",
+        MatchPhase.Escalation => "STORY",
+        MatchPhase.Comeback   => "COMEBACK",
+        MatchPhase.Stretch    => "STRETCH",
+        MatchPhase.Outside    => "OUTSIDE",
+        MatchPhase.Finish     => "FINISH",
+        _                     => phase.ToString().ToUpperInvariant()
+    };
+
+    /// <summary>Who works a beat, by name rather than by corner letter.</summary>
+    private string WorkerLabel(BeatControl control) => control switch
+    {
+        BeatControl.WrestlerA => NameOfSide(0),
+        BeatControl.WrestlerB => NameOfSide(1),
+        BeatControl.SideC     => NameOfSide(2),
+        _                     => "Both"
+    };
+
     /// <summary>Whether the library also lists beats this match's shape cannot book.</summary>
     private bool showGatedBeats;
 
@@ -1459,7 +1777,8 @@
     };
     private List<string> errors = new();
 
-    private int RuntimeMinutes => 2 + beats.Sum(x => x.DurationMinutes);
+    /// <summary>What this match will cost the card, read off the same rule the card uses.</summary>
+    private int RuntimeMinutes => Models.BookedMatch.RuntimeOf(beats);
 
     private bool CanAdvance => Blocker() is null;
 
@@ -1490,7 +1809,8 @@
                     : $"Pick who starts for side {SideName(side)}",
         0 when MembersB.Count() < SizeOf(1)
             => SizeOf(1) > 2 ? "Side B needs two partners" : "Pick B's partner",
-        4 when beats.Count == 0 => "A match needs at least one beat",
+        BriefStep when beats.Count == 0 => "Write the match first",
+        BeatsStep when beats.Count == 0 => "A match needs at least one beat",
         _ => null
     };
 
@@ -1505,8 +1825,11 @@
     // step is never truly empty — but it is close to empty in an exhibition, and that is a
     // fair thing to revisit.
 
-    private const int TitleStep = 2;
-    private const int FeudStep  = 3;
+    private const int TitleStep = 1;
+    private const int FeudStep  = 2;
+
+    /// <summary>Where the booking is stated and the sheet is written.</summary>
+    private const int BriefStep = 3;
 
     private bool StepApplies(int index) => index switch
     {
@@ -1873,7 +2196,12 @@
         var plan = new MatchPlanModel
         {
             Sides        = built,
-            MatchType    = matchType,
+            // Derived from the brief's story rather than declared. The scoring weights still
+            // hang off MatchType; what went is the step where a booker was asked to pick it.
+            MatchType    = TypeOf(brief.Story),
+            // Kept on the plan so the engine can grade the match against what it said it was
+            // going to be, and so a reopened booking still knows its own intention.
+            Brief        = brief.Clone(),
             Stipulation  = stipulation,
             IsBlowOff    = isBlowOff && feudChoice != FeudChoice.None,
             // Every live story among the people in the ring, not only the billed one. In a
@@ -1894,6 +2222,24 @@
 
         await OnDone.InvokeAsync(new BookedMatch { Plan = plan, StructureName = structureName });
     }
+
+    /// <summary>
+    /// The brief's story, as the scoring weights read it.
+    ///
+    /// A narrowing: seven stories onto four weightings, because the weights are about which
+    /// component of a match is being asked to carry it and several stories lean the same
+    /// way. A grudge and a David-and-Goliath are different bookings that are both graded on
+    /// the story they tell.
+    /// </summary>
+    private static MatchType TypeOf(MatchStory story) => story switch
+    {
+        MatchStory.TechnicalExhibition => MatchType.Technical,
+        MatchStory.Spectacle           => MatchType.Spotfest,
+        MatchStory.Grudge              => MatchType.Storytelling,
+        MatchStory.FaceInPeril         => MatchType.Storytelling,
+        MatchStory.DavidAndGoliath     => MatchType.Storytelling,
+        _                              => MatchType.Standard
+    };
 
     private static string BeatTypeName(BeatType type) => type switch
     {

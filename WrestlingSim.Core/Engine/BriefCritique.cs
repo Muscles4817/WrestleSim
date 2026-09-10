@@ -12,8 +12,12 @@ namespace WrestlingSim.Engine
         /// <summary>The booking is working against itself. Fixable, and worth fixing.</summary>
         Warning,
 
-        /// <summary>This will not run, or will not do what was asked.</summary>
-        Blocking
+        /// <summary>
+        /// This has a price attached and the price is large. Still not a refusal — a booker
+        /// is allowed to run a card long and pay for it, and the show screen has said so
+        /// since before any of this existed.
+        /// </summary>
+        Costly
     }
 
     /// <summary>One thing worth saying about a booking.</summary>
@@ -29,11 +33,15 @@ namespace WrestlingSim.Engine
     /// say "you booked this wrestler protected and gave them nothing", which is a sentence
     /// about the booking rather than about the data.
     ///
-    /// Everything here is advice. None of it stops a match being booked, because a booker who
-    /// knows what they are doing is allowed to do it — doc 04 §5 on the shortcut whose cost
-    /// is invisible per use applies to the game telling you off as much as to the booking.
-    /// The one exception is time, which is a hard constraint on the card rather than an
-    /// opinion about the match.
+    /// **Everything here is advice and nothing here refuses.** A booker who knows what they
+    /// are doing is allowed to do it, and doc 04 §5 on the shortcut whose cost is invisible
+    /// per use applies to the game lecturing you as much as to the booking itself.
+    ///
+    /// That includes the runtime. An over-long match is the loudest note in here because the
+    /// card charges up to 35% of its score for overrunning, but it is a price rather than a
+    /// rule — the show screen has offered that trade since long before the brief existed,
+    /// and quietly withdrawing it here would be taking away a decision rather than informing
+    /// one. The weight is called Costly and not Blocking for exactly that reason.
     /// </summary>
     public static class BriefCritique
     {
@@ -64,18 +72,21 @@ namespace WrestlingSim.Engine
         }
 
         /// <summary>
-        /// The one hard constraint. A card has a runtime budget and a match that will not fit
-        /// is not a matter of taste.
+        /// The loudest note. A card has a runtime budget and going past it is charged for,
+        /// so this is the one place the critique quotes a number and names the fix.
         /// </summary>
         private static void Time(
             MatchBrief brief, IReadOnlyList<MatchBeat> written, int? minutesLeft, List<BookingNote> notes)
         {
             if (minutesLeft is not { } left) return;
 
-            int minutes = written.Sum(b => b.DurationMinutes);
+            // What the *card* will be charged, not what the beats add up to. Those differ
+            // by the entrances, which is enough to tell a booker a match fits and then
+            // overrun the show by exactly that much.
+            int minutes = Models.BookedMatch.RuntimeOf(written);
             if (minutes <= left) return;
 
-            notes.Add(new BookingNote(NoteWeight.Blocking,
+            notes.Add(new BookingNote(NoteWeight.Costly,
                 $"This runs {minutes} minutes and there are {left} left in the slot. " +
                 (brief.Length == MatchScale.Opener
                     ? "There is nothing shorter to drop to."

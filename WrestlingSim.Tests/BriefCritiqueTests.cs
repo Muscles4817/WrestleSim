@@ -65,18 +65,19 @@ namespace WrestlingSim.Tests
         // ── Time, the one hard constraint ────────────────────────────────────
 
         /// <summary>
-        /// A card has a runtime budget and a match that will not fit is not a matter of
-        /// taste. It is also the only note that says what to do instead.
+        /// The loudest note there is, and the only one that quotes a number and names the
+        /// fix. Loud rather than refusing: the card charges for overrunning and has offered
+        /// that trade since long before the brief existed.
         /// </summary>
         [Fact]
-        public void AMatchTooLongForTheSlotIsBlocking()
+        public void AMatchTooLongForTheSlotIsTheLoudestNote()
         {
             var brief = new MatchBrief { Story = MatchStory.FaceInPeril, Length = MatchScale.Epic };
             var notes = Critique(brief, Sides(), minutesLeft: 12);
 
             Show(notes);
 
-            var note = Assert.Single(notes, n => n.Weight == NoteWeight.Blocking);
+            var note = Assert.Single(notes, n => n.Weight == NoteWeight.Costly);
             Assert.Contains("12 left", note.Text);
             Assert.Contains("big match", note.Text);
         }
@@ -88,9 +89,20 @@ namespace WrestlingSim.Tests
             var brief = new MatchBrief { Story = MatchStory.FaceInPeril, Length = MatchScale.Television };
 
             Assert.DoesNotContain(Critique(brief, Sides(), minutesLeft: 40),
-                                  n => n.Weight == NoteWeight.Blocking);
+                                  n => n.Weight == NoteWeight.Costly);
+
+            // Exactly the entrances of headroom, which is the case the first version got
+            // wrong: it summed the beats and left the two minutes off, so a match that
+            // overran the card by precisely its own entrances was reported as fitting.
+            var written = BriefDirector.Write(brief, Sides());
+            int beatsOnly = written.Beats.Sum(b => b.DurationMinutes);
+
+            Assert.Contains(Critique(brief, Sides(), minutesLeft: beatsOnly),
+                            n => n.Weight == NoteWeight.Costly);
+            Assert.DoesNotContain(Critique(brief, Sides(), minutesLeft: beatsOnly + 2),
+                                  n => n.Weight == NoteWeight.Costly);
             Assert.DoesNotContain(Critique(brief, Sides(), minutesLeft: null),
-                                  n => n.Weight == NoteWeight.Blocking);
+                                  n => n.Weight == NoteWeight.Costly);
         }
 
         /// <summary>An opener that will not fit has nothing shorter to offer, and says so.</summary>
@@ -327,7 +339,7 @@ namespace WrestlingSim.Tests
             Show(notes);
 
             Assert.True(notes.Count >= 3, "this booking is wrong in several ways at once");
-            Assert.Equal(NoteWeight.Blocking, notes[0].Weight);
+            Assert.Equal(NoteWeight.Costly, notes[0].Weight);
 
             for (int i = 1; i < notes.Count; i++)
                 Assert.True(notes[i].Weight <= notes[i - 1].Weight);

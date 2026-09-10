@@ -22,9 +22,19 @@ namespace WrestlingSim.Models
 
         public CardItemKind Kind => CardItemKind.Match;
 
-        // Entrances and the bell either side of the beats themselves.
-        public int DurationMinutes =>
-            2 + Plan.Beats.Sum(b => b.DurationMinutes);
+        /// <summary>
+        /// What a match of these beats costs the card: the beats, plus the entrances and the
+        /// bell either side of them.
+        ///
+        /// Static so that everything asking "will this fit" reads one definition. The
+        /// builder's runtime figure and the brief's over-running warning were both computing
+        /// it themselves, and the warning left the two minutes off — so a booker could be
+        /// told a match fit and then watch the card overrun by exactly the entrances.
+        /// </summary>
+        public static int RuntimeOf(IEnumerable<MatchBeat> beats) =>
+            2 + beats.Sum(b => b.DurationMinutes);
+
+        public int DurationMinutes => RuntimeOf(Plan.Beats);
 
         public IReadOnlyList<Wrestler> Wrestlers => Plan.AllParticipants.ToList();
     }

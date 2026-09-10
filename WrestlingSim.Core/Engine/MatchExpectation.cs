@@ -152,9 +152,14 @@ namespace WrestlingSim.Engine
                 return new(MatchStory.Grudge, 0.6,
                            "Two big men who hit people. This is going to be a fight.");
 
-            // A mixed field promises the ordinary thing, and only faintly.
-            return new(MatchStory.EvenContest, 0.3,
-                       "A mixed pairing. Nothing is being promised that you cannot change.");
+            // A mixed field promises nothing, and says so with a strength of zero rather
+            // than a small one.
+            //
+            // It sat at 0.3 first, just above VagueBelow, which meant the critique quoted
+            // "nothing is being promised that you cannot change" and then told the booker
+            // off for changing it. A reading the game describes as no promise has to score
+            // as no promise, or the two halves contradict each other on the same screen.
+            return Expectation.Nothing;
         }
 
         /// <summary>
