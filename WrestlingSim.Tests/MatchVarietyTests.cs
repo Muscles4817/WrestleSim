@@ -382,9 +382,27 @@ namespace WrestlingSim.Tests
             // explicit FeudalResonance, which no structure or booking flow ever set, so it
             // was dead code on every path a player could take.
             var a = A; var b = B;
-            var beats = MatchStructureLibrary.Find("Grudge Brawl")!.Beats.Select(x => x.Clone()).ToList();
-            // Add a storytelling beat so the feud has something to amplify.
-            beats.Insert(beats.Count - 1, T("Trash Talk", BeatControl.WrestlerB));
+            // The six beats this threshold was calibrated against — verbatim the "Grudge
+            // Brawl" structure as it stood before the library was rebuilt to doc 18's
+            // shape — owned here rather than read from the library.
+            //
+            // It used to read the live structure, and when Grudge Brawl grew from six beats
+            // to nine the measured gap fell from 0.253 to 0.177 and this went red. Nothing
+            // about feuds had changed: the engine's saturating normalisation means every
+            // extra beat dilutes what any one factor is worth, so the threshold was
+            // silently pinned to a beat count instead of to the claim. Freezing the beats
+            // measures the claim.
+            var beats = new List<MatchBeat>
+            {
+                T("Hot Start",       BeatControl.Even),
+                T("Ringside Brawl",  BeatControl.Even),
+                T("Power Beatdown",  BeatControl.WrestlerB),
+                T("Revenge Spot",    BeatControl.WrestlerA),
+                T("Signature Cover", BeatControl.WrestlerA),
+                // A storytelling beat, so the feud has something to amplify.
+                T("Trash Talk",      BeatControl.WrestlerB),
+                T("Clean Victory",   BeatControl.WrestlerA)
+            };
 
             double Run(FeudIntensity? intensity)
             {

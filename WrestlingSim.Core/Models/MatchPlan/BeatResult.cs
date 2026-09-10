@@ -132,6 +132,7 @@ namespace WrestlingSim.Models.MatchPlan
             BeatType.StandardOpening     => "OPENING",
             BeatType.HeatSegment         => "HEAT SEGMENT",
             BeatType.Comeback            => "COMEBACK",
+            BeatType.HopeSpot            => "HOPE SPOT",
             BeatType.RestHold            => "REST HOLD",
             BeatType.HighSpot            => "HIGH SPOT",
             BeatType.CrowdBrawl          => "CROWD BRAWL",

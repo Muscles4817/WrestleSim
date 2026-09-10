@@ -1016,6 +1016,10 @@ namespace WrestlingSim.Engine
                     ApplyComeback(result, beat, ctx, control, iMod, dMod);
                     break;
 
+                case BeatType.HopeSpot:
+                    ApplyHopeSpot(result, ctx, control, iMod, feudMult);
+                    break;
+
                 case BeatType.NearFall:
                     ApplyNearFall(result, beat, ctx, control, iMod, feudMult, timesUsed);
                     break;
@@ -1678,6 +1682,9 @@ namespace WrestlingSim.Engine
 
             // A second comeback is a real moment, but never the first one again.
             BeatType.Comeback             => 0.70,
+            // Steeper than a comeback: the third flurry that goes nowhere is the crowd
+            // learning the flurries go nowhere, which is the opposite of what it is for.
+            BeatType.HopeSpot             => 0.55,
 
             // Near falls hold up best — the whole point is escalation — but still decay.
             BeatType.NearFall             => 0.85,
@@ -1931,6 +1938,66 @@ namespace WrestlingSim.Engine
             ));
         }
 
+        /// <summary>
+        /// A hope spot. Doc 18 §2.3: "brief comeback attempts that fail. Each raises
+        /// tension … the hope spots are essential — they keep the audience from giving up
+        /// during the heat."
+        ///
+        /// The mirror of <see cref="ApplyNearTag"/> and deliberately its opposite in the
+        /// one place that matters. A denied tag is a reach that fails, so the room groans
+        /// and energy goes *down*; a hope spot is offence that lands before it is cut off,
+        /// so the room pops and energy goes *up*. Both read as
+        /// <see cref="ReactionKind.Tension"/>, because in neither case has anything been
+        /// released — the crowd is leaning in, not let go.
+        ///
+        /// **It costs the hole it is dug out of**, and that is what stops hope spots being
+        /// free. The flurry genuinely claws back some of the deficit, and
+        /// <see cref="ApplyComeback"/>'s earned bonus is read off exactly that deficit. So
+        /// one or two wind the crowd tighter than they cost; a fourth has flattened the
+        /// heat it was supposed to be relieving, and a wrestler who keeps getting flurries
+        /// was never really in peril. No new rule was needed to say that — it falls out of
+        /// the two mechanisms already here.
+        /// </summary>
+        private void ApplyHopeSpot(BeatResult r, Ctx ctx,
+            Wrestler? control, double iMod, double feudMult)
+        {
+            // Control is the wrestler in trouble — this is their flurry. The opposite
+            // convention to Isolation and NearTag, where control is the side doing the
+            // punishing, and the right one here: on a beat sheet a hope spot is the one row
+            // in the heat section that says the face is on top, which is what it looks like.
+            control ??= ctx.LegalDefault;
+            var cutter = ctx.Opponent(control);
+
+            var pRally = ctx.For(control);
+
+            // The pop is for the person fighting back, so it scales with how much the room
+            // wants them to.
+            double investment = PerformerProfile.Blend(pRally.Connection, 0.70);
+
+            r.CrowdEnergyDelta = Rng(4, 9) * iMod * investment
+                                 * PerformerProfile.Blend(pRally.Athleticism, 0.40);
+
+            // A real dent, and a small one. Enough that the deficit the comeback reads is
+            // genuinely shallower for having booked this.
+            r.AdvantageDelta = ControlSign(ctx, control) * Rng(5, 11) * iMod;
+
+            r.TechnicalContribution    = 2.5 * iMod * pRally.Workrate;
+            r.StorytellingContribution = 7.0 * iMod * feudMult
+                                         * PerformerProfile.Blend(pRally.Selling, 0.50)
+                                         * investment;
+
+            r.Reaction = ReactionKind.Tension;
+
+            ctx.State.RecordHopeSpot(ctx.IsSideA(control));
+
+            r.Commentary.Add(Pick(
+                $"{control.RingName} catches them! A flurry — the crowd is up! — and {cutter.RingName} shuts it down again.",
+                $"There it is, the first sign of life from {control.RingName}! But {cutter.RingName} cuts them off before it goes anywhere.",
+                $"{control.RingName} will not stay down — two big shots and the building is on its feet — and then {cutter.RingName} takes the legs out again.",
+                $"A desperate elbow from {control.RingName}, and another! They are trying to build something here — and {cutter.RingName} ends it."
+            ));
+        }
+
         private void ApplyComeback(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, double iMod, double dMod)
         {
@@ -1946,10 +2013,18 @@ namespace WrestlingSim.Engine
             double advantageDeficit = Math.Abs(state.RawAdvantage);
             double earnedBonus = Math.Min(advantageDeficit / 120.0 * 0.5, 0.5); // up to +50% bonus
 
+            // And what the hope spots bought — doc 18 §2.3. Separate from the deficit term
+            // because they measure different things: the deficit is how deep the hole is,
+            // this is how many times the room was made to believe they might get out of it.
+            // A crowd given neither has stopped watching by the time the comeback comes.
+            int hopeSpots = state.HopeSpotsGiven(ctx.IsSideA(control));
+            double hopeCharge = ComebackCharge(hopeSpots);
+
             // The pop belongs to the person making the comeback. A crowd that does not care
             // about them does not come alive no matter how well the spot is executed.
             // A comeback is a burst of fast offence — how explosive it looks is athleticism.
-            r.CrowdEnergyDelta = Rng(12, 20) * iMod * (1.0 + earnedBonus) * pControl.Connection
+            r.CrowdEnergyDelta = Rng(12, 20) * iMod * (1.0 + earnedBonus) * hopeCharge
+                                 * pControl.Connection
                                  * PerformerProfile.Blend(pControl.Athleticism, 0.45);
 
             // Swing momentum back hard. A comeback's job is to wipe out the heat that came
@@ -1971,9 +2046,18 @@ namespace WrestlingSim.Engine
 
             r.TechnicalContribution    = 4.5 * (AvgRingSkill(ctx) / 5.0) * iMod * pControl.Workrate
                                          * PerformerProfile.Blend(pControl.Athleticism, 0.40);
-            r.StorytellingContribution = 8.0 * iMod                              // comebacks are prime storytelling
+            r.StorytellingContribution = 8.0 * iMod * hopeCharge                 // comebacks are prime storytelling
                                          * PerformerProfile.Blend(pControl.Connection, 0.55)
                                          * PerformerProfile.Blend(pControl.RingPsych, 0.35);
+
+            // Spent. A second heat section has to buy its own payoff — otherwise the two
+            // heat/comeback cycles doc 18 §3.1 calls the 15–25 minute shape would let the
+            // second comeback bank the first one's tension for nothing.
+            state.ClearHopeSpots(ctx.IsSideA(control));
+
+            if (hopeSpots == 0)
+                r.Commentary.Add("They were never given a reason to believe, so there is " +
+                                 "not much left in here to release.");
 
             r.Commentary.Add(Pick(
                 $"{control.RingName} fires back! The crowd erupts!",
@@ -2606,6 +2690,25 @@ namespace WrestlingSim.Engine
         /// fourth isolation is a crowd getting bored rather than a crowd getting desperate,
         /// which is the same diminishing-returns shape the rest of the engine uses.
         /// </summary>
+        /// <summary>
+        /// What the hope spots bought the comeback. 1.0 with none, saturating just above
+        /// 1.4 — the same shape and the same argument as <see cref="HotTagCharge"/>.
+        ///
+        /// Doc 18 §2.3 says the hope spots are what keep the audience from giving up during
+        /// the heat, so a comeback that had them lands on a room that is still there. It
+        /// saturates at two because a third is the crowd learning that the flurries do not
+        /// mean anything, which is the diminishing-returns shape used everywhere else here.
+        ///
+        /// This is only the upside. The cost is not in this function and does not need to
+        /// be: a hope spot claws back deficit, and the comeback's earned bonus is read off
+        /// that deficit, so booking four flattens the hole they were meant to make deeper.
+        /// </summary>
+        public static double ComebackCharge(int hopeSpots) =>
+            1.0 + 0.45 * Math.Min(hopeSpots, HopeSpotPatience) / (double)HopeSpotPatience;
+
+        /// <summary>Hope spots past which the crowd stops believing the flurries.</summary>
+        public const int HopeSpotPatience = 2;
+
         private static double HotTagCharge(int isolations, int nearTags)
         {
             double isolationTerm = 0.55 * Math.Min(isolations, IsolationPatience) / (double)IsolationPatience;
@@ -3187,6 +3290,7 @@ namespace WrestlingSim.Engine
                 // The tag formula is the most story-driven structure the engine has: a man
                 // kept from his corner, the tag denied, and the release. Leaving these out
                 // meant declaring a Southern Tag "Storytelling" was a pure penalty.
+                or BeatType.HopeSpot
                 or BeatType.Cutoff or BeatType.Isolation or BeatType.NearTag or BeatType.HotTag
                 or BeatType.Miscommunication or BeatType.SaveBreakup,
 

@@ -12,6 +12,29 @@ namespace WrestlingSim.Enums
         Comeback,
         RestHold,
 
+        /// <summary>
+        /// A brief flurry from the wrestler in trouble that the heat cuts off again.
+        ///
+        /// Doc 18 §2.3 draws the face-in-peril structure as seven stages and puts this at
+        /// the middle of it: "HOPE SPOTS — Brief comeback attempts that fail. Each raises
+        /// tension", and then, in the paragraph explaining why the structure works, "the
+        /// hope spots are **essential** — they keep the audience from giving up during the
+        /// heat."
+        ///
+        /// It was missing. The tag formula has <see cref="NearTag"/> doing this job, and the
+        /// singles formula — which doc 18 calls the dominant structure in wrestling — had
+        /// nothing between the cut-off and the comeback at all. Every singles template in
+        /// <see cref="Engine.MatchStructureLibrary"/> therefore ran heat straight into
+        /// comeback, which is the one thing the reference says not to do.
+        ///
+        /// Not a small <see cref="Comeback"/>: a comeback releases the tension and a hope
+        /// spot winds it tighter. The crowd pops for the offence and then watches it get cut
+        /// off, which is why this reads as <see cref="ReactionKind.Tension"/> and takes the
+        /// room *up* rather than down — the opposite of a near tag, where the reach fails
+        /// and the building groans.
+        /// </summary>
+        HopeSpot,
+
         // High-impact spots
         HighSpot,
         CrowdBrawl,

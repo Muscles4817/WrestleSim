@@ -53,7 +53,8 @@ namespace WrestlingSim.Tests
         {
             Assert.NotNull(MatchStructureLibrary.Find("TV Formula"));
             Assert.NotNull(MatchStructureLibrary.Find("tv formula"));
-            Assert.NotNull(MatchStructureLibrary.Find("Big Match Epic"));
+            Assert.NotNull(MatchStructureLibrary.Find("Big Match"));
+            Assert.NotNull(MatchStructureLibrary.Find("Epic"));
             Assert.Null(MatchStructureLibrary.Find("does not exist"));
         }
 
@@ -73,7 +74,8 @@ namespace WrestlingSim.Tests
         [InlineData("Technical Showcase")]
         [InlineData("Spotfest")]
         [InlineData("Grudge Brawl")]
-        [InlineData("Big Match Epic")]
+        [InlineData("Big Match")]
+        [InlineData("Epic")]
         public void NonFeudStructure_ProducesValidResult(string structureName)
         {
             var wrestlerA = MakeDummy("Alpha");

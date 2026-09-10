@@ -759,7 +759,7 @@ namespace WrestlingSim.Tests
                      { ("nobodies", 15.0, 0.8), ("midcard", 60.0, 3.0), ("stars", 94.0, 4.9) })
             {
                 var r = Run(W("A", overness: over, charisma: cha),
-                            W("B", overness: over, charisma: cha), "Big Match Epic");
+                            W("B", overness: over, charisma: cha), "Big Match");
                 output.WriteLine($"  {label,-9} {r.Reaction.Investment:F2}  \"{r.CrowdNote}\"");
                 notes.Add(r.CrowdNote);
             }
