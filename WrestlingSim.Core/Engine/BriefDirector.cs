@@ -144,8 +144,13 @@ namespace WrestlingSim.Engine
             {
                 MatchStory.Grudge or MatchStory.Spectacle => [BeatType.HotOpening],
                 MatchStory.TechnicalExhibition            => [BeatType.SlowOpening],
+                // A big match opens slowly. There is time to establish and the form uses
+                // it — and it keeps the running time deterministic, because the opening is
+                // the one slot whose duration comes from the template rather than the
+                // grammar. Two templates with different defaults would make a big match
+                // twenty-three or twenty-five minutes depending on a coin flip.
                 _ when brief.Length is MatchScale.BigMatch or MatchScale.Epic
-                                                          => [BeatType.SlowOpening, BeatType.StandardOpening],
+                                                          => [BeatType.SlowOpening],
                 _                                         => [BeatType.StandardOpening, BeatType.HotOpening]
             },
 
@@ -309,14 +314,47 @@ namespace WrestlingSim.Engine
             if (template.StyleHint is not { } hint) return 1.0;
             if (hint == style) return 1.5;
 
-            return (hint, style) switch
-            {
-                (WrestlingStyle.HighFlyer,  WrestlingStyle.Powerhouse) => 0.4,
-                (WrestlingStyle.Powerhouse, WrestlingStyle.HighFlyer)  => 0.45,
-                (WrestlingStyle.Technical,  WrestlingStyle.Brawler)    => 0.6,
-                (WrestlingStyle.Technical,  WrestlingStyle.Powerhouse) => 0.6,
-                _                                                      => 0.85
-            };
+            return Family(hint) == Family(style) ? 1.1 : Adjacent(hint, style) ? 0.8 : 0.4;
+        }
+
+        /// <summary>
+        /// What a style is fundamentally doing, for judging how far a beat is from the body
+        /// working it.
+        ///
+        /// The first version listed four pairs by hand and gave everything else the same
+        /// 0.85, which meant most of the roster was interchangeable to the generator: a
+        /// technician and a powerhouse handed the same brief drew the identical sheet,
+        /// because every weight in it was the same number. A style that never changes an
+        /// outcome is decoration.
+        /// </summary>
+        private static StyleFamily Family(WrestlingStyle style) => style switch
+        {
+            WrestlingStyle.Powerhouse => StyleFamily.Force,
+            WrestlingStyle.Brawler    => StyleFamily.Force,
+            WrestlingStyle.Striker    => StyleFamily.Strikes,
+            WrestlingStyle.HighFlyer  => StyleFamily.Air,
+            WrestlingStyle.Technical  => StyleFamily.Mat,
+            WrestlingStyle.Grappler   => StyleFamily.Mat,
+            _                         => StyleFamily.Mat
+        };
+
+        private enum StyleFamily { Force, Strikes, Air, Mat }
+
+        /// <summary>
+        /// Families that share something. Striking sits between force and the air; the mat
+        /// and the air are the two that have nothing to say to each other, which is why a
+        /// technician doing a shooting star and a high flyer doing a wear-down hold are both
+        /// the beat looking wrong on the body.
+        /// </summary>
+        private static bool Adjacent(WrestlingStyle a, WrestlingStyle b)
+        {
+            var (x, y) = (Family(a), Family(b));
+            return (x, y) is (StyleFamily.Force, StyleFamily.Strikes)
+                          or (StyleFamily.Strikes, StyleFamily.Force)
+                          or (StyleFamily.Strikes, StyleFamily.Air)
+                          or (StyleFamily.Air, StyleFamily.Strikes)
+                          or (StyleFamily.Mat, StyleFamily.Force)
+                          or (StyleFamily.Force, StyleFamily.Mat);
         }
 
         /// <summary>Whoever is working this beat, or null when it is worked evenly.</summary>
