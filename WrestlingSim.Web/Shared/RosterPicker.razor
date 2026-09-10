@@ -113,6 +113,13 @@
                             }
                         </span>
                         <span class="prow__why">@row.Reason</span>
+                        @* Said where the booker is choosing, not three steps later on the
+                           confirm button. A tired or rusty wrestler is still bookable — this
+                           is a reading, not a gate. *@
+                        @if (row.Condition is { } condition)
+                        {
+                            <span class="prow__cond">⚠ @condition</span>
+                        }
                         <span class="prow__pop tabnum">@w.OvernessDisplay</span>
                         <Trend Momentum="@w.Momentum" ShowLabel="false" />
                     </button>

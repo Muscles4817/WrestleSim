@@ -23,7 +23,8 @@ namespace WrestlingSim.Engine
     {
         /// <summary>Why a name is being offered where it is, and what to say about it.</summary>
         public readonly record struct Suggestion(
-            Wrestler Wrestler, SuggestionBand Band, string Reason, string? BookedAs);
+            Wrestler Wrestler, SuggestionBand Band, string Reason, string? BookedAs,
+            string? Condition = null);
 
         public enum SuggestionBand
         {
@@ -68,7 +69,12 @@ namespace WrestlingSim.Engine
             Func<Wrestler, Wrestler?> standingPartnerOf,
             IReadOnlySet<Wrestler> recentlyBooked,
             DateOnly? today) =>
-            pool.Select(w => Describe(w, against, feuds, bookedAs, standingPartnerOf, recentlyBooked, today))
+            // The ring-condition reading is bolted on after the fact rather than threaded
+            // through Describe's six return paths, because it is orthogonal to all of them:
+            // being cooked is equally worth saying about somebody in a hot feud and
+            // somebody with no story at all.
+            pool.Select(w => Describe(w, against, feuds, bookedAs, standingPartnerOf, recentlyBooked, today)
+                             with { Condition = RingCondition.WarningFor(w) })
                 .OrderBy(SortKey)
                 .ThenByDescending(x => x.Wrestler.Overness)
                 .ToList();

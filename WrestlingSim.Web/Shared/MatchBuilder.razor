@@ -21,6 +21,29 @@
     </div>
 </div>
 
+@* The second place it is said, and it follows you through the wizard rather than
+   waiting at the end.
+
+   The picker warns while you are choosing; this one stays up from the moment somebody is
+   in the match until the booking is confirmed, because a card gets built one slot at a
+   time over several minutes and the reading you saw on the pick sheet is easy to have
+   scrolled past. It sat inside the beats step first, which meant it only appeared once
+   every other decision had already been made. *@
+@if (Cooked.Count > 0)
+{
+    <div class="notice notice--warn mb">
+        <strong>Ring condition.</strong>
+        @foreach (var (w, note) in Cooked)
+        {
+            <div>@w.RingName — @note</div>
+        }
+        <span class="small muted">
+            Bookable, and it will show. Fatigue comes back with time off; sharpness goes the
+            other way on exactly the same days, so there is no rest that only helps.
+        </span>
+    </div>
+}
+
 @* ── 1. Wrestlers ─────────────────────────────────────────────────────── *@
 @if (step == 0)
 {
@@ -1193,6 +1216,13 @@
             ? $"{days}d ago\n{Freshness(stip) * 100:F0}% fresh"
             : "never run";
     }
+
+    /// <summary>Everybody in this match with something worth saying about their condition.</summary>
+    private List<(Wrestler W, string Note)> Cooked =>
+        Chosen.Select(w => (W: w, Note: RingCondition.WarningFor(w)))
+              .Where(x => x.Note is not null)
+              .Select(x => (x.W, x.Note!))
+              .ToList();
 
     /// <summary>The booked finish, when the chosen stipulation has outlawed it.</summary>
     private MatchBeat? IllegalFinish =>

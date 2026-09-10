@@ -183,6 +183,12 @@ namespace WrestlingSim.Models.World
             foreach (var wrestler in Roster)
                 HeatEconomy.ApplyDailyDecay(wrestler, CurrentDate);
 
+            // The two meters, moving in opposite directions on the same day off. A day of
+            // rest pays back fatigue and costs sharpness, which is why there is no amount
+            // of time off that is simply good for somebody — see RingCondition.
+            foreach (var wrestler in Roster)
+                RingCondition.ApplyDayOff(wrestler);
+
             // A belt nobody is defending is quietly losing value the whole time — doc 21
             // §4. Being ignored is the fastest killer, so it has to happen on the clock
             // rather than only when someone books a match.

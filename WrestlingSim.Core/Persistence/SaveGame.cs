@@ -188,6 +188,15 @@ namespace WrestlingSim.Persistence
         public string? LastAppearance { get; set; }
 
         /// <summary>
+        /// The two ring-condition meters. Absent from saves written before they existed,
+        /// which read back as a fresh, sharp roster — the state a new career starts in, so
+        /// an old save loads as though nobody had worked yet rather than as a roster of
+        /// exhausted rookies.
+        /// </summary>
+        public double Fatigue { get; set; }
+        public double Sharpness { get; set; } = 100;
+
+        /// <summary>
         /// What Overness was called before the stock/flow split. Read only as a fallback so
         /// saves written by earlier builds still open; never written.
         /// </summary>
