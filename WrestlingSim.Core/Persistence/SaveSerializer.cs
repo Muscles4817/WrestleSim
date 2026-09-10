@@ -681,6 +681,8 @@ namespace WrestlingSim.Persistence
                 WinningSide = brief.WinningSide,
                 Outside     = brief.Outside,
                 Draft       = brief.Draft,
+                Alliance    = brief.Alliance is { } pact ? [pact.First, pact.Second] : null,
+                AllianceBreaks = brief.AllianceBreaks,
                 Bookings    = brief.Bookings.ToDictionary(
                                   kv => kv.Key.ToString(System.Globalization.CultureInfo.InvariantCulture),
                                   kv => kv.Value)
@@ -701,7 +703,13 @@ namespace WrestlingSim.Persistence
                 Finish      = dto.Finish,
                 WinningSide = dto.WinningSide,
                 Outside     = dto.Outside,
-                Draft       = dto.Draft
+                Draft       = dto.Draft,
+
+                // Two entries or nothing. A malformed pair is dropped rather than half-read:
+                // an alliance missing one of its members would generate a beat aimed at a
+                // side that is not in it.
+                Alliance    = dto.Alliance is { Count: 2 } pair ? (pair[0], pair[1]) : null,
+                AllianceBreaks = dto.AllianceBreaks
             };
 
             foreach (var (key, booking) in dto.Bookings)

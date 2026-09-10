@@ -3,8 +3,33 @@ using WrestlingSim.Models.MatchPlan;
 
 namespace WrestlingSim.Engine
 {
+    /// <summary>
+    /// Whether a preset wants an alliance, expressed as a rule rather than as side indices.
+    ///
+    /// A preset cannot name sides — it does not know who is in the match, and the same chip
+    /// has to work on any three-way. So it says what *kind* of alliance the shape wants and
+    /// it is resolved against the cast at the point of use.
+    /// </summary>
+    public enum AllianceHint
+    {
+        /// <summary>Nobody teams up. Correct for every singles preset.</summary>
+        None,
+
+        /// <summary>
+        /// The two who are not booked to win work the winner over, and it breaks. The
+        /// archetypal three-way: two of them agree the favourite is the problem, right up
+        /// until one of them decides the other is.
+        /// </summary>
+        AgainstTheWinner,
+
+        /// <summary>The same, and it holds. Two of them simply beat the third.</summary>
+        AgainstTheWinnerAndHolds
+    }
+
     /// <summary>A named starting point for a brief, and what it is for.</summary>
-    public readonly record struct BriefPreset(string Name, string Description, MatchBrief Brief);
+    public readonly record struct BriefPreset(
+        string Name, string Description, MatchBrief Brief,
+        int MinimumSides = 2, AllianceHint Alliance = AllianceHint.None);
 
     /// <summary>
     /// The old structure library, as briefs.
@@ -54,10 +79,55 @@ namespace WrestlingSim.Engine
                 "One-sided on purpose. Somebody is being made to look unbeatable.",
                 new MatchBrief { Story = MatchStory.Showcase, Length = MatchScale.Opener, Finish = FinishKind.Dominant }),
 
+            // ── Multi-man ────────────────────────────────────────────────────
+            //
+            // The library's four multi-man structures were eight beats each, twelve minutes
+            // at the longest, and identical in length whoever was in them. These are what
+            // they were trying to be.
+
+            new("Triple Threat",
+                "Two of them decide the favourite is the problem, until one decides the other is.",
+                new MatchBrief { Story = MatchStory.EvenContest, Length = MatchScale.Workhorse, Finish = FinishKind.Clean },
+                MinimumSides: 3, Alliance: AllianceHint.AgainstTheWinner),
+
+            new("Three-Way Main Event",
+                "The long version. Two cycles, a real finishing stretch, and the alliance breaking in the middle of it.",
+                new MatchBrief { Story = MatchStory.EvenContest, Length = MatchScale.BigMatch, Finish = FinishKind.Dominant },
+                MinimumSides: 3, Alliance: AllianceHint.AgainstTheWinner),
+
+            new("Stolen Fall",
+                "Two of them wreck each other and the third takes it. The finish the format exists for.",
+                new MatchBrief { Story = MatchStory.Grudge, Length = MatchScale.Workhorse, Finish = FinishKind.Stolen },
+                MinimumSides: 3, Alliance: AllianceHint.AgainstTheWinner),
+
+            new("Two On One",
+                "They gang up and stay ganged up. The quieter booking, and the one that makes somebody look unbeatable for surviving it.",
+                new MatchBrief { Story = MatchStory.DavidAndGoliath, Length = MatchScale.Workhorse, Finish = FinishKind.Clean },
+                MinimumSides: 3, Alliance: AllianceHint.AgainstTheWinnerAndHolds),
+
             new("Giant Killer",
                 "Somebody is giving away a great deal of size, and the match is about whether they survive it.",
                 new MatchBrief { Story = MatchStory.DavidAndGoliath, Length = MatchScale.Workhorse, Finish = FinishKind.Clean })
         ];
+
+        /// <summary>The ones that make sense for a match of this shape.</summary>
+        public static IEnumerable<BriefPreset> For(int sideCount) =>
+            All.Where(p => sideCount >= p.MinimumSides);
+
+        /// <summary>
+        /// Which two sides a preset's alliance means, given who is booked to win.
+        ///
+        /// Null when the preset wants none, or when there are not two people left to form
+        /// one — which is every singles match, asked as "are there two others" rather than
+        /// as a separate rule about side counts.
+        /// </summary>
+        public static (int First, int Second)? Resolve(AllianceHint hint, int winningSide, int sideCount)
+        {
+            if (hint == AllianceHint.None) return null;
+
+            var against = Enumerable.Range(0, sideCount).Where(s => s != winningSide).ToList();
+            return against.Count >= 2 ? (against[0], against[1]) : null;
+        }
 
         public static BriefPreset? Find(string name) =>
             All.FirstOrDefault(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) is { Name: not null } hit

@@ -36,6 +36,18 @@ namespace WrestlingSim.Engine
         /// <summary>Somebody outside the match gets involved.</summary>
         Outside,
 
+        /// <summary>Two of them work the third. Doc 18 §2.5's best story, first half.</summary>
+        Alliance,
+
+        /// <summary>And the moment it breaks, which §2.5 calls the peak.</summary>
+        Betrayal,
+
+        /// <summary>The third man is put somewhere, so the next stretch can be two-handed.</summary>
+        Disposal,
+
+        /// <summary>And comes back, which is what makes the disposal a payoff and not a reset.</summary>
+        Return,
+
         /// <summary>The end.</summary>
         Finish
     }
@@ -52,12 +64,21 @@ namespace WrestlingSim.Engine
     /// case that matters: a feeling-out process is Low because it is a feeling-out process,
     /// and having the grammar restate that is a second place for it to be wrong.
     /// </param>
+    /// <param name="Against">
+    /// Who the beat is aimed at, for the multi-man beats where that is not "the other one".
+    /// A disposal, an alliance and a betrayal all name a target, and in a three-way there is
+    /// more than one candidate — leaving it null there is how a beat booked against side C
+    /// ends up narrating side B, which is a bug this engine has already had once.
+    /// </param>
     public readonly record struct PhaseSlot(
         MatchPhase     Phase,
         BeatControl    Control,
         BeatIntensity? Intensity,
         BeatDuration?  Duration,
-        string         Why);
+        string         Why)
+    {
+        public BeatControl? Against { get; init; }
+    }
 
     /// <summary>
     /// The shape of a match, derived from what the booker asked for.
@@ -148,7 +169,14 @@ namespace WrestlingSim.Engine
             var slots = new List<PhaseSlot>();
 
             int protagonist = brief.Protagonist(sideCount);
-            int antagonist  = protagonist == 0 ? 1 : 0;
+
+            // In a three-way the antagonist is whoever the *finish* is against, falling back
+            // to the next side along. `protagonist == 0 ? 1 : 0` was fine while every match
+            // had two sides and silently named side A in a triple threat where the
+            // protagonist was side C.
+            int antagonist = protagonist == brief.WinningSide
+                ? FirstOther(sideCount, protagonist)
+                : brief.WinningSide;
 
             var p = Control(protagonist);
             var q = Control(antagonist);
@@ -173,9 +201,53 @@ namespace WrestlingSim.Engine
                         : "The protagonist looks good before the match turns."));
             }
 
+            // ── The alliance, and the moment it breaks ───────────────────────
+            //
+            // Doc 18 §2.5 calls this "the format's single best story", and it goes here —
+            // after the opening, before anybody has been disposed of — because it is the
+            // answer to the third-man problem that does not involve removing anybody. All
+            // three are busy, which is what a real three-way opens with.
+            // No side-count check here either. `OutnumberedSide` returns null when there is
+            // nobody left to be outnumbered, which is the same question asked once instead
+            // of twice — and a guard that can never change an answer looks like a rule and
+            // is not one.
+            if (brief.Alliance is { } pact && brief.OutnumberedSide(sideCount) is { } outnumbered)
+            {
+                slots.Add(new PhaseSlot(
+                    MatchPhase.Alliance, Control(pact.First), null, null,
+                    "Two of them decide the third is the problem. Nobody is standing on the floor.")
+                    { Against = Control(outnumbered) });
+
+                if (brief.AllianceBreaks)
+                    slots.Add(new PhaseSlot(
+                        MatchPhase.Betrayal, Control(pact.Second), null, null,
+                        "And it breaks. Doc 18 §2.5 calls this the peak of the format.")
+                        { Against = Control(pact.First) });
+            }
+
             // ── Cycles ───────────────────────────────────────────────────────
             int cycles = Cycles(brief.Length);
             int hopes  = 0;
+
+            // **The bracketing rule.** Doc 18 §2.5: "the entire craft of a multi-man match is
+            // disposing of people plausibly and then bringing them back at the right moment.
+            // A triple threat that never explains where the third man went is the format's
+            // characteristic failure."
+            //
+            // So everything between here and the finishing stretch is a two-person passage —
+            // a cut-off, a heat section, a comeback all assume somebody to work and somebody
+            // to work on — and in a three-way it has to be opened by putting the odd one out
+            // somewhere and closed by bringing them back. One bracket around the whole run
+            // rather than one per beat: a disposal before every cut-off would be absurd, and
+            // the crowd stops believing the fourth one anyway.
+            bool bracketed = sideCount >= 3;
+            int spare = bracketed ? SpareSide(sideCount, protagonist, antagonist) : -1;
+
+            if (bracketed)
+                slots.Add(new PhaseSlot(
+                    MatchPhase.Disposal, Control(antagonist), BeatIntensity.High, BeatDuration.Short,
+                    "The third of them is put somewhere, so the next passage can be two-handed.")
+                    { Against = Control(spare) });
 
             for (int cycle = 0; cycle < cycles; cycle++)
             {
@@ -232,6 +304,14 @@ namespace WrestlingSim.Engine
                     last ? "The payoff." : "The first comeback, which the next cut-off takes back."));
             }
 
+            // And back, which is what makes the disposal a payoff rather than a reset — doc
+            // 18 §2.5 again: "dispose of people *for a reason*, so the return is a payoff".
+            if (bracketed)
+                slots.Add(new PhaseSlot(
+                    MatchPhase.Return, Control(spare), BeatIntensity.High, BeatDuration.Brief,
+                    "And back in, at the worst possible moment for the other two.")
+                    { Against = Control(brief.WinningSide) });
+
             // ── Outside interference ─────────────────────────────────────────
             //
             // Placed after the last comeback and before the near falls, which is where it
@@ -257,15 +337,77 @@ namespace WrestlingSim.Engine
             }
 
             // ── Finish ───────────────────────────────────────────────────────
+            //
+            // In a three-way the fall has to be *possible*, which means the third of them
+            // cannot be standing there when it is counted. Doc 18 §2.5: "the disposal is
+            // what makes the near falls mean anything — outside a disposal window every
+            // cover in a three-way is breakable and the crowd knows it."
+            //
+            // So the last thing before the finish is putting one of them somewhere. It is
+            // also, not coincidentally, how nearly every good three-way actually ends.
+            int? pinned = null;
+
+            if (bracketed)
+            {
+                int removed = brief.WinningSide == protagonist ? spare : protagonist;
+                if (removed == brief.WinningSide) removed = FirstOther(sideCount, brief.WinningSide);
+
+                slots.Add(new PhaseSlot(
+                    MatchPhase.Disposal, Control(brief.WinningSide),
+                    BeatIntensity.Extreme, BeatDuration.Brief,
+                    "One of them is removed, so the fall can actually be counted.")
+                    { Against = Control(removed) });
+
+                // And the fall goes on whoever is left, which the format requires be said
+                // out loud: `MatchPlan.Validate` refuses a three-way finish that names a
+                // winner and not a loser, because in this format those are different
+                // questions and the difference is the whole point.
+                pinned = Remaining(sideCount, brief.WinningSide, removed);
+            }
+
             slots.Add(new PhaseSlot(
                 MatchPhase.Finish, Control(brief.WinningSide),
                 FinishIntensity(brief.Finish), BeatDuration.Brief,
-                FinishWhy(brief.Finish)));
+                pinned is { } loser
+                    ? $"{FinishWhy(brief.Finish)} The fall goes on whoever is still standing."
+                    : FinishWhy(brief.Finish))
+                { Against = pinned is { } side ? Control(side) : null });
 
             return slots;
         }
 
         // ── The small decisions, each with its reason ────────────────────────
+
+        /// <summary>Whoever is neither of these two. The one left to take the fall.</summary>
+        private static int Remaining(int sideCount, int a, int b)
+        {
+            for (int side = 0; side < sideCount; side++)
+                if (side != a && side != b) return side;
+
+            return FirstOther(sideCount, a);
+        }
+
+        /// <summary>
+        /// The odd one out: whoever is neither working the heat nor taking it.
+        ///
+        /// This is the person doc 18 §2.5 says a bad three-way leaves on the floor for four
+        /// minutes with no explanation. Naming them is what lets the grammar account for
+        /// them instead.
+        /// </summary>
+        private static int SpareSide(int sideCount, int protagonist, int antagonist)
+        {
+            for (int side = 0; side < sideCount; side++)
+                if (side != protagonist && side != antagonist) return side;
+
+            return FirstOther(sideCount, protagonist);
+        }
+
+        /// <summary>The first side that is not this one.</summary>
+        private static int FirstOther(int sideCount, int side)
+        {
+            for (int i = 0; i < sideCount; i++) if (i != side) return i;
+            return side;
+        }
 
         private static BeatControl Control(int side) =>
             side == 0 ? BeatControl.WrestlerA

@@ -74,6 +74,9 @@ namespace WrestlingSim.Engine
                 // the same beat opening a television match.
                 var beat = template.ToMatchBeat(slot.Control, slot.Intensity, slot.Duration);
 
+                // Who it is aimed at, where the grammar knows and the beat cannot guess.
+                if (slot.Against is { } target && target != slot.Control) beat.Against = target;
+
                 phases.Add(new WrittenPhase
                 {
                     Phase = slot.Phase,
@@ -188,7 +191,17 @@ namespace WrestlingSim.Engine
                 ? [BeatType.NearFall, BeatType.HighSpot]
                 : [BeatType.NearFall],
 
+
             MatchPhase.Outside     => [BeatType.ThirdPartyPullIn],
+
+            MatchPhase.Alliance    => [BeatType.Alliance],
+            MatchPhase.Betrayal    => [BeatType.Betrayal],
+            MatchPhase.Disposal    => [BeatType.DisposalSpot],
+
+            // Coming back in is the third man breaking up what the other two were doing.
+            // Not a new beat type: the pin break *is* the return, and inventing a second
+            // beat that means "he is back" would be a beat with nothing to do.
+            MatchPhase.Return      => [BeatType.PinBreak],
 
             MatchPhase.Finish      => [FinishType(brief.Finish)],
 

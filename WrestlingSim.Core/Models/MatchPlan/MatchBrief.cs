@@ -43,6 +43,44 @@ namespace WrestlingSim.Models.MatchPlan
         public OutsideFactor Outside { get; set; } = OutsideFactor.None;
 
         /// <summary>
+        /// The two sides who work together, by index, or null for a match where nobody does.
+        ///
+        /// **Doc 18 §2.5 calls this "the format's single best story."** Two working against
+        /// the third is what a three-way opens with, and it is also the honest answer to the
+        /// third-man problem: nobody is standing on the floor being unaccounted for, because
+        /// all three are busy.
+        ///
+        /// Meaningless in a two-sided match and ignored there, which is why it is nullable
+        /// rather than defaulted — an alliance between the only two people in the match is
+        /// not a thing that can happen.
+        /// </summary>
+        public (int First, int Second)? Alliance { get; set; }
+
+        /// <summary>
+        /// Whether the alliance falls apart on camera.
+        ///
+        /// Doc 18 §2.5: "the moment it breaks is the peak." An alliance that never breaks is
+        /// a legitimate booking — two of them can simply beat the third — but it is the
+        /// quieter one, and the game should let a booker choose which.
+        /// </summary>
+        public bool AllianceBreaks { get; set; } = true;
+
+        /// <summary>Whoever is on the wrong end of the alliance, or null when there is none.</summary>
+        public int? OutnumberedSide(int sideCount)
+        {
+            if (Alliance is not { } pair) return null;
+
+            // No explicit "fewer than three sides" guard. The search *is* that rule: in a
+            // two-sided match every side is one of the two allies, so there is nobody left
+            // to be outnumbered and this returns null on its own. A second statement of the
+            // same rule above it is one that can drift out of step with this one.
+            for (int side = 0; side < sideCount; side++)
+                if (side != pair.First && side != pair.Second) return side;
+
+            return null;
+        }
+
+        /// <summary>
         /// Bumped by the re-roll button. Part of the seed, so the same brief re-rolled gives
         /// a genuinely different sheet rather than the same one again.
         /// </summary>
@@ -83,9 +121,11 @@ namespace WrestlingSim.Models.MatchPlan
             Length      = Length,
             Finish      = Finish,
             WinningSide = WinningSide,
-            Bookings    = new Dictionary<int, Booking>(Bookings),
-            Outside     = Outside,
-            Draft       = Draft
+            Bookings       = new Dictionary<int, Booking>(Bookings),
+            Outside        = Outside,
+            Alliance       = Alliance,
+            AllianceBreaks = AllianceBreaks,
+            Draft          = Draft
         };
     }
 }

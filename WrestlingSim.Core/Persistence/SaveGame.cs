@@ -443,6 +443,15 @@ namespace WrestlingSim.Persistence
         public OutsideFactor Outside { get; set; }
         public int Draft { get; set; }
 
+        /// <summary>
+        /// The two sides who work together, as a two-element list, or null for a match where
+        /// nobody does. A list rather than a tuple because a tuple round-trips through JSON
+        /// as `Item1`/`Item2`, which is a shape nobody wants to read in a save file.
+        /// </summary>
+        public List<int>? Alliance { get; set; }
+
+        public bool AllianceBreaks { get; set; } = true;
+
         /// <summary>How each side comes out, keyed by side index as a string for JSON.</summary>
         public Dictionary<string, Booking> Bookings { get; set; } = new();
     }

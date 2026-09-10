@@ -147,6 +147,32 @@ namespace WrestlingSim.Enums
         MutualDestruction,
 
         /// <summary>
+        /// **Two of them work the third.**
+        ///
+        /// Doc 18 §2.5 calls the temporary alliance and its betrayal "the format's single
+        /// best story", and this is the first half of it. It is also the answer to the
+        /// third-man problem that is not a disposal: nobody is on the floor wondering what
+        /// to do, because all three are accounted for and two of them are busy.
+        ///
+        /// The engine had no way to express this at all. Every multi-man beat it carried was
+        /// about *removing* somebody — disposal, pin break, elimination — and none of them
+        /// could say that two people were working together, which is the thing a three-way
+        /// opens with and turns on.
+        /// </summary>
+        Alliance,
+
+        /// <summary>
+        /// The alliance breaks, and whoever moves first has the advantage.
+        ///
+        /// Doc 18 §2.5: "the moment it breaks is the peak." It pays more than almost
+        /// anything else in a multi-man match and it costs the betrayer nothing mechanically
+        /// — unlike a <see cref="SpiteBreak"/>, this is the *good* decision as well as the
+        /// dramatic one, which is exactly why the audience spends the whole alliance waiting
+        /// for it.
+        /// </summary>
+        Betrayal,
+
+        /// <summary>
         /// A fall that removes somebody from the match instead of ending it.
         ///
         /// Doc 18 §2.5: elimination "solves the third-man problem by construction, which is

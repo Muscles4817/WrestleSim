@@ -429,7 +429,9 @@ namespace WrestlingSim.Tests
                 WinningSide = 1,
                 Outside     = OutsideFactor.Manager,
                 Draft       = 7,
-                Bookings    = { [0] = Booking.Elevated, [1] = Booking.Diminished }
+                Bookings    = { [0] = Booking.Elevated, [1] = Booking.Diminished },
+                Alliance    = (0, 1),
+                AllianceBreaks = false
             };
 
             var reloaded = RoundTrip(brief);
@@ -445,6 +447,8 @@ namespace WrestlingSim.Tests
             Assert.Equal(brief.Draft,       reloaded.Draft);
             Assert.Equal(Booking.Elevated,   reloaded.BookingOf(0));
             Assert.Equal(Booking.Diminished, reloaded.BookingOf(1));
+            Assert.Equal((0, 1), reloaded.Alliance);
+            Assert.False(reloaded.AllianceBreaks);
         }
 
         /// <summary>

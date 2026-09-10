@@ -689,7 +689,7 @@
     <div class="panel">
         <div class="panel__title">Start from</div>
         <div class="chips">
-            @foreach (var preset in BriefPresets.All)
+            @foreach (var preset in BriefPresets.For(sideCount))
             {
                 var p = preset;
                 <button class="chip @(BriefPresets.Matching(brief) == p.Name ? "is-selected" : "")"
@@ -727,6 +727,14 @@
                         @onclick="() => Open(BriefField.Booking, side)">@BriefCritique.Name(brief.BookingOf(side))</button><text>@(side == sideCount - 1 ? "." : "; ")</text>
             }
             <br />
+            @* Only where there is somebody to be outnumbered. An alliance between the only
+               two people in a match is not a thing that can happen, and offering it would be
+               a control whose every option is wrong. *@
+            @if (sideCount > 2)
+            {
+                <button class="brief__slot @Lit(BriefField.Alliance)" @onclick="() => Open(BriefField.Alliance)">@AllianceLabel()</button>
+                <br />
+            }
             <button class="brief__slot @Lit(BriefField.Outside)" @onclick="() => Open(BriefField.Outside)">@OutsideLabel()</button>
         </p>
 
@@ -1487,7 +1495,7 @@
     private WrittenMatch? written;
 
     /// <summary>Which fragment of the sentence has its chooser open.</summary>
-    private enum BriefField { Story, Length, Winner, Finish, Booking, Outside }
+    private enum BriefField { Story, Length, Winner, Finish, Booking, Outside, Alliance }
 
     private BriefField? openField;
     private int openFieldSide;
@@ -1560,6 +1568,32 @@
                 }
                 break;
 
+            case BriefField.Alliance:
+                yield return ("Nobody teams up", "Three ways to win and nobody helping anybody.",
+                              () => brief.Alliance = null);
+
+                // Every pair, both ways round, because who turns on whom is the decision.
+                for (int first = 0; first < sideCount; first++)
+                for (int second = 0; second < sideCount; second++)
+                {
+                    if (first == second) continue;
+                    var (a, b) = (first, second);
+
+                    yield return ($"{NameOfSide(a)} and {NameOfSide(b)}, and {NameOfSide(b)} turns",
+                                  $"They work {NameOfSide(Outnumbered(a, b))} over together, until {NameOfSide(b)} moves first.",
+                                  () => { brief.Alliance = (a, b); brief.AllianceBreaks = true; });
+                }
+
+                for (int first = 0; first < sideCount; first++)
+                for (int second = first + 1; second < sideCount; second++)
+                {
+                    var (a, b) = (first, second);
+                    yield return ($"{NameOfSide(a)} and {NameOfSide(b)}, and it holds",
+                                  $"They simply beat {NameOfSide(Outnumbered(a, b))}. The quieter booking.",
+                                  () => { brief.Alliance = (a, b); brief.AllianceBreaks = false; });
+                }
+                break;
+
             case BriefField.Outside:
                 yield return ("Nobody outside it", "The match is between the people in it.",
                               () => brief.Outside = OutsideFactor.None);
@@ -1616,6 +1650,21 @@
         _                  => ""
     };
 
+    /// <summary>Whoever is left once these two have paired off.</summary>
+    private int Outnumbered(int a, int b)
+    {
+        for (int side = 0; side < sideCount; side++)
+            if (side != a && side != b) return side;
+        return a;
+    }
+
+    private string AllianceLabel() =>
+        brief.Alliance is not { } pact
+            ? "Nobody teams up"
+            : brief.AllianceBreaks
+                ? $"{NameOfSide(pact.First)} and {NameOfSide(pact.Second)} team up, and {NameOfSide(pact.Second)} turns"
+                : $"{NameOfSide(pact.First)} and {NameOfSide(pact.Second)} team up, and it holds";
+
     private string OutsideLabel() =>
         brief.Outside.HasFlag(OutsideFactor.RefereeBump) ? "with a referee bump"
       : brief.Outside.HasFlag(OutsideFactor.RunIn)       ? "with a run-in"
@@ -1661,14 +1710,21 @@
 
     private void ApplyPreset(BriefPreset preset)
     {
-        // The cast-dependent fields survive a preset, because they are about these two
-        // people rather than about the shape: swapping to "Epic" should not silently hand
-        // the match to the other corner.
+        // Who wins and how everybody comes out survive a preset, because they are about
+        // these people rather than about the shape: swapping to "Epic" should not silently
+        // hand the match to the other corner.
         var kept = brief;
         brief = preset.Brief.Clone();
         brief.WinningSide = kept.WinningSide;
         brief.Bookings    = new Dictionary<int, Booking>(kept.Bookings);
         brief.Outside     = kept.Outside;
+
+        // The alliance does *not* survive, because it is part of the shape rather than part
+        // of the cast — "Two On One" and "Stolen Fall" are different bookings largely
+        // because of what their alliance does. A preset that named a story and left a
+        // contradicting alliance behind would be half a booking from each.
+        brief.Alliance = BriefPresets.Resolve(preset.Alliance, brief.WinningSide, sideCount);
+        brief.AllianceBreaks = preset.Alliance != AllianceHint.AgainstTheWinnerAndHolds;
 
         WriteTheMatch(reroll: false);
     }
@@ -1913,6 +1969,7 @@
         written = null;
         brief.WinningSide = 0;
         brief.Bookings.Clear();
+        brief.Alliance = null;
     }
 
     /// <summary>
