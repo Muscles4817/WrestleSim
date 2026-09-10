@@ -150,6 +150,109 @@ namespace WrestlingSim.Engine
         }
 
         /// <summary>
+        /// How much of a story a number is by itself, 0–1.
+        ///
+        /// U-shaped, and symmetrical on purpose: number one and number thirty are both
+        /// something to react to, and number fifteen is not. What the two ends *mean* is not
+        /// symmetrical at all — that is <see cref="PullReaction"/>'s job, and splitting the
+        /// two is what lets either be tested without the other.
+        /// </summary>
+        public static double NumberDrama(int number, int fieldSize)
+        {
+            if (fieldSize <= 1) return 0.0;
+            double at = (double)(Math.Clamp(number, 1, fieldSize) - 1) / (fieldSize - 1);
+            return Math.Abs(at - 0.5) * 2.0;
+        }
+
+        /// <summary>
+        /// What one wrestler pulling one number is worth to the building, 0–1.
+        ///
+        /// The same asymmetry <see cref="EntryStory"/> runs on, read from the other end. In
+        /// the match, what a number is worth is what the winner can do with it; at the
+        /// drawing, it is what the crowd does the second they hear it:
+        ///
+        ///   • A **face** drawing early is the whole reason to televise a drawing. The
+        ///     building groans, and then it decides it is behind them, and the match has a
+        ///     story a week before the bell.
+        ///   • A **face** drawing late has nothing to sell. Relief is not a reaction.
+        ///   • A **heel** drawing late is an injustice everybody can see coming, which is
+        ///     heat, which is engagement (A5) and for a heel is the goal rather than the cost.
+        ///   • A **heel** drawing early is the cheap pop, and it is a real one — the crowd
+        ///     enjoys watching it happen to them. Worth a little less than the injustice.
+        ///
+        /// <paramref name="connection"/> is the engine's connection factor — around 1.00 for
+        /// a solid television regular. It gates everything, because a number only matters if
+        /// the building cares who pulled it.
+        /// </summary>
+        public static double PullReaction(int number, int fieldSize, Alignment alignment,
+                                          double connection)
+        {
+            double drama = NumberDrama(number, fieldSize);
+            if (drama <= 0.0) return 0.0;
+
+            bool early = number * 2 < fieldSize + 1;
+
+            double weight = alignment switch
+            {
+                Alignment.Face => early ? 1.00 : 0.45,
+                Alignment.Heel => early ? 0.80 : 1.00,
+                _              => 0.60
+            };
+
+            double cares = Math.Clamp(0.35 + connection * 0.55, 0, 1.0);
+            return Math.Clamp(drama * weight * cares, 0, 1);
+        }
+
+        /// <summary>
+        /// What the drawing was worth as a segment, 0–1, from what each pull was worth.
+        ///
+        /// Weighted to the best number of the night rather than the mean, because that is
+        /// the one the building talks about on the way out — but the mean is a third of it,
+        /// so parading six people past a drum to hear six middling numbers still drags. A
+        /// booker who wants a guaranteed reaction has to fix it, and fixing it costs
+        /// <see cref="DrawCredibility"/>.
+        /// </summary>
+        public static double DrawCrowd(IReadOnlyList<double> pulls) =>
+            pulls.Count == 0
+                ? 0.0
+                : Math.Clamp(pulls.Max() * 0.65 + pulls.Average() * 0.35, 0, 1);
+
+        /// <summary>
+        /// How much of the drum the crowd still believes, 0.4–1.
+        ///
+        /// Every number handed out instead of drawn is one the audience knows was handed
+        /// out — the whole point of doing it on camera. It never reaches zero, because a
+        /// crowd that knows the fix is in is still watching the fix, and that is its own
+        /// kind of angle.
+        /// </summary>
+        public static double DrawCredibility(int rigged, int pulled) =>
+            pulled <= 0
+                ? 1.0
+                : Math.Clamp(1.0 - (double)Math.Clamp(rigged, 0, pulled) / pulled * 0.6, 0.4, 1.0);
+
+        /// <summary>
+        /// What the crowd already knowing the numbers is worth to the match, 0–0.5, applied
+        /// as a multiplier's worth on top of <see cref="EntryStory"/>.
+        ///
+        /// This is the whole return on booking a <see cref="Models.Rumble.RumbleDraw"/>, and
+        /// it is shaped the way the segment is: most of it rides on the *winner's* number
+        /// being one of the announced ones, because "can they go the distance from two" is
+        /// the story, and it is only a story if the building has had a week to ask it.
+        /// Announcing more of the field on top adds a little and not much — a drawing is
+        /// worth booking for one number, not for breadth.
+        ///
+        /// Zero when nothing was announced, so a Rumble booked without a drawing scores
+        /// exactly what it scored before this existed. The drawing is a thing to gain, not
+        /// a tax on not having one.
+        /// </summary>
+        public static double Anticipation(bool winnerAnnounced, int announced, int fieldSize)
+        {
+            if (fieldSize <= 0 || announced <= 0) return 0.0;
+            double breadth = Math.Clamp((double)announced / fieldSize, 0, 1);
+            return (winnerAnnounced ? 0.35 : 0.0) + breadth * 0.15;
+        }
+
+        /// <summary>
         /// How long the longest run was, as a share of the field, 0–1.
         ///
         /// Read off the match rather than booked, because an iron-man run is the one moment

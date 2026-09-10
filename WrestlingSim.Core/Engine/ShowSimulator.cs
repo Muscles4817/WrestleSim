@@ -96,6 +96,7 @@ namespace WrestlingSim.Engine
                         match, itemResult, result, i, showDate, show.Name, starMaking),
                     Segment segment   => RunSegment(segment, itemResult, result, showDate),
                     Models.Rumble.RumblePlan rumble => RunRumble(rumble, itemResult, result, index: i),
+                    Models.Rumble.RumbleDraw draw => RunDraw(draw, itemResult, result, showDate, index: i),
 
                     // Deliberately still here, and deliberately still zero. A card item this
                     // does not know how to run should score nothing rather than something
@@ -309,6 +310,49 @@ namespace WrestlingSim.Engine
                 HeatEconomy.Apply(change);
                 if (change.IsMeaningful) showResult.StatusChanges.Add(change);
             }
+
+            return result.FinalScore;
+        }
+
+        /// <summary>
+        /// Runs a number drawing on a card.
+        ///
+        /// Scored and paced as a segment, because that is what a crowd is sitting through,
+        /// and it deposits heat like one. What it does that no other card item does is
+        /// reach forward: the numbers it draws are written onto a match booked on a *later*
+        /// show, which is the whole reason a drawing is worth a slot.
+        /// </summary>
+        private double RunDraw(
+            Models.Rumble.RumbleDraw draw, CardItemResult itemResult, ShowResult showResult,
+            DateOnly showDate, int index)
+        {
+            // A dangling reference is the one failure mode a booker can create from outside
+            // this card — deleting the show that held the match, say — so it is reported
+            // rather than thrown. Every other way a drawing can be wrong is something the
+            // builder would not let them book in the first place, and those still throw.
+            if (draw.Rumble is null)
+            {
+                itemResult.Notes.Add(
+                    "The match this was drawing for is not booked any more. Nothing to draw.");
+                return 0;
+            }
+
+            var result = new RumbleDrawEngine(_seed.HasValue ? _seed.Value + index : Random.Shared.Next())
+                .Execute(draw);
+
+            itemResult.DrawResult = result;
+
+            foreach (var pull in result.Pulls)
+                itemResult.Notes.Add(
+                    $"{pull.Wrestler.RingName} — number {pull.Number}" +
+                    (pull.Rigged ? ", handed over." : "."));
+
+            if (result.Credibility < 1.0)
+                itemResult.Notes.Add(
+                    $"The drum was worth {result.Credibility * 100:F0}% of what an honest one is.");
+
+            showResult.FeudUpdates.AddRange(_feudBook.RecordSegment(
+                result.HeatParticipants, result.HeatGenerated, result.HistoryTags, showDate));
 
             return result.FinalScore;
         }

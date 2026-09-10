@@ -323,6 +323,15 @@ namespace WrestlingSim.Persistence
         public RumbleDto? Rumble { get; set; }
 
         /// <summary>
+        /// Present when this card slot is a number drawing for a battle royal booked on a
+        /// later show. Kind stays <see cref="CardItemKind.Segment"/>, because a drawing is
+        /// a segment to a crowd sitting through it and the pacing rules read Kind.
+        ///
+        /// Null on every save written before this existed.
+        /// </summary>
+        public RumbleDrawDto? Draw { get; set; }
+
+        /// <summary>
         /// Whether the booker declared this the blow-off. Absent from pre-A3 saves, which
         /// read as false — correct, since no save written before A3 could have declared one.
         /// </summary>
@@ -388,6 +397,13 @@ namespace WrestlingSim.Persistence
     /// <summary>A battle royal on a card. Ids, so a wrestler is bound once on load.</summary>
     public class RumbleDto
     {
+        /// <summary>
+        /// <see cref="Models.Rumble.RumblePlan.Id"/>, so a drawing on another show can find
+        /// this one. Empty on saves written before drawings existed — nothing pointed at a
+        /// Rumble then, so a fresh id on load loses nothing.
+        /// </summary>
+        public string Id { get; set; } = "";
+
         /// <summary>The field, in entry order.</summary>
         public List<RumbleEntrantDto> Field { get; set; } = new();
 
@@ -402,6 +418,19 @@ namespace WrestlingSim.Persistence
         public string WrestlerId { get; set; } = "";
         public int Number { get; set; } = 1;
         public bool IsSurprise { get; set; }
+
+        /// <summary>The drawing already told the crowd this number. False on older saves.</summary>
+        public bool NumberAnnounced { get; set; }
+    }
+
+    /// <summary>A number drawing on a card, pointing at the match it draws for by id.</summary>
+    public class RumbleDrawDto
+    {
+        public string RumbleId { get; set; } = "";
+        public string RumbleLabel { get; set; } = "the Rumble";
+        public List<string> Cast { get; set; } = new();
+        public string? HostId { get; set; }
+        public List<string> Rigged { get; set; } = new();
     }
 
     public class RumbleMomentDto

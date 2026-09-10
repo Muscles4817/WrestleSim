@@ -24,7 +24,19 @@ namespace WrestlingSim.Models.Rumble
 
         public double MomentScore   { get; init; }
         public double FieldStarPower{ get; init; }
+
+        /// <summary>
+        /// The winner's number as a story, already multiplied by
+        /// <see cref="Anticipation"/> — so it can exceed 1 when a drawing was televised.
+        /// </summary>
         public double EntryStory    { get; init; }
+
+        /// <summary>
+        /// What the crowd already knowing the numbers added, 0–0.5. Zero unless a
+        /// <see cref="RumbleDraw"/> ran on an earlier show.
+        /// </summary>
+        public double Anticipation  { get; init; }
+
         public double IronManShare  { get; init; }
 
         public double FinalScore    { get; init; }
