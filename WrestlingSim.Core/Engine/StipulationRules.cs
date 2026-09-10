@@ -27,17 +27,32 @@ namespace WrestlingSim.Engine
         // ── What it takes away ───────────────────────────────────────────────
 
         /// <summary>
-        /// Whether this finish can end a match under this stipulation.
+        /// Whether this beat can end a match under this stipulation.
         ///
         /// The one property that holds across the whole enum, and the sentence the feature
         /// exists to state: **every stipulation forbids the disqualification and the
         /// count-out**. Those are the two finishes that let somebody lose without being
         /// beaten (<see cref="FinishWeight.Protected"/>), so removing them is what a
         /// gimmick match *is*. Everything else below is one rung's particular character.
+        ///
+        /// **A beat that is not a finish is always allowed**, and that guard is load-bearing
+        /// rather than defensive. The rungs are written as the set of finishes they permit —
+        /// Last Man Standing is `is FinishClean or FinishSuperFinisher` — so without it,
+        /// asking about a hot opening gets `false`. The builder's beat-library gate asked
+        /// exactly that, for every template, and choosing Last Man Standing or I Quit
+        /// disabled the entire library: two of the four rungs were unbookable. Fixed here
+        /// rather than at the call site because there were already three callers and the
+        /// trap was invisible from all of them.
+        ///
+        /// A stipulation constrains how a match can *end*. It has nothing to say about how
+        /// one is worked.
         /// </summary>
-        public static bool Allows(Stipulation stipulation, BeatType finish)
+        public static bool Allows(Stipulation stipulation, BeatType beat)
         {
             if (stipulation == Stipulation.None) return true;
+            if (!new Models.MatchPlan.MatchBeat { Type = beat }.IsFinish) return true;
+
+            var finish = beat;
 
             // The universal rule. Nothing on the ladder lets you lose cheaply.
             if (finish is BeatType.FinishDQ or BeatType.FinishCountout) return false;

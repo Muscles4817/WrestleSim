@@ -375,74 +375,7 @@
             <strong>Standard</strong> promises nothing specific — the safe choice, never the free one.
         </div>
     </div>
-
-    @* ── The stipulation ────────────────────────────────────────────────────
-       A different axis from match type, and kept as its own panel to say so: the type is
-       the style being worked, the stipulation is which finishes exist. Doc 20 §6 puts it
-       inside the blow-off, so what it is graded against is the story, not the work. *@
-    <div class="panel">
-        <div class="panel__title">The stipulation</div>
-        <div class="picks">
-            @foreach (var st in Enum.GetValues<Stipulation>())
-            {
-                var stip = st;
-                var earned = StipulationRules.Escalation(stip, FeudReached) >= 0;
-                <button class="pick @(stipulation == stip ? "is-selected" : "")"
-                        @onclick="() => stipulation = stip">
-                    <span class="pick__body">
-                        <span class="pick__name">
-                            @StipulationRules.Label(stip)
-                            @if (stip != Stipulation.None && !earned)
-                            {
-                                <span class="badge badge--heel">needs @StipulationRules.Demands(stip)+</span>
-                            }
-                        </span>
-                        @* One span, because .pick__desc is inline and a second one runs on
-                           the end of the first rather than under it. *@
-                        <span class="pick__desc">
-                            @StipulationRules.Says(stip) @Forbids(stip)
-                        </span>
-                    </span>
-                    <span class="pick__meta">@FreshnessLabel(stip)</span>
-                </button>
-            }
-        </div>
-
-        @if (stipulation != Stipulation.None)
-        {
-            @if (StipulationRules.Escalation(stipulation, FeudReached) < 0)
-            {
-                <div class="notice notice--warn mt">
-                    <strong>The story has not got there.</strong>
-                    @StipulationRules.Label(stipulation) wants a @StipulationRules.Demands(stipulation)
-                    feud and this one is @FeudReached. A stipulation nobody earned tells the room
-                    the promotion has run out of ideas — it is worth
-                    <strong>@StipulationStakes.ToString("F1") crowd energy</strong>, which is worse
-                    than booking nothing.
-                </div>
-            }
-            else if (Freshness(stipulation) < 0.9)
-            {
-                <div class="notice notice--warn mt">
-                    <strong>This was on recently.</strong> Worth
-                    @((Freshness(stipulation) * 100).ToString("F0"))% of a rare one
-                    (+@StipulationStakes.ToString("F1")). A cage match is special once a year;
-                    run monthly it devalues every cage match you will ever book.
-                </div>
-            }
-            else
-            {
-                <div class="notice notice--info mt">
-                    Earned, and it has been a while — worth
-                    <strong>+@StipulationStakes.ToString("F1") crowd energy</strong>.
-                    Every stipulation takes away the disqualification and the count-out, so
-                    nobody in this match can lose cheaply.
-                </div>
-            }
-        }
-    </div>
 }
-
 
 @* ── 3. Championship ──────────────────────────────────────────────────── *@
 @if (step == 2)
@@ -646,6 +579,81 @@
                 This feud has already been blown off. That story is over — these two need a new
                 reason to fight before there is anything to settle.
             </div>
+        }
+    </div>
+
+    @* ── The stipulation ────────────────────────────────────────────────────
+       On the feud step, and after it, because that is what a stipulation is. Doc 20 §6
+       puts it inside the blow-off and says it "must match the escalation" — so its price
+       cannot be read until the story it escalates from has been chosen.
+
+       It was on the match-type step in the first version, which put it three steps before
+       `feud` is assigned. Every rung was therefore badged "needs Hot+" and quoted its full
+       negative on the forward path, while the engine graded the same booking off the feud
+       that did exist and applied a large positive. A panel that advertises −11 and delivers
+       +11 is worse than no panel.
+
+       `PendingIntensity` rather than `feud`, for the same reason: `feud` is assigned when
+       this step is *left*, and this panel is read while the player is still standing on it. *@
+    <div class="panel">
+        <div class="panel__title">The stipulation</div>
+        <div class="picks">
+            @foreach (var st in Enum.GetValues<Stipulation>())
+            {
+                var stip = st;
+                var earned = StipulationRules.Escalation(stip, FeudReached) >= 0;
+                <button class="pick @(stipulation == stip ? "is-selected" : "")"
+                        @onclick="() => stipulation = stip">
+                    <span class="pick__body">
+                        <span class="pick__name">
+                            @StipulationRules.Label(stip)
+                            @if (stip != Stipulation.None && !earned)
+                            {
+                                <span class="badge badge--heel">needs @StipulationRules.Demands(stip)+</span>
+                            }
+                        </span>
+                        @* One span, because .pick__desc is inline and a second one runs on
+                           the end of the first rather than under it. *@
+                        <span class="pick__desc">
+                            @StipulationRules.Says(stip) @Forbids(stip)
+                        </span>
+                    </span>
+                    <span class="pick__meta">@FreshnessLabel(stip)</span>
+                </button>
+            }
+        </div>
+
+        @if (stipulation != Stipulation.None)
+        {
+            @if (StipulationRules.Escalation(stipulation, FeudReached) < 0)
+            {
+                <div class="notice notice--warn mt">
+                    <strong>The story has not got there.</strong>
+                    @StipulationRules.Label(stipulation) wants a @StipulationRules.Demands(stipulation)
+                    feud and this one is @FeudReached. A stipulation nobody earned tells the room
+                    the promotion has run out of ideas — it is worth
+                    <strong>@StipulationStakes.ToString("F1") crowd energy</strong>, which is worse
+                    than booking nothing.
+                </div>
+            }
+            else if (Freshness(stipulation) < 0.9)
+            {
+                <div class="notice notice--warn mt">
+                    <strong>This was on recently.</strong> Worth
+                    @((Freshness(stipulation) * 100).ToString("F0"))% of a rare one
+                    (+@StipulationStakes.ToString("F1")). A cage match is special once a year;
+                    run monthly it devalues every cage match you will ever book.
+                </div>
+            }
+            else
+            {
+                <div class="notice notice--info mt">
+                    Earned, and it has been a while — worth
+                    <strong>+@StipulationStakes.ToString("F1") crowd energy</strong>.
+                    Every stipulation takes away the disqualification and the count-out, so
+                    nobody in this match can lose cheaply.
+                </div>
+            }
         }
     </div>
 }
@@ -1143,23 +1151,35 @@
     private Stipulation stipulation = Stipulation.None;
 
     /// <summary>
-    /// How far the story has actually escalated. Read off the feud attached to this
-    /// booking, so the warning the builder shows and the number the engine applies are the
-    /// same reading — a panel that promised +11 and delivered −11 would be worse than no
-    /// panel.
+    /// How far the story has escalated, as settled *on the feud step itself*.
+    ///
+    /// <see cref="PendingIntensity"/> and not <c>feud</c>: `feud` is assigned by
+    /// <see cref="ResolveFeud"/> when the step is left, so reading it here gave null — and
+    /// therefore <see cref="FeudIntensity.None"/> — for every booking on the forward path,
+    /// while the engine graded the same match off the feud that did exist. The panel and
+    /// the engine have to be reading the same thing or the panel is worse than nothing.
     /// </summary>
-    private FeudIntensity FeudReached => feud?.Intensity ?? FeudIntensity.None;
+    private FeudIntensity FeudReached => PendingIntensity;
 
-    /// <summary>How rare this rung still is, tonight. 1.0 in exhibition, where nothing has happened.</summary>
+    /// <summary>
+    /// The night this match happens, which is what the freshness of a stipulation is
+    /// measured against.
+    ///
+    /// Not <see cref="Career.CurrentDate"/>: the clock only advances when a show is run, so
+    /// a card booked two months out was being quoted the staleness of *today* while
+    /// <see cref="ShowSimulator"/> priced it off the show date. Booking a cage for a
+    /// pay-per-view eight weeks away is exactly how a booker gets a stale one fresh again,
+    /// and the panel was hiding that.
+    /// </summary>
+    private DateOnly PricedOn =>
+        State.ActiveShow?.Date ?? State.Career?.CurrentDate ?? DateOnly.MinValue;
+
+    /// <summary>How rare this rung still is on the night. 1.0 in exhibition, where nothing has happened.</summary>
     private double Freshness(Stipulation stip) =>
-        State.Career is { } career
-            ? career.Stipulations.FreshnessOf(stip, career.CurrentDate)
-            : 1.0;
+        State.Career is { } career ? career.Stipulations.FreshnessOf(stip, PricedOn) : 1.0;
 
     private int? DaysSince(Stipulation stip) =>
-        State.Career is { } career
-            ? career.Stipulations.DaysSince(stip, career.CurrentDate)
-            : null;
+        State.Career is { } career ? career.Stipulations.DaysSince(stip, PricedOn) : null;
 
     private double StipulationStakes =>
         StipulationRules.StakesBonus(stipulation, FeudReached, DaysSince(stipulation));

@@ -3196,6 +3196,46 @@ was escaped rather than rendered; and lower-casing the forbidden-finish list tur
 
 **758 tests passing.**
 
+### What review found
+
+Three findings, all in the Blazor builder, which the test suite does not reach. Corrected
+before merge.
+
+**The blocker, and it was a real one.** `GateFor` called `StipulationRules.Allows` for *every*
+beat template, but `Allows` was written as a question about finishes — `Last Man Standing` is
+`is FinishClean or FinishSuperFinisher`, which is `false` for a hot opening. Choosing Last Man
+Standing or I Quit therefore disabled the entire beat library, and **two of the four rungs were
+unbookable**. Steel Cage and No DQ happen to return true for non-finishes, which is exactly why
+a browser pass that only booked a cage found nothing — a reminder that verifying one member of
+a set is not verifying the set.
+
+Fixed in `Allows` rather than at the call site: there were already three callers and the trap
+was invisible from all of them. A stipulation constrains how a match can *end*; it has nothing
+to say about how one is worked. Pinned by
+`AStipulationHasNoOpinionAboutBeatsThatAreNotFinishes`, written red first.
+
+**The panel was reading a feud that did not exist yet.** It sat on the match-type step, three
+steps before `ResolveFeud` assigns `feud`, so on the forward path every rung was badged "needs
+Hot+" and quoted its full negative — while the engine graded the same booking off the feud that
+did exist and applied a large positive. The "Earned" branch was unreachable. A panel that
+advertises −11 and delivers +11 is worse than no panel.
+
+The fix is not a different variable but a different *place*: the panel moved onto the feud step,
+below the feud picker, reading `PendingIntensity`. That is also the design being consistent with
+itself — doc 20 §6 puts the stipulation inside the blow-off, so its price cannot be read until
+the story it escalates from has been chosen.
+
+**Freshness was priced on the wrong night.** The panel used `Career.CurrentDate` and the engine
+uses the show date; the clock only advances when a show is run, so a card booked two months out
+was quoted today's staleness. Booking a cage for a pay-per-view eight weeks away is precisely
+how a booker gets a stale one fresh again, and the panel was hiding it.
+
+Re-verified in the browser: with a Nuclear feud declared, all four rungs lose their "needs"
+badges and I Quit reads *"Earned, and it has been a while — worth +15.0 crowd energy"*; the beat
+library under I Quit offers **27 of 27** picks enabled, where before it offered none.
+
+**759 tests passing.**
+
 ### Still not built
 
 - **The escalation level doc 20 §9 asks for.** `Demands` grades against `Feud.Intensity`, which

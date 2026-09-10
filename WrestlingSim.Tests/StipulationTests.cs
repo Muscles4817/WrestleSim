@@ -78,6 +78,43 @@ namespace WrestlingSim.Tests
         }
 
         /// <summary>
+        /// **A stipulation has no opinion about a beat that is not a finish.**
+        ///
+        /// Added after review found the builder unusable for two of the four rungs.
+        /// <see cref="StipulationRules.Allows"/> was written as a question about finishes —
+        /// "can this end a match here" — and `Last Man Standing` answers it with
+        /// `is FinishClean or FinishSuperFinisher`, which is `false` for a hot opening, a
+        /// heat segment and everything else. The builder's beat-library gate called it for
+        /// *every* template, so choosing Last Man Standing or I Quit disabled the entire
+        /// library and the match could not be booked at all.
+        ///
+        /// The fix is here rather than at the call site because there were already three
+        /// callers and the trap was invisible from all of them. A stipulation constrains
+        /// how a match can *end*; it has nothing to say about how one is worked.
+        ///
+        /// Steel Cage and No DQ happened to return true for non-finishes, which is why a
+        /// browser pass that only booked a cage found nothing.
+        /// </summary>
+        [Fact]
+        public void AStipulationHasNoOpinionAboutBeatsThatAreNotFinishes()
+        {
+            BeatType[] notFinishes =
+            [
+                BeatType.HotOpening, BeatType.StandardOpening, BeatType.HeatSegment,
+                BeatType.Comeback, BeatType.NearFall, BeatType.HighSpot, BeatType.RestHold,
+                BeatType.Shine, BeatType.HotTag, BeatType.DisposalSpot, BeatType.Elimination
+            ];
+
+            foreach (var stip in Gimmicks)
+                foreach (var beat in notFinishes)
+                    Assert.True(StipulationRules.Allows(stip, beat),
+                        $"{stip} refused {beat}, which is not a finish");
+
+            output.WriteLine($"  {notFinishes.Length} non-finish beats allowed under all " +
+                             $"{Gimmicks.Length} rungs");
+        }
+
+        /// <summary>
         /// **Each rung has its own character, and the cage's is who it keeps out.**
         ///
         /// Doc 20 §6.2's "Says" column, as rules. The cage is the one that bans the
