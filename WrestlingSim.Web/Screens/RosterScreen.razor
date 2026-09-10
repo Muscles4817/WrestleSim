@@ -65,6 +65,22 @@
                     <div class="rcard__stat"><b class="gold">@w.CardPosition.Label()</b><span>Card</span></div>
                 </div>
 
+                @* The two meters, on the card rather than behind the expander, because they
+                   are the two numbers that decide whether somebody should be on this week's
+                   show at all. Fresh and sharp is the quiet case and says nothing. *@
+                <div class="rcard__meters">
+                    <Meter Label="Fresh" Value="@(100 - w.Fatigue)" Max="100"
+                           ValueText="@($"{100 - w.Fatigue:F0} / 100")"
+                           Variant="@(w.Fatigue >= RingCondition.CookedThreshold ? "heel" : "gold")" />
+                    <Meter Label="Sharp" Value="@w.Sharpness" Max="100"
+                           ValueText="@($"{w.Sharpness:F0} / 100")"
+                           Variant="@(w.Sharpness <= RingCondition.RustyThreshold ? "heel" : "gold")" />
+                </div>
+                @if (RingCondition.WarningFor(w) is { } condition)
+                {
+                    <div class="rcard__warn">⚠ @condition</div>
+                }
+
                 <button class="rcard__toggle" @onclick="() => Toggle(w.RingName)">
                     @(expanded.Contains(w.RingName) ? "Hide ring skills ▲" : "Ring skills ▼")
                 </button>

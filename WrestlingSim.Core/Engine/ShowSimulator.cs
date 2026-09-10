@@ -183,6 +183,12 @@ namespace WrestlingSim.Engine
             foreach (var wrestler in show.Card.SelectMany(i => i.Wrestlers).Distinct())
                 wrestler.LastAppearance = showDate;
 
+            // And everyone who wrestled paid for it, and got sharper for it. Charged per
+            // card item rather than once per night, so a wrestler booked twice pays twice —
+            // which is the only thing stopping a booker working their main eventer three
+            // times on the same show for free.
+            foreach (var item in show.Card) ChargeRingCondition(item);
+
             // ── Running long ─────────────────────────────────────────────────
             double overrun = Math.Min(MaxOverrunPenalty, show.OverrunFraction);
             if (overrun > 0)
@@ -388,6 +394,72 @@ namespace WrestlingSim.Engine
                        $"{freshness * 100:F0}% of a rare one (+{stakes:F1}).";
 
             return $"{label} — earned, and it has been a while (+{stakes:F1}).";
+        }
+
+        /// <summary>
+        /// Bills one card item to everybody who worked it: fatigue up, sharpness up.
+        ///
+        /// Reads the booking rather than the result, deliberately. What a match takes out
+        /// of somebody is how long they were out there and how fast they went — decided
+        /// when it was laid out — not how well it happened to go on the night.
+        /// </summary>
+        private static void ChargeRingCondition(ICardItem item)
+        {
+            switch (item)
+            {
+                case BookedMatch match:
+                {
+                    double minutes = match.Plan.Beats.Sum(b => b.DurationMinutes);
+                    double pace    = RingCondition.Pace(match.Plan.Beats);
+
+                    foreach (var side in match.Plan.Sides)
+                    {
+                        double share = RingCondition.WorkShare(side.Members.Count);
+                        foreach (var w in side.Members)
+                            Bill(w, minutes, pace, share);
+                    }
+                    break;
+                }
+
+                case Models.Rumble.RumblePlan rumble:
+                {
+                    // No beats to read, so the cost comes from how much of it each of them
+                    // was actually in — a battle royal is cheap for the twelve people
+                    // thrown out early and expensive for whoever went the distance. Pace is
+                    // taken as brisk-but-not-frantic: it is a scramble, not a sprint.
+                    double full = rumble.DurationMinutes;
+                    int field   = Math.Max(1, rumble.Field.Count);
+
+                    foreach (var (entrant, i) in rumble.Field.Select((e, i) => (e, i)))
+                    {
+                        // Without a result to read, entry order is the honest proxy for how
+                        // long somebody was in there: the last man out started last.
+                        double survived = full * (0.35 + 0.65 * (i + 1) / field);
+                        Bill(entrant.Wrestler, survived, pace: 1.2, share: 1.0);
+                    }
+                    break;
+                }
+
+                // A segment is not a match. Standing in the ring talking costs a wrestler
+                // nothing worth modelling and sharpens nothing — and a drawing, a promo or
+                // a beatdown all read the same way here, which is why none of them are
+                // billed at all.
+            }
+        }
+
+        private static void Bill(Wrestler w, double minutes, double pace, double share)
+        {
+            double conditioning = new PerformerProfile(w).BaseConditioning;
+
+            w.Fatigue = Math.Clamp(
+                w.Fatigue + RingCondition.MatchCost(minutes, pace, w.Style, share, conditioning),
+                0, 100);
+
+            double upkeep = RingCondition.SelfMaintenance(
+                w.Mental?.Psychology ?? 70, w.Mental?.RingIQ ?? 70);
+
+            w.Sharpness = Math.Clamp(
+                w.Sharpness + RingCondition.SharpnessGain(minutes, pace, upkeep, share), 0, 100);
         }
 
         private double RunMatch(

@@ -84,7 +84,9 @@ namespace WrestlingSim.Persistence
                     Id             = w.Id,
                     Overness       = Math.Round(w.Overness, 3),
                     Momentum       = Math.Round(w.Momentum, 3),
-                    LastAppearance = w.LastAppearance is { } seen ? Iso(seen) : null
+                    LastAppearance = w.LastAppearance is { } seen ? Iso(seen) : null,
+                    Fatigue        = w.Fatigue,
+                    Sharpness      = w.Sharpness
                 })
                 .ToList(),
 
@@ -368,6 +370,9 @@ namespace WrestlingSim.Persistence
                     System.Globalization.DateTimeStyles.None, out var seen)
                         ? seen
                         : null;
+
+                w.Fatigue   = Math.Clamp(state.Fatigue, 0, 100);
+                w.Sharpness = Math.Clamp(state.Sharpness, 0, 100);
             }
 
             var career = new Career

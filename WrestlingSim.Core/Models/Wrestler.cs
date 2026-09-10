@@ -60,6 +60,26 @@ namespace WrestlingSim.Models
         /// Null means they have not worked yet this career.
         /// </summary>
         public DateOnly? LastAppearance { get; set; }
+
+        /// <summary>
+        /// How worked-out they are, 0 (fresh) to 100 (cooked).
+        ///
+        /// Charged by matches and paid back by days off — see
+        /// <see cref="Engine.RingCondition"/>. Pulls against <see cref="Sharpness"/>, which
+        /// moves the other way on the same input, so resting somebody is always a trade
+        /// rather than a free repair.
+        /// </summary>
+        public double Fatigue { get; set; }
+
+        /// <summary>
+        /// How ring-ready they are, 0 (rusty) to 100 (razor). Starts sharp.
+        ///
+        /// Bought with live matches and lost to time away, at a rate that differs by
+        /// wrestler: somebody with the psychology to keep themselves ready stops falling
+        /// well short of useless, while a wrestler whose game is speed and timing needs the
+        /// reps week in and week out.
+        /// </summary>
+        public double Sharpness { get; set; } = 100;
         public RingSkills RingSkills { get; set; }
         public PhysicalAttributes Physical { get; set; } = new();
         public MentalAttributes Mental { get; set; } = new();

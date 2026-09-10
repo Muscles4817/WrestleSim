@@ -3388,3 +3388,170 @@ out again"* (60→63), with both comebacks landing after their hope spots. No co
   it and nothing joins them up.
 - **Hope spots in tag matches.** `NearTag` does the job there, which is right, but a tag match
   cannot book a hope spot that is not a reach for the corner.
+
+
+## Two meters that pull against each other
+
+Before this the engine had fatigue *inside* a match — `FadeFactor`, the stamina penalty, the
+extra wear of being outnumbered — and nothing whatever outside one. A wrestler left a
+thirty-four-minute epic in exactly the state they entered it. Eight months off cost them
+overness and not one point of ring sharpness. Work every night for a month: no wear. Sit out
+a year: come back as sharp as you left.
+
+```
+                works a match      rests a week
+  Fatigue          ▲ up             ▼ down
+  Sharpness        ▲ up             ▼ down
+```
+
+**A day off pays back fatigue and costs sharpness.** That is the whole design and the reason
+the two live in one file: resting somebody is a trade rather than a repair, and there is no
+correct amount of it. Rest your main eventer two months and they come back fresh and rusty;
+work them every week and they are sharp and cooked. Neither is the right answer, which is
+what makes it a decision.
+
+### Danger is not fatigue
+
+Nothing in `RingCondition` reads match type or stipulation. What costs a wrestler is how long
+they were out there and how fast they went:
+
+```
+paced  = minutes × PaceLoad(style)   × pace²        × 0.20
+lasted = minutes × VolumeLoad(style) × minutes / 20 × 0.18
+cost   = paced + lasted
+```
+
+**Pace is squared and volume is not**, and that asymmetry is the point. Going flat out is
+anaerobic and the bill grows far faster than the clock does. Measured: a striker's twelve
+minutes at near-Extreme costs **13.0** against **12.0** for a twenty-six-minute steady match —
+the sprint is the more expensive night. A powerhouse is the reverse by a mile (9.1 against
+13.1). A ladder match is dangerous without being especially tiring, and the two axes are
+modelled as the different things they are.
+
+The first implementation multiplied *both* halves by the running time, which made length
+dominate everything and a sprint always the cheap option — the exact reading this system
+exists to deny. It was caught by measuring, not by reading the code.
+
+### A style is a shape, not a number
+
+| Style | Pace load | Volume load | |
+|---|---|---|---|
+| HighFlyer | 1.30 | 1.05 | every spot is a full-body landing |
+| Striker | 1.25 | 0.80 | throwing and eating strikes at that rate |
+| Brawler | 1.00 | 1.00 | robust, no extremes |
+| Grappler | 0.80 | 0.95 | efficient, constant isometric load |
+| **Powerhouse** | 0.75 | **1.45** | big men gas — the clock is the killer, not the speed |
+| Technical | 0.70 | 0.70 | the economical one, which is why they could work every night |
+
+The two columns rank the styles differently, and a test asserts that they do — if they ranked
+the same, one of them would be redundant and the interaction would collapse into "some styles
+are tiring".
+
+### Two routes to sharpness, and they are inverses
+
+`SelfMaintenance` is read off psychology and ring IQ, because that is what this model has to
+say *veteran* with — doc 15 §4 has psychology rising into a wrestler's forties while
+athleticism declines from around twenty-eight. It is also right on the merits: what a veteran
+keeps at home is the knowing. What goes is timing with another body, and no amount of
+understanding replaces live reps for that.
+
+`RestingFloor` is where somebody stops falling when they are not working at all — a **floor**,
+not a ceiling. Measured, from 100:
+
+| | floor | 4 weeks | 8 weeks | 26 weeks |
+|---|---|---|---|---|
+| veteran (psych 95) | 72 | 84 | 77 | 72 |
+| regular (psych 78) | 64 | 79 | 70 | 64 |
+| rookie (psych 58) | 54 | 73 | 62 | 54 |
+
+The veteran settles at "fine" — able to go out and have a good match. What he cannot reach
+from home is his own best.
+
+And the rep side is the inverse: the young one's body answers a match harder (+3.5 against
++2.4 for the same twelve minutes). What that produces once rust is in the picture is the
+thing worth having, and it is *not* what that line says on its own — because the youngster
+also falls fastest, he needs **more** matches a week to hold a high reading. Measured, working
+twice a week from a sharpness of 40, the veteran is back to razor in fourteen weeks and the
+rookie is still climbing after a year. Not because a rep does less for him, but because five
+days off does more against him. That is the young wrestler needing the reps week in and week
+out, arrived at rather than asserted.
+
+### Where the meters bite
+
+| Meter | Feeds | |
+|---|---|---|
+| Fatigue | `Conditioning`, half as much `Athleticism` | conditioning already drives the late-match fade, the long-match penalty **and** the outnumbered wear — one hook, three mechanisms |
+| Sharpness | `Workrate`, `RingPsych`, and `WorkrateFor(style)` | rust is timing and crispness |
+| — | **never `Connection`** | |
+
+That last row keeps three different things apart. Rusty and forgotten are not the same, and
+the game already models forgotten (absence bleeds overness, doc 17 §3.9). Keeping rust off
+the crowd axis is what lets a returning legend be white hot and unable to go, which is the
+actual problem with returning legends.
+
+`WorkrateFor(style)` needed the factor separately: without it a beat carrying a `StyleHint`
+read the raw skills and routed around the meter, the one path on which being ring rusty would
+have cost nothing.
+
+### Calibrated, not guessed
+
+Doc 06 gives **100–150 dates a year** for a full-timer at Tier 0. A throwaway harness ran a
+simulated year at several volumes per style; the first pair of scale constants put a
+mid-card technical wrestler and a high-flyer both at a pinned 100 on the same schedule, which
+is a meter that has stopped saying anything. The shipped values give:
+
+| | 2/wk 10-min | 3/wk 10-min | 3/wk 20-min | 1/wk 30-min epic |
+|---|---|---|---|---|
+| Technical | 4 | 4 | 47 | 10 |
+| Powerhouse | 6 | 6 | 79 | 24 |
+| HighFlyer | 8 | 17 | 92 | 33 |
+
+### Verified
+
+**787 tests passing.** Fourteen mutations killed — pace linear instead of squared; either
+style load flattened; pace counted per beat instead of per minute; a rest day costing no
+sharpness; rust running past the floor; a rep worth the same to everybody; either performance
+factor neutered; the style-hinted workrate routing around rust; tagging out costing a full
+match; the show charging once a night; the meters not persisted; and fatigue compounding on
+itself.
+
+**The last one survived the first pass and is worth recording.** The initial wiring read a
+wrestler's conditioning through `PerformerProfile.Conditioning`, which by then already had the
+fatigue factor taken off it — so a tired wrestler paid *more* for the same match and recovered
+*slower* from it, twice over. It was spotted and fixed during the build, and left nothing
+behind that would notice it coming back. `BaseConditioning` exists for exactly this, and there
+is now a test on it. Fixing a bug mid-build and moving on is how the bug gets back in.
+
+Two other mutations survived and were **bad mutations rather than weak tests** on inspection.
+
+`InternalsVisibleTo` was added to the Core project so tests can reach `PerformerProfile`. It
+is internal on purpose — nothing outside the engine should depend on its shape — but that also
+meant no test could assert on it, which is the coupling this repo keeps removing everywhere
+else. `HotTagCharge` sat private and untested for the same reason.
+
+Browser-verified at 390×844: a fresh career shows every wrestler at Fresh 100 / Sharp 100; one
+thirty-four-minute Epic took a powerhouse to **Fresh 78**, matching the calibration table; four
+of them on one card took him to **Fresh 12** with *"⚠ cooked — they need time off more than
+they need this match"* on the roster card, in the picker row while choosing him for the next
+show, and in the builder. No console errors.
+
+One placement bug found by looking: the builder notice was anchored inside the beats step, so
+it only appeared once every other decision had already been made. It now sits above the step
+bodies and follows the booker through the wizard. And `.prow__why` is a single grid area, so
+the picker's condition line was rendering on top of the booking reason until it got a row of
+its own.
+
+### Still not built
+
+- **Fatigue does not cause injury**, which is the doc-faithful version (doc 15 §3.1 lists
+  fatigue and conditioning as multipliers) and needs the match injury model that does not
+  exist. Chosen deliberately: the meters are real and legible before anything can take a
+  wrestler off the roster for three months.
+- **No age**, so doc 15 §4's aging curve still has nothing to hang on. `SelfMaintenance` uses
+  psychology as the veteran proxy, which is the honest substitute rather than the real thing.
+- **Segments cost nothing.** A promo, a beatdown and a number drawing all read the same here,
+  which is right for the promo and thin for the beatdown.
+- **A battle royal's cost is estimated from entry order**, not from how long each entrant was
+  actually in the ring — the engine knows, and the card layer does not ask.
+- **Style still only affects fatigue.** The other half of what a style should touch —
+  entertainment, crowd fit — is a separate axis and deliberately out of this.
