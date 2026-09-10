@@ -74,10 +74,21 @@ namespace WrestlingSim.Engine
             // being cooked is equally worth saying about somebody in a hot feud and
             // somebody with no story at all.
             pool.Select(w => Describe(w, against, feuds, bookedAs, standingPartnerOf, recentlyBooked, today)
-                             with { Condition = RingCondition.WarningFor(w) })
+                             with { Condition = ConditionOf(w, today) })
                 .OrderBy(SortKey)
                 .ThenByDescending(x => x.Wrestler.Overness)
                 .ToList();
+
+        /// <summary>
+        /// The one line under a name that says whether they can work at all, and how well.
+        ///
+        /// Injury first and unconditionally: being cooked is advice and being hurt is a
+        /// fact, so a wrestler who is out does not also get told he needs a rest.
+        /// </summary>
+        private static string? ConditionOf(Wrestler w, DateOnly? today) =>
+            today is { } date && w.Injury is { } injury && injury.KeepsOut(date)
+                ? $"unavailable — {injury.Reason(date)}"
+                : RingCondition.WarningFor(w);
 
         /// <summary>
         /// Where a suggestion sorts. The band, except that <see cref="SuggestionBand.Plain"/>

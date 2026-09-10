@@ -197,6 +197,14 @@ namespace WrestlingSim.Persistence
         public double Sharpness { get; set; } = 100;
 
         /// <summary>
+        /// What is keeping them out, and everything they have ever done to themselves.
+        /// History is permanent — doc 15's sim implications call it "the most important
+        /// detail" — so it is saved in full rather than as a count.
+        /// </summary>
+        public InjuryDto? Injury { get; set; }
+        public List<InjuryDto> InjuryHistory { get; set; } = new();
+
+        /// <summary>
         /// What Overness was called before the stock/flow split. Read only as a fallback so
         /// saves written by earlier builds still open; never written.
         /// </summary>
@@ -412,6 +420,15 @@ namespace WrestlingSim.Persistence
         public double? StarRating { get; set; }
 
         public List<string> Notes { get; set; } = new();
+    }
+
+    /// <summary>One injury, on a wrestler's sheet or in their history.</summary>
+    public class InjuryDto
+    {
+        public BodyPart Part { get; set; }
+        public string Sustained { get; set; } = "";
+        public string ClearedOn { get; set; } = "";
+        public int WeeksOut { get; set; }
     }
 
     /// <summary>One gimmick match type and the last date the promotion ran it.</summary>

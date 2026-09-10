@@ -125,6 +125,13 @@ namespace WrestlingSim.Models.MatchPlan
         /// <summary>The gimmick this was worked under.</summary>
         public Stipulation Stipulation { get; init; } = Stipulation.None;
 
+        /// <summary>
+        /// Anybody the match hurt, reported rather than applied. The show layer writes
+        /// these down; the engine only says what happened, which is why a match can be
+        /// simulated twice without maiming somebody twice.
+        /// </summary>
+        public IReadOnlyList<Engine.MatchEngine.InjuryRoll> Injuries { get; init; } = [];
+
         /// <summary>A plain-English reading of <see cref="Familiarity"/>, or null when fresh.</summary>
         public string? StalenessNote => Familiarity switch
         {

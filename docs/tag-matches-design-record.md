@@ -3555,3 +3555,225 @@ its own.
   actually in the ring — the engine knows, and the card layer does not ask.
 - **Style still only affects fatigue.** The other half of what a style should touch —
   entertainment, crowd fit — is a separate axis and deliberately out of this.
+
+## The cost of having had the match
+
+The ring-condition meters ended with fatigue as an expense. This makes it a danger.
+
+Before this, injury did not exist. A booker could work their main eventer three times a
+night, every week, for a year, and the worst that happened was a number went down and some
+matches got worse. Doc 15 §3.1 gives a table of risk multipliers and calls them "directly
+usable", so `InjuryRisk` is that table rather than a curve somebody liked the shape of:
+
+```
+risk = 0.00013 × style × intensity × fatigue×lateness × size
+                × opponent × history × ring
+```
+
+per beat, per wrestler, for everybody legal in the ring.
+
+**Nothing in it reads the rating.** An injury is not a punishment for booking a bad match; it
+is what a body does after enough of them. The one thing the model refuses to say is that a
+badly-worked match is a dangerous one.
+
+### Per beat, because the reference's sharpest claim is about *when*
+
+Doc 15 §3.1: "poor conditioning sharply increases **late-match** injury risk." A roll taken
+once at the end of a match cannot tell the tenth minute from the second, so the roll is per
+beat and reads both terms — how tired they arrived and how deep in they are — and the two
+compound:
+
+| carried fatigue | beat 2 | beat 12 |
+|---|---|---|
+| 0 | ×1.00 | ×1.63 |
+| 30 | ×1.39 | ×2.27 |
+| 60 | ×1.78 | ×2.90 |
+| 90 | ×2.17 | ×3.54 |
+
+The lateness term starts at beat 6, the same threshold `FadeFactor` uses, so the engine has
+one idea of "late" rather than two. A cooked wrestler in a long match is carrying **3.5×**,
+and that is the whole reason the fatigue meter was worth building.
+
+### Three styles orderings, deliberately not one
+
+`StyleRisk` does **not** rank the styles the way either fatigue load does, and a test asserts
+that it doesn't:
+
+| Style | Pace load | Volume load | **Injury risk** |
+|---|---|---|---|
+| HighFlyer | 1.30 | 1.05 | **2.30** |
+| Powerhouse | 0.75 | 1.45 | **1.45** |
+| Brawler | 1.00 | 1.00 | 1.25 |
+| Striker | 1.25 | 0.80 | 1.15 |
+| Grappler | 0.80 | 0.95 | 0.90 |
+| Technical | 0.70 | 0.70 | 0.80 |
+
+A powerhouse is punished by the clock, a striker by the pace, and a high-flyer by the
+landing. Three different questions, three different answers, which is the reason none of them
+is a single "how hard is this style" number. A striker goes second-fastest of the six and is
+the third *safest*; a powerhouse is second-slowest, carries the heaviest volume load of any
+style, and is the second most dangerous. Neither ordering predicts the other.
+
+### History is permanent and it compounds
+
+Doc 15 calls injury history "the strongest single predictor", says a prior **back or neck**
+injury roughly doubles recurrence risk, and its sim implications call a permanent compounding
+history "the most important detail". So:
+
+| prior injuries to that part | back / neck | ankle |
+|---|---|---|
+| 0 | ×1.00 | ×1.00 |
+| 1 | **×1.99** | ×1.58 |
+| 2 | ×2.53 | ×1.91 |
+| 3 | ×2.83 | — |
+
+Saturating rather than unbounded: a wrestler with nine prior knee injuries is not nine times
+likelier than one with one, he is somebody whose knee is gone, and the model says that once.
+Injuries elsewhere in the file count for less but they do count, because a body that has been
+broken before breaks again.
+
+The first version used one weight for every part and reached only ×1.47 for a prior neck,
+which is not "roughly doubles". The weight is part-dependent now.
+
+### Reported, never applied
+
+`MatchEngine` returns `InjuryRoll`s on the result and writes nothing. `ShowSimulator` turns
+them into `Injury` records on the wrestler. Same split as every other consequence in here,
+and the reason a match can be simulated twice without maiming somebody twice.
+
+An `Injury` holds a **date, not a countdown**. `Career.CurrentDate` jumps when a show runs on
+a date three weeks out, so anything decremented once per `AdvanceOneDay` would quietly skip
+those weeks. A wrestler is fit when the calendar says so.
+
+### The shape of the year is in the frequencies, not the bands
+
+Doc 15 §3 says 35–55% of full-time performers miss time in a year but only 10–18% lose three
+months or more. Those two together force most of what happens to be **short** — the
+concussion, the tweaked back, the rolled ankle — regardless of how often the reference calls
+a shoulder injury "very common".
+
+The first calibration weighted body parts by that "common" language and put **85%** of a
+roster on the shelf inside a year, over half of them for three months or more. Every
+individual multiplier looked reasonable. Nothing but running a season would have found it.
+The shipped weights, measured over 40 wrestlers × 120 dates:
+
+| | measured | doc 15 §3 |
+|---|---|---|
+| missed time | 50% | 35–55% |
+| out 3 months or more | 18% | 10–18% |
+| average weeks lost | 7.9 | 6–12 |
+
+`BaseBeatRisk` came down by 3.5× to get there.
+
+### What the booker sees
+
+A meter is advice. This is a fact, and it is the one thing in the builder that **refuses**
+rather than warns:
+
+- **Roster card** — `🩹 Knee — out 30 weeks`, in place of the ring-condition line rather than
+  alongside it. A wrestler in a sling does not also need telling he is tired. Underneath,
+  a history line: `History: back ×2, concussion`.
+- **Roster picker** — `unavailable — knee, out 30 weeks` under the name, before any booking
+  reason.
+- **Match builder** — a red *Cannot be booked* block above the wizard, and `Finish` adds a
+  validation error. Everything else in this builder lets you do it anyway; this does not,
+  because a game that lets you book a wrestler in a sling is lying about its own injury model.
+- **Show report** — a *Hurt tonight* block above the title changes, marked *· not the first
+  time* on a repeat. A rating is a number; somebody being out for six months is the thing
+  that changes next month's booking.
+
+### The two systems already handle coming back
+
+Nothing was added for the return. `ApplyDayOff` runs over the whole roster every day, injured
+or not, so somebody out for six months comes back with fatigue at zero and sharpness down at
+their resting floor — **fresh and rusty**, which is what a returning wrestler is. The
+veteran's floor is 72 and the rookie's is 54, so the young one loses more of himself sitting
+out, exactly as the sharpness model already said.
+
+### Injuries roll on their own dice
+
+`MatchEngine` carries two `Random`s now. The injury roll happens per wrestler per beat, so
+taking it off the narrative stream would shift every subsequent draw the engine makes and
+silently re-roll every seeded expectation in the game — the measured medians this repo
+calibrates against included. `_injuryRand` is derived from the same seed, so a seeded match is
+still reproducible end to end, and offset so the two streams are not the same numbers in the
+same order. The physical cost of a match and the story it tells are independent questions and
+they get independent dice.
+
+That is why 800 existing tests went green on the first run of a change that adds a roll to
+every beat of every match.
+
+`PickBodyPart` also runs for every wrestler on every beat, and the first version did it with
+`Enum.GetValues` and three LINQ passes — reflection and four allocations each time. The weight
+table depends only on style and size, and there are thirty of those, so it is built once and
+cached.
+
+### Verified
+
+**802 tests passing.** Twenty-three mutations killed: lateness not biting; carried fatigue
+ignored; back and neck weighted like everything else; injuries elsewhere counting for nothing;
+style risk ranked like fatigue; intensity flat at the top; the indie ring as safe as anywhere;
+size not mattering; a powerhouse no likelier to tear a pectoral; a blown knee healing in a
+fortnight; a rolled ankle costing half a year; nobody ever healing; history not kept; the
+picker never saying unavailable; injuries not saved; a match hurting the same wrestler twice;
+every seeded match rolling the same injuries; nothing ever rolled; an unparseable clear date
+guessed at; weeks out counted as days; a part week rounding down to nothing; the first
+calibration that crippled a roster; and every injury getting an ankle's time out.
+
+**Four of those survived the first pass and three were real gaps**, each closed by a test
+rather than by an argument:
+
+- *A blown knee healing in a fortnight.* A season's headline rate barely moves when knees are
+  rare, so the frequency weights could not check the time-out column they were calibrated
+  against. `TheTimeOutIsDecidedByWhatTheInjuryIs` now holds the short and the long injuries
+  apart.
+- *Weeks out counted as days.* Every assertion on the show test stayed true — somebody hurt on
+  the night is still hurt on the night — while a torn ACL came back inside two months. The
+  test now pins the clear date arithmetic.
+- *A part week rounding down.* "Knee — out 0 weeks" on the roster sheet beside a wrestler the
+  builder refuses to book: the game contradicting itself on one screen.
+- *A match hurting the same wrestler twice.* At the shipped risk this is a one-in-tens-of-
+  thousands event, so nothing could see it. `AMatchHurtsAWrestlerAtMostOnce` builds the worst
+  wrestler in the world — cooked, oversized, high-flying, a file of prior injuries, extreme
+  beats, an indie ring, a careless opponent — which is about a hundredfold, and runs 2500
+  matches. 707 injuries, no doubles. The count is printed because it is the evidence the
+  assertion means anything.
+
+Browser-verified at 390×844 on a real career, with no console errors:
+
+| Surface | What it showed |
+|---|---|
+| Roster card | `🩹 Knee — out 30 weeks`, and `History: back ×2, ankle` on somebody cleared |
+| Roster picker | `⚠ unavailable — knee, out 30 weeks` under the name |
+| Match builder | *Cannot be booked. Rhea Ripley — knee, out 30 weeks*, above the wizard |
+| Book Show | *1 on this card cannot work.* … *Take them off the card before running it*, with **Run the show ★ disabled** |
+| Show report | *Hurt tonight. Becky Lynch — ankle, out 5 weeks* |
+
+The show report needed `BaseBeatRisk` temporarily raised to make an injury happen on demand;
+the constant was restored before the suite was re-run.
+
+Two things were found by looking rather than by testing. The picker read *"unavailable — knee
+— out 30 weeks"*, two dashes doing different jobs, so `Injury.Reason` exists beside
+`Injury.Describe` for the position after a name. And the builder's refusal only fires at
+booking time, which is wrong for a career that books a month ahead: the wrestler on next
+month's card was fit when you booked him and got hurt on tonight's show. The card is now
+checked again on the night, and that check disables the button rather than warning.
+
+### Still not built
+
+- **No age.** Doc 15 §3.1 puts over-35 at 1.5–2× and rising, and there is no age on a
+  wrestler. Inventing a proxy out of stats that merely correlate with it would produce a
+  number that looks authoritative and is not.
+- **Opponent safety is a proxy** off ring psychology and ring IQ. Defensible — a wrestler who
+  does not know where he is putting people is the one who hurts them — but it will read a
+  green athletic worker as safer than he is.
+- **No catastrophic outcome.** Doc 15 says a neck can be eighteen months and often
+  career-ending; the game cannot end a career, so `WeeksOut` truncates at 52 and the model
+  stops where it can still tell the truth about what happens next.
+- **Stipulations do not raise risk.** A ladder match and a technical exhibition of the same
+  intensity are the same roll. `Stipulation` is on the plan and the hook is a one-line
+  multiplier; it is out because nothing has measured what it should be.
+- **Nobody is written off television.** An injured wrestler is refused at the builder and
+  that is all — no automatic angle, no title vacated, no storyline consequence.
+- **Segments cannot hurt anybody**, so a beatdown angle is free. Same gap the fatigue meters
+  have, for the same reason.

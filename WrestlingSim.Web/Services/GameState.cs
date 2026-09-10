@@ -457,7 +457,8 @@ public class GameState
             : null;
 
         var result = new ShowSimulator(Career.FeudBook, titles: Career.Titles, brands: brands,
-                                       stipulations: Career.Stipulations)
+                                       stipulations: Career.Stipulations,
+                                       tier: Career.Promotion.Tier)
             .Simulate(show.ToShow());
         show.Result = result;
 

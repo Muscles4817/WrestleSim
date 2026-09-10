@@ -86,7 +86,9 @@ namespace WrestlingSim.Persistence
                     Momentum       = Math.Round(w.Momentum, 3),
                     LastAppearance = w.LastAppearance is { } seen ? Iso(seen) : null,
                     Fatigue        = w.Fatigue,
-                    Sharpness      = w.Sharpness
+                    Sharpness      = w.Sharpness,
+                    Injury         = ToDto(w.Injury),
+                    InjuryHistory  = w.InjuryHistory.Select(ToDto).OfType<InjuryDto>().ToList()
                 })
                 .ToList(),
 
@@ -373,6 +375,10 @@ namespace WrestlingSim.Persistence
 
                 w.Fatigue   = Math.Clamp(state.Fatigue, 0, 100);
                 w.Sharpness = Math.Clamp(state.Sharpness, 0, 100);
+
+                w.Injury        = FromDto(state.Injury);
+                w.InjuryHistory = state.InjuryHistory
+                    .Select(FromDto).OfType<Models.Person.Injury>().ToList();
             }
 
             var career = new Career
@@ -663,6 +669,39 @@ namespace WrestlingSim.Persistence
                     draw.Rumble = rumbles.GetValueOrDefault(draw.RumbleId);
                     return draw.Rumble is null;
                 });
+        }
+
+        private static InjuryDto? ToDto(Models.Person.Injury? injury) =>
+            injury is null ? null : new InjuryDto
+            {
+                Part      = injury.Part,
+                Sustained = Iso(injury.Sustained),
+                ClearedOn = Iso(injury.ClearedOn),
+                WeeksOut  = injury.WeeksOut
+            };
+
+        /// <summary>
+        /// An injury whose dates cannot be read is dropped rather than restored with a
+        /// guessed one — a wrestler wrongly held out for six months is worse than a
+        /// history entry lost.
+        /// </summary>
+        private static Models.Person.Injury? FromDto(InjuryDto? dto)
+        {
+            if (dto is null) return null;
+
+            var culture = System.Globalization.CultureInfo.InvariantCulture;
+            var style   = System.Globalization.DateTimeStyles.None;
+
+            if (!DateOnly.TryParse(dto.Sustained, culture, style, out var sustained)) return null;
+            if (!DateOnly.TryParse(dto.ClearedOn, culture, style, out var cleared))   return null;
+
+            return new Models.Person.Injury
+            {
+                Part      = dto.Part,
+                Sustained = sustained,
+                ClearedOn = cleared,
+                WeeksOut  = dto.WeeksOut
+            };
         }
 
         /// <summary>

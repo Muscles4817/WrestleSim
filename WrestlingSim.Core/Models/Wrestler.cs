@@ -80,6 +80,24 @@ namespace WrestlingSim.Models
         /// reps week in and week out.
         /// </summary>
         public double Sharpness { get; set; } = 100;
+
+        /// <summary>
+        /// What is currently keeping them out, or null if they are fit.
+        ///
+        /// Stays set after it clears rather than being nulled, so the roster sheet can say
+        /// what somebody is coming back from — <see cref="IsInjured"/> reads the date.
+        /// </summary>
+        public Person.Injury? Injury { get; set; }
+
+        /// <summary>
+        /// Everything they have ever done to themselves. Permanent and compounding, which
+        /// doc 15's sim implications call "the most important detail": a performer with a
+        /// prior neck injury should be permanently more fragile.
+        /// </summary>
+        public List<Person.Injury> InjuryHistory { get; set; } = new();
+
+        /// <summary>Whether they are unavailable on a given day.</summary>
+        public bool IsInjured(DateOnly today) => Injury?.KeepsOut(today) == true;
         public RingSkills RingSkills { get; set; }
         public PhysicalAttributes Physical { get; set; } = new();
         public MentalAttributes Mental { get; set; } = new();
