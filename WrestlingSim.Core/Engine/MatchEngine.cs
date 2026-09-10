@@ -3254,6 +3254,30 @@ namespace WrestlingSim.Engine
                 ? 0.0
                 : Math.Clamp((coherence - 0.55) * 16.0, -8.0, 8.0);
 
+            // ── What the match promised, and whether it delivered ────────────
+            //
+            // The other half of the coherence question, and the half the booker does not
+            // declare. Doc 18 §3.2 and doc 16: a crowd arrives wanting something, decided by
+            // who is in the ring, what the feud has been, what the rules are and what is at
+            // stake. Giving them it pays. Giving them something else costs, unless these two
+            // are good enough to win the room round — which is a question about the
+            // performers, not about the plan.
+            //
+            // Only for a plan booked from a brief. A hand-built plan made no promise, so
+            // there is nothing here to keep or break and the term is zero.
+            double expectationNudge = 0.0;
+            Expectation? promised = null;
+
+            if (plan.Brief is { } brief)
+            {
+                var reading = MatchExpectation.Of(
+                    plan.Sides, plan.Feud, plan.Stipulation, plan.TitleAtStake is not null);
+
+                promised = reading;
+                expectationNudge = MatchExpectation.Reward(
+                    reading, brief.Story, MatchExpectation.CanCarryIt(plan.Sides));
+            }
+
             // ── Elimination pacing ───────────────────────────────────────────
             //
             // Doc 18 §2.5 says the drama of this format is the *order* of the eliminations,
@@ -3295,7 +3319,7 @@ namespace WrestlingSim.Engine
 
             double finalScore = Math.Clamp(
                 techComponent + storyComponent + crowdComponent + finishNudge + varietyNudge
-                    + coherenceNudge + pacingNudge + defianceNudge,
+                    + coherenceNudge + pacingNudge + defianceNudge + expectationNudge,
                 0, 100);
 
             double starRating = Math.Clamp(finalScore / 20.0, 0, 5);
@@ -3329,6 +3353,8 @@ namespace WrestlingSim.Engine
                 CrowdAverageEnergy = state.CrowdAverage,
                 FinishQuality      = state.FinishQuality,
                 MatchTypeCoherence = coherence,
+                Promised           = promised,
+                ExpectationNudge   = expectationNudge,
                 Reaction           = state.Reaction,
                 Familiarity        = ctx.Familiarity,
                 Stipulation        = ctx.Plan.Stipulation,

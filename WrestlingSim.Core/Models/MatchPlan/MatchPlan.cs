@@ -155,7 +155,35 @@ namespace WrestlingSim.Models.MatchPlan
         /// </summary>
         public bool IsBlowOff { get; set; }
 
+        /// <summary>
+        /// How the match is worked, as the scoring reads it.
+        ///
+        /// **No longer a player input.** It used to be a step in the builder, where the
+        /// booker declared a style and the engine graded them against the declaration —
+        /// which is not a decision a booker has. Nobody announces a technical classic; the
+        /// promise is made by who is in the match and what the feud has been, and it is kept
+        /// or broken by the beats. See <see cref="Engine.MatchExpectation"/> for the derived
+        /// half and <see cref="Brief"/> for the booked half.
+        ///
+        /// Still here because the scoring weights hang off it, and it is now set from the
+        /// brief's story rather than typed in.
+        /// </summary>
         public MatchType MatchType { get; set; } = MatchType.Standard;
+
+        /// <summary>
+        /// What the booker asked for, when this plan was written from a brief rather than
+        /// beat by beat.
+        ///
+        /// Kept after generation rather than thrown away, and kept through hand-editing.
+        /// It is what lets the review screen say a booking has drifted from its own
+        /// intention — "you booked a technical exhibition and six of thirteen beats are
+        /// brawling" — which is a sentence the game could not form when the beats were the
+        /// only record of what was wanted.
+        ///
+        /// Null for a plan built by hand or loaded from a save written before briefs
+        /// existed. Everything that reads it treats null as "no promise was made".
+        /// </summary>
+        public MatchBrief? Brief { get; set; }
 
         /// <summary>
         /// The gimmick, or <see cref="Stipulation.None"/> for a match under the rules.
