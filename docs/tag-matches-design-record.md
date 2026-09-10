@@ -3777,3 +3777,241 @@ checked again on the night, and that check disables the button rather than warni
   that is all — no automatic angle, no title vacated, no storyline consequence.
 - **Segments cannot hurt anybody**, so a beatdown angle is free. Same gap the fatigue meters
   have, for the same reason.
+
+## The booker states the booking, and the game writes the match
+
+This started as a complaint about the triple threat, which was eight beats and twelve
+minutes, and it was correct. So were `The Grudge Three-Way`, `Triple Threat Elimination` and
+`Fatal Four-Way`. Every multi-man format in the library was the same length whoever was in
+it, none could be booked as a main event, and none contained the thing doc 18 §2.5 calls
+"the format's single best story", because the engine had no beat for it.
+
+An earlier change rebuilt the *singles* structures and reported it as fixing "the match
+plans", which overstated what it had done. This is the rest of it, and the rethink the fix
+turned out to need.
+
+### The structure list was the wrong unit
+
+A `MatchStructure` was a frozen list of beats. Booking `Face-in-Peril` twice gave the
+identical eleven beats twice, and a beat nobody hand-wrote into a structure was a beat no
+booker ever saw — which is how `Hope Spot` shipped reachable from three singles structures
+and none of the multi-man ones.
+
+A booker does not think in beat lists. They think in outcomes, and the beats are how you get
+there. So the structure step became a step where you state intent:
+
+> **a big match** built as **a technical exhibition**.
+> **Becky Lynch** goes over **clean**.
+> **Becky Lynch** comes out **as they are**; **Charlotte Flair** comes out **protected**.
+> **Nobody outside it gets involved**
+
+Every bold fragment is a tap target that opens its own chooser below the sentence. Selections
+compose the sentence, so nothing has to be parsed and the same brief always means the same
+thing. The old structure names survive as one-tap presets that fill a brief, and the one that
+suits the pairing is marked.
+
+**Who wins and how each side comes out are separate questions on purpose.** Doc 20 §4 runs
+feuds on the difference: a challenger who takes the champion to the limit and loses is worth
+more afterwards than one who wins a nothing match. Booking somebody `Elevated` makes them the
+protagonist even in defeat — they shine, they take the hope spots, they make the comeback,
+and they still lose. No structure in the library could express that; every singles structure
+had WrestlerA shine, come back and win.
+
+### Phases, not templates
+
+The grammar fills **phases**, which is how doc 18 §2.3 already describes a match:
+
+```
+opening
+  [shine]
+  cycle × N:
+      cut-off → heat → hope spot × 0..2 → comeback
+  [finishing stretch: near falls × 1..3]
+finish
+```
+
+The cycle count comes straight off §3.1's table, which is a table of *contents* rather than
+of minutes: "15–25 min adds a second heat/comeback cycle and a real finishing stretch." So
+length is the cycle count and the minutes follow.
+
+The split between shape and fill is the point. The shape is deterministic — a face-in-peril
+big match is always opening, shine, two cycles, two near falls, finish — and what fills those
+slots is not. Same brief, same match; same brief, different sheet.
+
+### The proof that it is the same rule
+
+The claim is that the grammar is what the structure library was written *from*, not a
+plausible replacement. Checked two ways:
+
+| | Result |
+|---|---|
+| The shape of each shipped structure, on every draft | Controller, duration, running time, and intensity from beat two |
+| The exact beat list | Reachable — not on a nominated draft, somewhere in the space |
+
+The second half matters. The first version asserted beat-for-beat exactness on draft zero and
+passed, which was luck rather than a property: it broke the moment the test cast changed,
+because an opening that can legitimately be a collar-and-elbow or a hot start will be one of
+them.
+
+`Epic` disagrees by one beat and the grammar is right. Its third hope spot drops back to
+Medium after the second was High, and §3.3's pyramid says a later tease cannot be smaller
+than an earlier one. That is pinned as a disagreement rather than glossed, so if it ever
+starts matching exactly, somebody changed one of the two and should say which.
+
+Three faults the comparison found, one of which mattered:
+
+- The grammar was restating an opening's intensity when the beat template already knew it.
+- A technical match was not being given the extra time its mat work takes.
+- **Style was overruling story.** A technical exhibition worked by a powerhouse drew Power
+  Beatdown for its heat, because a matching style hint was worth ×2.5 and a matching story
+  ×3.0 against a mismatched hint's ×0.4. That is the generator quietly overruling the booker.
+  Story now dominates and style only modulates; the place to charge for a cast that cannot
+  deliver the booking is the score, not a substituted beat nobody chose.
+
+### The match type was the wrong question
+
+`MatchType` asked the booker to declare a style so the engine could grade the beats against
+the declaration. It was worth up to eight points, and it was the least understood thing in
+the game for a good reason: **it is not a decision a booker has.** A promotion never announces
+that tonight's semi-main will be a technical classic.
+
+The promise is made by who is in the match, what the feud has been, what the rules are and
+what is at stake, and it is kept or broken entirely by how the match is booked. So it is
+derived, in that order of loudness:
+
+| Source | Because |
+|---|---|
+| The stipulation | Printed on the poster. The least deniable promise a card can make |
+| The feud | Nuclear or hot means they came for a fight, not a wrestling match |
+| The bodies | Two mat wrestlers promise a contest; a size gap of two promises a question about survival |
+| The belt | Firms up whatever the promise already was without saying what kind of match to have |
+
+The engine scores the distance between that and what was booked, and the stories are not
+equidistant: a crowd promised a fight will take a face-in-peril, which is still somebody
+suffering, and will not take a mat classic.
+
+**Defying the room is a gamble on the performers rather than a flat penalty.** Doc 18 §3.2
+has great workers adjusting in real time, which is exactly the skill of giving a crowd
+something it did not ask for and winning it round; limited ones cannot, so the identical
+booking is a triumph for one pair and a disaster for another. Read off the weakest link,
+because one great worker cannot rescue a mismatched booking alone.
+
+A plan built by hand promised nothing, so the term is zero. That is why 802 existing tests
+passed unchanged with a new scoring term added — the null case being the honest answer rather
+than a convenient one.
+
+### What the brief buys that a beat list could not
+
+The old builder could tell you a plan was invalid and nothing else, because the beats were
+the only record of what was wanted and so there was no intention to drift from. With a brief
+attached the game can form sentences it could not before:
+
+- this runs 34 minutes and there are 12 left in the slot
+- booked as a technical exhibition, 3 of 11 beats are not
+- they want a fight and you are giving them a mat classic, and this pair cannot talk a crowd
+  round
+- Bravo is booked elevated and loses without a comeback or a near fall, so nothing in the
+  match says they were ever in it
+
+All advice, and none of it refuses. That includes the runtime: an over-long match is the
+loudest note because the card charges up to 35% for overrunning, but it is a price rather
+than a rule and the show screen has offered that trade since long before any of this. The
+weight is called `Costly` and not `Blocking` for exactly that reason.
+
+### The three-way, finally
+
+Two beats the engine did not have. **Alliance** is two of them working the third, which is
+the answer to the odd one out that does not involve removing anybody — all three are busy,
+which is what a real three-way opens with. Every multi-man beat the library carried was about
+*removing* somebody, and none could say two people were working together. **Betrayal** is the
+moment it breaks, priced as §2.5 prices it. Unlike a spite break it *pays* the person who
+does it, which is why the audience spends the whole alliance waiting for it.
+
+And the bracketing rule, which is §2.5's central claim written as code:
+
+> The entire craft of a multi-man match is disposing of people plausibly and then bringing
+> them back at the right moment. A triple threat that never explains where the third man went
+> is the format's characteristic failure.
+
+Everything between the opening and the finishing stretch is a two-person passage — a cut-off,
+a heat section and a comeback all assume somebody to work and somebody to work on — so in a
+three-way it is opened by putting the odd one out somewhere and closed by bringing them back.
+**One bracket around the whole run, not one per beat**: a disposal before every cut-off would
+be absurd and the crowd stops believing the fourth one anyway. Then one more immediately
+before the fall, because outside a disposal window every cover in a three-way is breakable.
+
+The shape that produces, measured:
+
+```
+OPENING    Standard Collar-and-Elbow   Both
+SHINE      Shine                       Becky Lynch
+ALLIANCE   Uneasy Truce                Becky Lynch      → Rhea Ripley
+BETRAYAL   The Betrayal                Charlotte Flair  → Becky Lynch
+DISPOSAL   Disposal Spot               Charlotte Flair  → Rhea Ripley
+CUT-OFF    Cut-Off                     Charlotte Flair
+HEAT       Technical Dissection        Charlotte Flair
+COMEBACK   Slow Burn Rally             Becky Lynch
+RETURN     Pin Break                   Rhea Ripley
+DISPOSAL   Disposal Spot               Becky Lynch      → Rhea Ripley
+FINISH     Clean Victory               Becky Lynch      → Charlotte Flair
+```
+
+And in the play-by-play: *"Two on one! Rhea Ripley cannot fight both of them — and how long
+does this last?"* takes the crowd 69 → 85. *"And there it goes! Charlotte Flair turns on
+Becky Lynch — every alliance in this match had an expiry date!"* takes it 82 → 95.
+
+A three-way can now run as an epic, and it can still be a six-minute opener, which was never
+the problem.
+
+### Verified
+
+**897 tests.** Thirty mutations killed across the grammar, the expectation, the critique and
+the multi-man rules.
+
+Four survivors were real and each closed a genuine gap: nothing pinned that a beat on the
+wrong body is rarer than one on a merely different body; the end-to-end expectation test
+compared two plans generated from two different briefs, so the beats carried the difference
+and deleting the whole scoring term failed nothing; deleting the kept-promise branch still
+returned a positive number, because the miss arithmetic on a distance of zero happens to come
+out positive; and a guard keeping a match winner out of a warning was untested because three
+assertions searched for "never in it" against a note that says "ever in it".
+
+That last one is worth keeping. **Three assertions had been passing on any input.** Fixing
+the phrase then exposed that the test case was also wrong — it elevated the winner of a
+showcase, and the grammar hands the protagonist a comeback in every shape, so the guard was
+never reached.
+
+Three survivors were bad mutations that exposed redundant guards rather than weak tests: a
+side-count check in two places where the search below it already answered the same question.
+A guard that can never change an answer looks like a rule and is not one. Removed.
+
+Browser-verified at 390×844, in a career and in exhibition: preset, adjust, re-roll, book,
+run, for singles and for a triple threat. Four faults found by looking rather than by
+testing:
+
+- `.sheet` was already the beat editor's fixed bottom sheet, so the written match painted
+  `position: fixed` over the whole page.
+- The runtime warning summed the beats and the card charges the beats *plus the entrances*,
+  so a match that overran a show by exactly its own entrances was reported as fitting. Both
+  now read `BookedMatch.RuntimeOf`.
+- A mixed pairing scored 0.3, just above the vague threshold, so the critique quoted "nothing
+  is being promised that you cannot change" and then told the booker off for changing it.
+- The main menu still described a match as "pick two wrestlers, choose a structure, then edit
+  the beats", which is a wizard that no longer exists.
+
+### Still not built
+
+- **The console app still offers the structure list.** README already calls it "the original
+  session-scoped sandbox — no save, no clock", and this widens that gap rather than creating
+  it. The Blazor app is the game.
+- **Tag and trios do not use the phase grammar.** `Isolation`, `NearTag` and `HotTag` exist as
+  beats and the grammar has no phases for them, so a tag match books from a preset and a
+  hand-edited sheet. The grammar is the right home for them and this change did not do it.
+- **Elimination is not a phase separator.** A `Triple Threat Elimination` is bookable only by
+  hand. The rule — a fall removes somebody and the match carries on — is a change to how
+  cycles terminate rather than a new phase, and it is the next real piece of work here.
+- **The play-by-play prints raw enum names for some beats** — `DISPOSALSPOT` rather than
+  `Disposal Spot`. Pre-existing, visible, and not touched here.
+- **The critique cannot see the card.** It knows the runtime left in the slot and nothing
+  about what is on either side of this match, so it cannot say "this is your third grudge in
+  a row", which doc 06 §4 on card variety would want.

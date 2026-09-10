@@ -271,25 +271,12 @@ at all, so a 1v2 would be graded as though it were a normal match rather than ge
 harshly. The error says so, because the rule lifts when that mechanic exists — not when
 somebody decides handicap matches are allowed.
 
-### 2 — Set the match type
-Standard, Technical, Storytelling or Spotfest.
-
-The match type is a real commitment, not a label. It does two things:
-
-1. **Shifts the component weights.** A Technical match is graded mostly on ring work
-   (46/24/30); a Spotfest mostly on crowd reaction (30/22/48); Storytelling on story
-   (24/42/34). Standard stays balanced at 35/30/35.
-2. **Grades your plan against what you advertised.** Each type has a set of on-type
-   beats. Book a mat-based plan and call it Technical and you are paid up to +8 points;
-   book a brawl and call it a technical classic and you lose up to 8. Standard promises
-   nothing specific, so it is neutral — the safe choice, never the free one.
-
-### 3 — The championship *(only when one applies)*
+### 2 — The championship *(only when one applies)*
 Any belt held by somebody in the match, and contested at this side size, can be put on the
 line. A tag belt needs *all* of its champions in the match — beating one half of a team does
 not take the straps. If nobody in the match holds anything, this step does not appear.
 
-### 4 — The feud
+### 3 — The feud
 The booker reads the feud these two have actually built. If they have history, it is
 shown and used automatically; if they have none you can still declare one by hand,
 and that declaration is written back into the feud book so later segments build on it.
@@ -322,23 +309,56 @@ are stamped by the segments that earn them and gate certain beats:
 
 Feud intensity also still pays off through starting crowd energy and beat unlocks.
 
-### 5 — Choose a match structure
+### 4 — The brief
 
-You are only offered structures the shape of match can actually work — a singles match is
-never shown a hot tag, and a tag match is never left with only singles presets.
-Pick one of seven pre-built structures as your starting plan, or build from scratch.
+**You say what the match is for, and the game writes the beats.**
 
-| Structure | Beats | Description |
-|---|---|---|
-| **TV Formula** | 4 | Weekly TV bread-and-butter. Opening → Heat → Comeback → Finish. |
-| **Face-in-Peril** | 5 | The Hogan/Cena formula. Face dominates, gets cut off, long heat, big pop comeback. |
-| **Technical Showcase** | 7 | Bret/HBK/Benoit psychology. Mat work, limb targeting, submission payoff. |
-| **Spotfest** | 7 | High spots carry the match. Two aerial sequences, minimal psychology. |
-| **Grudge Brawl** | 6 | Ringside chaos and revenge. Works without a feud, better with one. |
-| **Feud Blowoff** | 8 | The definitive end to a rivalry. Requires an active feud at Building+. |
-| **Big Match Epic** | 9 | WrestleMania main event structure. Slow build to a defining finish. |
+This step used to be two: a match type, where you declared a style so the engine could grade
+you against the declaration, and a structure, which handed you a frozen beat list. The first
+is not a decision a booker has — nobody announces a technical classic — and the second is why
+every Face-in-Peril in a career was the same eleven beats.
 
-### 6 — Edit in the Beat Editor
+It opens with what the match already promises, derived rather than asked for:
+
+> **A technical exhibition** — Two mat wrestlers. The crowd is expecting a contest.
+
+That reading comes from the stipulation first, then the feud, then the styles and sizes in
+the ring, then whether a belt is on the line. Then the booking, as a sentence you tap to edit:
+
+> **a big match** built as **a technical exhibition**.
+> **Becky Lynch** goes over **clean**.
+> **Becky Lynch** comes out **as they are**; **Charlotte Flair** comes out **protected**.
+> **Nobody teams up**. **Nobody outside it gets involved**
+
+| Decision | Options |
+|---|---|
+| What it is about | even contest, face in peril, grudge, technical exhibition, David and Goliath, spectacle, showcase |
+| How long | opener, television, workhorse, big match, epic |
+| Who wins, and how | clean, with the finisher, by submission, on a roll-up, on interference, on a DQ, on a count-out |
+| How each side comes out | elevated, protected, as they are, taken down a peg |
+| Who teams up *(three or more sides)* | any pair, and whether it breaks |
+| Outside factors | a manager at ringside, a run-in, a referee bump |
+
+**How each side comes out is not the same question as who wins.** Booking somebody
+`elevated` makes them the protagonist even in defeat — they shine, they take the hope spots,
+they make the comeback, and they still lose.
+
+Then the sheet, grouped by stage, each one saying why it is there, with a **re-roll** that
+gives a genuinely different match from the same brief. Underneath it, the critique:
+
+> *Bravo is booked elevated and loses without a comeback or a near fall. Nothing in the match
+> says they were ever in it.*
+
+The old structure names survive as one-tap presets — TV Formula, Face-in-Peril, Technical
+Showcase, Spotfest, Grudge Brawl, Big Match, Epic, Squash, Giant Killer, and for three or
+more sides Triple Threat, Three-Way Main Event, Stolen Fall and Two On One. Picking one fills
+the brief and every field stays adjustable.
+
+**Length is a cycle count, not a slider.** Doc 18 §3.1's table is a table of contents:
+ten to fifteen minutes is one heat and comeback cycle, fifteen to twenty-five adds a second
+and a real finishing stretch. The minutes follow from that.
+
+### 5 — Edit in the Beat Editor
 
 ```
   ╔══════════════════════════════════════════════════════╗
@@ -517,7 +537,7 @@ would.
 ## The Rating System
 
 After execution the engine produces a star rating (0–5★) from three components, weighted
-by the declared match type (Standard shown):
+by what the brief said the match was (an even contest shown):
 
 | Component | Weight | Driven by |
 |---|---|---|
@@ -532,7 +552,14 @@ Three adjustments then apply:
   are cut by 45%.
 - **Variety**, ±5 points. Measured as distinct beat types over total beats. A four-beat
   match using four types is fully varied; a twelve-beat match using four types is not.
-- **Type coherence**, ±8 points, as described under *Set the match type* above.
+- **Type coherence**, ±8 points. Whether the beat mix has an identity at all, measured
+  against what the brief said the match was.
+- **Expectation**, roughly +6 / −9 points. What the match *promised* — read off the
+  stipulation, the feud, the bodies in the ring and whether a belt is on the line — against
+  what was booked. Serving the room pays and defying it costs, but the cost is discounted by
+  how well these particular performers can talk a crowd round, so the same defiant booking is
+  a triumph for one pair and a disaster for another. A plan built by hand promised nothing
+  and is not graded on it.
 
 ### The performer model
 
