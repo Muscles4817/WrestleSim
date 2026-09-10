@@ -4007,6 +4007,7 @@ testing:
 - **Tag and trios do not use the phase grammar.** `Isolation`, `NearTag` and `HotTag` exist as
   beats and the grammar has no phases for them, so a tag match books from a preset and a
   hand-edited sheet. The grammar is the right home for them and this change did not do it.
+  *(Done — see "A tag match is the same skeleton with different furniture" below.)*
 - **Elimination is not a phase separator.** A `Triple Threat Elimination` is bookable only by
   hand. The rule — a fall removes somebody and the match carries on — is a change to how
   cycles terminate rather than a new phase, and it is the next real piece of work here.
@@ -4015,3 +4016,125 @@ testing:
 - **The critique cannot see the card.** It knows the runtime left in the slot and nothing
   about what is on either side of this match, so it cannot say "this is your third grudge in
   a row", which doc 06 §4 on card variety would want.
+
+
+## A tag match is the same skeleton with different furniture
+
+The grammar generated singles matches and three-ways and left tag matches booking from a
+preset and a hand-edited sheet. Closing that turned out to be smaller than expected, which is
+the strongest evidence available that the grammar was the right abstraction: doc 18 §2.3's
+stages do not change when there are two people a side.
+
+**Three substitutions.** The heat becomes an isolation, because the thing being denied is a
+corner rather than a comeback. The hope spot becomes a near tag. The comeback becomes a hot
+tag. That is the whole of it in `BriefDirector.TypesFor` — three pool swaps behind a
+`sideSize > 1`, and everything else falls through to the singles pools it already had.
+
+**Three phases a singles match has no room for.** These are additions to the shape rather
+than substitutions in it:
+
+| Phase | Where | Why |
+|---|---|---|
+| `Tandem` | after the last comeback | The hot tag is a comeback with a second half. The tandem offence is what the isolation was building to, and one body has nowhere to put it. |
+| `AllFour` | after the tandem, not in an opener | Everybody in is a *loss* of control, and a six-minute tag has not established enough control to lose. |
+| `Save` | after the near falls, before the finish | A near fall in a tag match is broken up by a partner rather than surviving on its own. It is why the format's near falls read differently: the count is never the only question. |
+
+**And one that only trios buys.** Doc 18 §2.5 on the American six-man says what the third body
+is for: "three fresh opponents rotating on one man, which two a side cannot book". So at three
+or more a side the valley gains a `Rotation` after each near tag — the heat gets *deeper*
+rather than longer, which is the distinction the format exists on. The fresh body arrives
+after the tease, not before it, because that is what makes the tease cost something.
+
+The shine also runs longer in a tag. A tag team's shine is two of them looking good together
+with the quick tags that establish they can work as a unit, and that takes more than the
+singles beat's worth of time.
+
+### Lucha is a different match, and it took two tries to say so
+
+Doc 25 §3.3 has three a side as the *default* in lucha rather than a variant, with "rapid tag
+rules that allow constant motion". So a trios booked as a spectacle drops the isolation
+entirely — there is no long stretch of somebody being kept from a corner — and the beat where
+an American six-man slows down is the beat where this one changes bodies.
+
+**The first version got that exactly backwards.** It had lucha rotate *instead of* the
+American rotation, on the rest beat alone. There is at most one rest in a valley, so a lucha
+trios changed bodies once where an American six-man of the same length changed them twice. It
+read as the format's opposite and every test passed, because each of them asked *where* the
+rotation was and none asked *how many* there were. What found it was printing the shape of
+every length and side size and reading the table.
+
+Switching lucha on for both openings then produced two rotations back to back, which is not
+motion, it is a gap — on the written sheet the pair read as one long tag with a dead beat in
+it. The rotation after a near tag now looks ahead one phase and stands down when the next beat
+is going to change bodies anyway.
+
+### What the booker sees
+
+`BriefPreset` gained a `MinimumPerSide` alongside `MinimumSides`, because they are different
+questions. A trios is two sides of three: gating it on side count would have offered it to a
+three-way, which cannot book it, and hidden it from the match it was written for. Four presets
+sit behind it — **Southern Tag**, **Tag Sprint**, **Six-Man War** and **Lucha Trios**.
+
+Two of them carry the same brief as a singles preset, because a tag Face-in-Peril *is* a
+Face-in-Peril; only the furniture changes. That made `Matching` ambiguous — it returned the
+first preset in the list with the same story, length and finish, so tapping "Southern Tag" lit
+up "Face-in-Peril" and the control looked broken. It now prefers the most specific preset the
+match can book, which also makes the three-way presets correct on purpose rather than by
+accident of list order.
+
+A booked trios, in the browser at 390×844:
+
+```
+Six-Man War   Feeling-Out Process · Shine · Cut-Off · Face in Peril · Near Tag ·
+              Blind Tag · Hot Tag · Cut-Off · Face in Peril · Near Tag · Blind Tag ·
+              Hot Tag · Double Team · Everybody In · Shock Kickout · Signature Cover ·
+              Save · Dominant Statement                              18 beats · 36 min
+
+Lucha Trios   Hot Start · Aerial Assault · Cut-Off · Jaw-Dropper · Hope Spot ·
+              Blind Tag · Desperation Strike · Quick Tag · Fighting Spirit ·
+              Double Team · Everybody In · Jaw-Dropper · Shock Kickout · Save ·
+              Clean Victory                                          15 beats · 26 min
+```
+
+And the play-by-play of a tag match reads as one: *"Becky Lynch keeps Roman Reigns grounded in
+the wrong corner — miles from help."*
+
+### What the tests are worth
+
+Thirty mutations. Twenty-nine killed; the thirtieth turned out to be a redundant arm and was
+deleted rather than tested. Five needed a test written first and three needed the code
+changed:
+
+- The legality sweep that checks nobody is tagged in who is not in the match swept one story.
+  Lucha rotates on a different phase, so the branch that counts bodies fastest was the one
+  branch the check could not see.
+- The pools with two beats in them — a rotation is a tag or a blind tag, a lucha heat is a
+  double team or a high spot — could each be narrowed to their first member with the suite
+  green. Every test asked what *kind* of beat filled a phase; none asked whether the second
+  member was ever chosen. Re-rolling the same brief is the whole design, so pool width is a
+  claim and now has a test.
+- The longer tag shine had no test at all.
+- `incoming < sideSize` was written twice and only the near tag's copy was reachable: every
+  valley holds at most one rest and it sits in the first cycle. Said once, as a `Fresh()`
+  local, it is exercised — and the unreachable copy stopped looking like a rule it was not.
+- `SuggestedFor` had a Face-in-Peril arm and a catch-all that gave the same answer for a tag
+  match, so each covered the other and neither could be shown to matter. Southern Tag is the
+  tag match's Face-in-Peril, so it is the fallback and not a story of its own.
+
+The suggestion test worth keeping is not any particular pairing of story to preset name. It is
+that whatever is suggested is something this match can *book*: naming a preset outside the
+offered list does not misfire loudly, it renders no star on any chip and the feature quietly
+stops existing.
+
+### Still not built
+
+- **A tag match has no rules about who is legal.** `IncomingIndex` says which partner comes
+  in and `MatchPlan.Validate` refuses a tag that brings in somebody already legal, but nothing
+  models the five-count, the referee's back being turned, or a blind tag being illegal in the
+  first place. The `BlindTag` beat is flavour, not a rule.
+- **Chemistry does not reach the tandem beat.** Teams have chemistry and the tandem offence is
+  the beat where it should show; it currently grades like any other double team.
+- **Survivor Series still books by hand.** Four a side generates a legal sheet — it is in the
+  legality sweep — but elimination is not a phase separator, so the shape it writes is one
+  long tag match rather than a match that loses people. Same blocker as the three-way
+  elimination named above, and the same fix.

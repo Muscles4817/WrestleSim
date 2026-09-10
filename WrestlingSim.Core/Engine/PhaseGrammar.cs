@@ -48,6 +48,18 @@ namespace WrestlingSim.Engine
         /// <summary>And comes back, which is what makes the disposal a payoff and not a reset.</summary>
         Return,
 
+        /// <summary>A fresh partner rotates in. The heat gets deeper rather than longer.</summary>
+        Rotation,
+
+        /// <summary>The tandem offence a hot tag buys. The payoff's payoff.</summary>
+        Tandem,
+
+        /// <summary>Everybody in, nobody legal, and the referee has lost it.</summary>
+        AllFour,
+
+        /// <summary>The partner breaks the count. A tag match's answer to the pin break.</summary>
+        Save,
+
         /// <summary>The end.</summary>
         Finish
     }
@@ -78,6 +90,13 @@ namespace WrestlingSim.Engine
         string         Why)
     {
         public BeatControl? Against { get; init; }
+
+        /// <summary>
+        /// Which partner comes in, for the beats that rotate a side. Doc 18 §2.5 on the
+        /// American six-man: what the third body buys is "a deeper heat — three fresh
+        /// opponents rotating on one man, which two a side cannot book".
+        /// </summary>
+        public int? Incoming { get; init; }
     }
 
     /// <summary>
@@ -164,8 +183,15 @@ namespace WrestlingSim.Engine
         /// </summary>
         /// <param name="brief">What the booker asked for.</param>
         /// <param name="sideCount">How many sides are in it. Two, for now.</param>
-        public static IReadOnlyList<PhaseSlot> Shape(MatchBrief brief, int sideCount = 2)
+        public static IReadOnlyList<PhaseSlot> Shape(MatchBrief brief, int sideCount = 2, int sideSize = 1)
         {
+            // A tag match is the same skeleton with different furniture: the heat becomes an
+            // isolation because the thing being denied is a corner rather than a comeback,
+            // the hope spot becomes a near tag, and the comeback becomes a hot tag. Doc 18
+            // §2.3's stages do not change — which is the argument for a grammar rather than
+            // a second structure library for tags.
+            bool tag = sideSize > 1;
+
             var slots = new List<PhaseSlot>();
 
             int protagonist = brief.Protagonist(sideCount);
@@ -195,7 +221,9 @@ namespace WrestlingSim.Engine
             {
                 slots.Add(new PhaseSlot(
                     MatchPhase.Shine, p, BeatIntensity.Medium,
-                    brief.Length == MatchScale.Epic ? BeatDuration.Medium : BeatDuration.Short,
+                    // Longer in a tag match, where the shine is a team looking good together
+                    // rather than one person, and there is twice as much of it to show.
+                    tag || brief.Length == MatchScale.Epic ? BeatDuration.Medium : BeatDuration.Short,
                     valiant
                         ? "They look good early, because you booked them to come out of this bigger."
                         : "The protagonist looks good before the match turns."));
@@ -228,6 +256,19 @@ namespace WrestlingSim.Engine
             // ── Cycles ───────────────────────────────────────────────────────
             int cycles = Cycles(brief.Length);
             int hopes  = 0;
+
+            // Who comes in next when a side rotates. Counted across the *whole match* and
+            // not per cycle: the first version reset it each time round and so tagged in the
+            // same partner twice, the second time while they were already the legal one.
+            // `MatchPlan.Validate` refuses that, which is how it was found.
+            int incoming = 1;
+
+            // One statement of "there is somebody left to bring in", for both rotations.
+            // It was written out twice, and only the hope spot's copy is reachable: every
+            // valley holds at most one rest and it sits in the first cycle, so the rest's
+            // copy was a bound no input could reach and no reader could tell was unreachable.
+            // Said once, it is exercised.
+            bool Fresh() => incoming < sideSize;
 
             // **The bracketing rule.** Doc 18 §2.5: "the entire craft of a multi-man match is
             // disposing of people plausibly and then bringing them back at the right moment.
@@ -272,10 +313,44 @@ namespace WrestlingSim.Engine
                     HeatWhy(brief.Story)));
 
                 var valley = Valley(brief.Length, cycle);
-                foreach (var phase in valley)
+
+                // **The deeper heat.** Doc 18 §2.5 on the American six-man: what the third
+                // body buys is "three fresh opponents rotating on one man, which two a side
+                // cannot book". So with three or more a side the valley gains a rotation —
+                // the heat gets deeper rather than longer, which is the distinction the
+                // format exists on.
+                bool rotates = sideSize >= 3;
+
+                // And a lucha trios rotates *as well as* — the beat where an American six-man
+                // slows down is the beat where this one changes bodies. Doc 25 §3.3 has three
+                // a side as the default there rather than a variant, with "rapid tag rules
+                // that allow constant motion".
+                //
+                // The first version had lucha rotate *instead of* the American rotation, on
+                // the rest beat alone. There is at most one rest in a valley, so that gave a
+                // lucha trios one body change where an American six-man of the same length
+                // got two — the opposite of what the reference says the format is. Lucha now
+                // takes both openings and is the one that moves more.
+                bool lucha = sideSize > 1 && brief.Story == MatchStory.Spectacle;
+
+                for (int i = 0; i < valley.Count; i++)
                 {
+                    var phase = valley[i];
+
+                    // Not when the beat after this one is going to change bodies anyway.
+                    // Two rotations back to back are not motion, they are a gap: the lucha
+                    // valley put one after the hope spot and another where the rest would
+                    // have been, and on the sheet the pair read as one long tag.
+                    bool nextRotates = lucha && i + 1 < valley.Count
+                                             && valley[i + 1] == MatchPhase.Rest;
+
                     slots.Add(phase switch
                     {
+                        MatchPhase.Rest when lucha && Fresh() => new PhaseSlot(
+                            MatchPhase.Rotation, heater, BeatIntensity.Medium, BeatDuration.Brief,
+                            "Bodies change instead of the pace dropping. This is what lucha does with the beat.")
+                            { Incoming = incoming++ },
+
                         MatchPhase.Rest => new PhaseSlot(
                             MatchPhase.Rest, heater, BeatIntensity.Low,
                             RestDuration(brief.Story, brief.Length),
@@ -293,8 +368,18 @@ namespace WrestlingSim.Engine
                             MatchPhase.HopeSpot, reliever,
                             hopes++ == 0 ? BeatIntensity.Medium : BeatIntensity.High,
                             BeatDuration.Brief,
-                            "A tease. The comeback is worth what these cost.")
+                            tag
+                                ? "They reach for the corner and do not make it."
+                                : "A tease. The comeback is worth what these cost.")
                     });
+
+                    // After a near tag, not before it: the fresh body arriving is what makes
+                    // the tease cost something.
+                    if (rotates && !nextRotates && phase == MatchPhase.HopeSpot && Fresh())
+                        slots.Add(new PhaseSlot(
+                            MatchPhase.Rotation, heater, BeatIntensity.Low, BeatDuration.Brief,
+                            "A fresh one comes in. The beating gets deeper rather than longer.")
+                            { Incoming = incoming++ });
                 }
 
                 slots.Add(new PhaseSlot(
@@ -311,6 +396,27 @@ namespace WrestlingSim.Engine
                     MatchPhase.Return, Control(spare), BeatIntensity.High, BeatDuration.Brief,
                     "And back in, at the worst possible moment for the other two.")
                     { Against = Control(brief.WinningSide) });
+
+            // ── What a hot tag buys ──────────────────────────────────────────
+            //
+            // The hot tag is the comeback, and in a tag match the comeback has a second
+            // half that a singles match has no room for: the tandem offence the crowd has
+            // been waiting the whole isolation to see, and then everybody in at once. Doc 18
+            // §2.3's structure ends at the comeback because it is describing one body; two
+            // bodies get the extra beat.
+            if (tag)
+            {
+                slots.Add(new PhaseSlot(
+                    MatchPhase.Tandem, Control(protagonist), BeatIntensity.High, BeatDuration.Short,
+                    "The tandem offence the whole isolation was building to."));
+
+                // Not in the shortest match: everybody in is a *loss of control*, and a
+                // six-minute tag has not established enough control to lose.
+                if (brief.Length != MatchScale.Opener)
+                    slots.Add(new PhaseSlot(
+                        MatchPhase.AllFour, BeatControl.Even, BeatIntensity.High, BeatDuration.Short,
+                        "Everybody in, nobody legal, and the referee has lost it."));
+            }
 
             // ── Outside interference ─────────────────────────────────────────
             //
@@ -335,6 +441,14 @@ namespace WrestlingSim.Engine
                     BeatDuration.Brief,
                     i == 0 ? "The stretch begins." : "Escalating, because the finish has to beat this."));
             }
+
+            // A near fall in a tag match is broken up by a partner rather than surviving on
+            // its own, which is the whole reason the format's near falls read differently:
+            // the count is never the only question.
+            if (tag && nearFalls > 0)
+                slots.Add(new PhaseSlot(
+                    MatchPhase.Save, Control(antagonist), BeatIntensity.High, BeatDuration.Brief,
+                    "The partner breaks the count. In a tag match nobody is ever quite alone."));
 
             // ── Finish ───────────────────────────────────────────────────────
             //

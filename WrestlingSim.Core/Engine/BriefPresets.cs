@@ -27,9 +27,17 @@ namespace WrestlingSim.Engine
     }
 
     /// <summary>A named starting point for a brief, and what it is for.</summary>
+    /// <param name="MinimumSides">How many corners the shape needs. Three for a three-way.</param>
+    /// <param name="MinimumPerSide">
+    /// How many bodies a side needs. Two for a tag preset, three for a trios one. Separate
+    /// from <paramref name="MinimumSides"/> because they are different questions — a trios
+    /// match is two sides of three, and gating it on side count would offer it to a
+    /// three-way instead.
+    /// </param>
     public readonly record struct BriefPreset(
         string Name, string Description, MatchBrief Brief,
-        int MinimumSides = 2, AllianceHint Alliance = AllianceHint.None);
+        int MinimumSides = 2, AllianceHint Alliance = AllianceHint.None,
+        int MinimumPerSide = 1);
 
     /// <summary>
     /// The old structure library, as briefs.
@@ -107,12 +115,40 @@ namespace WrestlingSim.Engine
 
             new("Giant Killer",
                 "Somebody is giving away a great deal of size, and the match is about whether they survive it.",
-                new MatchBrief { Story = MatchStory.DavidAndGoliath, Length = MatchScale.Workhorse, Finish = FinishKind.Clean })
+                new MatchBrief { Story = MatchStory.DavidAndGoliath, Length = MatchScale.Workhorse, Finish = FinishKind.Clean }),
+
+            // ── Tag and trios ────────────────────────────────────────────────
+            //
+            // Two of these carry the same brief as a singles preset above, because a tag
+            // Face-in-Peril *is* a Face-in-Peril — the shape does not change with the body
+            // count, only the furniture does. What changes is the name a booker of that
+            // match wants to see, which is why `Matching` prefers the most specific preset
+            // the shape allows rather than the first one in this list.
+
+            new("Southern Tag",
+                "Cut the ring in half. A long isolation, a corner they keep not reaching, and a hot tag that has been paid for twice over.",
+                new MatchBrief { Story = MatchStory.FaceInPeril, Length = MatchScale.Workhorse, Finish = FinishKind.Clean },
+                MinimumPerSide: 2),
+
+            new("Tag Sprint",
+                "In and out fast, both teams even, nobody isolated long enough to build heat. An opener that gets the crowd moving.",
+                new MatchBrief { Story = MatchStory.EvenContest, Length = MatchScale.Opener, Finish = FinishKind.Clean },
+                MinimumPerSide: 2),
+
+            new("Six-Man War",
+                "Three fresh opponents rotating on one man, twice over, and everybody in before the end.",
+                new MatchBrief { Story = MatchStory.FaceInPeril, Length = MatchScale.BigMatch, Finish = FinishKind.Dominant },
+                MinimumPerSide: 3),
+
+            new("Lucha Trios",
+                "Constant motion. Bodies change instead of the pace dropping, and nobody is kept from a corner long enough to be in peril.",
+                new MatchBrief { Story = MatchStory.Spectacle, Length = MatchScale.Workhorse, Finish = FinishKind.Clean },
+                MinimumPerSide: 3)
         ];
 
         /// <summary>The ones that make sense for a match of this shape.</summary>
-        public static IEnumerable<BriefPreset> For(int sideCount) =>
-            All.Where(p => sideCount >= p.MinimumSides);
+        public static IEnumerable<BriefPreset> For(int sideCount, int perSide = 1) =>
+            All.Where(p => sideCount >= p.MinimumSides && perSide >= p.MinimumPerSide);
 
         /// <summary>
         /// Which two sides a preset's alliance means, given who is booked to win.
@@ -139,10 +175,21 @@ namespace WrestlingSim.Engine
         /// all of them. Used to keep a preset chip lit while it still describes the booking
         /// and to let go of it the moment it does not.
         /// </summary>
-        public static string? Matching(MatchBrief brief) =>
-            All.FirstOrDefault(p => p.Brief.Story  == brief.Story
-                                 && p.Brief.Length == brief.Length
-                                 && p.Brief.Finish == brief.Finish).Name;
+        /// <remarks>
+        /// Most specific first. Several presets share a brief — a tag Face-in-Peril and a
+        /// singles one are the same booking — so the answer has to depend on the match as
+        /// well as on the brief, or a booker who taps "Southern Tag" watches the chip light
+        /// up over "Face-in-Peril" instead.
+        /// </remarks>
+        public static string? Matching(MatchBrief brief, int sideCount = 2, int perSide = 1) =>
+            For(sideCount, perSide)
+                .Where(p => p.Brief.Story  == brief.Story
+                         && p.Brief.Length == brief.Length
+                         && p.Brief.Finish == brief.Finish)
+                .OrderByDescending(p => p.MinimumPerSide)
+                .ThenByDescending(p => p.MinimumSides)
+                .Select(p => p.Name)
+                .FirstOrDefault();
 
         /// <summary>
         /// The one a booker most likely wants, given what the match already promises.
@@ -151,13 +198,24 @@ namespace WrestlingSim.Engine
         /// away from the player, and the whole point of deriving the expectation is to inform
         /// the booking rather than to make it.
         /// </summary>
-        public static string SuggestedFor(Expectation promised) => promised.Wants switch
-        {
-            MatchStory.Grudge              => "Grudge Brawl",
-            MatchStory.TechnicalExhibition => "Technical Showcase",
-            MatchStory.Spectacle           => "Spotfest",
-            MatchStory.DavidAndGoliath     => "Giant Killer",
-            _                              => "Face-in-Peril"
-        };
+        public static string SuggestedFor(Expectation promised, int perSide = 1) =>
+            (promised.Wants, perSide) switch
+            {
+                // The tag answers first, so a six-man that promises spectacle is pointed at
+                // the lucha preset rather than at a singles spotfest it cannot book.
+                (MatchStory.Spectacle,   >= 3) => "Lucha Trios",
+                (MatchStory.FaceInPeril, >= 3) => "Six-Man War",
+
+                (MatchStory.Grudge,              _) => "Grudge Brawl",
+                (MatchStory.TechnicalExhibition, _) => "Technical Showcase",
+                (MatchStory.Spectacle,           _) => "Spotfest",
+                (MatchStory.DavidAndGoliath,     _) => "Giant Killer",
+
+                // Southern Tag is the tag match's Face-in-Peril, so it is the fallback and
+                // not a story of its own. Written as both, the two arms answered for each
+                // other and neither could be shown to matter.
+                (_, >= 2) => "Southern Tag",
+                _         => "Face-in-Peril"
+            };
     }
 }
