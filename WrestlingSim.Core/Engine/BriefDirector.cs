@@ -195,6 +195,37 @@ namespace WrestlingSim.Engine
             _                      => []
         };
 
+        /// <summary>
+        /// Every beat type a story can produce, across every phase and every length.
+        ///
+        /// One definition of what belongs in a story, shared by the generator and by the
+        /// critique. The first version of the critique carried its own hand-written list of
+        /// what was out of place, and the two disagreed immediately: a grudge is given a rest
+        /// hold and a shine by the grammar, and the critique called both of them off-story.
+        /// A game that flags the beats it just wrote for you is contradicting itself.
+        ///
+        /// Finishes are always in, whatever the story. Which one to use is named by the brief
+        /// outright and checked separately, so counting it here would be marking the same
+        /// thing twice.
+        /// </summary>
+        public static IReadOnlySet<BeatType> TypesWithin(MatchStory story)
+        {
+            var types = new HashSet<BeatType>();
+
+            foreach (MatchScale scale in Enum.GetValues<MatchScale>())
+            {
+                var brief = new MatchBrief { Story = story, Length = scale };
+                foreach (MatchPhase phase in Enum.GetValues<MatchPhase>())
+                    foreach (var type in TypesFor(phase, brief))
+                        types.Add(type);
+            }
+
+            foreach (FinishKind finish in Enum.GetValues<FinishKind>())
+                types.Add(FinishType(finish));
+
+            return types;
+        }
+
         /// <summary>The finish the booker asked for, as the beat that produces it.</summary>
         public static BeatType FinishType(FinishKind finish) => finish switch
         {
