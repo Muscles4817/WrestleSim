@@ -29,6 +29,50 @@ namespace WrestlingSim.Tests
             ?? throw new InvalidOperationException(
                 $"'{ringName}' is not in Wrestlers.json. Roster: {string.Join(", ", Roster.Select(r => r.RingName))}");
 
+        /// <summary>
+        /// The nine beats the thresholds below were calibrated against — verbatim the
+        /// "Big Match Epic" structure as it stood before it was rebuilt — frozen here so
+        /// that editing the structure library cannot silently recalibrate them again.
+        ///
+        /// Copied rather than invented: a probe designed from scratch is a different
+        /// experiment, and the first attempt at one dropped the super-finisher and made the
+        /// Strength sweep fail for a reason that had nothing to do with Strength.
+        /// </summary>
+        private static List<MatchBeat> ProbeBeats() =>
+        [
+            Probe("Feeling-Out Process", BeatControl.Even),
+            Probe("Power Beatdown",      BeatControl.WrestlerB),
+            Probe("Aerial Assault",      BeatControl.WrestlerA),
+            Probe("Fighting Spirit",     BeatControl.WrestlerA),
+            Probe("Signature Cover",     BeatControl.WrestlerA),
+            Probe("Mind Games",          BeatControl.WrestlerA),
+            Probe("Shock Kickout",       BeatControl.WrestlerA),
+            Probe("Shock Kickout",       BeatControl.WrestlerB),
+            Probe("Dominant Statement",  BeatControl.WrestlerA)
+        ];
+
+        private static MatchBeat Probe(string template, BeatControl control) =>
+            BeatLibrary.Find(template)!.ToMatchBeat(control);
+
+        /// <summary>Mean over many seeds for a beat list this file owns.</summary>
+        private static (double stars, double tech, double story, double peak, double avg) Mean(
+            Wrestler a, Wrestler b, List<MatchBeat> beats, MatchType type = MatchType.Standard,
+            Feud? feud = null, int runs = 200)
+        {
+            double s = 0, t = 0, y = 0, p = 0, v = 0;
+            for (int i = 0; i < runs; i++)
+            {
+                var r = new MatchEngine(i * 7919 + beats.Count).Execute(new MatchPlan
+                {
+                    WrestlerA = a, WrestlerB = b, MatchType = type, Feud = feud,
+                    Beats = beats.Select(x => x.Clone()).ToList()
+                });
+                s += r.StarRating; t += r.TechnicalScore; y += r.StorytellingScore;
+                p += r.CrowdPeakEnergy; v += r.CrowdAverageEnergy;
+            }
+            return (s / runs, t / runs, y / runs, p / runs, v / runs);
+        }
+
         /// <summary>Mean result over many seeds, so a single lucky roll cannot carry a test.</summary>
         private static (double stars, double tech, double story, double peak, double avg) Mean(
             Wrestler a, Wrestler b, string structure, MatchType type = MatchType.Standard,
@@ -68,7 +112,7 @@ namespace WrestlingSim.Tests
             {
                 if (ReferenceEquals(a, b)) continue;
                 cells.Add(($"{a.RingName} vs {b.RingName}",
-                           Mean(a, b, "Big Match Epic", runs: 60).stars));
+                           Mean(a, b, "Big Match", runs: 60).stars));
             }
 
             double min = cells.Min(c => c.stars);
@@ -94,9 +138,9 @@ namespace WrestlingSim.Tests
             //
             // Averaged over BOTH slots and several structures deliberately: a single
             // structure in a single slot measures structural fit as much as the wrestler
-            // (Big Match Epic hands its Aerial Assault to slot A, which flatters a high
+            // (Big Match hands its Aerial Assault to slot A, which flatters a high
             // flyer). Averaging both out leaves the performer.
-            string[] structures = ["TV Formula", "Face-in-Peril", "Big Match Epic"];
+            string[] structures = ["TV Formula", "Face-in-Peril", "Big Match"];
 
             var byWrestler = Roster.ToDictionary(
                 w => w.RingName,
@@ -216,9 +260,9 @@ namespace WrestlingSim.Tests
             var veteran    = W("Randy Orton");
 
             double vetShort   = Mean(veteran,    W("Cody Rhodes"), "TV Formula",     runs: 250).stars;
-            double vetLong    = Mean(veteran,    W("Cody Rhodes"), "Big Match Epic", runs: 250).stars;
+            double vetLong    = Mean(veteran,    W("Cody Rhodes"), "Big Match", runs: 250).stars;
             double youngShort = Mean(youngHorse, W("Cody Rhodes"), "TV Formula",     runs: 250).stars;
-            double youngLong  = Mean(youngHorse, W("Cody Rhodes"), "Big Match Epic", runs: 250).stars;
+            double youngLong  = Mean(youngHorse, W("Cody Rhodes"), "Big Match", runs: 250).stars;
 
             output.WriteLine($"  Orton    short {vetShort:F3} -> long {vetLong:F3}  (gain {vetLong - vetShort:+0.000})");
             output.WriteLine($"  Breakker short {youngShort:F3} -> long {youngLong:F3}  (gain {youngLong - youngShort:+0.000})");
@@ -278,8 +322,8 @@ namespace WrestlingSim.Tests
         {
             // Becky: overness 95, charisma 4.7, appeal 0.95/0.96 — the most connected
             // person on the roster. Her matches should be the loudest, full stop.
-            var withBecky  = Mean(W("Becky Lynch"),    W("Charlotte Flair"), "Big Match Epic");
-            var withShayna = Mean(W("Shayna Baszler"), W("Charlotte Flair"), "Big Match Epic");
+            var withBecky  = Mean(W("Becky Lynch"),    W("Charlotte Flair"), "Big Match");
+            var withShayna = Mean(W("Shayna Baszler"), W("Charlotte Flair"), "Big Match");
 
             output.WriteLine($"  Becky  vs Charlotte: peak {withBecky.peak:F1}  avg {withBecky.avg:F1}  stars {withBecky.stars:F2}");
             output.WriteLine($"  Shayna vs Charlotte: peak {withShayna.peak:F1}  avg {withShayna.avg:F1}  stars {withShayna.stars:F2}");
@@ -295,8 +339,8 @@ namespace WrestlingSim.Tests
         {
             // The single clearest symptom of the old engine: crowd peak pinned at exactly
             // 100 in 93% of all matches, so 35% of the score was a constant.
-            var hot  = Mean(W("Becky Lynch"),    W("Rhea Ripley"), "Big Match Epic");
-            var cold = Mean(W("Shayna Baszler"), W("Liv Morgan"),  "Big Match Epic");
+            var hot  = Mean(W("Becky Lynch"),    W("Rhea Ripley"), "Big Match");
+            var cold = Mean(W("Shayna Baszler"), W("Liv Morgan"),  "Big Match");
 
             output.WriteLine($"  Becky/Rhea    peak {hot.peak:F1}");
             output.WriteLine($"  Shayna/Liv    peak {cold.peak:F1}");
@@ -346,9 +390,21 @@ namespace WrestlingSim.Tests
                 return w;
             }
 
-            // Big Match Epic is long enough to exercise fade, near-falls and high spots.
-            var low  = Mean(Build(20), Build(20), "Big Match Epic", runs: 150);
-            var high = Mean(Build(95), Build(95), "Big Match Epic", runs: 150);
+            // A fixed nine-beat probe rather than a library structure.
+            //
+            // This used to read `MatchStructureLibrary.Find("Big Match Epic")`, and when
+            // that structure was rebuilt to doc 18's shape — longer, with hope spots and a
+            // real finishing stretch — the sweep it measures fell from 0.056 to 0.033 and
+            // the test went red. The structure had not got worse and neither had the
+            // attribute: the engine's saturating normalisation means every extra beat
+            // dilutes what any single factor is worth, so the threshold was silently
+            // calibrated against a beat count rather than against the attribute.
+            //
+            // Owning the beat list fixes the calibration to the thing being claimed. It is
+            // the same lesson as everywhere else here — measure the mechanism, not
+            // something downstream of it that another edit can move.
+            var low  = Mean(Build(20), Build(20), ProbeBeats(), runs: 150);
+            var high = Mean(Build(95), Build(95), ProbeBeats(), runs: 150);
 
             output.WriteLine($"  {attribute}: 20 -> {low.stars:F3}   95 -> {high.stars:F3}   delta {high.stars - low.stars:+0.000;-0.000}");
 
@@ -363,7 +419,7 @@ namespace WrestlingSim.Tests
             // Old behaviour: charisma was read in exactly two beat handlers, so on TV
             // Formula — which contains neither — sweeping charisma 0 to 5 changed the
             // rating by exactly 0.00.
-            foreach (var structure in new[] { "TV Formula", "Face-in-Peril", "Technical Showcase", "Big Match Epic" })
+            foreach (var structure in new[] { "TV Formula", "Face-in-Peril", "Technical Showcase", "Big Match" })
             {
                 // Two distinct instances per pairing rather than the same object twice.
                 // A wrestler cannot be on both sides of a match, and the engine now says

@@ -121,6 +121,13 @@ namespace WrestlingSim.Engine
         private readonly int[] _isolations = new int[2];
         private readonly int[] _nearTags   = new int[2];
 
+        /// <summary>
+        /// Hope spots each side has been given while in trouble. The singles equivalent of
+        /// <see cref="_nearTags"/>, and it charges the comeback the same way a denied tag
+        /// charges the hot tag.
+        /// </summary>
+        private readonly int[] _hopeSpots  = new int[2];
+
         // How many isolation beats in a row this side has taken with no hope spot in
         // between. Deliberately separate from the charge above, because the two measure
         // different things: the charge is what was spent buying the payoff and resets on a
@@ -135,6 +142,19 @@ namespace WrestlingSim.Engine
 
         /// <summary>Tags this side has been denied since its last successful one.</summary>
         public int NearTagsDenied(bool sideA) => _nearTags[sideA ? 0 : 1];
+
+        /// <summary>How many hope spots this side has had while in trouble.</summary>
+        public int HopeSpotsGiven(bool sideA) => _hopeSpots[sideA ? 0 : 1];
+
+        /// <summary>Records a hope spot for the side that is in trouble and had it.</summary>
+        public void RecordHopeSpot(bool rallyingSideA) => _hopeSpots[rallyingSideA ? 0 : 1]++;
+
+        /// <summary>
+        /// Spent when the comeback lands, so a second heat section has to buy its own
+        /// payoff. Two heat/comeback cycles is doc 18 §3.1's 15–25 minute shape, and it
+        /// would be a cheat if the second comeback could bank the first one's hope spots.
+        /// </summary>
+        public void ClearHopeSpots(bool sideA) => _hopeSpots[sideA ? 0 : 1] = 0;
 
         /// <summary>Consecutive isolations this side has taken without a hope spot.</summary>
         public int IsolationRun(bool sideA) => _isolationRun[sideA ? 0 : 1];

@@ -169,6 +169,40 @@ namespace WrestlingSim.Engine
                 Tags             = ["Slow", "Emotional"]
             },
 
+            // ── Hope spots (doc 18 §2.3) ─────────────────────────────────────
+            //
+            // The stage the singles structures did not have. A comeback releases the
+            // tension; these wind it tighter, and the reference calls them essential
+            // because they are what stops a long heat losing the room.
+            //
+            // Booked for the wrestler *in trouble* — control is theirs, not the heel's.
+            // On a beat sheet that reads correctly: one row in the middle of the heat
+            // where the face is on top, which is what a hope spot looks like.
+
+            new BeatTemplate
+            {
+                Name             = "Hope Spot",
+                Description      = "A flurry from underneath that the heat cuts off again. The crowd rises, then sits back down.",
+                Category         = CatComeback,
+                Type             = BeatType.HopeSpot,
+                DefaultIntensity = BeatIntensity.Medium,
+                DefaultDuration  = BeatDuration.Brief,
+                BookerTip        = "Two is the sweet spot. A third teaches the crowd the flurries mean nothing, and each one flattens the deficit the comeback is paid out of.",
+                Tags             = ["Fast", "Emotional"]
+            },
+
+            new BeatTemplate
+            {
+                Name             = "Desperation Strike",
+                Description      = "One shot out of nowhere that drops the aggressor. Both of them down, and the count starts.",
+                Category         = CatComeback,
+                Type             = BeatType.HopeSpot,
+                DefaultIntensity = BeatIntensity.High,
+                DefaultDuration  = BeatDuration.Brief,
+                BookerTip        = "The loudest hope spot and the one that dents the momentum hardest — which is also what it costs.",
+                Tags             = ["Emotional", "Impact"]
+            },
+
             // ── Rest Holds ───────────────────────────────────────────────────
 
             new BeatTemplate
@@ -456,7 +490,7 @@ namespace WrestlingSim.Engine
             {
                 Name             = "Shine",
                 Description      = "The face side on top early — clean offence, and the opponents cannot get settled. Works in a singles match too.",
-                Category         = CatTag,
+                Category         = CatControl,
                 Type             = BeatType.Shine,
                 DefaultIntensity = BeatIntensity.Medium,
                 DefaultDuration  = BeatDuration.Medium,
@@ -467,7 +501,7 @@ namespace WrestlingSim.Engine
             {
                 Name             = "Cut-Off",
                 Description      = "The heels take over, usually off a distraction. The shine ends here and the heat begins.",
-                Category         = CatTag,
+                Category         = CatControl,
                 Type             = BeatType.Cutoff,
                 DefaultIntensity = BeatIntensity.Medium,
                 DefaultDuration  = BeatDuration.Short,

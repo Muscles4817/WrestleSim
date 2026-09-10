@@ -3254,3 +3254,137 @@ library under I Quit offers **27 of 27** picks enabled, where before it offered 
 - **The cage keeping anybody out.** There are no managers, seconds or stables, so the most
   famous reason a cage match exists has nobody to exclude. `SteelCage` bans the interference
   finish, which is the closest this codebase can currently get.
+
+
+## The stage the singles structures did not have
+
+Doc 18 §2.3 draws the face-in-peril structure as seven stages, says of the middle one that
+"the hope spots are **essential** — they keep the audience from giving up during the heat",
+and then says of the whole thing: *"this structure … is the reason 'face in peril' is in this
+repo's `MatchStructureLibrary`."*
+
+The structure named after it implemented four of the seven.
+
+```
+doc 18 §2.3   SHINE → CUT-OFF → HEAT → HOPE SPOTS → COMEBACK → FINISHING STRETCH → FINISH
+shipped       ·       ·         HEAT   ·            COMEBACK   ·                    FINISH
+```
+
+`Face-in-Peril` was `Hot Start → Power Beatdown → Methodical Grind → Hot Comeback → Clean
+Victory`. Five beats. No shine, no cut-off, **no hope spots — there was no `HopeSpot` beat
+type at all** — and no finishing stretch: the comeback ran straight into the pin with zero
+near falls, which is doc 18 §3.3's pyramid rule inverted. A detail that gives the game away:
+the structure called Face-in-Peril contained no `Face in Peril` beat, because that beat is
+`BeatType.Isolation` and `IsTagBeat` gates it to matches with a partner on the apron.
+
+The asymmetry is the tell. Southern Tag has thirteen beats, two peril/near-tag cycles, an
+everybody-in and a save; Six-Man War has fourteen. **The tag formula got the full treatment
+and the singles formula — which doc 18 calls the dominant structure in wrestling, seventy
+years old and working in every culture — had five beats.**
+
+### The beat
+
+`BeatType.HopeSpot`, and it is the mirror of `NearTag` rather than a small `Comeback`. A
+comeback releases the tension; a hope spot winds it tighter. Both read as
+`ReactionKind.Tension`, and they are opposite in the one place it can be measured: a hope
+spot is offence that *lands* before it is cut off, so the room goes up; a near tag is a reach
+that *fails*, so the room groans. If the pair ever agreed in sign, one of the two beats would
+be redundant.
+
+`ComebackCharge(hopeSpots)` mirrors `HotTagCharge`: 1.0 with none, saturating just above 1.4
+at two, because a third flurry that goes nowhere is the crowd learning that the flurries go
+nowhere. Spent when the comeback lands, so the second cycle of a two-cycle match buys its own
+payoff.
+
+**The cost needed no new rule.** A hope spot claws back real deficit, and the comeback's
+earned bonus is read off exactly that deficit — so past the saturation point every further
+flurry is spending the heat it was supposed to be relieving. A wrestler who keeps getting
+flurries was never really in peril. That falls out of two mechanisms that were already there,
+which is a better reason to believe it than a rule written to produce it.
+
+### The library, rebuilt
+
+| Structure | Before | After | Band (doc 18 §3.1) |
+|---|---|---|---|
+| TV Formula | 4 beats, 9 min, 0 near falls | 6 / 9 | 5–8, TV standard |
+| Face-in-Peril | 5 / 16 / 0 | 11 / 15 / 2 | 10–15, the workhorse |
+| Technical Showcase | 7 / 20 / 2 | 11 / 22 / 2 | 15–25, big match |
+| Feud Blowoff | 8 / 20 / 2 | 12 / 20 / 3 | 15–25 |
+| Big Match *(was "Big Match Epic")* | 9 / 16 / 3 | 13 / 25 / 2 | 15–25, two cycles |
+| **Epic** *(new)* | — | 17 / 34 / 3 | 25–40, false finishes |
+
+"Big Match Epic" was renamed because it was not one. Doc 18 §2.4 defines an epic as "25–40
+minutes, multiple false finishes"; it ran sixteen. Nothing in the library reached that band
+except the three multi-person structures, so a booker laying out the main event of the
+biggest show of the year had no template for it.
+
+**Spotfest and Grudge Brawl deliberately did not get the peril shape.** Doc 18 §2.4 calls a
+spotfest "sequential high spots, weakest psychology" and a brawl "little structure, escalating
+violence". Forcing seven stages onto those would make every match the same match, which is the
+opposite of the point. They got longer finishing stretches instead.
+
+`Shine` and `Cut-Off` were also recategorised out of `CatTag`. `BeatEnums.cs` already said in
+its own comment that they "describe the singles face-in-peril structure just as well" — but
+they were filed under Tag, so a booker building a singles match never saw them in the palette.
+Bookable and invisible is the same as absent.
+
+### What the rebuild broke, and what that revealed
+
+Two tests went red, and neither was widened.
+
+`FeudIntensity_PaysOffThroughTheMultiplier` read the live `Grudge Brawl`; when it grew from
+six beats to nine, the measured feud gap fell from **0.253 to 0.177** stars and the 0.20
+threshold failed. `PreviouslyUnusedAttributes_NowChangeTheResult` read the live `Big Match`;
+the Toughness sweep fell from **0.056 to 0.033**.
+
+Nothing about feuds or toughness had changed. `Saturate()` is documented as giving ever-
+smaller returns per beat, and the consequence nobody had written down is that **the longer a
+match is, the less any single factor moves its rating** — so both thresholds were silently
+calibrated against a beat count rather than against the claim they were making. A library
+edit moved them.
+
+The fix is the lesson this repo keeps arriving at: both tests now own their beat lists, copied
+verbatim from the structures as they stood, so they measure the mechanism instead of something
+downstream that another edit can move. Both reproduce their original numbers exactly (0.253
+and 0.056).
+
+The property itself is left standing and recorded below, because it is arguably backwards — a
+thirty-four-minute epic should be *more* revealing of conditioning and connection than an
+eight-minute television match, not less — and fixing it is a scoring recalibration rather than
+a structure change.
+
+### Verified
+
+Seven mutations, all killed: the hope spot draining the room instead of lifting it; the charge
+never saturating; the comeback ignoring it; the flurry costing no deficit; the charge never
+being spent; Face-in-Peril losing both hope spots; the Epic losing its second heat cycle.
+
+Two earlier attempts at the last two survived and were **bad mutations rather than weak
+tests** — one swapped a `Hope Spot` for a heat beat while leaving a `Desperation Strike` (also
+a `HopeSpot`) in place, and the other trimmed three minutes off a structure whose band is
+fifteen wide. Worth recording: a surviving mutation is a claim about the tests, and it has to
+be checked before it is believed.
+
+Browser-verified at 390×844. The Epic books from the structure list at seventeen beats, and
+its play-by-play reads *"A desperate elbow from Roman Reigns, and another! They are trying to
+build something here — and Seth Rollins ends it"* (crowd 64→68), *"Roman Reigns will not stay
+down — two big shots and the building is on its feet — and then Seth Rollins takes the legs
+out again"* (60→63), with both comebacks landing after their hope spots. No console errors.
+
+**770 tests passing.**
+
+### Still not built
+
+- **The saturation property above.** Per-factor effects shrink as matches lengthen. It is
+  recorded rather than fixed because the fix is a recalibration of `TechScale`, `StoryScale`
+  and the crowd normalisation, which would move every rating in the game.
+- **The finishing stretch is only a count of near falls.** Nothing distinguishes a finisher
+  kickout from a roll-up near fall, and doc 18 §5.3's "protected finisher" is not modelled at
+  all — so an epic's four false finishes are four of the same thing with repetition decay
+  applied.
+- **The limb chain, still.** Doc 18 §2.2 is five links — attack → sell → limits offence →
+  finisher targets it → match ends because of it — and in code "limb story" exists only in
+  `BeatLibrary` descriptions and one booker tip. `Technical Showcase` has the beats named for
+  it and nothing joins them up.
+- **Hope spots in tag matches.** `NearTag` does the job there, which is right, but a tag match
+  cannot book a hope spot that is not a reach for the corner.

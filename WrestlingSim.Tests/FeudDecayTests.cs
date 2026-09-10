@@ -628,7 +628,7 @@ namespace WrestlingSim.Tests
             WrestlerB = TestRoster.Make("Heel", overness: 78, charisma: 4.0, skill: 3.8),
             MatchType = MatchType.Standard,
             Feud      = feud,
-            Beats     = MatchStructureLibrary.Find("Big Match Epic")!
+            Beats     = MatchStructureLibrary.Find("Big Match")!
                             .Beats.Select(b => b.Clone()).ToList()
         };
 
