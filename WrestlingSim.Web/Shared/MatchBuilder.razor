@@ -1889,9 +1889,9 @@
     // visual cue that the name had been in use.
 
     /// <summary>
-    /// Changing the shape of the match. Clears the structure and beats, because a preset
-    /// written for one side size does not validate against another — leaving a stale one
-    /// selected would hand the player a plan that cannot be booked.
+    /// Changing the shape of the match. Clears the written sheet, because a sheet written
+    /// for one side size does not validate against another — leaving a stale one would hand
+    /// the player a plan the validator rejects with no way back to a good one.
     /// </summary>
     private void SetShape(MatchShape shape)
     {
@@ -1901,13 +1901,18 @@
         for (int i = 0; i < sideSizes.Length; i++) sideSizes[i] = i == 1 ? shape.SizeB : shape.Size;
 
         // Everything downstream is about the people who were in it. Changing the shape
-        // changes who they are, so the lineup, the teams and the beat sheet all reset —
-        // leaving a structure booked for a tag match on a triple threat would be a plan the
-        // validator rejects with no way back to a good one.
+        // changes who they are, so the lineup, the teams and the beat sheet all reset.
+        //
+        // The brief keeps its story, length and finish — those are about the match you want
+        // rather than about who is in it — but the cast-dependent half goes, because "side C
+        // comes out elevated" is meaningless once there is no side C.
         foreach (var side in sides) side.Clear();
         formTeamA = formTeamB = false;
         structureName = "";
         beats = new List<MatchBeat>();
+        written = null;
+        brief.WinningSide = 0;
+        brief.Bookings.Clear();
     }
 
     /// <summary>
