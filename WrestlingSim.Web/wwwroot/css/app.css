@@ -185,10 +185,17 @@ a { color: var(--gold); }
 .main {
   flex: 1;
   width: 100%; max-width: 1120px; margin: 0 auto;
+  /* --main-max is the one place the page width is decided, so a wide screen raises it
+     rather than each screen inventing its own container. */
   padding: clamp(18px, 3.4vw, 34px) clamp(12px, 3vw, 28px) 64px;
   padding-left: calc(clamp(12px, 3vw, 28px) + var(--safe-l));
   padding-right: calc(clamp(12px, 3vw, 28px) + var(--safe-r));
 }
+
+/* The screens that are a list beside a list. Everything else keeps the reading width:
+   a form is harder at 1500px than at 1100, because the eye has to cross the whole
+   monitor from a label to its field. */
+.main--wide { max-width: 1560px; }
 
 /* ── Mobile tab bar ──────────────────────────────────────────────────────── */
 /* Hidden on desktop, where the top nav does the job. On a phone the top of the
@@ -342,6 +349,159 @@ a { color: var(--gold); }
   letter-spacing: -.015em;
 }
 .screen__lede { color: var(--muted); max-width: 62ch; margin-top: 8px; }
+
+/* ── A show's head ───────────────────────────────────────────────────────────
+   The date was an eleven-pixel amber eyebrow above the show name, which is the
+   wrong way round for a game whose whole subject is a calendar: what a booker
+   needs to know first is *which night this is* and how long they have.
+
+   A tile rather than a line of text, because a date read as three stacked
+   fields is read at a glance and a date read as a sentence is read word by
+   word. It is the same reason a calendar looks like a calendar. */
+.showhead {
+  display: grid; gap: clamp(14px, 2vw, 24px);
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  margin-bottom: clamp(16px, 2.6vw, 26px);
+}
+.showhead__when {
+  display: grid; justify-items: center; align-content: center;
+  min-width: 92px; padding: 10px 14px;
+  border: 1px solid var(--line); border-radius: var(--r-lg);
+  background: linear-gradient(180deg, var(--panel-2) 0%, var(--panel) 100%);
+}
+.showhead__dow {
+  font-size: var(--t-xs); letter-spacing: var(--track-label);
+  text-transform: uppercase; color: var(--gold); font-weight: 800;
+}
+.showhead__day   { font-size: clamp(30px, 3.4vw, 42px); font-weight: 800; line-height: 1.05; }
+.showhead__month {
+  font-size: var(--t-xs); letter-spacing: var(--track-label);
+  text-transform: uppercase; color: var(--muted); font-weight: 700;
+}
+.showhead__body  { min-width: 0; }
+.showhead__tags  { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 6px; }
+.showhead__name {
+  font-size: clamp(26px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -.015em; line-height: 1.1;
+}
+.showhead__where { color: var(--muted); font-size: var(--t-sm); margin-top: 4px; }
+
+/* The two or three numbers that say where the night stands. On a wide screen they
+   sit beside the name; below that they wrap under it rather than squeezing it. */
+.showhead__stats { display: flex; gap: clamp(12px, 1.6vw, 22px); flex-wrap: wrap; margin-top: 10px; }
+.showstat { display: grid; gap: 2px; }
+.showstat__key {
+  font-size: var(--t-xs); letter-spacing: var(--track-label);
+  text-transform: uppercase; color: var(--faint); font-weight: 700;
+}
+.showstat__val { font-size: var(--t-lg); font-weight: 800; font-variant-numeric: tabular-nums; }
+
+@media (min-width: 1100px) {
+  .showhead { grid-template-columns: auto 1fr auto; }
+  .showhead__stats { margin-top: 0; justify-content: flex-end; }
+}
+
+@media (max-width: 560px) {
+  .showhead { gap: 12px; }
+  .showhead__when { min-width: 74px; padding: 8px 10px; }
+}
+
+/* ── Booking: the card beside everything else ────────────────────────────────
+   One column on a phone, two from 1100px. The running order is the work, so it
+   takes the space; the details, the warnings and the buttons are a rail. Before
+   this they were stacked, which on a desktop monitor meant scrolling past a
+   three-field form every time you wanted the thing you came to edit. */
+.booking { display: grid; gap: var(--gap); align-items: start; }
+
+@media (min-width: 1100px) {
+  .booking { grid-template-columns: minmax(0, 1fr) 340px; }
+  /* The rail follows you down a long card, because "Run the show" is the one
+     control you want reachable from anywhere on the page. */
+  .booking__rail { position: sticky; top: 16px; display: grid; gap: var(--gap); }
+}
+
+/* ── A card row's corners ────────────────────────────────────────────────────
+   A match draws the people in it as corners, so a slot nobody has cast still
+   shows its shape: "— vs —" is a match you have decided to have and not yet
+   decided about, which is exactly the state a booker works in. */
+.corners { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.corners__vs {
+  font-size: var(--t-xs); letter-spacing: var(--track-label);
+  text-transform: uppercase; color: var(--faint); font-weight: 800;
+}
+.corner {
+  min-height: 32px; padding: 4px 10px;
+  border: 1px dashed var(--line); border-radius: var(--r-sm);
+  background: none; color: var(--faint);
+  font: inherit; font-size: var(--t-sm); font-weight: 700; cursor: pointer;
+}
+.corner.is-filled {
+  border-style: solid; border-color: var(--line);
+  background: var(--panel-2); color: var(--ink);
+}
+.corner.is-focused {
+  border-color: var(--gold); color: var(--gold);
+  background: rgba(245, 185, 59, .08);
+}
+.corner:focus-visible { outline: none; box-shadow: var(--ring); }
+
+/* A row still being worked on. Quiet rather than alarming — an unfinished card is
+   the ordinary state now, not a mistake. */
+.card-row.is-draft { border-style: dashed; }
+.card-row { cursor: grab; }
+.card-row:active { cursor: grabbing; }
+
+/* ── Booking a match on the card ─────────────────────────────────────────────
+   Four choices, inline. The five-step builder still exists for laying out the
+   beats by hand; this is the same decision at a shallower depth, and it is the
+   depth most matches on most cards deserve. */
+.quickbook {
+  margin: -2px 0 6px; padding: 12px 14px;
+  border: 1px solid var(--line); border-top: 0;
+  border-radius: 0 0 var(--r) var(--r);
+  background: var(--panel-2);
+  display: grid; gap: 10px;
+}
+.quickbook__row { display: grid; gap: 6px; }
+.quickbook__key {
+  font-size: var(--t-xs); letter-spacing: var(--track-label);
+  text-transform: uppercase; color: var(--faint); font-weight: 700;
+}
+
+@media (min-width: 720px) {
+  .quickbook__row { grid-template-columns: 130px 1fr; align-items: center; gap: 12px; }
+}
+
+/* ── The roster rail ─────────────────────────────────────────────────────────
+   Every other roster list in the app is a modal you open, use once and close,
+   which is right for one pick and wrong for casting a whole show. This one
+   stays. It caps its height and scrolls on its own so the rail below it —
+   the details, and the button that runs the night — never leaves the screen. */
+.roster-rail__list {
+  margin-top: 8px; max-height: 46vh; overflow-y: auto;
+  display: grid; gap: 2px;
+  -webkit-overflow-scrolling: touch;
+}
+.railrow {
+  display: grid; grid-template-columns: 1fr auto; gap: 2px 8px;
+  align-items: center; text-align: left;
+  width: 100%; min-height: 44px; padding: 6px 8px;
+  border: 0; border-radius: var(--r-sm); background: none;
+  color: inherit; font: inherit; cursor: pointer;
+}
+.railrow:focus-visible { outline: none; box-shadow: var(--ring); }
+@media (hover: hover) and (pointer: fine) {
+  .railrow:hover { background: rgba(255, 255, 255, .04); }
+}
+.railrow__name { font-weight: 700; font-size: var(--t-sm);
+                 display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.railrow__why  { grid-column: 1; font-size: var(--t-xs); color: var(--muted); }
+.railrow__pop  { grid-column: 2; grid-row: 1 / span 2; font-weight: 800; }
+
+/* With no corner chosen a tap has nowhere to go, so the list says so by receding
+   rather than by refusing. */
+.railrow.is-idle { opacity: .72; }
 
 /* ── Panels ──────────────────────────────────────────────────────────────── */
 

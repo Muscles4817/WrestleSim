@@ -336,6 +336,14 @@ namespace WrestlingSim.Persistence
         public int StartingIndexB { get; set; }
 
         /// <summary>
+        /// How many each side is still waiting for, when the card is being planned. Null on
+        /// every finished match and on every save written before card-first planning, which
+        /// is what "as many as are in it" means — see <c>MatchSide.Intended</c>.
+        /// </summary>
+        public int? IntendedA { get; set; }
+        public int? IntendedB { get; set; }
+
+        /// <summary>
         /// v2 form: one wrestler per side. Still read, never written — a v2 card becomes
         /// two sides of one. Kept nullable so a v3 save can omit them entirely.
         /// </summary>

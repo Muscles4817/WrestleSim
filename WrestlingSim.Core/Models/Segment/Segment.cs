@@ -32,6 +32,12 @@ namespace WrestlingSim.Models.Segment
         public CardItemKind Kind => CardItemKind.Segment;
 
         /// <summary>
+        /// Somebody to be in it and something for them to do. A segment with a cast and no
+        /// actions is a person standing in the ring in silence.
+        /// </summary>
+        public bool IsComplete => Participants.Count > 0 && Actions.Count > 0;
+
+        /// <summary>
         /// A base runtime for the format plus a minute per beat of action.
         /// A one-line promo is quick; a contract signing that ends in a brawl is not.
         /// </summary>

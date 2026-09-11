@@ -31,7 +31,7 @@
         }
     </header>
 
-    <main class="main">
+    <main class="main @(Wide ? "main--wide" : "")">
         @if (!State.Loaded)
         {
             <div class="empty">
@@ -95,6 +95,20 @@
 </div>
 
 @code {
+    /// <summary>
+    /// Screens that earn the extra width.
+    ///
+    /// Not all of them, on purpose. A form is harder to read at 1500px than at 1100 — the eye
+    /// has to travel from a label on the left to a field on the right — so the cap stays where
+    /// it is for anything that is mostly prose or mostly inputs. What widens is the screens
+    /// that are a *list beside a list*: booking a card against the roster, a roster table, a
+    /// month of dates. Those were the ones cramming two columns of information into one.
+    /// </summary>
+    private static readonly HashSet<Screen> WideScreens =
+        [Screen.BookShow, Screen.Show, Screen.Roster, Screen.Calendar, Screen.Brands];
+
+    private bool Wide => WideScreens.Contains(State.Current);
+
     private static readonly (Screen Screen, string Label, string Glyph)[] CareerNav =
     [
         (Screen.Dashboard, "Home",     "◆"),

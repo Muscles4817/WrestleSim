@@ -83,6 +83,12 @@ namespace WrestlingSim.Models.Rumble
         /// </summary>
         public CardItemKind Kind => CardItemKind.Segment;
 
+        /// <summary>
+        /// A drawing has nothing to fill in. It is made complete by the builder that creates
+        /// it, because there is no half-made version of pulling numbers out of a drum.
+        /// </summary>
+        public bool IsComplete => true;
+
         public int DurationMinutes => Math.Clamp(3 + Cast.Count, 4, 12);
 
         public IReadOnlyList<Wrestler> Wrestlers =>

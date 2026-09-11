@@ -521,7 +521,9 @@ public class GameState
             return;
         }
 
-        if (show.Card.Count == 0) return;
+        // Not just "is there anything on it". A card can now hold a match nobody has cast,
+        // and running one would take a side with nobody on it to the bell.
+        if (!show.IsRunnable) return;
 
         // The brand context is what charges the night's crossovers to the split. A
         // company-wide date passes a null home brand, which is how the inter-brand
