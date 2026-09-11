@@ -92,64 +92,48 @@ else if (mode == Mode.BookLoop)
 else
 {
     @* ── Card sheet ──────────────────────────────────────────────────────── *@
-    <div class="screen__head">
-        <div class="screen__eyebrow">
-            @if (career.Brands.Active)
-            {
-                <span class="badge @(career.BrandOfShow(show) is null ? "badge--muted" : "badge--face")">
-                    @(career.BrandOfShow(show)?.Name ?? "Both brands")
-                </span>
-                <text>&#32;</text>
-            }
-            @show.TypeLabel · @show.Date.ToString("dddd d MMMM yyyy")
-            @if (career.DaysUntil(show) > 0)
-            {
-                <text> · in @career.DaysUntil(show) day@(career.DaysUntil(show) == 1 ? "" : "s")</text>
-            }
+    @* The date first and as a tile. The first thing a booker needs to know is which night
+       this is and how much of it is still empty, and both of those used to be an eleven-pixel
+       amber eyebrow above the show's name. *@
+    <div class="showhead">
+        <div class="showhead__when">
+            <div class="showhead__dow">@show.Date.ToString("ddd")</div>
+            <div class="showhead__day">@show.Date.Day</div>
+            <div class="showhead__month">@show.Date.ToString("MMM")</div>
         </div>
-        <h1 class="screen__title">@show.Name</h1>
-        <p class="screen__lede">
-            Position and pacing both count: the opener is weighted ×1.2, the main event ×1.5,
-            and two of the same kind back to back take a fatigue penalty.
-        </p>
-    </div>
 
-    <div class="panel">
-        <div class="panel__title">Details</div>
-        <div class="fields">
-            <div class="field">
-                <span class="field__label">Show name</span>
-                <input class="input" @bind="show.Name" @bind:after="Persist" maxlength="60" />
+        <div class="showhead__body">
+            <div class="showhead__tags">
+                <span class="badge @TypeBadge(show.Type)">@show.TypeLabel</span>
+                @if (career.Brands.Active)
+                {
+                    <span class="badge @(career.BrandOfShow(show) is null ? "badge--muted" : "badge--cyan")">
+                        @(career.BrandOfShow(show)?.Name ?? "Both brands")
+                    </span>
+                }
+                <span class="badge badge--muted">@Countdown(career, show)</span>
             </div>
-            <div class="field">
-                <span class="field__label">Venue</span>
-                <input class="input" @bind="show.Venue" @bind:after="Persist" maxlength="60"
-                       placeholder="Unknown Arena" />
+            <div class="showhead__name">@show.Name</div>
+            <div class="showhead__where">
+                @(string.IsNullOrWhiteSpace(show.Venue) ? "No venue set" : show.Venue)
+                · @show.Date.ToString("dddd d MMMM yyyy")
             </div>
-            <div class="field">
-                <span class="field__label">Runtime budget (minutes)</span>
-                <input class="input" type="number" min="20" max="480"
-                       @bind="show.RuntimeMinutes" @bind:after="Persist" />
-            </div>
+        </div>
 
-            @if (career.Brands.Active)
-            {
-                @* Per date rather than per series: moving one night to the other brand is a
-                   thing a promotion does, and it should not move the whole show with it. *@
-                <div class="field">
-                    <span class="field__label">Whose show this is</span>
-                    <select class="input" value="@(show.BrandId ?? "")"
-                            @onchange="e => SetBrand(show, e.Value?.ToString())">
-                        @foreach (var brand in career.Brands.Brands)
-                        {
-                            <option value="@brand.Id">@brand.Name</option>
-                        }
-                        <option value="">Both brands — nobody crosses over</option>
-                    </select>
-                </div>
-            }
+        <div class="showhead__stats">
+            <div class="showstat">
+                <div class="showstat__key">On the card</div>
+                <div class="showstat__val">@show.Card.Count<span class="muted"> / @career.Promotion.TypicalCardSizeFor(show.Type)</span></div>
+            </div>
         </div>
     </div>
+
+    @* Two columns from 1100px: the running order is the work and takes the space, and the
+       details, the warnings and the button that runs the night become a rail that follows you
+       down a long card. Stacked, a desktop booker scrolled past a three-field form every time
+       they wanted the thing they came to edit. *@
+    <div class="booking">
+    <div class="booking__main">
 
     <div class="panel">
         <div class="panel__title">
@@ -213,12 +197,77 @@ else
             </div>
         }
 
+
+        <div class="row mt">
+            <button class="btn" @onclick="() => mode = Mode.AddMatch">+ Add a match</button>
+            <button class="btn" @onclick="() => mode = Mode.AddSegment">+ Add a segment</button>
+            <button class="btn" @onclick="() => mode = Mode.AddRumble">+ Add a battle royal</button>
+            @* Offered only when there is something to draw for. A drawing has to precede the
+               match it draws for, so with nothing booked later the button would open onto an
+               empty state and a dead end. *@
+            @if (HasSomethingToDrawFor(career, show))
+            {
+                <button class="btn" @onclick="() => mode = Mode.AddDraw">+ Add a number drawing</button>
+            }
+            @* Only on an untelevised date, and only while nothing is booked match by match.
+               A card and a run of towns are alternatives, not a mode — whichever one has
+               something in it is the one that runs. *@
+            @if (show.Type == ShowType.HouseShow && show.Card.Count == 0)
+            {
+                <button class="btn" @onclick="() => mode = Mode.BookLoop">
+                    @(show.IsLoop ? "Edit the run" : "+ Book a run of towns")
+                </button>
+            }
+        </div>
+    </div>
+    </div>
+
+    <aside class="booking__rail">
+    <div class="panel">
+        <div class="panel__title">Details</div>
+        <div class="fields">
+            <div class="field">
+                <span class="field__label">Show name</span>
+                <input class="input" @bind="show.Name" @bind:after="Persist" maxlength="60" />
+            </div>
+            <div class="field">
+                <span class="field__label">Venue</span>
+                <input class="input" @bind="show.Venue" @bind:after="Persist" maxlength="60"
+                       placeholder="Unknown Arena" />
+            </div>
+            <div class="field">
+                <span class="field__label">Runtime budget (minutes)</span>
+                <input class="input" type="number" min="20" max="480"
+                       @bind="show.RuntimeMinutes" @bind:after="Persist" />
+            </div>
+
+            @if (career.Brands.Active)
+            {
+                @* Per date rather than per series: moving one night to the other brand is a
+                   thing a promotion does, and it should not move the whole show with it. *@
+                <div class="field">
+                    <span class="field__label">Whose show this is</span>
+                    <select class="input" value="@(show.BrandId ?? "")"
+                            @onchange="e => SetBrand(show, e.Value?.ToString())">
+                        @foreach (var brand in career.Brands.Brands)
+                        {
+                            <option value="@brand.Id">@brand.Name</option>
+                        }
+                        <option value="">Both brands — nobody crosses over</option>
+                    </select>
+                </div>
+            }
+        </div>
+
+@* The bar sits under the budget it reflects, so a booker who changes the number watches it
+   move. It used to be a panel of its own in the rail, printing the same two numbers the
+   header prints — and at this width those two copies are a thousand pixels apart, which
+   reads as two different facts rather than one. *@
         <div class="mt">
             <Meter Label="Runtime" Value="@show.BookedMinutes" Max="@show.RuntimeMinutes"
                    ValueText="@RuntimeText(show)"
                    Variant="@(show.IsOverrunning ? "heel" : "gold")" />
         </div>
-
         @if (show.IsOverrunning)
         {
             <div class="notice notice--warn mt">
@@ -226,6 +275,7 @@ else
                 Running it costs up to 35% of the overall score.
             </div>
         }
+    </div>
 
         @if (Crossovers(career, show) is { Count: > 0 } crossing)
         {
@@ -256,41 +306,22 @@ else
         </div>
     }
 
-        <div class="row mt">
-            <button class="btn" @onclick="() => mode = Mode.AddMatch">+ Add a match</button>
-            <button class="btn" @onclick="() => mode = Mode.AddSegment">+ Add a segment</button>
-            <button class="btn" @onclick="() => mode = Mode.AddRumble">+ Add a battle royal</button>
-            @* Offered only when there is something to draw for. A drawing has to precede the
-               match it draws for, so with nothing booked later the button would open onto an
-               empty state and a dead end. *@
-            @if (HasSomethingToDrawFor(career, show))
-            {
-                <button class="btn" @onclick="() => mode = Mode.AddDraw">+ Add a number drawing</button>
-            }
-            @* Only on an untelevised date, and only while nothing is booked match by match.
-               A card and a run of towns are alternatives, not a mode — whichever one has
-               something in it is the one that runs. *@
-            @if (show.Type == ShowType.HouseShow && show.Card.Count == 0)
-            {
-                <button class="btn" @onclick="() => mode = Mode.BookLoop">
-                    @(show.IsLoop ? "Edit the run" : "+ Book a run of towns")
-                </button>
-            }
-            <span class="spacer"></span>
-            <button class="btn btn--primary"
+        <div class="panel">
+            <button class="btn btn--primary btn--block"
                     disabled="@(!show.IsBooked || HurtOnCard(show).Count > 0)"
                     @onclick="() => Run(show)">
                 @(show.IsLoop ? "Run the towns ★" : "Run the show ★")
             </button>
-        </div>
 
-        @if (show.Card.Count > 0 && career.DaysUntil(show) > 0)
-        {
-            <div class="notice notice--info mt">
-                This show is @career.DaysUntil(show) day@(career.DaysUntil(show) == 1 ? "" : "s") away.
-                Running it now advances the clock to @show.Date.ToString("d MMM").
-            </div>
-        }
+            @if (show.Card.Count > 0 && career.DaysUntil(show) > 0)
+            {
+                <div class="notice notice--info mt">
+                    This show is @career.DaysUntil(show) day@(career.DaysUntil(show) == 1 ? "" : "s") away.
+                    Running it now advances the clock to @show.Date.ToString("d MMM").
+                </div>
+            }
+        </div>
+    </aside>
     </div>
 
     <div class="wizard-bar">
@@ -301,6 +332,31 @@ else
 }
 
 @code {
+    /// <summary>
+    /// What kind of night this is, in colour. A premium event is the one the year is built
+    /// around, television is the week, and a house show is the one nobody is filming — three
+    /// different jobs that used to be the same grey word.
+    /// </summary>
+    private static string TypeBadge(ShowType type) => type switch
+    {
+        ShowType.PremiumEvent => "badge--gold",
+        ShowType.Television   => "badge--face",
+        _                      => "badge--muted"
+    };
+
+    /// <summary>How far off it is, in the words a booker would use.</summary>
+    private static string Countdown(Career career, ScheduledShow show)
+    {
+        int days = career.DaysUntil(show);
+        return days switch
+        {
+            <= 0 => "Tonight",
+            1    => "Tomorrow",
+            < 7  => $"In {days} days",
+            _    => $"In {days / 7} week{(days / 7 == 1 ? "" : "s")}"
+        };
+    }
+
     private enum Mode { Card, AddMatch, AddSegment, AddRumble, AddDraw, BookLoop }
 
     private Mode mode = Mode.Card;
