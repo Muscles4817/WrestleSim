@@ -82,6 +82,24 @@ namespace WrestlingSim.Models
         public double Sharpness { get; set; } = 100;
 
         /// <summary>
+        /// Out working the towns until this date, or null for somebody who is not on the road.
+        ///
+        /// A standing instruction rather than a booking. A promotion does not decide week
+        /// who tours; it puts people out for a stretch and brings them back, and the loop
+        /// builder reads this so a booker who has said "these eight are touring this month"
+        /// is not asked again every Saturday.
+        ///
+        /// It does not book anybody by itself. The run of towns is still confirmed on the
+        /// date, and taking somebody off that run does not bring them home — one is what you
+        /// intend and the other is what happened, and a game that conflated them would make
+        /// dropping somebody from one night cancel the tour.
+        /// </summary>
+        public DateOnly? TouringUntil { get; set; }
+
+        /// <summary>Whether they are out on the road on a given date.</summary>
+        public bool IsTouring(DateOnly on) => TouringUntil is { } until && on <= until;
+
+        /// <summary>
         /// What is currently keeping them out, or null if they are fit.
         ///
         /// Stays set after it clears rather than being nulled, so the roster sheet can say

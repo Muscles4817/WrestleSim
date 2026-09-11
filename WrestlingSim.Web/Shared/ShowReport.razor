@@ -26,10 +26,13 @@
 *@
 @using WrestlingSim.Models.Rumble
 
-@if (Result.Loop is { } loop)
+@* A date can be a card, a run of towns, or both — they are different people doing different
+   things on the same night. So the road is a section of the report rather than a different
+   report, and the card half above it simply is not drawn when there was no card. *@
+@if (Result.Loop is { } loop && Result.Items.Count == 0)
 {
-    @* A run of towns has no rating, because nobody was watching. What it has is condition,
-       so the report is the two meters and who came home hurt. *@
+    @* A run of towns and nothing else. No rating, because nobody was watching; what it has
+       is condition, so the hero is the shape of the run. *@
     <div class="score-hero">
         <div>
             <div class="score-hero__label">Towns</div>
@@ -58,42 +61,7 @@
         </div>
     }
 
-    <div class="panel">
-        <div class="panel__title">
-            The run
-            <span class="spacer"></span>
-            <span class="small muted">sharper · more tired</span>
-        </div>
-        @foreach (var worker in loop.Workers.OrderByDescending(w => w.SharpnessGained))
-        {
-            <div class="editor-row @(worker.HurtOnNight is null ? "" : "is-flagged")">
-                <div class="editor-row__n">@worker.NightsWorked</div>
-                <div>
-                    <div class="editor-row__name">@worker.Wrestler.RingName</div>
-                    <div class="editor-row__sub">
-                        @if (worker.HurtOnNight is { } night)
-                        {
-                            <text>Went home after town @night.</text>
-                        }
-                        else
-                        {
-                            <text>Worked all @worker.NightsWorked.</text>
-                        }
-                        @RingCondition.WarningFor(worker.Wrestler)
-                    </div>
-                </div>
-                <div class="editor-row__tools">
-                    <span class="tabnum grade--great">+@worker.SharpnessGained.ToString("F1")</span>
-                    <span class="tabnum grade--poor">+@worker.FatigueAdded.ToString("F1")</span>
-                </div>
-            </div>
-        }
-    </div>
-
-    <div class="notice notice--advice mt">
-        Nothing on a house show reaches the television audience, so nobody got more over and
-        no story moved. They are only fitter, or more tired, than they were.
-    </div>
+    @RoadRun(loop)
 }
 else
 {
@@ -340,6 +308,59 @@ else
     </div>
 }
 
+}
+
+@* Drawn at the foot of the card when the same date also sent people out. *@
+@if (Result.Loop is { } alsoOnTheRoad && Result.Items.Count > 0)
+{
+    @RoadRun(alsoOnTheRoad)
+}
+
+
+@* The run of towns, wherever it is drawn — on its own, or under a card that shared the
+   date with it. *@
+@code {
+    private RenderFragment RoadRun(LoopResult loop) =>
+        @<div>
+    <div class="panel">
+            <div class="panel__title">
+                The run
+                <span class="spacer"></span>
+                <span class="small muted">sharper · more tired</span>
+            </div>
+            @foreach (var worker in loop.Workers.OrderByDescending(w => w.SharpnessGained))
+            {
+                <div class="editor-row @(worker.HurtOnNight is null ? "" : "is-flagged")">
+                    <div class="editor-row__n">@worker.NightsWorked</div>
+                    <div>
+                        <div class="editor-row__name">@worker.Wrestler.RingName</div>
+                        <div class="editor-row__sub">
+                            @if (worker.HurtOnNight is { } night)
+                            {
+                                <text>Went home after town @night.</text>
+                            }
+                            else
+                            {
+                                <text>Worked all @worker.NightsWorked.</text>
+                            }
+                            @RingCondition.WarningFor(worker.Wrestler)
+                        </div>
+                    </div>
+                    <div class="editor-row__tools">
+                        <span class="tabnum grade--great">+@worker.SharpnessGained.ToString("F1")</span>
+                        <span class="tabnum grade--poor">+@worker.FatigueAdded.ToString("F1")</span>
+                    </div>
+                </div>
+            }
+        </div>
+    
+    
+            <div class="notice notice--advice mt">
+                Nothing on a house show reaches the television audience, so nobody on the road
+                got more over and no story moved. They are only fitter, or more tired, than
+                they were.
+            </div>
+        </div>;
 }
 
 @code {

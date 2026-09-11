@@ -87,12 +87,35 @@ namespace WrestlingSim.Tests
             Assert.Equal(BeatIntensity.High, back.Loop.Pace);
             Assert.Equal(16, back.Loop.MinutesPerNight);
             Assert.Equal(2, back.Loop.Cast.Count);
-            Assert.True(back.IsLoop);
+            Assert.True(back.HasRoadRun);
 
             // The cast has to be the roster's own instances, or running the loop sharpens
             // copies and the career never sees it.
             foreach (var w in back.Loop.Cast)
                 Assert.Same(loaded.Roster.Single(r => r.Id == w.Id), w);
+        }
+
+        /// <summary>
+        /// A touring assignment is a stretch of weeks, so it has to survive the saves that
+        /// happen inside that stretch — otherwise the instruction lasts until the player
+        /// closes the tab.
+        /// </summary>
+        [Fact]
+        public void RoundTripKeepsWhoIsOnTheRoad()
+        {
+            var roster = Roster();
+            var career = NewCareer(roster);
+
+            roster[0].TouringUntil = career.CurrentDate.AddDays(28);
+
+            var loaded = RoundTrip(career);
+
+            var touring = loaded.Roster.Single(w => w.Id == roster[0].Id);
+            var home    = loaded.Roster.Single(w => w.Id == roster[1].Id);
+
+            Assert.Equal(career.CurrentDate.AddDays(28), touring.TouringUntil);
+            Assert.True(touring.IsTouring(career.CurrentDate.AddDays(14)));
+            Assert.Null(home.TouringUntil);
         }
 
         [Fact]

@@ -502,28 +502,11 @@ public class GameState
     {
         if (Career == null || show.HasRun) return;
 
-        // A run of towns, rather than a card. No rating, because nobody was watching — see
-        // LoopSimulator. It still moves the clock and still saves, because the week happened.
-        if (show.IsLoop)
-        {
-            var loop = new LoopSimulator(tier: Career.Promotion.Tier).Run(show.Loop!, show.Date);
-            show.Result = new ShowResult
-            {
-                Loop          = loop,
-                BudgetMinutes = show.RuntimeMinutes,
-                Injuries      = loop.Injuries
-            };
-
-            if (Career.CurrentDate < show.Date) Career.CurrentDate = show.Date;
-            ActiveShow = show;
-            await SaveAsync();
-            Notify();
-            return;
-        }
-
-        // Not just "is there anything on it". A card can now hold a match nobody has cast,
-        // and running one would take a side with nobody on it to the bell.
+        // Not just "is there anything on it". A card can hold a match nobody has cast, and
+        // running one would take a side with nobody on it to the bell.
         if (!show.IsRunnable) return;
+
+
 
         // The brand context is what charges the night's crossovers to the split. A
         // company-wide date passes a null home brand, which is how the inter-brand
@@ -532,10 +515,42 @@ public class GameState
             ? new BrandContext(Career.Brands, Career.BrandOfShow(show))
             : null;
 
-        var result = new ShowSimulator(Career.FeudBook, titles: Career.Titles, brands: brands,
-                                       stipulations: Career.Stipulations,
-                                       tier: Career.Promotion.Tier)
-            .Simulate(show.ToShow());
+        // The card, when there is one. A date can be a run of towns and nothing else, which is
+        // the ordinary untelevised week.
+        var result = show.Card.Count > 0
+            ? new ShowSimulator(Career.FeudBook, titles: Career.Titles, brands: brands,
+                                stipulations: Career.Stipulations,
+                                tier: Career.Promotion.Tier)
+                .Simulate(show.ToShow())
+            : new ShowResult { BudgetMinutes = show.RuntimeMinutes };
+
+        // And the road, when anybody is on it. Both, on the same date, because they are
+        // different people doing different things: the card is the night you booked and the
+        // run is the rest of the roster out in the towns.
+        //
+        // Anybody on the card stays home from the towns. Nobody is in two places, and the
+        // card is the half the booker built by hand — so it wins for that wrestler rather
+        // than for the whole run. Warning and running it anyway billed the same body twice,
+        // which is what the first version did.
+        if (show.Loop is { IsBookable: true } loop)
+        {
+            var onTheCard = show.Card.SelectMany(i => i.Wrestlers).ToHashSet();
+            var travelling = new HouseShowLoop
+            {
+                Cast            = loop.Cast.Where(w => !onTheCard.Contains(w)).ToList(),
+                Towns           = loop.Towns,
+                Pace            = loop.Pace,
+                MinutesPerNight = loop.MinutesPerNight
+            };
+
+            if (travelling.IsBookable)
+            {
+                var road = new LoopSimulator(tier: Career.Promotion.Tier).Run(travelling, show.Date);
+                result.Loop = road;
+                result.Injuries.AddRange(road.Injuries);
+            }
+        }
+
         show.Result = result;
 
         if (Career.CurrentDate < show.Date) Career.CurrentDate = show.Date;

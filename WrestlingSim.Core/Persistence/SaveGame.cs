@@ -187,6 +187,9 @@ namespace WrestlingSim.Persistence
         /// <summary>Last show they worked, ISO yyyy-MM-dd. Null if they have not yet.</summary>
         public string? LastAppearance { get; set; }
 
+        /// <summary>Out on the road until this date, or absent for somebody at home.</summary>
+        public string? TouringUntil { get; set; }
+
         /// <summary>
         /// The two ring-condition meters. Absent from saves written before they existed,
         /// which read back as a fresh, sharp roster — the state a new career starts in, so
