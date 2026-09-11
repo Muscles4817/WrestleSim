@@ -502,6 +502,7 @@ a { color: var(--gold); }
 .railrow__name { font-weight: 700; font-size: var(--t-sm);
                  display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .railrow__why  { grid-column: 1; font-size: var(--t-xs); color: var(--muted); }
+.railrow__cond { grid-column: 1; font-size: var(--t-xs); color: var(--heel); }
 .railrow__pop  { grid-column: 2; grid-row: 1 / span 2; font-weight: 800; }
 
 /* With no corner chosen a tap has nowhere to go, so the list says so by receding

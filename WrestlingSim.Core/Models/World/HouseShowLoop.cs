@@ -50,5 +50,20 @@ namespace WrestlingSim.Models.World
 
         /// <summary>Total nights of work this run asks of one wrestler.</summary>
         public int NightsEach => Math.Max(0, Towns);
+
+        /// <summary>
+        /// Nights this wrestler actually works, given who was on television the same night.
+        ///
+        /// **A televised match costs one town, not the whole run.** The first version of the
+        /// mixed night took anybody on the card out of the travelling cast entirely, and that
+        /// is not how a week works: somebody wrestles television on the Monday and is in a
+        /// high school gym on the Friday. Dropping them from the run made television and the
+        /// road mutually exclusive, which breaks the one route back to match fitness the
+        /// sharpness meter actually describes — protected television plus live local reps.
+        /// One night off the run is the real cost, because that is the night they were
+        /// somewhere else.
+        /// </summary>
+        public int NightsFor(Wrestler w, IReadOnlySet<Wrestler> onTelevision) =>
+            Math.Max(0, NightsEach - (onTelevision.Contains(w) ? 1 : 0));
     }
 }

@@ -84,7 +84,7 @@ namespace WrestlingSim.Models
         /// <summary>
         /// Out working the towns until this date, or null for somebody who is not on the road.
         ///
-        /// A standing instruction rather than a booking. A promotion does not decide week
+        /// A standing instruction rather than a booking. A promotion does not decide week by week
         /// who tours; it puts people out for a stretch and brings them back, and the loop
         /// builder reads this so a booker who has said "these eight are touring this month"
         /// is not asked again every Saturday.

@@ -37,5 +37,12 @@ namespace WrestlingSim.Models
 
         /// <summary>How many nights they actually worked.</summary>
         public required int NightsWorked { get; init; }
+
+        /// <summary>
+        /// They were on the televised card the same night, so the run was a town shorter for
+        /// them. Reported rather than inferred from the night count, because a short count
+        /// also means somebody went home hurt and the two read completely differently.
+        /// </summary>
+        public bool OnTelevision { get; init; }
     }
 }

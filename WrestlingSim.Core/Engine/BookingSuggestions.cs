@@ -84,11 +84,27 @@ namespace WrestlingSim.Engine
         ///
         /// Injury first and unconditionally: being cooked is advice and being hurt is a
         /// fact, so a wrestler who is out does not also get told he needs a rest.
+        ///
+        /// Being out on the road comes next, and for the same reason — it is where they are
+        /// rather than how they feel. The picker offered touring wrestlers with no trace of
+        /// it, so a booker could put somebody in a televised main event on a night their own
+        /// standing instruction had them in a gym two states away, and find out from the
+        /// report. It is still an offer and not a gate: a card beats the towns for that
+        /// wrestler, at the price of one town, which is an ordinary week rather than a
+        /// mistake. The row says so; it does not decide.
         /// </summary>
-        private static string? ConditionOf(Wrestler w, DateOnly? today) =>
-            today is { } date && w.Injury is { } injury && injury.KeepsOut(date)
-                ? $"unavailable — {injury.Reason(date)}"
-                : RingCondition.WarningFor(w);
+        private static string? ConditionOf(Wrestler w, DateOnly? today)
+        {
+            if (today is not { } date) return RingCondition.WarningFor(w);
+
+            if (w.Injury is { } injury && injury.KeepsOut(date))
+                return $"unavailable — {injury.Reason(date)}";
+
+            if (w.IsTouring(date))
+                return $"out on the road until {w.TouringUntil!.Value:d MMM}";
+
+            return RingCondition.WarningFor(w);
+        }
 
         /// <summary>
         /// Where a suggestion sorts. The band, except that <see cref="SuggestionBand.Plain"/>

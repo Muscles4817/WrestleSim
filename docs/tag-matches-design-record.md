@@ -4623,12 +4623,35 @@ report.
 `IsLoopOnly` survives for the screens that genuinely ask "is this night *only* a run of towns",
 which is one button's label and one empty state.
 
-**Nobody is in two places.** Somebody on the card and on the road for the same date stays home
-from the towns, and the screen says so. The card wins for that wrestler rather than for the
-whole run, and it wins *when the night is run* rather than when it is booked — so taking the
-match off puts them back on the road without the booker having to remember to. The first attempt
-warned and then billed the same body twice, which browser-verifying caught: Roman Reigns
-appeared in the card's main event and in the run's sharpness table on the same page.
+**A televised match costs one town, not the run.**
+
+*(Corrected. The paragraph that stood here said somebody on the card "stays home from the
+towns", and that was wrong — twice over, in opposite directions, and the second version is the
+one that shipped.*
+
+*The first attempt warned and then billed the same body twice, which browser-verifying caught:
+Roman Reigns appeared in the card's main event and in the run's sharpness table on the same
+page, collecting four nights of work out of one date. The fix took anybody on the card out of
+the travelling cast altogether — which is not a week. Somebody wrestles Monday television and
+is in a high school gym on the Friday. Dropping them from the run made television and the road
+**mutually exclusive**, and that closes the one route back to match fitness this whole system
+exists to describe: protected television plus live local reps, which is the model the user
+gave when the sharpness decay was recalibrated. A wrestler on television got no road reps that
+week at all.*
+
+*What the run costs them is the night they were somewhere else. `HouseShowLoop.NightsFor`
+gives anybody on the card `Towns - 1` nights, and the simulator walks that many rather than
+filtering the cast — so the meters, the fatigue curve and the injury roll all see the real
+number. On a one-town run that leaves nothing, and they are not billed at all rather than
+billed for zero towns, because a row reading "worked 0 towns" is the card reported a second
+time in different words. `LoopWorker.OnTelevision` carries the reason, since a short count
+otherwise reads identically to having gone home hurt.)*
+
+The rule still applies when the night is **run** rather than when it is booked, so taking the
+match off puts them back on the full run without the booker having to remember to. And the
+notice is advice rather than a warning: working television and then the towns is an ordinary
+week, so the screen says what it costs — "they work 2 of the 3 towns rather than all of them" —
+instead of sending the booker back to unpick the run.
 
 ### The loop builder edits the run instead of replacing it
 
@@ -4660,6 +4683,15 @@ times a browser found it and the tests could not.
   thing a booker would actually want telling them.
 - **The road cannot be a tag run**, so the work share that makes a tag a protected rep still
   never applies on the road.
-- **A touring wrestler is not flagged on the card.** Booking somebody who is out in the towns
-  is legal and correct — they come home for television — but the picker does not mention it.
+- ~~**A touring wrestler is not flagged on the card.**~~ *(Built. `BookingSuggestions` puts
+  `out on the road until 2 Feb` on the condition line, below being injured and above the ring
+  condition reading, because where they are is a fact about the week and being unable to work
+  is a fact about the match. It is a reading and not a gate — a card beats the towns at the
+  price of one town, which is an ordinary week.*
+
+  *It had to go in twice. The condition line was already rendered by the picker sheet, but the
+  card-first booking screen's roster rail ranks with `BookingSuggestions` and dropped it — so
+  the surface where booking actually happens on the desktop was the one that never said
+  somebody was hurt, cooked, or two states away. That is the third time in this session a
+  feature landed on the half of a two-surface screen nobody was looking at.)*
 

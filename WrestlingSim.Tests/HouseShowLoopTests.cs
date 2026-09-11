@@ -370,6 +370,78 @@ namespace WrestlingSim.Tests
             Assert.DoesNotContain(result.Workers, w => w.Wrestler == onTheCard);
         }
 
+        /// <summary>
+        /// **A televised match costs one town, not the whole run.**
+        ///
+        /// The first mixed night billed anybody on the card for the card *and* every town, so
+        /// one body worked four nights out of one date. The fix for that took them off the
+        /// run altogether, which is wrong in the other direction and worse: television and
+        /// the road become mutually exclusive, and the one route back to match fitness the
+        /// sharpness meter describes — protected television plus live local reps — stops
+        /// existing. Somebody wrestles Monday television and is in a gym on the Friday.
+        /// </summary>
+        [Fact]
+        public void ACardWrestlerWorksTheRunOneTownShort()
+        {
+            var alsoOnTv = Worker("Television", sharpness: 50);
+            var roadOnly = Worker("Road only",  sharpness: 50);
+
+            var loop = Run(3, alsoOnTv, roadOnly);
+            var result = new LoopSimulator(seed: 7).Run(loop, Day, new HashSet<Wrestler> { alsoOnTv });
+
+            var tv   = result.Workers.Single(w => w.Wrestler == alsoOnTv);
+            var road = result.Workers.Single(w => w.Wrestler == roadOnly);
+
+            output.WriteLine($"  television {tv.NightsWorked} of {loop.Towns} towns, " +
+                             $"+{tv.SharpnessGained:F1} sharp");
+            output.WriteLine($"  road only  {road.NightsWorked} of {loop.Towns} towns, " +
+                             $"+{road.SharpnessGained:F1} sharp");
+
+            Assert.Equal(2, tv.NightsWorked);
+            Assert.Equal(3, road.NightsWorked);
+
+            // The point of the whole thing: being on television does not cost them the reps.
+            Assert.True(tv.SharpnessGained > 0, "television plus the towns is still reps");
+            Assert.True(tv.OnTelevision);
+            Assert.False(road.OnTelevision);
+        }
+
+        /// <summary>
+        /// Unless there is nothing left of the run. One town, and they were on the card that
+        /// night, means they were not on the road at all — and a row reading "worked 0 towns"
+        /// is the card being reported a second time in different words.
+        /// </summary>
+        [Fact]
+        public void AOneTownRunLeavesNothingForSomebodyOnTheCard()
+        {
+            var alsoOnTv = Worker("Television", sharpness: 50);
+            double before = alsoOnTv.Sharpness;
+
+            var loop = Run(1, alsoOnTv, Worker("Road only"));
+            var result = new LoopSimulator(seed: 7).Run(loop, Day, new HashSet<Wrestler> { alsoOnTv });
+
+            Assert.DoesNotContain(result.Workers, w => w.Wrestler == alsoOnTv);
+            Assert.Equal(before, alsoOnTv.Sharpness, 3);
+            Assert.Single(result.Workers);
+        }
+
+        /// <summary>
+        /// The night count alone cannot explain itself. A short run means either "they were
+        /// on television" or "they went home hurt", and those read completely differently to
+        /// a booker — so the result says which rather than leaving the report to guess.
+        /// </summary>
+        [Fact]
+        public void AShortRunSaysWhetherItWasTelevisionOrAnInjury()
+        {
+            var alsoOnTv = Worker("Television");
+            var loop = Run(4, alsoOnTv, Worker("Road only"));
+            var result = new LoopSimulator(seed: 3).Run(loop, Day, new HashSet<Wrestler> { alsoOnTv });
+
+            var tv = result.Workers.Single(w => w.Wrestler == alsoOnTv);
+            Assert.True(tv.OnTelevision);
+            Assert.Null(tv.HurtOnNight);
+        }
+
         // ── Who is on the road ───────────────────────────────────────────────
 
         /// <summary>
