@@ -905,45 +905,15 @@ namespace WrestlingSim.Engine
             return false;
         }
 
-        private static readonly BodyPart[] Parts = Enum.GetValues<BodyPart>();
-
         /// <summary>
-        /// The weight table for one kind of body, built once.
+        /// Which injury this wrestler is most likely to pick up.
         ///
-        /// This is called for every wrestler on every beat of every match, which the first
-        /// version did with <c>Enum.GetValues</c> and three LINQ passes — reflection and
-        /// four allocations per wrestler per beat, and measurably slower across a card. The
-        /// table only depends on style and size, and there are thirty of those.
+        /// The weighted draw and its cache moved to <see cref="InjuryRisk.PickPart"/> when the
+        /// house show loop needed the same answer. A second copy of a weighted table is how
+        /// two parts of one engine end up disagreeing about what a powerhouse hurts.
         /// </summary>
-        private static readonly System.Collections.Concurrent.ConcurrentDictionary<
-            (WrestlingStyle Style, int Size), (double[] Weights, double Total)> BodyOdds = new();
-
-        private static (double[] Weights, double Total) OddsFor(WrestlingStyle style, int size) =>
-            BodyOdds.GetOrAdd((style, size), key =>
-            {
-                var weights = new double[Parts.Length];
-                double total = 0;
-                for (int i = 0; i < Parts.Length; i++)
-                {
-                    weights[i] = InjuryRisk.Likelihood(Parts[i], key.Style, key.Size);
-                    total += weights[i];
-                }
-                return (weights, total);
-            });
-
-        /// <summary>Which injury this wrestler is most likely to pick up, weighted per doc 15 §2.1.</summary>
-        private BodyPart PickBodyPart(Wrestler wrestler)
-        {
-            var (weights, total) = OddsFor(wrestler.Style, wrestler.Physical?.Size ?? 3);
-
-            double roll = _injuryRand.NextDouble() * total;
-            for (int i = 0; i < weights.Length; i++)
-            {
-                roll -= weights[i];
-                if (roll <= 0) return Parts[i];
-            }
-            return Parts[^1];
-        }
+        private BodyPart PickBodyPart(Wrestler wrestler) =>
+            InjuryRisk.PickPart(wrestler, _injuryRand);
 
         /// <summary>An injury the match produced, before the show layer writes it down.</summary>
         public readonly record struct InjuryRoll(Wrestler Wrestler, BodyPart Part, int WeeksOut);

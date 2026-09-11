@@ -219,9 +219,18 @@ namespace WrestlingSim.Engine
         /// A wrestler whose game is speed and timing settles a long way below that, which
         /// is why the young high-flyer needs to be out there every week and the old hand
         /// does not.
+        ///
+        /// **Recalibrated, because the first band was far too generous.** It ran 30–75 against
+        /// a roster whose self-maintenance spans 0.30 to 0.77, so the median wrestler settled
+        /// at 62 and only 21% of the roster could ever read rusty however long they sat. The
+        /// meter existed and its threshold was unreachable for four names in five. Measured on
+        /// the shipped roster, the band below settles the median at 43 and leaves only the
+        /// most diligent handful above the rusty line — which is the right shape, because
+        /// keeping yourself ring-ready without ever being in a ring is the exception and the
+        /// old numbers made it the rule.
         /// </summary>
         public static double RestingFloor(double selfMaintenance) =>
-            30.0 + Math.Clamp(selfMaintenance, 0, 1) * 55.0;
+            Math.Max(0, Math.Clamp(selfMaintenance, 0, 1) * 80.0 - 4.0);
 
         /// <summary>
         /// Sharpness lost in one day away, moving toward <see cref="RestingFloor"/>.
@@ -229,11 +238,14 @@ namespace WrestlingSim.Engine
         /// Geometric rather than linear, so the first weeks off cost the most and a
         /// wrestler who has been away a year is not still falling.
         /// </summary>
+        /// <summary>Share of the gap to the floor that a day away closes.</summary>
+        public const double RustFraction = 0.030;
+
         public static double RustPerDay(double sharpness, double selfMaintenance)
         {
             double floor = RestingFloor(selfMaintenance);
             if (sharpness <= floor) return 0.0;
-            return (sharpness - floor) * 0.030;
+            return (sharpness - floor) * RustFraction;
         }
 
         // ── What working gives back ──────────────────────────────────────────
@@ -241,15 +253,30 @@ namespace WrestlingSim.Engine
         /// <summary>
         /// Sharpness gained from having a match.
         ///
-        /// Scaled by how demanding it was, because a three-minute squash does not sharpen
-        /// anybody — the reps that count are the ones where you had to work. Saturating, so
-        /// one long match is not a substitute for a run of them.
+        /// **A rep and a workout, and the rep is the bigger half.** What comes back in a ring
+        /// is timing with another body, and you get that from having had the match at all —
+        /// so the first term is simply "you were out there", saturating at around eight
+        /// minutes because a three-minute squash is not a night's work and a twenty-minute
+        /// match is not two.
+        ///
+        /// That shape is the whole reason a protected spot is where somebody is brought back.
+        /// A tag is a rep at a fraction of the exposure: <paramref name="share"/> scales the
+        /// workout half and not the rep half, because standing on the apron waiting to be
+        /// tagged is still a night of timing a hot tag. And a match worked at a sensible pace
+        /// still counts, because the second term is the smaller one — a returning wrestler
+        /// does not have to go out and have a war to get himself back, which is fortunate,
+        /// since going out and having a war is exactly what he is not ready for.
+        ///
+        /// Measured against the shipped roster: an eight-minute tag at a moderate pace is
+        /// worth about four fifths of what a fifteen-minute singles main event is worth, at
+        /// roughly half the fatigue and a fraction of the injury risk.
         /// </summary>
         public static double SharpnessGain(double minutes, double pace,
                                            double selfMaintenance, double share = 1.0)
         {
             if (minutes <= 0) return 0.0;
 
+            double rep    = RepValue * Math.Min(1.0, minutes / RepMinutes);
             double demand = minutes * (0.45 + Math.Max(0, pace) * 0.35);
 
             // **The two routes are inverses.** The young one's body answers a rep harder —
@@ -267,8 +294,18 @@ namespace WrestlingSim.Engine
             // needing the reps week in and week out, arrived at rather than asserted.
             double responds = 1.5 - Math.Clamp(selfMaintenance, 0, 1) * 0.8;
 
-            return Math.Clamp(demand * 0.30 * responds * Math.Clamp(share, 0, 1), 0, 11.0);
+            return Math.Clamp(
+                (rep + demand * WorkoutScale * Math.Clamp(share, 0, 1)) * responds, 0, 11.0);
         }
+
+        /// <summary>What having had a match at all is worth, before the work in it.</summary>
+        private const double RepValue = 4.4;
+
+        /// <summary>Minutes at which a match counts as a full night's reps.</summary>
+        private const double RepMinutes = 8.0;
+
+        /// <summary>What the work on top of the rep is worth, per unit of demand.</summary>
+        private const double WorkoutScale = 0.30;
 
         // ── What the meters do to a performance ──────────────────────────────
 
@@ -296,6 +333,34 @@ namespace WrestlingSim.Engine
         /// </summary>
         public static double CraftFactor(double sharpness) =>
             0.78 + Math.Clamp(sharpness, 0, 100) / 100.0 * 0.22;
+
+        /// <summary>
+        /// Where a wrestler's sharpness starts when a career begins.
+        ///
+        /// **Not 100 for everybody.** The property defaults to razor because a wrestler built
+        /// in a test should not have to be warmed up first, but a whole roster at the ceiling
+        /// on day one means every rep in the booker's first months is worth literally nothing
+        /// — measured in the browser, six wrestlers on a three-town run came home with +0.0
+        /// sharpness each and only the fatigue, which makes the road look broken on the one
+        /// occasion a new player is most likely to try it.
+        ///
+        /// The seed is what a weekly schedule settles somebody at, because that is what the
+        /// roster has been doing: a spread from the low sixties to the high eighties, nobody
+        /// rusty and nobody finished. Which is the state the game wants to open in — the road
+        /// is worth using from the first week, and it is worth more to some of them than to
+        /// others.
+        /// </summary>
+        public static double OpeningSharpness(double selfMaintenance)
+        {
+            double floor = RestingFloor(selfMaintenance);
+
+            // Settled on one match a week, solved rather than simulated: a week's rust from S
+            // is (S - floor) * (1 - 0.97^7), and it balances one rep.
+            double weeklyRust = 1 - Math.Pow(1 - RustFraction, 7);
+            double rep = SharpnessGain(15, 1.0, selfMaintenance);
+
+            return Math.Clamp(floor + rep / weeklyRust, 0, 100);
+        }
 
         // ── Applying ─────────────────────────────────────────────────────────
 

@@ -4358,3 +4358,165 @@ there.
   true about the match and means nothing about a sandbox that ends when you close it. It is
   shown because the engine rolled it and hiding it would be the same lie the old screen told.
 
+
+## The wrestler nobody booked was the one nobody could forget
+
+`LastAppearance` is written in exactly one place: `ShowSimulator`, when somebody works a show.
+So it is null for every name on the roster on day one, and stays null forever for anybody the
+booker never uses. The absence decay read null as **absent zero days**.
+
+The result is the inverse of doc 17 §3.9. A wrestler you sign and never put on television is
+the one person in the game immune to being forgotten. Measured over six months at 70 overness:
+
+| | Day 30 | Day 180 |
+|---|---|---|
+| Booked once, then dropped | 69.53 | 61.92 |
+| Never booked at all | 70.00 | **70.00** |
+
+Absence is now measured from the last appearance **or from the career's start date**, whichever
+is later, so a signing nobody uses fades at exactly the rate of somebody who worked once and
+was dropped. The two differ only in whether the game happened to write a date down, which is
+bookkeeping rather than a career.
+
+## The rust meter had a threshold nobody could reach
+
+`RestingFloor` ran 30–75 against a roster whose self-maintenance spans 0.30 to 0.77. So the
+median wrestler settled at 62, the rusty warning fires at 55, and **only 21% of the roster
+could ever read rusty however long they sat**. Two years off screen left the top of the card at
+66.5 and climbing down no further.
+
+That is not what the meter is for. Keeping yourself ring-ready with no ring in it is the
+exception; the old band made it the rule. Measured on the shipped roster now:
+
+| | Upkeep | Settles at |
+|---|---|---|
+| Least diligent | 0.30 | 20 |
+| Median | 0.59 | 43 |
+| Most diligent | 0.77 | 57 |
+
+95% of the roster goes rusty sitting still, against 21% before. A rookie reads rusty three
+weeks after his last match; the median wrestler after seven; the single most diligent name on
+the roster never quite does, which is the point of having the stat.
+
+**All seventeen tests in `RingConditionTests` passed with the old band and passed with it
+halved.** Every one of them asked about the shape of the curve — a veteran holds more than a
+rookie, rust stops at the floor, a day off mends one meter and spends the other — and not one
+asked where the curve actually landed. The new test measures the shipped roster and is written
+the same way `MatchEngine.TypicalInvestment` is: a roster change moves it, and the answer is to
+re-measure rather than to widen the bound.
+
+### A rep and a workout, and the rep is the bigger half
+
+What comes back in a ring is timing with another body, and you get that from having had the
+match at all. So `SharpnessGain` is now a rep that saturates at about eight minutes, plus a
+smaller term for the work in it — and `share` scales only the second half, because standing on
+the apron waiting to be tagged is still a night of timing a hot tag.
+
+| One match, median upkeep | Sharpness | Fatigue |
+|---|---|---|
+| 15-min singles, full pace | +8.31 | 3.5 |
+| 15-min tag, full pace | +7.28 (88%) | 2.6 (73%) |
+| 15-min singles, sensible pace | +7.66 (92%) | — |
+| 3-min squash | +2.46 (30%) | — |
+
+That shape is why a rusty wrestler is brought back in a tag rather than thrown into a
+twenty-minute singles match: the reps are almost the same and nothing else about it is. A
+squash stays what it is — an appearance, not a night's work — so a run of them does not get
+anybody ready.
+
+And the maintenance claim, which is a different claim and easy to confuse with the reps one:
+
+| Matches a week | Diligent | Median |
+|---|---|---|
+| 0 | 57 | 43 |
+| 1 | 86 | 77 |
+| 2 | 92 | 89 |
+
+A diligent professional on weekly television stays sharp doing nothing else. Everybody else
+settles short of their best on the same schedule and needs more time in a ring to close it.
+
+### Still not built
+
+- **The live local dates are not in the game.** The engine now says a protected rep is most of
+  a rep and that most of the roster needs more than one a week, and the only way to get a rep
+  is a televised match on a card the player books beat by beat. The reps the model is asking
+  for have nowhere to come from yet.
+- **Fatigue is calibrated for a schedule the game does not run.** A fifteen-minute match costs
+  7.6 and a week off repays about 14, so on one show a week it returns to zero before the next
+  bell, every time. It takes five matches a week to reach the cooked threshold of 70, and a
+  career runs one show. The meter works; the calendar never feeds it. Whatever answers the
+  local dates above is the same thing that answers this.
+
+*(Both done — see "A run of towns" below. It was the same answer to both, as expected.)*
+
+## A run of towns
+
+Booked as a cast and a number of towns rather than as a card, because that is the decision.
+Nobody lays a house show out beat by beat, and a game that asked you to would be asking you to
+spend the evening on the part of the week that does not matter.
+
+**It answers both of the gaps above with one mechanic**, which is the main argument for it.
+The sharpness meter was asking for reps the calendar could not supply, and the fatigue meter
+was calibrated for a workload the calendar could not reach. Six hard nights takes somebody from
+35 fatigue to cooked; three easy ones is a top-up. The road is where both meters finally live.
+
+### What a loop does not do
+
+`ShowType.HouseShow` is already defined as the night the television audience was not at, and
+the engine takes that literally. **No overness, no momentum, no feud heat, no titles, and no
+rating at all** — `LoopSimulator` is the only engine in the game that does not produce a score,
+because there is nothing for one to mean.
+
+The sharpest consequence is that a loop **does not write `LastAppearance`**, so the absence
+clock keeps running on somebody working six towns a week. Being in a ring and being on
+television are different currencies, and the road only pays in the first one: you can tour
+yourself to peak fitness and still be forgotten. Without that rule the road would quietly
+become a second, easier way to get people over, and booking television would stop mattering.
+
+### Three things the browser found that the tests could not
+
+The engine was green and the feature was still wrong three times over, each time in a way only
+visible by playing it:
+
+- **A promotion with television got no house show dates**, so the whole mechanic was
+  unreachable from a normal career unless the player thought to schedule one. The default slate
+  now carries a weekly road date alongside the weekly television one, because a promotion with
+  television still tours.
+- **Every wrestler on a new roster starts at 100 sharpness**, so the first six people sent out
+  on the road came home with **+0.0 sharpness each** and nothing but the fatigue — on the one
+  occasion a new player is most likely to try it. A career now opens the roster where a weekly
+  schedule would have settled them: 72 to 94, median 86. Nobody rusty, nobody finished.
+- **The forecast quoted a typical body** and promised +23 sharpness to six wrestlers who were
+  all at the ceiling. It reads the booked cast now and walks the nights, because a forecast
+  that cannot see the headroom is worse than no forecast.
+
+After all three, a three-town run of six reads +12.4 down to +2.6 — the spread is the point,
+and the people who gain least are the diligent ones who had least to gain.
+
+### The rate
+
+Doc 15 §1 puts 35–55% of a roster missing time in a year, and the match engine was calibrated
+against it. A loop is the other half of the year's workload, so it is sized against the same
+figure rather than guessed:
+
+| Pace | Per night | Across 156 nights |
+|---|---|---|
+| Going through it | 0.06% | 8% |
+| A working pace | 0.14% | 20% |
+| Full tilt | 0.34% | 42% |
+
+The dial is how many beats of risk a night carries, and nothing else in the tests reads it — it
+could have been set six times safer with everything green, which is why it has a test of its
+own.
+
+### Still not built
+
+- **The loop has no gate, no merchandise and no money**, which is what a house show is
+  *for* in a real promotion. It buys condition and costs condition, and that is all. The
+  business side of a touring schedule is a whole other system.
+- **Nobody can be told to stay home.** A wrestler not on the run simply is not on it, and there
+  is no way to say "rest this one" that reads differently from "forgot about this one".
+- **A loop cannot be a tag run.** Everybody on it works a singles match a night, so the work
+  share that makes a tag a protected rep never applies — which is a shame, because a tag loop
+  is precisely how a real promotion brings somebody back.
+

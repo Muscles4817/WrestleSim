@@ -44,6 +44,13 @@ namespace WrestlingSim.Models
         /// </summary>
         public BrandShowReport? Brand { get; set; }
 
+        /// <summary>
+        /// What the run of towns did, when this date was a loop rather than a card. Null on
+        /// every televised show, which is how the report knows which of the two it is looking
+        /// at without being told.
+        /// </summary>
+        public LoopResult? Loop { get; set; }
+
         /// <summary>Kept for compatibility with the old label-to-score view.</summary>
         public Dictionary<string, double> Breakdown =>
             Items.ToDictionary(i => i.Label, i => i.Score);

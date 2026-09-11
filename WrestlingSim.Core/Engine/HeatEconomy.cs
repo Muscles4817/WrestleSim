@@ -434,16 +434,29 @@ namespace WrestlingSim.Engine
         /// slips once someone has been off screen long enough for the audience to start
         /// forgetting (doc 17 §3.9).
         /// </summary>
-        public static void ApplyDailyDecay(Wrestler wrestler, DateOnly today)
+        /// <param name="since">
+        /// When the clock started for this wrestler — the career's start date, or the day
+        /// they were signed. Absence is measured from their last appearance **or from here
+        /// if they have never had one**.
+        ///
+        /// That fallback is the whole fix. `LastAppearance` is written only by
+        /// <c>ShowSimulator</c>, so it is null for every name on the roster on day one and
+        /// stays null forever for anybody the booker never uses — and the old reading took
+        /// null to mean "absent zero days". A wrestler who had never been on television was
+        /// therefore the one person in the game immune to being forgotten, which is the
+        /// exact inverse of doc 17 §3.9. Measured over six months: somebody booked once and
+        /// then dropped went 70.00 → 61.92, and somebody never booked at all stayed at
+        /// 70.00 to the decimal.
+        /// </param>
+        public static void ApplyDailyDecay(Wrestler wrestler, DateOnly today, DateOnly since)
         {
             wrestler.Momentum *= MomentumDailyRetention;
 
             // Stop it creeping around zero forever.
             if (Math.Abs(wrestler.Momentum) < 0.05) wrestler.Momentum = 0;
 
-            int absent = wrestler.LastAppearance is { } last
-                ? today.DayNumber - last.DayNumber
-                : 0;
+            var lastSeen = wrestler.LastAppearance ?? since;
+            int absent   = today.DayNumber - lastSeen.DayNumber;
 
             if (absent <= AbsenceGraceDays) return;
 

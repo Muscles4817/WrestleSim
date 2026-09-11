@@ -188,10 +188,177 @@ namespace WrestlingSim.Tests
             Assert.True(vet > rookie + 12,
                 $"the veteran should hold far more of it at home: {vet:F0} vs {rookie:F0}");
             Assert.True(vet < 90, "and still not be at his best without live matches");
-            Assert.True(rookie > 30, "and nobody decays to useless");
+
+            // Not "nobody decays to useless", which is what this used to claim. Keeping
+            // yourself ring-ready with no ring in it is the exception, and the band that
+            // made it the rule is the one this file failed to notice was wrong — see
+            // MostOfTheRosterGoesRustyIfTheySitStill. The floor is still a floor: rust
+            // stops there rather than running through it.
+            Assert.True(rookie > 0, "the floor is a floor");
+            Assert.True(rookie < RingCondition.RustyThreshold,
+                $"and for somebody with no upkeep it has to be below the rusty line, not {rookie:F0}");
 
             // Rust stops at the floor rather than continuing through it.
             Assert.Equal(0.0, RingCondition.RustPerDay(vet, RingCondition.SelfMaintenance(95, 95)), 3);
+        }
+
+        /// <summary>
+        /// **Most of the roster goes rusty if they sit still.**
+        ///
+        /// Measured against the shipped roster rather than asserted, in the same spirit as
+        /// `MatchEngine.TypicalInvestment`: a roster change moves this, and the right response
+        /// is to re-measure rather than to widen the bound.
+        ///
+        /// This is the test that was missing. The first resting band ran 30–75 against a
+        /// roster whose upkeep spans 0.30 to 0.77, so the median wrestler settled at 62 and
+        /// only 21% of the roster could ever read rusty however long they sat — a meter whose
+        /// threshold was unreachable for four names in five. Every one of the seventeen tests
+        /// in this file passed with that band and passed with the band halved, because all of
+        /// them asked about the *shape* of the curve and none about where it actually landed.
+        /// </summary>
+        [Fact]
+        public void MostOfTheRosterGoesRustyIfTheySitStill()
+        {
+            var roster = DataLoaders.LoadEmbeddedWrestlers();
+
+            var floors = roster
+                .Select(w => RingCondition.RestingFloor(RingCondition.SelfMaintenance(
+                    w.Mental?.Psychology ?? 70, w.Mental?.RingIQ ?? 70)))
+                .OrderBy(f => f)
+                .ToList();
+
+            int rusty = floors.Count(f => f <= RingCondition.RustyThreshold);
+            double median = floors[floors.Count / 2];
+
+            output.WriteLine($"  {roster.Count} wrestlers · floors {floors.First():F0} to {floors.Last():F0}" +
+                             $" · median {median:F0} · rusty line {RingCondition.RustyThreshold}");
+            output.WriteLine($"  {rusty} of {floors.Count} ({rusty * 100.0 / floors.Count:F0}%) would read rusty sitting still");
+
+            Assert.True(rusty > floors.Count * 0.75,
+                $"only {rusty} of {floors.Count} can go rusty — the meter is decorative again");
+
+            // And the other end: somebody has to be able to hold a professional reading at
+            // home, or the diligence stat buys nothing.
+            Assert.True(floors.Last() > RingCondition.RustyThreshold,
+                "the most diligent wrestler on the roster should stay the right side of rusty");
+        }
+
+        /// <summary>
+        /// **A career does not open with a roster of razor-sharp wrestlers.**
+        ///
+        /// The property defaults to 100 so a wrestler built in a test does not have to be
+        /// warmed up first, and a career that took that default put the whole roster at the
+        /// ceiling on day one — which makes every rep in the booker's first months worth
+        /// literally nothing. Six wrestlers on a three-town run came home with +0.0 sharpness
+        /// each and only the fatigue, on the one occasion a new player is most likely to try
+        /// the road.
+        /// </summary>
+        [Fact]
+        public void ACareerOpensWithARosterThatHasSomewhereToGo()
+        {
+            var roster = DataLoaders.LoadEmbeddedWrestlers();
+
+            var opening = roster
+                .Select(w => RingCondition.OpeningSharpness(RingCondition.SelfMaintenance(
+                    w.Mental?.Psychology ?? 70, w.Mental?.RingIQ ?? 70)))
+                .OrderBy(x => x)
+                .ToList();
+
+            output.WriteLine($"  opening sharpness {opening.First():F0} to {opening.Last():F0}," +
+                             $" median {opening[opening.Count / 2]:F0}");
+
+            Assert.True(opening.Last() < 100,
+                "nobody starts at the ceiling, or the road buys them nothing");
+            Assert.True(opening.First() > RingCondition.RustyThreshold,
+                "and nobody starts rusty — they have been working, they just have not peaked");
+            Assert.True(opening.Last() - opening.First() > 10,
+                "and it is a spread, so the road is worth more to some of them than to others");
+        }
+
+        /// <summary>
+        /// **One match a week holds a professional; it does not get anybody to their best.**
+        ///
+        /// The maintenance claim and the reps claim, which are two different claims and are
+        /// easy to confuse. Somebody diligent who is on television every week stays sharp
+        /// without doing anything else. Everybody else settles somewhere short of their best
+        /// and needs more time in a ring to close it — which is what the live dates and the
+        /// protected television spots are *for*.
+        /// </summary>
+        [Fact]
+        public void AWeeklySpotMaintainsAProfessionalAndNobodyElseReachesTheirBest()
+        {
+            double Settle(double upkeep, int perWeek)
+            {
+                double s = 60;
+                for (int week = 0; week < 200; week++)
+                {
+                    for (int m = 0; m < perWeek; m++)
+                        s = Math.Min(100, s + RingCondition.SharpnessGain(15, 1.0, upkeep));
+                    for (int d = 0; d < 7; d++) s -= RingCondition.RustPerDay(s, upkeep);
+                }
+                return s;
+            }
+
+            double diligent = RingCondition.SelfMaintenance(92, 92);
+            double median   = RingCondition.SelfMaintenance(74, 74);
+
+            double diligentWeekly = Settle(diligent, 1);
+            double medianWeekly   = Settle(median, 1);
+            double medianTwice    = Settle(median, 2);
+
+            output.WriteLine($"  diligent, one match a week : {diligentWeekly:F1}");
+            output.WriteLine($"  median,   one match a week : {medianWeekly:F1}");
+            output.WriteLine($"  median,   two a week       : {medianTwice:F1}");
+
+            Assert.True(diligentWeekly > 85,
+                $"a diligent professional on weekly television should stay sharp, not {diligentWeekly:F0}");
+            Assert.True(medianWeekly < diligentWeekly - 5,
+                "and somebody without that upkeep should not hold the same reading on the same schedule");
+            Assert.True(medianTwice > medianWeekly + 8,
+                "with the extra reps they close it");
+        }
+
+        /// <summary>
+        /// **A protected spot is most of a rep.**
+        ///
+        /// What comes back in a ring is timing with another body, and you get that from
+        /// having had the match — not from how hard it was. So a tag, where you work a
+        /// fraction of the match and are never exposed, is worth most of what a singles main
+        /// event is worth, and a match at a sensible pace counts nearly as much as a war.
+        ///
+        /// That is the whole reason a rusty wrestler is brought back in a tag rather than
+        /// thrown into a twenty-minute singles match: the reps are almost the same and
+        /// nothing else about it is.
+        /// </summary>
+        [Fact]
+        public void ATagIsMostOfARepAtAFractionOfTheExposure()
+        {
+            double upkeep = RingCondition.SelfMaintenance(74, 74);
+            double share  = RingCondition.WorkShare(2);
+
+            double singles  = RingCondition.SharpnessGain(15, 1.0, upkeep);
+            double tag      = RingCondition.SharpnessGain(15, 1.0, upkeep, share);
+            double sensible = RingCondition.SharpnessGain(15, 0.6, upkeep);
+
+            double singlesCost = RingCondition.MatchCost(15, 1.0, WrestlingStyle.Technical);
+            double tagCost     = RingCondition.MatchCost(15, 1.0, WrestlingStyle.Technical, share);
+
+            output.WriteLine($"  15-min singles : +{singles:F2} sharpness, {singlesCost:F1} fatigue");
+            output.WriteLine($"  15-min tag     : +{tag:F2} sharpness, {tagCost:F1} fatigue" +
+                             $"  ({tag / singles * 100:F0}% of the reps, {tagCost / singlesCost * 100:F0}% of the cost)");
+            output.WriteLine($"  sensible pace  : +{sensible:F2} sharpness ({sensible / singles * 100:F0}%)");
+
+            Assert.True(tag > singles * 0.80,
+                $"a tag has to be a real rep, not {tag / singles * 100:F0}% of one");
+            Assert.True(tagCost < singlesCost * 0.85, "and it has to cost less than it gives back");
+            Assert.True(sensible > singles * 0.75,
+                "a match worked sensibly is still a night in the ring");
+
+            // A squash is not. Three minutes is an appearance, not a night's work, which is
+            // why bringing somebody back on a run of squashes does not get them ready.
+            double squash = RingCondition.SharpnessGain(3, 1.0, upkeep);
+            output.WriteLine($"  3-min squash   : +{squash:F2} ({squash / singles * 100:F0}%)");
+            Assert.True(squash < singles * 0.45, "a squash is an appearance, not a night's work");
         }
 
         /// <summary>

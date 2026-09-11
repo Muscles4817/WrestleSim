@@ -293,11 +293,26 @@ namespace WrestlingSim.Persistence
 
         public List<CardItemDto> Card { get; set; } = new();
 
+        /// <summary>A booked run of towns, on an untelevised date. Null on every other show.</summary>
+        public LoopDto? Loop { get; set; }
+
         /// <summary>
         /// Result summary. Full BeatResult play-by-play is deliberately not persisted —
         /// it is large, and a completed show only needs to report what it did.
         /// </summary>
         public ShowResultDto? Result { get; set; }
+    }
+
+    /// <summary>
+    /// A booked run of towns. The cast is written by id like every other roster reference, so
+    /// a wrestler removed between saves drops off the run rather than resurrecting.
+    /// </summary>
+    public class LoopDto
+    {
+        public List<string> Cast { get; set; } = new();
+        public int Towns { get; set; } = 3;
+        public BeatIntensity Pace { get; set; } = BeatIntensity.Medium;
+        public int MinutesPerNight { get; set; } = 12;
     }
 
     public class CardItemDto

@@ -56,6 +56,45 @@ namespace WrestlingSim.Tests
             return SaveSerializer.FromJson(json, fresh);
         }
 
+        /// <summary>
+        /// **A booked run of towns survives a reload.**
+        ///
+        /// A loop is booked days before it runs, like any other date, so a save between the
+        /// two has to keep it — and it has to keep the cast by reference, because the engine
+        /// mutates the wrestlers it is handed and a by-value copy would sharpen three
+        /// strangers.
+        /// </summary>
+        [Fact]
+        public void RoundTripKeepsABookedRunOfTowns()
+        {
+            var roster = Roster();
+            var career = NewCareer(roster);
+
+            var show = career.Schedule("Saturday", career.CurrentDate.AddDays(3), ShowType.HouseShow);
+            show.Loop = new HouseShowLoop
+            {
+                Cast            = [roster[0], roster[2]],
+                Towns           = 4,
+                Pace            = BeatIntensity.High,
+                MinutesPerNight = 16
+            };
+
+            var loaded = RoundTrip(career);
+            var back   = loaded.Shows.Single(s => s.Id == show.Id);
+
+            Assert.NotNull(back.Loop);
+            Assert.Equal(4, back.Loop!.Towns);
+            Assert.Equal(BeatIntensity.High, back.Loop.Pace);
+            Assert.Equal(16, back.Loop.MinutesPerNight);
+            Assert.Equal(2, back.Loop.Cast.Count);
+            Assert.True(back.IsLoop);
+
+            // The cast has to be the roster's own instances, or running the loop sharpens
+            // copies and the career never sees it.
+            foreach (var w in back.Loop.Cast)
+                Assert.Same(loaded.Roster.Single(r => r.Id == w.Id), w);
+        }
+
         [Fact]
         public void RoundTripKeepsPromotionAndClock()
         {

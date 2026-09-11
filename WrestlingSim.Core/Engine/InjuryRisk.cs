@@ -191,6 +191,53 @@ namespace WrestlingSim.Engine
 
         // ── What gets hurt, and for how long ─────────────────────────────────
 
+        private static readonly BodyPart[] Parts = Enum.GetValues<BodyPart>();
+
+        /// <summary>
+        /// The weight table for one kind of body, built once.
+        ///
+        /// This is called for every wrestler on every beat of every match, which the first
+        /// version did with <c>Enum.GetValues</c> and three LINQ passes — reflection and four
+        /// allocations per wrestler per beat, and measurably slower across a card. The table
+        /// only depends on style and size, and there are thirty of those.
+        /// </summary>
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<
+            (WrestlingStyle Style, int Size), (double[] Weights, double Total)> BodyOdds = new();
+
+        private static (double[] Weights, double Total) OddsFor(WrestlingStyle style, int size) =>
+            BodyOdds.GetOrAdd((style, size), key =>
+            {
+                var weights = new double[Parts.Length];
+                double total = 0;
+                for (int i = 0; i < Parts.Length; i++)
+                {
+                    weights[i] = Likelihood(Parts[i], key.Style, key.Size);
+                    total += weights[i];
+                }
+                return (weights, total);
+            });
+
+        /// <summary>
+        /// Which injury this wrestler is most likely to pick up, weighted per doc 15 §2.1.
+        ///
+        /// Here rather than in <c>MatchEngine</c> because a house show loop hurts people the
+        /// same way a televised match does — it is the same body in the same ring, and the
+        /// only difference is that nobody filmed it.
+        /// </summary>
+        public static BodyPart PickPart(Models.Wrestler wrestler, Random rand)
+        {
+            var (weights, total) = OddsFor(wrestler.Style, wrestler.Physical?.Size ?? 3);
+
+            double roll = rand.NextDouble() * total;
+            for (int i = 0; i < weights.Length; i++)
+            {
+                roll -= weights[i];
+                if (roll <= 0) return Parts[i];
+            }
+            return Parts[^1];
+        }
+
+
         /// <summary>
         /// How often each injury happens, before style and size tilt it. Doc 15 §2.1's
         /// frequency column, as weights.

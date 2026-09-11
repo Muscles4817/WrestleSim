@@ -231,6 +231,13 @@ namespace WrestlingSim.Persistence
             RuntimeMinutes = show.RuntimeMinutes,
             Attendance     = show.Attendance,
             Card           = show.Card.Select(ToDto).Where(c => c != null).Select(c => c!).ToList(),
+            Loop           = show.Loop == null ? null : new LoopDto
+            {
+                Cast            = show.Loop.Cast.Select(w => w.Id).ToList(),
+                Towns           = show.Loop.Towns,
+                Pace            = show.Loop.Pace,
+                MinutesPerNight = show.Loop.MinutesPerNight
+            },
             Result         = show.Result == null ? null : ToDto(show.Result)
         };
 
@@ -640,6 +647,20 @@ namespace WrestlingSim.Persistence
             {
                 var built = FromDto(item, byId, feudBook, titles, teams);
                 if (built != null) show.Card.Add(built);
+            }
+
+            if (dto.Loop is { } loopDto)
+            {
+                show.Loop = new HouseShowLoop
+                {
+                    // Names that are no longer on the roster drop off the run rather than
+                    // coming back from the dead, which is how every other cast is read.
+                    Cast            = loopDto.Cast.Select(id => byId.GetValueOrDefault(id))
+                                                  .Where(w => w != null).Select(w => w!).ToList(),
+                    Towns           = Math.Max(1, loopDto.Towns),
+                    Pace            = loopDto.Pace,
+                    MinutesPerNight = Math.Max(1, loopDto.MinutesPerNight)
+                };
             }
 
             if (dto.Result != null) show.Result = FromDto(dto.Result);

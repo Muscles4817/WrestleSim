@@ -1,0 +1,212 @@
+@*
+    Booking a run of towns: who goes out, how many nights, how hard.
+
+    Three questions, on one screen, because that is the whole decision. Nobody lays a house
+    show out beat by beat, and a game that asked you to would be asking you to spend the
+    evening on the part of the week that does not matter.
+
+    The roster list is the same ranking every other picker uses, so the names the game would
+    put in front of you for a match are the names it puts in front of you for the road. The
+    difference is the reading beside each one: for a loop what matters is not who has heat
+    with whom, it is who is rusty and who is already cooked.
+*@
+@inherits StateComponent
+
+<div class="panel">
+    <div class="panel__title">
+        Who goes out
+        <span class="spacer"></span>
+        <span class="small muted">@cast.Count booked</span>
+    </div>
+
+    <CastFilter Query="@query" QueryChanged="@(v => query = v)"
+                Division="@division" DivisionChanged="@(v => division = v)"
+                HomeBrand="@State.BookingBrand"
+                IncludeCrossover="@includeCrossover"
+                IncludeCrossoverChanged="@(v => includeCrossover = v)"
+                Placeholder="Search the roster…" />
+
+    <div class="picks picks--2">
+        @foreach (var w in Available())
+        {
+            var pick = w;
+            <button class="pick @(cast.Contains(pick) ? "is-selected" : "")"
+                    @onclick="() => Toggle(pick)">
+                <span class="pick__body">
+                    <span class="pick__name">
+                        @pick.RingName
+                        @if (pick.Gimmick is { } g)
+                        {
+                            <span class="badge badge--sm @g.NaturalAlignment.Badge()">@g.NaturalAlignment.Label()</span>
+                        }
+                    </span>
+                    @* The two meters, because they are the whole reason to send somebody out.
+                       A rusty wrestler is who the loop is for; a cooked one is who it will
+                       break. *@
+                    <span class="pick__desc">
+                        Sharpness <span class="@SharpTone(pick)">@pick.Sharpness.ToString("F0")</span>
+                        · fatigue <span class="@TiredTone(pick)">@pick.Fatigue.ToString("F0")</span>
+                    </span>
+                    @if (RingCondition.WarningFor(pick) is { } warning)
+                    {
+                        <span class="pick__desc band--worn">⚠ @warning</span>
+                    }
+                </span>
+            </button>
+        }
+    </div>
+</div>
+
+<div class="panel">
+    <div class="panel__title">The run</div>
+
+    <div class="field">
+        <span class="field__label">Towns</span>
+        <div class="chips">
+            @foreach (var n in new[] { 1, 2, 3, 4, 6 })
+            {
+                var towns = n;
+                <button class="chip @(loop.Towns == towns ? "is-active" : "")"
+                        @onclick="() => loop.Towns = towns">@towns</button>
+            }
+        </div>
+    </div>
+
+    <div class="field mt">
+        <span class="field__label">How hard they work</span>
+        <div class="chips">
+            @foreach (var v in new[] { BeatIntensity.Low, BeatIntensity.Medium, BeatIntensity.High })
+            {
+                var pace = v;
+                <button class="chip @pace.Tone() @(loop.Pace == pace ? "is-active" : "")"
+                        @onclick="() => loop.Pace = pace">@PaceLabel(pace)</button>
+            }
+        </div>
+    </div>
+
+    <div class="field mt">
+        <span class="field__label">Minutes a night</span>
+        <div class="chips">
+            @foreach (var m in new[] { 8, 12, 16, 20 })
+            {
+                var mins = m;
+                <button class="chip @(loop.MinutesPerNight == mins ? "is-active" : "")"
+                        @onclick="() => loop.MinutesPerNight = mins">@mins</button>
+            }
+        </div>
+    </div>
+
+    @* What it will do, before it is run. The loop is the one thing in the game whose whole
+       output is a trade, so saying which way the trade goes is the least it can do. *@
+    @if (cast.Count > 0)
+    {
+        <div class="notice notice--advice mt">
+            <strong>@loop.Towns night@(loop.Towns == 1 ? "" : "s") each.</strong>
+            About <strong>+@Expected(sharp: true).ToString("F0")</strong> sharpness and
+            <strong>+@Expected(sharp: false).ToString("F0")</strong> fatigue apiece, averaged
+            across the @cast.Count of them — the ones with the least left to gain will get the
+            least. Nobody gets more over: the television audience is not there.
+        </div>
+    }
+
+    @if (Cooked().Count > 0)
+    {
+        <div class="notice notice--warn mt">
+            <strong>@string.Join(", ", Cooked().Select(w => w.RingName))</strong>
+            @(Cooked().Count == 1 ? "is" : "are") already cooked. A run of towns is not a rest.
+        </div>
+    }
+</div>
+
+<div class="wizard-bar">
+    <button class="btn btn--ghost" @onclick="OnCancel">← Cancel</button>
+    <span class="wizard-bar__spacer"></span>
+    <button class="btn btn--primary" disabled="@(!loop.IsBookable)" @onclick="Done">
+        @ConfirmLabel
+    </button>
+</div>
+
+@code {
+    [Parameter] public EventCallback<HouseShowLoop> OnDone { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public string ConfirmLabel { get; set; } = "Book the run";
+
+    private readonly HouseShowLoop loop = new();
+    private readonly List<Wrestler> cast = new();
+
+    private string query = "";
+    private Division? division;
+    private bool includeCrossover;
+
+    private IEnumerable<Wrestler> Available() =>
+        BookingSuggestions.Rank(
+            State.Roster
+                 .Where(w => includeCrossover || !State.IsCrossover(w))
+                 .Where(w => division is null || w.Division == division)
+                 .Where(w => string.IsNullOrWhiteSpace(query)
+                          || (w.RingName?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false)
+                          || (w.RealName?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false)),
+            [], State.FeudBook, _ => null,
+            State.StandingPartnerOf, State.RecentlyBooked, State.Career?.CurrentDate)
+        .Select(r => r.Wrestler);
+
+    private void Toggle(Wrestler w)
+    {
+        if (!cast.Remove(w)) cast.Add(w);
+        loop.Cast = cast.ToList();
+    }
+
+    private List<Wrestler> Cooked() =>
+        cast.Where(w => w.Fatigue >= RingCondition.CookedThreshold).ToList();
+
+    /// <summary>
+    /// What the run is worth, averaged across the people actually on it.
+    ///
+    /// One number rather than a table, because a per-wrestler forecast for seventy names is
+    /// not a decision aid — but it is the *booked cast's* number, not a typical body's. The
+    /// first version quoted a typical body and told a booker to expect +23 sharpness for six
+    /// wrestlers who were all already at the ceiling and gained nothing. A forecast that
+    /// cannot see the headroom is worse than no forecast.
+    /// </summary>
+    private double Expected(bool sharp)
+    {
+        if (cast.Count == 0) return 0;
+
+        double pace = RingCondition.IntensityWeight(loop.Pace);
+        double total = 0;
+
+        foreach (var w in cast)
+        {
+            double upkeep = RingCondition.SelfMaintenance(
+                w.Mental?.Psychology ?? 70, w.Mental?.RingIQ ?? 70);
+
+            // Walked night by night rather than multiplied, for the same reason the engine
+            // walks it: both meters saturate, and a wrestler near the ceiling gets less from
+            // the fourth town than from the first.
+            double meter = sharp ? w.Sharpness : w.Fatigue;
+            for (int night = 0; night < loop.Towns; night++)
+                meter = Math.Clamp(meter + (sharp
+                    ? RingCondition.SharpnessGain(loop.MinutesPerNight, pace, upkeep)
+                    : RingCondition.MatchCost(loop.MinutesPerNight, pace, w.Style)), 0, 100);
+
+            total += meter - (sharp ? w.Sharpness : w.Fatigue);
+        }
+
+        return total / cast.Count;
+    }
+
+    private static string SharpTone(Wrestler w) =>
+        w.Sharpness <= RingCondition.RustyThreshold ? "grade--poor" : "grade--good";
+
+    private static string TiredTone(Wrestler w) =>
+        w.Fatigue >= RingCondition.CookedThreshold ? "grade--poor" : "grade--good";
+
+    private static string PaceLabel(BeatIntensity pace) => pace switch
+    {
+        BeatIntensity.Low  => "Going through it",
+        BeatIntensity.High => "Full tilt",
+        _                  => "A working pace"
+    };
+
+    private Task Done() => OnDone.InvokeAsync(loop);
+}
