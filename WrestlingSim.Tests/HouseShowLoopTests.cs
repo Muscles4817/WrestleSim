@@ -442,6 +442,117 @@ namespace WrestlingSim.Tests
             Assert.Null(tv.HurtOnNight);
         }
 
+        // ── The protected rep ────────────────────────────────────────────────
+
+        /// <summary>
+        /// **A tag run keeps more of the benefit than of the cost, and that is the whole
+        /// reason to book one.**
+        ///
+        /// `RingCondition.SharpnessGain` scales its *demand* term by the work share and
+        /// leaves its rep term alone: turning up and working a match is the rep whatever else
+        /// happens, and the apron only discounts the bill. So a tag night gives less than a
+        /// singles night — but it gives up proportionally less than it saves, which is what
+        /// "protected" means and what a smaller-is-worse reading of the numbers would miss.
+        /// </summary>
+        [Fact]
+        public void ATagRunKeepsMoreOfTheRepThanOfTheBill()
+        {
+            var singles = Worker("Singles", sharpness: 40);
+            var tags    = Worker("Tags",    sharpness: 40);
+
+            new LoopSimulator(seed: 5).Run(Run(3, singles, Worker("S2")), Day);
+
+            var tagRun = Run(3, tags, Worker("T2"), Worker("T3"), Worker("T4"));
+            tagRun.SideSize = 2;
+            var result = new LoopSimulator(seed: 5).Run(tagRun, Day);
+
+            // The report reads this to say the run was tag matches, and a booker looking at
+            // smaller numbers needs to know whether that is the format or the wrestler.
+            Assert.Equal(2, result.SideSize);
+
+            double sharpSingles = singles.Sharpness - 40, sharpTags = tags.Sharpness - 40;
+            double tiredSingles = singles.Fatigue,        tiredTags = tags.Fatigue;
+
+            output.WriteLine($"  singles  +{sharpSingles:F2} sharp  +{tiredSingles:F2} tired");
+            output.WriteLine($"  tags     +{sharpTags:F2} sharp  +{tiredTags:F2} tired");
+            output.WriteLine($"  kept     {sharpTags / sharpSingles:P0} of the rep, " +
+                             $"{tiredTags / tiredSingles:P0} of the bill");
+
+            Assert.True(sharpTags > 0, "a tag is still a rep");
+            Assert.True(sharpTags < sharpSingles, "and still less of one than a singles match");
+            Assert.True(tiredTags < tiredSingles, "it costs less");
+
+            // The claim that makes it worth booking: the trade is in the wrestler's favour.
+            Assert.True(sharpTags / sharpSingles > tiredTags / tiredSingles,
+                        "a tag keeps more of the rep than of the bill");
+        }
+
+        /// <summary>
+        /// **And it is fewer rolls of the dice, not merely cheaper ones.**
+        ///
+        /// You cannot get hurt taking a bump you were on the apron for, so the nightly injury
+        /// roll walks fewer beats. Measured across a corpus rather than asserted, because one
+        /// seed of a probabilistic model is one sample: the figures below are what the engine
+        /// actually does, printed so a change to them is visible.
+        /// </summary>
+        [Fact]
+        public void ATagRunIsFewerRollsOfTheDice()
+        {
+            int Hurt(int sideSize)
+            {
+                int hurt = 0;
+                for (int run = 0; run < 3000; run++)
+                {
+                    var cast = Enumerable.Range(0, 4)
+                        .Select(i => Worker($"Body {i}")).ToArray();
+
+                    var loop = new HouseShowLoop
+                    {
+                        Cast = cast.ToList(), Towns = 6,
+                        MinutesPerNight = 16, Pace = BeatIntensity.High,
+                        SideSize = sideSize
+                    };
+
+                    hurt += new LoopSimulator(seed: StableSeed.From(sideSize, run))
+                        .Run(loop, Day).Injuries.Count;
+                }
+                return hurt;
+            }
+
+            int singles = Hurt(1), tags = Hurt(2);
+            output.WriteLine($"  3000 runs of 4 bodies, 6 towns, full tilt:");
+            output.WriteLine($"    singles {singles} hurt · tags {tags} hurt " +
+                             $"({(double)tags / singles:P0} of the singles rate)");
+
+            // Not just "fewer": a tag walks four beats a night where singles walks six, so
+            // the gap should be a clear fraction and not a coin landing the right way up. The
+            // measured ratio is printed rather than pinned — the margin is here to rule out
+            // noise, and the number above is the one to read when it moves.
+            Assert.True(tags < singles * 0.90,
+                        $"a tag run should hurt clearly fewer people: {tags} against {singles}");
+        }
+
+        /// <summary>
+        /// A tag run needs two full sides. Three people booked into one is not a tag run with
+        /// somebody sitting out, it is a card that has not been finished — and the format chip
+        /// can make an already-booked run unbookable without anybody touching the cast.
+        /// </summary>
+        [Fact]
+        public void ATagRunNeedsTwoFullSides()
+        {
+            var loop = Run(3, Worker("A"), Worker("B"));
+            Assert.True(loop.IsBookable, "two is a singles match");
+
+            loop.SideSize = 2;
+            Assert.False(loop.IsBookable, "two is not a tag match");
+
+            loop.Cast.Add(Worker("C"));
+            Assert.False(loop.IsBookable, "nor is three");
+
+            loop.Cast.Add(Worker("D"));
+            Assert.True(loop.IsBookable);
+        }
+
         // ── Who is on the road ───────────────────────────────────────────────
 
         /// <summary>

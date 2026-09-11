@@ -326,7 +326,12 @@ else
             <div class="panel__title">
                 The run
                 <span class="spacer"></span>
-                <span class="small muted">sharper · more tired</span>
+                @* The format, because a tag night moves both meters less than a singles
+                   night does and a booker reading a smaller number needs to know whether
+                   that is the booking or the wrestler. *@
+                <span class="small muted">
+                    @(loop.SideSize > 1 ? "tag matches · " : "")sharper · more tired
+                </span>
             </div>
             @foreach (var worker in loop.Workers.OrderByDescending(w => w.SharpnessGained))
             {

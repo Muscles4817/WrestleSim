@@ -49,10 +49,16 @@ namespace WrestlingSim.Engine
             var result = new LoopResult
             {
                 Towns           = loop.Towns,
-                MinutesPerNight = loop.MinutesPerNight
+                MinutesPerNight = loop.MinutesPerNight,
+                SideSize        = loop.SideSize
             };
 
             double pace = RingCondition.IntensityWeight(loop.Pace);
+
+            // How much of the match each of them is actually in. `WorkShare` is the card's
+            // own number rather than a road-specific one, so a tag out in the towns and a tag
+            // on television cost the same body the same thing.
+            double share = RingCondition.WorkShare(loop.SideSize);
 
             foreach (var wrestler in loop.Cast)
             {
@@ -74,14 +80,14 @@ namespace WrestlingSim.Engine
                     // Somebody carrying an injury does not go out for the next town.
                     if (wrestler.Injury is { } carried && carried.KeepsOut(date)) break;
 
-                    Work(wrestler, loop.MinutesPerNight, pace);
+                    Work(wrestler, loop.MinutesPerNight, pace, share);
                     worked++;
 
                     // No `break` here. The guard at the top of the loop already refuses to send
                     // out somebody carrying an injury, and the one just applied is carried —
                     // so an explicit second statement of "hurt people do not work" could only
                     // ever agree with it, or drift from it.
-                    if (RollInjury(wrestler, loop.Pace, night, date) is { } report)
+                    if (RollInjury(wrestler, loop.Pace, date, share) is { } report)
                     {
                         result.Injuries.Add(report);
                         hurtOn = night;
@@ -109,17 +115,21 @@ namespace WrestlingSim.Engine
         /// same thing happening to the same body — a house show match is not a lesser kind of
         /// match, it is a match nobody filmed.
         /// </summary>
-        private static void Work(Wrestler w, double minutes, double pace)
+        private static void Work(Wrestler w, double minutes, double pace, double share)
         {
             double conditioning = new PerformerProfile(w).BaseConditioning;
             double upkeep = RingCondition.SelfMaintenance(
                 w.Mental?.Psychology ?? 70, w.Mental?.RingIQ ?? 70);
 
             w.Fatigue = Math.Clamp(
-                w.Fatigue + RingCondition.MatchCost(minutes, pace, w.Style, 1.0, conditioning), 0, 100);
+                w.Fatigue + RingCondition.MatchCost(minutes, pace, w.Style, share, conditioning), 0, 100);
 
+            // `SharpnessGain` scales its *demand* term by the share and not its rep term, and
+            // that asymmetry is the whole reason a tag is worth booking for somebody coming
+            // back: turning up and working a match is the rep, whatever else happens, and the
+            // apron only discounts the bill.
             w.Sharpness = Math.Clamp(
-                w.Sharpness + RingCondition.SharpnessGain(minutes, pace, upkeep), 0, 100);
+                w.Sharpness + RingCondition.SharpnessGain(minutes, pace, upkeep, share), 0, 100);
         }
 
         /// <summary>
@@ -130,14 +140,15 @@ namespace WrestlingSim.Engine
         /// Charging it once a night would make the loop the safest place in the game to put
         /// anybody, which is the opposite of what a road schedule is.
         /// </summary>
-        private InjuryReport? RollInjury(Wrestler w, BeatIntensity pace, int night, DateOnly date)
+        private InjuryReport? RollInjury(Wrestler w, BeatIntensity pace, DateOnly date, double share)
         {
             var part = InjuryRisk.PickPart(w, _rand);
 
-            // Beats in a night, at the engine's own rough rate of one per two minutes. The
-            // beat index passed in is the middle of the match rather than the start, because
-            // the risk curve reads it as "how deep into this are they".
-            int beats = Math.Max(1, BeatsPerNight);
+            // Beats in a night, at the engine's own rough rate of one per two minutes, scaled
+            // by how much of the match they are in for. This is where a tag run actually
+            // protects somebody: you cannot get hurt taking a bump you were on the apron for,
+            // so a shorter shift is fewer rolls and not merely cheaper ones.
+            int beats = Math.Max(1, (int)Math.Round(BeatsPerNight * Math.Clamp(share, 0, 1)));
             double conditioning = new PerformerProfile(w).BaseConditioning;
 
             for (int beat = 0; beat < beats; beat++)

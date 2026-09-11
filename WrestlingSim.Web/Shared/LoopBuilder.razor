@@ -72,6 +72,20 @@
         </div>
     </div>
 
+    @* The format, above the pace, because it is the bigger of the two protections and the
+       one a booker sending somebody back out is actually reaching for. *@
+    <div class="field mt">
+        <span class="field__label">What they work</span>
+        <div class="chips">
+            @foreach (var n in new[] { 1, 2 })
+            {
+                var side = n;
+                <button class="chip @(loop.SideSize == side ? "is-active" : "")"
+                        @onclick="() => loop.SideSize = side">@FormatLabel(side)</button>
+            }
+        </div>
+    </div>
+
     <div class="field mt">
         <span class="field__label">How hard they work</span>
         <div class="chips">
@@ -106,6 +120,30 @@
             <strong>+@Expected(sharp: false).ToString("F0")</strong> fatigue apiece, averaged
             across the @cast.Count of them — the ones with the least left to gain will get the
             least. Nobody gets more over: the television audience is not there.
+            @if (loop.SideSize > 1)
+            {
+                @* "Less of the match each" and not "half the match": `WorkShare(2)` is
+                   0.725, because standing on the apron is a rest but you are still out
+                   there taking the double team. Saying half would be the copy describing a
+                   model the engine does not have. *@
+                <text>
+                    A tag run is the protected version: less of the match each, so a smaller
+                    bill and fewer chances to get hurt — and turning up is still the rep. It
+                    is where somebody who is not ready goes.
+                </text>
+            }
+        </div>
+    }
+
+    @* A disabled button with no reason on it is the game refusing and not saying why. Two
+       people is a match; four is a tag match, and the chip above can make a booked run
+       unbookable without touching the cast. *@
+    @if (cast.Count > 0 && !loop.IsBookable)
+    {
+        <div class="notice notice--warn mt">
+            <strong>@(loop.SideSize * 2 - cast.Count) more needed.</strong>
+            @FormatLabel(loop.SideSize) out on the road needs @(loop.SideSize * 2) bodies for
+            a match, and @cast.Count @(cast.Count == 1 ? "is" : "are") booked.
         </div>
     }
 
@@ -205,7 +243,8 @@
     {
         if (cast.Count == 0) return 0;
 
-        double pace = RingCondition.IntensityWeight(loop.Pace);
+        double pace  = RingCondition.IntensityWeight(loop.Pace);
+        double share = RingCondition.WorkShare(loop.SideSize);
         double total = 0;
 
         foreach (var w in cast)
@@ -219,8 +258,8 @@
             double meter = sharp ? w.Sharpness : w.Fatigue;
             for (int night = 0; night < loop.Towns; night++)
                 meter = Math.Clamp(meter + (sharp
-                    ? RingCondition.SharpnessGain(loop.MinutesPerNight, pace, upkeep)
-                    : RingCondition.MatchCost(loop.MinutesPerNight, pace, w.Style)), 0, 100);
+                    ? RingCondition.SharpnessGain(loop.MinutesPerNight, pace, upkeep, share)
+                    : RingCondition.MatchCost(loop.MinutesPerNight, pace, w.Style, share)), 0, 100);
 
             total += meter - (sharp ? w.Sharpness : w.Fatigue);
         }
@@ -233,6 +272,12 @@
 
     private static string TiredTone(Wrestler w) =>
         w.Fatigue >= RingCondition.CookedThreshold ? "grade--poor" : "grade--good";
+
+    private static string FormatLabel(int sideSize) => sideSize switch
+    {
+        2 => "Tag matches",
+        _ => "Singles"
+    };
 
     private static string PaceLabel(BeatIntensity pace) => pace switch
     {

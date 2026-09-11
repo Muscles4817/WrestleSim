@@ -46,7 +46,33 @@ namespace WrestlingSim.Models.World
         /// <summary>Minutes each of them works a night.</summary>
         public int MinutesPerNight { get; set; } = 12;
 
-        public bool IsBookable => Cast.Count >= 2 && Towns >= 1;
+        /// <summary>
+        /// How many a side out there: 1 for singles, 2 for a tag run.
+        ///
+        /// **The protected rep, which is the thing the road was missing.** The sharpness
+        /// model's own answer to "how do you get somebody back to match fitness without
+        /// putting them on television before they are ready" is reps at less than full
+        /// exposure, and a tag is exactly that — you are still out there, still taking the
+        /// double team, but you spend a good part of the match on the apron. Until this, a
+        /// loop was singles only, so the one setting in wrestling that exists to protect
+        /// somebody was the one the road could not book.
+        ///
+        /// It is the run's format rather than a per-wrestler one, because a house show loop
+        /// is booked as a cast and a number of towns and not as a card — the same reason
+        /// nobody lays out the beats. A mixed loop is not built; see the design record.
+        ///
+        /// The share of the work it buys is <c>RingCondition.WorkShare</c>, which is the same
+        /// number the televised card uses, so a tag on the road and a tag on television cost
+        /// the same body the same thing.
+        /// </summary>
+        public int SideSize { get; set; } = 1;
+
+        /// <summary>
+        /// A run needs two full sides. Singles has always needed two bodies; a tag run needs
+        /// four, and booking three people into one is not a tag run with somebody sitting
+        /// out, it is a card that has not been finished.
+        /// </summary>
+        public bool IsBookable => SideSize >= 1 && Cast.Count >= SideSize * 2 && Towns >= 1;
 
         /// <summary>Total nights of work this run asks of one wrestler.</summary>
         public int NightsEach => Math.Max(0, Towns);

@@ -316,6 +316,9 @@ namespace WrestlingSim.Persistence
         public int Towns { get; set; } = 3;
         public BeatIntensity Pace { get; set; } = BeatIntensity.Medium;
         public int MinutesPerNight { get; set; } = 12;
+
+        /// <summary>1 for singles, 2 for a tag run. Old saves have no value and read as singles.</summary>
+        public int SideSize { get; set; } = 1;
     }
 
     public class CardItemDto

@@ -8,6 +8,13 @@ namespace WrestlingSim.Models
         public int Towns { get; init; }
         public int MinutesPerNight { get; init; }
 
+        /// <summary>
+        /// How many a side worked out there: 1 for singles, 2 for a tag run. Reported because
+        /// a tag night moves both meters less than a singles night does, and a booker reading
+        /// a smaller number needs to know whether that is the format or the wrestler.
+        /// </summary>
+        public int SideSize { get; init; } = 1;
+
         /// <summary>One row per wrestler, in the order they were booked.</summary>
         public List<LoopWorker> Workers { get; init; } = new();
 
