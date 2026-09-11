@@ -35,13 +35,86 @@ else if (show.HasRun)
         <button class="btn btn--primary" @onclick="() => State.Go(Screen.Calendar)">Calendar →</button>
     </div>
 }
+@* ── What kind of thing ───────────────────────────────────────────────────────
+   Two buttons on the card, not four. A battle royal is a match — `RumblePlan.Kind`
+   has said so since it was written, and `CardItemKind` only has Match and Segment —
+   and a number drawing is a segment for the same reason. The four-button row was the
+   only place in the codebase that disagreed with the model, and it asked the booker
+   to answer "which of four builders" before they had decided what they were booking.
+
+   The format is a question *inside* what you are adding, which is also the order a
+   booker thinks in: a match, and then what kind of match. *@
+else if (mode == Mode.PickMatch)
+{
+    <div class="screen__head">
+        <div class="screen__eyebrow">Adding to @show.Name</div>
+        <h1 class="screen__title">What kind of match?</h1>
+    </div>
+
+    <div class="picks picks--2">
+        <button class="pick" @onclick="() => mode = Mode.AddMatch">
+            <span class="pick__body">
+                <span class="pick__name">A match</span>
+                <span class="pick__desc">
+                    One side against another, from singles up to a six-man tag, worked beat by
+                    beat. Everything with a winner and a story in it.
+                </span>
+            </span>
+        </button>
+        <button class="pick" @onclick="() => mode = Mode.AddRumble">
+            <span class="pick__body">
+                <span class="pick__name">A battle royal</span>
+                <span class="pick__desc">
+                    Everybody in, over the top rope, last one standing. Graded on eliminations
+                    and moments rather than on the work, because there are no beats to grade.
+                </span>
+            </span>
+        </button>
+    </div>
+
+    <div class="wizard-bar">
+        <button class="btn btn--ghost" @onclick="() => mode = Mode.Card">← Back to the card</button>
+    </div>
+}
+else if (mode == Mode.PickSegment)
+{
+    <div class="screen__head">
+        <div class="screen__eyebrow">Adding to @show.Name</div>
+        <h1 class="screen__title">What kind of segment?</h1>
+    </div>
+
+    <div class="picks picks--2">
+        <button class="pick" @onclick="() => mode = Mode.AddSegment">
+            <span class="pick__body">
+                <span class="pick__name">A promo or an angle</span>
+                <span class="pick__desc">
+                    Somebody talks, somebody interrupts, somebody gets laid out. Everything on
+                    the card that does not have a bell.
+                </span>
+            </span>
+        </button>
+        <button class="pick" @onclick="() => mode = Mode.AddDraw">
+            <span class="pick__body">
+                <span class="pick__name">A number drawing</span>
+                <span class="pick__desc">
+                    The numbers pulled in front of a crowd, for a Rumble booked later. Buys a
+                    building that has had a week to argue about who has to go the distance.
+                </span>
+            </span>
+        </button>
+    </div>
+
+    <div class="wizard-bar">
+        <button class="btn btn--ghost" @onclick="() => mode = Mode.Card">← Back to the card</button>
+    </div>
+}
 else if (mode == Mode.AddMatch)
 {
     <div class="screen__head">
         <div class="screen__eyebrow">Adding to @show.Name</div>
         <h1 class="screen__title">Add a Match</h1>
     </div>
-    <MatchBuilder OnDone="AddMatch" OnCancel="@(() => mode = Mode.Card)" ConfirmLabel="Add to card +" />
+    <MatchBuilder OnDone="AddMatch" OnCancel="@(() => mode = Mode.PickMatch)" ConfirmLabel="Add to card +" />
 }
 else if (mode == Mode.AddSegment)
 {
@@ -58,7 +131,7 @@ else if (mode == Mode.AddRumble)
         <h1 class="screen__title">Battle royal</h1>
     </div>
 
-    <RumbleBuilder OnDone="AddRumble" OnCancel="@(() => mode = Mode.Card)" ConfirmLabel="Add to card +" />
+    <RumbleBuilder OnDone="AddRumble" OnCancel="@(() => mode = Mode.PickMatch)" ConfirmLabel="Add to card +" />
 }
 else if (mode == Mode.AddDraw)
 {
@@ -199,16 +272,15 @@ else
 
 
         <div class="row mt">
-            <button class="btn" @onclick="() => mode = Mode.AddMatch">+ Add a match</button>
-            <button class="btn" @onclick="() => mode = Mode.AddSegment">+ Add a segment</button>
-            <button class="btn" @onclick="() => mode = Mode.AddRumble">+ Add a battle royal</button>
-            @* Offered only when there is something to draw for. A drawing has to precede the
-               match it draws for, so with nothing booked later the button would open onto an
-               empty state and a dead end. *@
-            @if (HasSomethingToDrawFor(career, show))
-            {
-                <button class="btn" @onclick="() => mode = Mode.AddDraw">+ Add a number drawing</button>
-            }
+            <button class="btn" @onclick="() => mode = Mode.PickMatch">+ Add a match</button>
+            @* Straight into the promo builder unless there is a drawing to offer as well — a
+               chooser with one live option on it is a click that asks nothing. A drawing has
+               to precede the Rumble it draws for, so with nothing booked later there is
+               nothing to choose between. *@
+            <button class="btn"
+                    @onclick="() => mode = HasSomethingToDrawFor(career, show) ? Mode.PickSegment : Mode.AddSegment">
+                + Add a segment
+            </button>
             @* Only on an untelevised date, and only while nothing is booked match by match.
                A card and a run of towns are alternatives, not a mode — whichever one has
                something in it is the one that runs. *@
@@ -357,7 +429,7 @@ else
         };
     }
 
-    private enum Mode { Card, AddMatch, AddSegment, AddRumble, AddDraw, BookLoop }
+    private enum Mode { Card, PickMatch, PickSegment, AddMatch, AddSegment, AddRumble, AddDraw, BookLoop }
 
     private Mode mode = Mode.Card;
 
