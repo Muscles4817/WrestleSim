@@ -160,7 +160,10 @@ else if (mode == Mode.BookLoop)
         </p>
     </div>
 
-    <LoopBuilder OnDone="BookLoop" OnCancel="@(() => mode = Mode.Card)"
+    @* Seeded from what is already booked, and from whoever the roster says is on the road.
+       The first version handed you a blank form every time and called it "Edit the run". *@
+    <LoopBuilder Existing="show.Loop" On="show.Date"
+                 OnDone="BookLoop" OnCancel="@(() => mode = Mode.Card)"
                  ConfirmLabel="Book the run +" />
 }
 else
@@ -222,7 +225,7 @@ else
         {
             <div class="empty">
                 <div class="empty__mark">▦</div>
-                @if (show.IsLoop)
+                @if (show.HasRoadRun)
                 {
                     <text>
                         A run of @show.Loop!.Towns town@(show.Loop!.Towns == 1 ? "" : "s") for
@@ -402,13 +405,17 @@ else
                     @onclick="() => mode = HasSomethingToDrawFor(career, show) ? Mode.PickSegment : Mode.AddSegment">
                 + Add a segment
             </button>
-            @* Only on an untelevised date, and only while nothing is booked match by match.
-               A card and a run of towns are alternatives, not a mode — whichever one has
-               something in it is the one that runs. *@
-            @if (show.Type == ShowType.HouseShow && show.Card.Count == 0)
+            @* On any untelevised date, whatever else is booked on it. A card and a run of
+               towns are not alternatives: the card is the night you booked and the run is the
+               rest of the roster out in the towns. The first version made you choose, and
+               chose for you — adding one match silently threw the booked run away. *@
+            @if (show.Type == ShowType.HouseShow)
             {
-                <button class="btn" @onclick="() => mode = Mode.BookLoop">
-                    @(show.IsLoop ? "Edit the run" : "+ Book a run of towns")
+                <button class="btn @(show.HasRoadRun ? "btn--ghost" : "")"
+                        @onclick="() => mode = Mode.BookLoop">
+                    @(show.HasRoadRun
+                        ? $"On the road: {show.Loop!.Cast.Count} for {show.Loop!.Towns} town{(show.Loop!.Towns == 1 ? "" : "s")}"
+                        : "+ Send the rest on the road")
                 </button>
             }
         </div>
@@ -541,7 +548,7 @@ else
             <button class="btn btn--primary btn--block"
                     disabled="@(!show.IsRunnable || HurtOnCard(show).Count > 0)"
                     @onclick="() => Run(show)">
-                @(show.IsLoop ? "Run the towns ★" : "Run the show ★")
+                @(show.IsLoopOnly ? "Run the towns ★" : "Run the show ★")
             </button>
 
             @* Why the button is off. A card being worked on is the ordinary state now, so the
@@ -551,6 +558,20 @@ else
                 <div class="notice notice--advice mt">
                     <strong>@show.Unfinished.Count() still to finish.</strong>
                     Fill every side and write the beats, and the show will run.
+                </div>
+            }
+
+            @* Nobody is in two places, and the card is the half you built by hand — so it
+               wins for that wrestler rather than for the whole run. Said rather than
+               enforced, because a booker who adds a name to the card has made the decision
+               already and should not have to go and unpick the run as well. *@
+            @if (show.DoubleBooked.Any())
+            {
+                <div class="notice notice--advice mt">
+                    <strong>@string.Join(", ", show.DoubleBooked.Select(w => w.RingName))</strong>
+                    @(show.DoubleBooked.Count() == 1 ? "is" : "are")
+                    on the card, so @(show.DoubleBooked.Count() == 1 ? "they stay" : "they stay")
+                    home from the towns.
                 </div>
             }
 

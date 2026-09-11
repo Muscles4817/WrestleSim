@@ -127,12 +127,45 @@
 </div>
 
 @code {
+    /// <summary>
+    /// The run already booked for this date, so re-opening it edits rather than replaces.
+    ///
+    /// The first version built a fresh <see cref="HouseShowLoop"/> every time and the button
+    /// still said "Edit the run" — so a booker who opened it to add one name and confirmed
+    /// lost the eight already on it.
+    /// </summary>
+    [Parameter] public HouseShowLoop? Existing { get; set; }
+
+    /// <summary>The date this run is for, which decides who the roster already has on the road.</summary>
+    [Parameter] public DateOnly On { get; set; }
+
     [Parameter] public EventCallback<HouseShowLoop> OnDone { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
     [Parameter] public string ConfirmLabel { get; set; } = "Book the run";
 
-    private readonly HouseShowLoop loop = new();
-    private readonly List<Wrestler> cast = new();
+    private HouseShowLoop loop = new();
+    private List<Wrestler> cast = new();
+
+    /// <summary>
+    /// Opens on what is already booked, or on whoever the roster has out on the road for this
+    /// date — see <see cref="Wrestler.TouringUntil"/>. A booker who has said "these eight are
+    /// touring this month" has answered this question already, and asking again every week is
+    /// asking them to repeat themselves.
+    /// </summary>
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        if (Existing is { } booked)
+        {
+            loop = booked;
+            cast = booked.Cast.ToList();
+            return;
+        }
+
+        cast = State.Roster.Where(w => w.IsTouring(On)).ToList();
+        loop.Cast = cast.ToList();
+    }
 
     private string query = "";
     private Division? division;

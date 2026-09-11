@@ -85,6 +85,7 @@ namespace WrestlingSim.Persistence
                     Overness       = Math.Round(w.Overness, 3),
                     Momentum       = Math.Round(w.Momentum, 3),
                     LastAppearance = w.LastAppearance is { } seen ? Iso(seen) : null,
+                    TouringUntil   = w.TouringUntil is { } road ? Iso(road) : null,
                     Fatigue        = w.Fatigue,
                     Sharpness      = w.Sharpness,
                     Injury         = ToDto(w.Injury),
@@ -381,6 +382,12 @@ namespace WrestlingSim.Persistence
                     state.LastAppearance, System.Globalization.CultureInfo.InvariantCulture,
                     System.Globalization.DateTimeStyles.None, out var seen)
                         ? seen
+                        : null;
+
+                w.TouringUntil = DateOnly.TryParse(
+                    state.TouringUntil, System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.None, out var road)
+                        ? road
                         : null;
 
                 w.Fatigue   = Math.Clamp(state.Fatigue, 0, 100);

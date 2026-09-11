@@ -328,6 +328,11 @@ a { color: var(--gold); }
 .rcard__bar { height: 5px; border-radius: 999px; background: var(--panel-3); overflow: hidden; }
 .rcard__bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--gold-dim), var(--gold)); }
 
+.rcard__road {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line-soft);
+}
+
 .rcard__toggle {
   appearance: none; border: 0; background: none; color: var(--muted);
   font: inherit; font-size: 12px; font-weight: 700; cursor: pointer;

@@ -100,6 +100,32 @@
                     </div>
                 }
 
+                @* On the road, or at home. A standing instruction rather than a booking: it
+                   says who the loop builder opens on, so a booker who has decided these eight
+                   are touring this month is not asked again every Saturday. Career only —
+                   exhibition has no clock for a stretch of weeks to mean anything against. *@
+                @if (State.InCareer)
+                {
+                    <div class="rcard__road">
+                        @if (w.IsTouring(Today))
+                        {
+                            <span class="badge badge--cyan">
+                                On the road until @w.TouringUntil!.Value.ToString("d MMM")
+                            </span>
+                            <button class="btn btn--sm btn--ghost" @onclick="() => SendHome(w)">Bring home</button>
+                        }
+                        else
+                        {
+                            <span class="small muted">On the road</span>
+                            @foreach (var weeks in new[] { 2, 4, 8 })
+                            {
+                                var run = weeks;
+                                <button class="btn btn--sm" @onclick="() => SendOut(w, run)">@run wk</button>
+                            }
+                        }
+                    </div>
+                }
+
                 <button class="rcard__toggle" @onclick="() => Toggle(w.RingName)">
                     @(expanded.Contains(w.RingName) ? "Hide ring skills ▲" : "Ring skills ▼")
                 </button>
@@ -159,6 +185,9 @@
                     <th class="num">Cha</th>
                     <th class="num">Disp</th>
                     <th>Trend</th>
+                    @* The road column is career-only: a stretch of weeks means nothing against
+                       an exhibition with no clock. *@
+                    @if (State.InCareer) { <th>On the road</th> }
                 </tr>
             </thead>
             <tbody>
@@ -182,6 +211,27 @@
                         <td class="num">@w.Charisma.ToString("F1")</td>
                         <td class="num gold">@Disposition(w).ToString("F2")</td>
                         <td><Trend Momentum="w.Momentum" /></td>
+                        @if (State.InCareer)
+                        {
+                            <td class="nowrap">
+                                @if (w.IsTouring(Today))
+                                {
+                                    <button class="btn btn--sm btn--ghost" title="Bring them home"
+                                            @onclick="() => SendHome(w)">
+                                        Until @w.TouringUntil!.Value.ToString("d MMM") ✕
+                                    </button>
+                                }
+                                else
+                                {
+                                    @foreach (var weeks in new[] { 2, 4, 8 })
+                                    {
+                                        var run = weeks;
+                                        <button class="btn btn--sm btn--ghost" title="@($"Out for {run} weeks")"
+                                                @onclick="() => SendOut(w, run)">@run</button>
+                                    }
+                                }
+                            </td>
+                        }
                     </tr>
                 }
             </tbody>
@@ -233,6 +283,24 @@
 </div>
 
 @code {
+    /// <summary>
+    /// Puts somebody out on the road for a stretch. Nothing is booked by this — the run of
+    /// towns is still confirmed on its date — it only decides who that builder opens on.
+    /// </summary>
+    private async Task SendOut(Wrestler w, int weeks)
+    {
+        w.TouringUntil = Today.AddDays(weeks * 7);
+        await State.SaveAsync();
+        State.Notify();
+    }
+
+    private async Task SendHome(Wrestler w)
+    {
+        w.TouringUntil = null;
+        await State.SaveAsync();
+        State.Notify();
+    }
+
     /// <summary>The career's clock, or today in exhibition — injuries are read against a date.</summary>
     private DateOnly Today =>
         State.Career?.CurrentDate ?? DateOnly.FromDateTime(DateTime.Today);

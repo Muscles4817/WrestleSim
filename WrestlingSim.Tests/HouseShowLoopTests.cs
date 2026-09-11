@@ -271,32 +271,122 @@ namespace WrestlingSim.Tests
         }
 
         /// <summary>
-        /// A date is a card *or* a run, and whichever has something in it is the one that runs.
-        /// They are alternatives rather than a mode flag, so booking a match on an untelevised
-        /// date still works exactly as it did.
+        /// **A card and a run of towns happen on the same date.**
+        ///
+        /// They are not alternatives. A real untelevised night is a couple of matches that
+        /// mean something plus everybody else getting work, and the first version made the
+        /// booker choose — worse, it chose for them: adding one match to a date with a booked
+        /// run silently dropped the run, with no warning and nowhere left on the screen to
+        /// see it. This is that behaviour, inverted.
         /// </summary>
         [Fact]
-        public void ACardAndARunAreAlternatives()
+        public void ACardAndARunOfTownsBothHappen()
         {
             var show = new ScheduledShow { Type = ShowType.HouseShow, Date = Day };
             Assert.False(show.IsBooked);
-            Assert.False(show.IsLoop);
+            Assert.False(show.HasRoadRun);
 
-            show.Loop = new HouseShowLoop { Cast = [Worker("A"), Worker("B")], Towns = 2 };
-            Assert.True(show.IsLoop);
+            show.Loop = new HouseShowLoop { Cast = [Worker("Road A"), Worker("Road B")], Towns = 2 };
+            Assert.True(show.HasRoadRun);
+            Assert.True(show.IsLoopOnly);
             Assert.True(show.IsBooked);
+            Assert.True(show.IsRunnable);
 
-            // And a card wins, because somebody who laid one out meant it.
+            var match = new BookedMatch
+            {
+                Plan = new Models.MatchPlan.MatchPlan
+                {
+                    Sides = [Models.MatchPlan.MatchSide.Of(Worker("Card A")),
+                             Models.MatchPlan.MatchSide.Of(Worker("Card B"))]
+                }
+            };
+            match.Plan.Beats.AddRange(WrestlingSim.Engine.BriefDirector
+                .Write(new Models.MatchPlan.MatchBrief(), match.Plan.Sides).Beats);
+            show.Card.Add(match);
+
+            // The run is still there, and the night is still runnable.
+            Assert.True(show.HasRoadRun);
+            Assert.False(show.IsLoopOnly, "it is no longer *only* a run of towns");
+            Assert.True(show.IsRunnable);
+            Assert.Equal(2, show.Loop!.Cast.Count);
+        }
+
+        /// <summary>
+        /// Nobody is in two places. Somebody on the card and on the road for the same date is
+        /// a booking mistake, and the screen says so rather than one of the two quietly
+        /// winning — which is what the old "a card beats a run" rule did to a whole cast.
+        /// </summary>
+        [Fact]
+        public void SomebodyOnTheCardAndOnTheRoadIsFlagged()
+        {
+            var both = Worker("In two places");
+            var show = new ScheduledShow { Type = ShowType.HouseShow, Date = Day };
+
+            show.Loop = new HouseShowLoop { Cast = [both, Worker("Road")], Towns = 2 };
             show.Card.Add(new BookedMatch
             {
                 Plan = new Models.MatchPlan.MatchPlan
                 {
-                    Sides = [new Models.MatchPlan.MatchSide { Members = [Worker("A")] },
-                             new Models.MatchPlan.MatchSide { Members = [Worker("B")] }]
+                    Sides = [Models.MatchPlan.MatchSide.Of(both),
+                             Models.MatchPlan.MatchSide.Of(Worker("Opponent"))]
                 }
             });
-            Assert.False(show.IsLoop);
-            Assert.True(show.IsBooked);
+
+            output.WriteLine($"  double booked: {string.Join(", ", show.DoubleBooked.Select(w => w.RingName))}");
+            Assert.Single(show.DoubleBooked);
+            Assert.Same(both, show.DoubleBooked.Single());
+
+            // And the run itself is untouched by it — the card wins for that wrestler when
+            // the night is run, not when it is booked, so removing the match puts them back
+            // on the road without the booker having to remember to.
+            Assert.Equal(2, show.Loop!.Cast.Count);
+        }
+
+        /// <summary>
+        /// **Both halves of a mixed night actually happen.**
+        ///
+        /// The card is graded and moves standing; the road moves condition and nothing else.
+        /// Run on the same date they must not interfere: the people on the card are not
+        /// sharpened by a tour they were not on, and the people on the road do not appear in
+        /// the card's rating.
+        /// </summary>
+        [Fact]
+        public void ACardAndARoadRunOnOneNightEachDoTheirOwnJob()
+        {
+            var onTheRoad = Worker("Road", sharpness: 50);
+            var onTheCard = Worker("Card", sharpness: 50);
+
+            double roadBefore = onTheRoad.Sharpness;
+            double cardBefore = onTheCard.Sharpness;
+
+            var loop = new HouseShowLoop { Cast = [onTheRoad, Worker("Road two")], Towns = 3 };
+            var result = new LoopSimulator(seed: 11).Run(loop, Day);
+
+            output.WriteLine($"  road {roadBefore:F1} → {onTheRoad.Sharpness:F1} · " +
+                             $"card {cardBefore:F1} → {onTheCard.Sharpness:F1}");
+
+            Assert.True(onTheRoad.Sharpness > roadBefore, "the road sharpens whoever is on it");
+            Assert.Equal(cardBefore, onTheCard.Sharpness, 3);
+            Assert.DoesNotContain(result.Workers, w => w.Wrestler == onTheCard);
+        }
+
+        // ── Who is on the road ───────────────────────────────────────────────
+
+        /// <summary>
+        /// A touring assignment is a standing instruction, not a booking. It says who the
+        /// loop builder opens on, and it stops meaning anything the day it runs out.
+        /// </summary>
+        [Fact]
+        public void ATouringAssignmentCoversAStretchAndThenStops()
+        {
+            var w = Worker("On the road");
+            Assert.False(w.IsTouring(Day));
+
+            w.TouringUntil = Day.AddDays(28);
+
+            Assert.True(w.IsTouring(Day));
+            Assert.True(w.IsTouring(Day.AddDays(28)), "the last day is still on the road");
+            Assert.False(w.IsTouring(Day.AddDays(29)));
         }
     }
 }

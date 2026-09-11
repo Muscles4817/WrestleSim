@@ -4516,6 +4516,7 @@ own.
   business side of a touring schedule is a whole other system.
 - **Nobody can be told to stay home.** A wrestler not on the run simply is not on it, and there
   is no way to say "rest this one" that reads differently from "forgot about this one".
+  *(Still true. The touring assignment below says who goes out, not who is deliberately kept in.)*
 - **A loop cannot be a tag run.** Everybody on it works a singles match a night, so the work
   share that makes a tag a protected rep never applies — which is a shame, because a tag loop
   is precisely how a real promotion brings somebody back.
@@ -4603,4 +4604,62 @@ they are the same decision at two depths.
 - **Nothing checks the card as a whole.** `BriefCritique` reads one match, so nothing says
   "this is your third grudge tonight" or "both your main-eventers are in the opener", which is
   exactly the judgement a card-first view finally has the information to make.
+
+
+## A card and a run of towns on the same night
+
+The two were built as alternatives and the code chose between them:
+`IsLoop => Loop is { IsBookable: true } && Card.Count == 0`. **A card silently won.** Book a run
+of eight, add one match to the same date, and the run was dropped — it stayed on the show
+object, the button that would have shown it disappeared because it was gated on an empty card,
+and the night ran as a one-match show. Nobody was told.
+
+A real untelevised night is a couple of matches that mean something plus everybody else getting
+work, so they are not alternatives at all: **the card is the night you booked and the run is the
+rest of the roster out in the towns.** `HasRoadRun` replaces `IsLoop`, both engines run on the
+date, and the report carries both — the road as a section under the card rather than a different
+report.
+
+`IsLoopOnly` survives for the screens that genuinely ask "is this night *only* a run of towns",
+which is one button's label and one empty state.
+
+**Nobody is in two places.** Somebody on the card and on the road for the same date stays home
+from the towns, and the screen says so. The card wins for that wrestler rather than for the
+whole run, and it wins *when the night is run* rather than when it is booked — so taking the
+match off puts them back on the road without the booker having to remember to. The first attempt
+warned and then billed the same body twice, which browser-verifying caught: Roman Reigns
+appeared in the card's main event and in the run's sharpness table on the same page.
+
+### The loop builder edits the run instead of replacing it
+
+It built a fresh `HouseShowLoop` every time while the button said "Edit the run", so a booker
+who opened it to add one name and confirmed lost the eight already on it. It opens on what is
+booked now.
+
+## Who is on the road, as a standing instruction
+
+`Wrestler.TouringUntil` is a date, and the loop builder opens on whoever it covers. A promotion
+does not decide every week who tours; it puts people out for a stretch and brings them back, and
+asking the question again every Saturday is asking the booker to repeat themselves.
+
+It is deliberately **not** a booking. The run of towns is still confirmed on its date, and
+taking somebody off that run does not bring them home — one is what you intend and the other is
+what happened, and conflating them would make dropping somebody from one night cancel their
+tour.
+
+**The control went in the wrong place first.** It was added to the roster's card list, which is
+the mobile view — `.rcards` is `display: none` above 640px — so on the desktop the feature did
+not exist. The desktop table has an "On the road" column now. That is the second time in this
+session a feature was built into the half of a two-view screen nobody was looking at, and both
+times a browser found it and the tests could not.
+
+### Still not built
+
+- **Nothing brings people home on its own.** A tour runs out on its date and they are simply at
+  home again; there is no "they have been out three months, bring them in" prompt, which is the
+  thing a booker would actually want telling them.
+- **The road cannot be a tag run**, so the work share that makes a tag a protected rep still
+  never applies on the road.
+- **A touring wrestler is not flagged on the card.** Booking somebody who is out in the towns
+  is legal and correct — they come home for television — but the picker does not mention it.
 
