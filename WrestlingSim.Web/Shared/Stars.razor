@@ -1,8 +1,19 @@
-<span class="stars">
-    <span class="stars__glyphs">@MatchEngineResult.GlyphsFor(Rating)</span>
+@*
+    A rating, in glyphs and in colour.
+
+    Every rating in the app used to be gold. Five stars and two drew a different number of
+    glyphs in the same triumphant colour, with the same glow behind them — so the screen whose
+    whole job is telling a booker whether the show was any good said "good" whatever happened.
+    The band comes from `Grades`, which reads the stars, and the score elsewhere on the screen
+    converts to stars rather than carrying its own thresholds.
+*@
+<span class="stars" title="@Grades.OfStars(Rating).Label()">
+    <span class="stars__glyphs @Grades.OfStars(Rating).Tone()">@MatchEngineResult.GlyphsFor(Rating)</span>
     @if (ShowNumber)
     {
         <span class="stars__num">@Rating.ToString("F2") / 5.00</span>
+        @* The word, so the band is not carried by colour alone. *@
+        <span class="stars__verdict @Grades.OfStars(Rating).Tone()">@Grades.OfStars(Rating).Label()</span>
     }
 </span>
 

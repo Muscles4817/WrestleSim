@@ -44,12 +44,9 @@
     private List<FeudUpdate> Meaningful =>
         Updates.Where(u => u.HeatAdded > 0.05).ToList();
 
-    internal static string IntensityBadge(FeudIntensity intensity) => intensity switch
-    {
-        FeudIntensity.Nuclear  => "badge--heel",
-        FeudIntensity.Hot      => "badge--gold",
-        FeudIntensity.Building => "badge--cyan",
-        FeudIntensity.Cold     => "badge",
-        _                      => "badge--muted"
-    };
+    /// <summary>
+    /// The heat badge, from the one place that decides it. This map was private here while
+    /// the match builder rendered the same five values with no colour at all.
+    /// </summary>
+    internal static string IntensityBadge(FeudIntensity intensity) => intensity.Badge();
 }

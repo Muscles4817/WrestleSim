@@ -226,6 +226,25 @@ namespace WrestlingSim.Enums
         Extreme
     }
 
+    public static class BeatIntensityExtensions
+    {
+        /// <summary>
+        /// The class an intensity is painted with, warming as it climbs.
+        ///
+        /// A beat sheet is a shape, and the shape is what the intensities do down the page —
+        /// a valley, a climb, a peak at the finish. Rendered in one colour it is a list of
+        /// words, and the booker has to read four of them to see what the eye should have got
+        /// in one pass.
+        /// </summary>
+        public static string Tone(this BeatIntensity i) => i switch
+        {
+            BeatIntensity.Extreme => "heat--extreme",
+            BeatIntensity.High    => "heat--high",
+            BeatIntensity.Medium  => "heat--medium",
+            _                     => "heat--low"
+        };
+    }
+
     public enum BeatDuration
     {
         Brief,    // ~30s

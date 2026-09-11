@@ -28,7 +28,7 @@ else if (show.HasRun)
     <div class="score-hero">
         <div>
             <div class="score-hero__label">Overall</div>
-            <div class="score-hero__main">@result.OverallRating.ToString("F1") <span class="muted">/ 100</span></div>
+            <div class="score-hero__main @Grades.OfScore(result.OverallRating).Tone()">@result.OverallRating.ToString("F1") <span class="muted">/ 100</span></div>
         </div>
         <div>
             <div class="score-hero__label">Runtime</div>
@@ -123,7 +123,7 @@ else if (show.HasRun)
                     {
                         <Stars Rating="@stars" ShowNumber="false" />
                     }
-                    <strong class="tabnum gold">@item.Score.ToString("F1")</strong>
+                    <strong class="tabnum @Grades.OfScore(item.Score).Tone()">@item.Score.ToString("F1")</strong>
                 </div>
             </div>
         }

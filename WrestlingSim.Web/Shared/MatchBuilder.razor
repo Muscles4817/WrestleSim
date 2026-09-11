@@ -224,13 +224,19 @@
         <span class="label slot__label">@label</span>
         @if (held is { } w)
         {
-            <span class="slot__name">@w.RingName</span>
+            <span class="slot__name">
+                @w.RingName
+                @if (w.Gimmick is { } g)
+                {
+                    <span class="badge badge--sm @g.NaturalAlignment.Badge()">@g.NaturalAlignment.Label()</span>
+                }
+            </span>
             <span class="slot__meta">
-                @w.CardPosition.Label() · @w.OvernessDisplay
+                @w.CardPosition.Label() · <span class="tabnum @w.CardPosition.Tone()">@w.OvernessDisplay</span>
                 <Trend Momentum="@w.Momentum" ShowLabel="false" />
                 @if (State.IsCrossover(w))
                 {
-                    <span class="badge badge--heel">crossover −@BrandIntegrity.CostOf(w).ToString("F1")</span>
+                    <span class="badge badge--sm badge--cost">crossover −@BrandIntegrity.CostOf(w).ToString("F1")</span>
                 }
             </span>
         }
@@ -341,7 +347,7 @@
                 <div class="chips">
                     @foreach (var v in Enum.GetValues<BeatIntensity>())
                     {
-                        <button class="chip @(edit.Intensity == v ? "is-active" : "")"
+                        <button class="chip @v.Tone() @(edit.Intensity == v ? "is-active" : "")"
                                 @onclick="() => { edit.Intensity = v; }">@v</button>
                     }
                 </div>
@@ -383,6 +389,7 @@
                   Current="@SlotHolder(slot)"
                   UsedAs="@BookedAs"
                   Against="@OpposingSide(slot)"
+                  DefaultDivision="@DefaultDivision"
                   Picked="@(w => FillSlot(slot, w))"
                   Cleared="@(() => { Assign(slot, null); openSlot = null; })"
                   Cancelled="@(() => openSlot = null)" />
@@ -816,7 +823,7 @@
                     <div class="versus__name">@string.Join(" & ", Members(s).Select(w => w.RingName))</div>
                     @if (starter is not null)
                     {
-                        <div class="versus__meta">@starter.CardPosition.Label() · @starter.OvernessDisplay</div>
+                        <div class="versus__meta">@starter.CardPosition.Label() · <span class="tabnum @starter.CardPosition.Tone()">@starter.OvernessDisplay</span></div>
                     }
                 </div>
             }
@@ -825,7 +832,7 @@
         @if (feud is not null)
         {
             <div class="notice notice--tip mt">
-                <strong>@feud.Intensity feud</strong> — @feud.Heat.ToString("F0") heat,
+                <strong class="@feud.Intensity.Badge()">@feud.Intensity feud</strong> — @feud.Heat.ToString("F0") heat,
                 +@feud.StartingEnergyBonus starting crowd energy.
                 @if (feud.History.Count > 0)
                 {
@@ -1147,6 +1154,16 @@
 
     private Wrestler? SlotHolder(SlotRef slot) =>
         sides[slot.Side].ElementAtOrDefault(slot.Index);
+
+    /// <summary>
+    /// The division the next picker opens on: whatever everybody already booked has in
+    /// common, and the whole roster when they have nothing in common or nobody is booked.
+    ///
+    /// Read from the lineup rather than remembered from the last pick, so clearing a slot
+    /// changes it back and an intergender match already on the board keeps the list whole.
+    /// </summary>
+    private Division? DefaultDivision =>
+        RosterFilters.DivisionFor(Enumerable.Range(0, sideCount).SelectMany(Members));
 
     /// <summary>
     /// The side this slot is being picked *against*, which is what the picker sorts by.

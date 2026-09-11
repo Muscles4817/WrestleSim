@@ -24,6 +24,19 @@
 
   --face:        #4ade80;
   --heel:        #f2585f;
+  --violet:      #a78bfa;
+
+  /* How over somebody is, in the bands CardPosition already uses. Every number in the
+     roster list was --ink-2, so a 91 and a 34 read as equally important and the booker
+     compared digits on seventy rows. Warm and bright at the top, receding to the bottom:
+     the ramp is lightness as much as hue, so it survives being colour-blind or on a
+     phone in daylight — and the card-position heading above each group says the same
+     thing in words. */
+  --pop-main:    #ffd77a;
+  --pop-upper:   #7fe3c4;
+  --pop-mid:     #b6bccd;
+  --pop-lower:   #7d8497;
+  --pop-enh:     #565d70;
 
   --r-sm: 6px;
   --r:    10px;
@@ -289,8 +302,12 @@ a { color: var(--gold); }
   gap: 8px; margin-top: 12px;
 }
 .rcard__stat { text-align: center; }
+/* No `color` here. `.rcard__stat b` is more specific than a one-class utility, so pinning
+   the colour on the element silently beat every class put on the <b> — the "Card" label has
+   been asking for .gold and rendering plain ink since it was written, and the overness tone
+   would have gone the same way. Inheriting gives the same --ink to anything unclassed. */
 .rcard__stat b {
-  display: block; font-size: 15px; font-variant-numeric: tabular-nums; color: var(--ink);
+  display: block; font-size: 15px; font-variant-numeric: tabular-nums;
 }
 .rcard__stat span {
   display: block; font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
@@ -532,7 +549,14 @@ table.data tr:last-child td { border-bottom: 0; }
 .badge--heel  { color: var(--heel); border-color: rgba(242, 88, 95, .3);  background: rgba(242, 88, 95, .1); }
 .badge--gold  { color: var(--gold); border-color: rgba(245, 185, 59, .32); background: rgba(245, 185, 59, .1); }
 .badge--cyan  { color: var(--cyan); border-color: rgba(79, 209, 224, .3);  background: rgba(79, 209, 224, .1); }
-.badge--muted { color: var(--faint); }
+.badge--muted { color: var(--faint); border-color: var(--line); }
+.badge--violet { color: var(--violet); border-color: rgba(167, 139, 250, .3); background: rgba(167, 139, 250, .1); }
+/* A price, not a villain. This was .badge--heel, which is the colour that now means the
+   wrestler *is* a heel — so a crossover cost on a babyface read as a contradiction. */
+.badge--cost  { color: var(--gold-2); border-color: rgba(245, 185, 59, .3); background: rgba(245, 185, 59, .1); }
+/* For a row that already carries two or three of these. Shrinks the badge, not the text
+   inside it below the 10px floor. */
+.badge--sm    { padding: 1px 5px; font-size: 10px; letter-spacing: .08em; }
 
 .badge-row { display: flex; gap: 5px; flex-wrap: wrap; }
 
@@ -568,6 +592,11 @@ table.data tr:last-child td { border-bottom: 0; }
 .stars__num {
   font-variant-numeric: tabular-nums; color: var(--muted);
   font-size: 13px; font-weight: 700;
+}
+/* The band in words. Colour is the fast channel and the word is the reliable one. */
+.stars__verdict {
+  font-size: var(--t-xs); font-weight: 800;
+  letter-spacing: var(--track-label); text-transform: uppercase;
 }
 
 .score-hero {
@@ -726,6 +755,39 @@ table.data tr:last-child td { border-bottom: 0; }
 .gold  { color: var(--gold); }
 .small { font-size: 12.5px; }
 .tabnum { font-variant-numeric: tabular-nums; }
+
+/* ── How good it was ───────────────────────────────────────────────────────
+   Every rating in the app was gold: a two-star match and a five-star one drew
+   different glyph counts in the same triumphant colour, and the score beside
+   them was gold at 42 and gold at 95. Unlike the overness ramp this does not
+   fade out at the bottom — a low reading on a wrestler is a jobber doing their
+   job, and a low reading on a match is a mistake the booker made. */
+.grade--classic { color: var(--gold-2); }
+.grade--great   { color: #7fe3c4; }
+.grade--good    { color: var(--ink-2); }
+.grade--fine    { color: var(--muted); }
+.grade--poor    { color: var(--heel); }
+/* The glow is the thing that made every rating look like a triumph. It stays on
+   the one band that has earned it. */
+.stars__glyphs { text-shadow: none; }
+.stars__glyphs.grade--classic { text-shadow: 0 0 18px rgba(245, 185, 59, .35); }
+
+/* ── How hard a beat goes ──────────────────────────────────────────────────
+   A beat sheet is a shape, and the shape is what the intensities do down the
+   page. In one colour it is a list of words. */
+.heat--extreme { color: var(--heel); }
+.heat--high    { color: var(--gold); }
+.heat--medium  { color: var(--ink-2); }
+.heat--low     { color: var(--muted); }
+
+
+/* Why a name the booker knows is on the roster is not in the list. A filter the sheet
+   applied for them needs saying once; one they applied themselves does not. */
+.sheet__default {
+  font-size: var(--t-sm); color: var(--ink-2);
+  padding: 6px 2px 2px; line-height: 1.4;
+}
+.sheet__default strong { color: var(--gold); font-weight: 700; }
 .mono { font-family: var(--mono); }
 .center { text-align: center; }
 .mt   { margin-top: var(--gap); }
@@ -1000,7 +1062,8 @@ table.data tr:last-child td { border-bottom: 0; }
 }
 .slot__label { color: var(--faint); }
 .slot.is-filled .slot__label { color: var(--gold-dim); }
-.slot__name  { font-size: var(--t-lg); font-weight: 700; line-height: 1.2; }
+.slot__name  { font-size: var(--t-lg); font-weight: 700; line-height: 1.2;
+               display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .slot__meta  { font-size: var(--t-sm); color: var(--muted);
                display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .slot__hint  { font-size: var(--t-md); color: var(--faint); }
@@ -1061,7 +1124,29 @@ table.data tr:last-child td { border-bottom: 0; }
 .prow__name  { grid-area: name; font-weight: 700; font-size: 15px;
                display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .prow__why   { grid-area: why; font-size: var(--t-sm); color: var(--muted); }
-.prow__pop   { grid-area: pop; color: var(--ink-2); align-self: center; }
+
+/* ── Why a name is being offered ───────────────────────────────────────────
+   Three of the six bands, not six. A story is the reason to book somebody, a
+   worn-out pairing is the reason not to, and a name already in the match is
+   not a candidate. The other three are the ordinary case, and painting the
+   ordinary case is how a palette stops meaning anything — this app has been
+   there already, with twenty-six amber notices doing four different jobs.
+
+   Below `.prow__why` on purpose: both are one class, so the later one wins, and
+   above it these rules lost silently to the grey they exist to replace. */
+.band--story  { color: var(--gold-2); }
+.band--worn   { color: #ffb27a; }
+.band--booked { color: var(--faint); }
+.prow__pop   { grid-area: pop; color: var(--ink-2); align-self: center; font-weight: 700; }
+
+/* ── How over somebody is, in colour ───────────────────────────────────────
+   Used by the picker rows and by the filled lineup slots, so the same number
+   is the same colour wherever the booker meets it. */
+.pop--main  { color: var(--pop-main);  font-weight: 800; }
+.pop--upper { color: var(--pop-upper); }
+.pop--mid   { color: var(--pop-mid); }
+.pop--lower { color: var(--pop-lower); }
+.pop--enh   { color: var(--pop-enh); }
 .prow .trend { grid-area: trend; align-self: center; }
 /* Its own grid row. Sharing `why` put the ring-condition line on top of the booking
    reason — same grid area, both visible, both unreadable. */

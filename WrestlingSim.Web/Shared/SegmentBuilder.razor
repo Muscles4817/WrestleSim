@@ -108,18 +108,33 @@
                         HomeBrand="@State.BookingBrand"
                         IncludeCrossover="@includeCrossover" IncludeCrossoverChanged="@(v => includeCrossover = v)" />
             <div class="picks picks--2">
-                @foreach (var w in FilteredRoster())
+                @foreach (var row in RankedRoster())
                 {
+                    var w = row.Wrestler;
                     <button class="pick @(cast.Contains(w) ? "is-selected" : "")" @onclick="() => ToggleCast(w)">
                         <span class="pick__body">
                             <span class="pick__name">
                                 @w.RingName
+                                @if (w.Gimmick is { } g)
+                                {
+                                    <span class="badge badge--sm @g.NaturalAlignment.Badge()">@g.NaturalAlignment.Label()</span>
+                                }
+                                @* A price, not a villain — this was the heel colour, which now
+                                   means the wrestler is one. *@
                                 @if (State.IsCrossover(w))
                                 {
-                                    <span class="badge badge--heel">crossover −@BrandIntegrity.CostOf(w).ToString("F1")</span>
+                                    <span class="badge badge--sm badge--cost">crossover −@BrandIntegrity.CostOf(w).ToString("F1")</span>
                                 }
                             </span>
                             <span class="pick__desc">@w.CharismaLabel · @w.CardPosition.Label()</span>
+                            @* The ranking's own reason, but only where it says something worth
+                               a line. A promo cares about charisma, which is the line above;
+                               a live story or a worn-out pairing is the thing that changes
+                               which promo you book at all. *@
+                            @if (BookingSuggestions.Tone(row.Band) is { Length: > 0 } tone)
+                            {
+                                <span class="pick__desc @tone">@row.Reason</span>
+                            }
                         </span>
                     </button>
                 }
@@ -143,16 +158,21 @@
                 <div class="field mt">
                     <span class="field__label">@role</span>
                     <div class="picks picks--2">
-                        @foreach (var w in FilteredRoster().Where(x => IsAvailableFor(x, roleIndex)))
+                        @foreach (var row in RankedRoster().Where(x => IsAvailableFor(x.Wrestler, roleIndex)))
                         {
+                            var w = row.Wrestler;
                             <button class="pick @(RoleAt(roleIndex) == w ? "is-selected" : "")"
                                     @onclick="() => AssignRole(roleIndex, w)">
                                 <span class="pick__body">
                                     <span class="pick__name">
                                         @w.RingName
+                                        @if (w.Gimmick is { } g)
+                                        {
+                                            <span class="badge badge--sm @g.NaturalAlignment.Badge()">@g.NaturalAlignment.Label()</span>
+                                        }
                                         @if (State.IsCrossover(w))
                                         {
-                                            <span class="badge badge--heel">crossover</span>
+                                            <span class="badge badge--sm badge--cost">crossover</span>
                                         }
                                     </span>
                                     <span class="pick__desc">@w.CharismaLabel · @w.CardPosition.Label()</span>
@@ -168,8 +188,9 @@
                 <div class="field mt">
                     <span class="field__label">@template.ExtraParticipantRole (optional)</span>
                     <div class="picks picks--2">
-                        @foreach (var w in FilteredRoster().Where(x => !cast.Take(template.ParticipantRoles.Count).Contains(x)))
+                        @foreach (var row in RankedRoster().Where(x => !cast.Take(template.ParticipantRoles.Count).Contains(x.Wrestler)))
                         {
+                            var w = row.Wrestler;
                             <button class="pick @(extras.Contains(w) ? "is-selected" : "")" @onclick="() => ToggleExtra(w)">
                                 <span class="pick__body"><span class="pick__name">@w.RingName</span></span>
                             </button>
@@ -386,14 +407,37 @@
     private bool includeCrossover;
 
     /// <summary>Roster narrowed by the search box, division chips and brand, most over first.</summary>
-    private IEnumerable<Wrestler> FilteredRoster() =>
-        State.Roster
-            .Where(w => includeCrossover || !State.IsCrossover(w))
-            .Where(w => castDivision is null || w.Division == castDivision)
-            .Where(w => string.IsNullOrWhiteSpace(castQuery)
-                     || (w.RingName?.Contains(castQuery, StringComparison.OrdinalIgnoreCase) ?? false)
-                     || (w.RealName?.Contains(castQuery, StringComparison.OrdinalIgnoreCase) ?? false))
-            .OrderByDescending(w => w.Overness);
+    /// <summary>
+    /// The cast list, ranked the way the match builder ranks a corner.
+    ///
+    /// This was `OrderByDescending(Overness)` — the same thing every roster list in the app
+    /// used to do, and the reason `BookingSuggestions` exists. A promo is *about* a story, so
+    /// offering names by popularity on the screen where a story is being told is the worst
+    /// place in the game to do it: the person the segment should be with is whoever the cast
+    /// already has heat with, and the game knows exactly who that is.
+    ///
+    /// `against` is whoever is already in the segment. Not literally opposed — a cast can be
+    /// allies — but it is the same question the ranking answers either way: who has something
+    /// going on with these people.
+    /// </summary>
+    private IReadOnlyList<BookingSuggestions.Suggestion> RankedRoster() =>
+        BookingSuggestions.Rank(
+            State.Roster
+                 .Where(w => includeCrossover || !State.IsCrossover(w))
+                 .Where(w => castDivision is null || w.Division == castDivision)
+                 .Where(w => string.IsNullOrWhiteSpace(castQuery)
+                          || (w.RingName?.Contains(castQuery, StringComparison.OrdinalIgnoreCase) ?? false)
+                          || (w.RealName?.Contains(castQuery, StringComparison.OrdinalIgnoreCase) ?? false)),
+            cast, State.FeudBook,
+            // No "already booked" marker, deliberately. In the match picker that band sinks a
+            // name to the bottom of the list and tapping it *swaps* two slots, so moving it is
+            // harmless. A segment cast is a toggle list: marking a chosen name would drop it
+            // to the foot of seventy rows the instant it was picked, and taking somebody back
+            // out would mean scrolling to find them. `is-selected` already carries the state,
+            // and it carries it where the name is.
+            _ => null,
+            State.StandingPartnerOf, State.RecentlyBooked,
+            State.Career?.CurrentDate);
     private readonly List<Wrestler> extras = new();
     private string dialogue = "";
 

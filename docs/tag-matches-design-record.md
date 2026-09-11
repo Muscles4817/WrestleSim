@@ -4138,3 +4138,165 @@ stops existing.
   legality sweep — but elimination is not a phase separator, so the shape it writes is one
   long tag match rather than a match that loses people. Same blocker as the three-way
   elimination named above, and the same fix.
+
+
+## Everything in the roster list was the same colour
+
+The picker showed seventy names, and the only thing that varied down the page was the digits.
+Overness was `--ink-2` on every row, so a 91 and a 34 read as equally important; alignment
+appeared as a grey lowercase word at the end of the reason line; and the two divisions were
+indistinguishable. A booker comparing two names had to read rather than look.
+
+**The bands are the game's own.** Overness is painted by `CardPosition` — main event, upper
+card, midcard, lower card, enhancement — rather than by new thresholds. A second set of
+cut-offs would drift from the first, and then the group heading would say "Midcard" over a
+number painted main-event gold. The ramp is lightness as much as hue, so it survives a
+colour-blind reader and a phone in daylight, and the heading above each group already says the
+same thing in words.
+
+**Colour is never the only channel.** Face and heel take the two colours the palette already
+carried, but each badge carries the word as well: red and green are the pair most likely to be
+one colour to whoever is reading. A tweener is deliberately not a third colour — it is the
+absence of one, because painting it would say there are three kinds of alignment to weigh when
+there are two and an undecided.
+
+**The division badge appears only while the list holds both.** Once the filter is on one of
+them the badge is on every row and says nothing; a label that never varies is furniture.
+
+Three things fell out of doing this rather than being the point of it:
+
+- **`badge--dim` was never defined in the stylesheet.** The picker had been asking for it on
+  every already-booked name since the sheet was written, and it rendered as a bare outline.
+- **The crossover cost was painted `--heel`.** Once red means the wrestler *is* a heel, a red
+  cost badge beside a babyface's name reads as a contradiction. It is `--cost` now, and gold
+  means a price everywhere.
+- **`.rcard__stat b` pinned `color` on the element**, which is more specific than any
+  one-class utility, so every class put on that `<b>` lost silently. The "Card" label on the
+  roster card had been asking for `.gold` and rendering plain ink since it was written. The
+  colour is off the element now and both utilities work.
+
+The alignment word came *out* of `BookingSuggestions.Plain` at the same time. Said in both
+places, a row read "Powerhouse · heel" underneath a HEEL badge, and the reason line is the half
+that has to fit on a phone.
+
+`RosterScreen` had its own copy of the alignment-to-colour map, which is how a face ends up
+green on one screen and red on another. There is one now.
+
+### The picker opens on the division already booked
+
+Picking a tag team meant answering "women, not men" once per slot, to a filter that reset every
+time the sheet opened. `RosterFilters.DivisionFor` answers it from the lineup instead.
+
+It returns null — the whole roster — in two cases, and the second is the one worth stating.
+Nobody is booked yet, so there is nothing to match. **Or the people already booked disagree**,
+because an intergender match is a legitimate booking, and once a booker has made one, filtering
+to the first name's division would hide half of what they have visibly already chosen. The
+picker would be arguing with a decision that has been taken.
+
+It is a default and never a gate. The division chips sit directly above the list and override
+it, and the sheet says so in one line while the filter is still the one it opened with — a
+filter the booker did not set is one they have to be told about, or a name they know is on the
+roster is simply missing and the picker looks broken. The line disappears the moment they touch
+the chips.
+
+Twelve mutations, all killed. Browser-verified at 390x844: the first slot opens on everybody,
+the second opens on the first pick's division with the line explaining why, tapping **All**
+clears both, and a lineup that is already intergender opens on the whole roster again.
+
+### Still not built
+
+*(All three were done in the pass below.)*
+
+- **The colour stops at the roster.** Beat intensity, match ratings and heat readings are still
+  monochrome, and the same argument applies to all three.
+- **The reason line is still grey for everybody.** "There is a story here" and "the crowd has
+  seen this" are the two most consequential things a row can say, and they are the same colour
+  as the wrestling style beside them.
+- **`SegmentBuilder` still ranks by overness** rather than through `BookingSuggestions`, so its
+  lists got the badges but not the ordering. Already named in the review record.
+
+## The rest of the palette
+
+### Every rating in the app was gold
+
+A two-star match and a five-star one drew a different number of glyphs in the same triumphant
+colour, with the same glow behind them, and the 0–100 score beside them was gold at 42 and gold
+at 95. The one screen whose whole job is telling a booker whether the show was any good said
+"good" whatever happened.
+
+`Grades` bands a rating: **Poor, Forgettable, Good, Very good, Classic**. Two things about how
+it is defined:
+
+- **The thresholds are on the stars, and the 0–100 view converts.** `MatchEngine` defines the
+  star rating as the final score over twenty, so they are one number on two scales; giving the
+  score its own cut-offs would let a hero reading "Very good" sit beside stars painted for a
+  good one, on the same screen, two inches apart. A test walks all 101 integer scores and
+  checks the two agree at every one.
+- **The bottom band is the warning colour, not a faded one.** This is where the grade ramp and
+  the overness ramp part company, and the difference is why there are two. A wrestler with a
+  low reading is an enhancement talent doing the job they are on the card for; a match with a
+  low reading is a mistake the booker made, and the screen should say so.
+
+The glow moved with it. It now belongs to the one band that has earned it, rather than sitting
+behind every rating the game has ever produced. And where the number is shown, the band is
+shown in words beside it, for the same reason the alignment badges carry a word.
+
+**There are two show-report screens.** `ShowScreen` and `BookShowScreen` render the same hero
+and the same per-item scores from their own copies of the markup, and the flow a player
+actually takes — book a card, run it — lands on the second one. The first attempt coloured only
+`ShowScreen`, and browser-verifying it showed a gold 75.3 exactly where the change was supposed
+to be. Both are done, and so are the dashboard and the calendar; the duplication itself is not.
+
+### The rest
+
+**Beat intensity** climbs through four colours. A beat sheet is a shape, and the shape is what
+the intensities do down the page — a valley, a climb, a peak at the finish. In one colour it is
+a list of words the booker has to read four of to see what the eye should have got in one pass.
+
+**Feud heat** had its badge map living privately inside `FeudUpdates.razor` while the match
+builder rendered the same five values with no colour at all: two copies, one step before it
+happens. Nuclear is the warning colour rather than the best one, because doc 20 §6 has a
+nuclear feud as the state with a clock on it — something to be paid off soon, not sat in.
+
+**The reason line** in the picker was `--muted` for every row, so "there is a story here", the
+single most useful thing the list can say, was the same grey as the wrestling style beside it.
+Three of the six bands are painted and three are not, and that is the design rather than an
+omission: a story is the reason to book somebody, a worn-out pairing is the reason not to, and
+a name already in the match is not a candidate. The rest are the ordinary case. This app has
+already learned what happens when the ordinary case gets a colour — twenty-six amber notices
+doing four different jobs, and amber meaning nothing.
+
+One CSS ordering trap, found by probing computed colours in the browser rather than by reading:
+`.band--story` and `.prow__why` are both single-class selectors, so the later one wins, and the
+band rules were above the grey they exist to replace. They lost silently. They sit below it now
+and there is a comment saying why.
+
+### The segment cast is ranked, not sorted by popularity
+
+`SegmentBuilder.FilteredRoster` was `OrderByDescending(Overness)` — the same thing every roster
+list in the app used to do, and the reason `BookingSuggestions` exists. A promo is *about* a
+story, so offering names by popularity on the screen where a story is being told is the worst
+place in the game to do it.
+
+`StandingPartnerOf` and the last card's cast were both private to `RosterPicker`, which is why
+the segment builder could not use the ranking without copying them. They are questions about
+the career rather than about a component, so they moved to `GameState`, where the cache is
+dropped by `Notify` — the one place anything changes.
+
+**One thing that had to be different from the match picker.** The match picker marks names
+already in the match, which sinks them to the bottom of the list, and that is fine there
+because tapping one *swaps* two slots. A segment cast is a toggle list: browser-verifying the
+first version showed the name dropping to the foot of seventy rows the instant it was picked,
+so taking somebody back out meant scrolling to find them. No marker is passed, `is-selected`
+carries the state, and it carries it where the name is.
+
+### Still not built
+
+- **The ranking has nothing to rank on in a fresh career.** With no feuds, the segment cast
+  still comes out in card-position order, which is what it did before. The change shows once a
+  story exists, which is exactly when it matters and exactly when a screenshot cannot see it.
+- **The two show-report screens are still two.** They render the same thing from separate
+  markup, and every change to a rating readout has to be made twice.
+- **The play-by-play is still one colour.** Each beat prints its intensity, and that is the
+  same shape argument as the beat sheet, one screen further on.
+

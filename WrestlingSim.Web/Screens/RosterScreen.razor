@@ -60,7 +60,7 @@
                    into the expandable detail below, where the paragraph explaining it lives.
                    The card keeps the three a booker reads, each against its own ceiling. *@
                 <div class="rcard__stats">
-                    <div class="rcard__stat"><b>@w.OvernessDisplay</b><span>Over / 100</span></div>
+                    <div class="rcard__stat"><b class="@w.CardPosition.Tone()">@w.OvernessDisplay</b><span>Over / 100</span></div>
                     <div class="rcard__stat"><b>@w.Charisma.ToString("F1")</b><span>Cha / 5</span></div>
                     <div class="rcard__stat"><b>@w.RingSkills.GetOverallSkill().ToString("F2")</b><span>Skill / 5</span></div>
                     <div class="rcard__stat"><b class="gold">@w.CardPosition.Label()</b><span>Card</span></div>
@@ -177,7 +177,7 @@
                         }
                         <td><span class="badge @AlignBadge(w)">@(w.Gimmick?.NaturalAlignment.ToString() ?? "—")</span></td>
                         <td class="small muted nowrap">@w.Style</td>
-                        <td class="num">@w.OvernessDisplay</td>
+                        <td class="num @w.CardPosition.Tone()">@w.OvernessDisplay</td>
                         <td class="num">@w.RingSkills.GetOverallSkill().ToString("F2")</td>
                         <td class="num">@w.Charisma.ToString("F1")</td>
                         <td class="num gold">@Disposition(w).ToString("F2")</td>
@@ -266,12 +266,13 @@
         ("Striker",   w.RingSkills.Striker),
     ];
 
-    private static string AlignBadge(Wrestler w) => w.Gimmick?.NaturalAlignment switch
-    {
-        Alignment.Face => "badge--face",
-        Alignment.Heel => "badge--heel",
-        _              => "badge--muted"
-    };
+    /// <summary>
+    /// The alignment colour, from the one place that decides it. This screen carried its own
+    /// copy of the same three-way map; the picker needed the same answer, and two copies of a
+    /// colour rule is how a face ends up red on one screen and green on another.
+    /// </summary>
+    private static string AlignBadge(Wrestler w) =>
+        w.Gimmick?.NaturalAlignment.Badge() ?? "badge--muted";
 
     /// <summary>
     /// The raw popularity + fan-group appeal blend the engine calls Disposition.
