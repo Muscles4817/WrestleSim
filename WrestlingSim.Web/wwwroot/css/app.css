@@ -421,6 +421,88 @@ a { color: var(--gold); }
   .booking__rail { position: sticky; top: 16px; display: grid; gap: var(--gap); }
 }
 
+/* ── A card row's corners ────────────────────────────────────────────────────
+   A match draws the people in it as corners, so a slot nobody has cast still
+   shows its shape: "— vs —" is a match you have decided to have and not yet
+   decided about, which is exactly the state a booker works in. */
+.corners { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.corners__vs {
+  font-size: var(--t-xs); letter-spacing: var(--track-label);
+  text-transform: uppercase; color: var(--faint); font-weight: 800;
+}
+.corner {
+  min-height: 32px; padding: 4px 10px;
+  border: 1px dashed var(--line); border-radius: var(--r-sm);
+  background: none; color: var(--faint);
+  font: inherit; font-size: var(--t-sm); font-weight: 700; cursor: pointer;
+}
+.corner.is-filled {
+  border-style: solid; border-color: var(--line);
+  background: var(--panel-2); color: var(--ink);
+}
+.corner.is-focused {
+  border-color: var(--gold); color: var(--gold);
+  background: rgba(245, 185, 59, .08);
+}
+.corner:focus-visible { outline: none; box-shadow: var(--ring); }
+
+/* A row still being worked on. Quiet rather than alarming — an unfinished card is
+   the ordinary state now, not a mistake. */
+.card-row.is-draft { border-style: dashed; }
+.card-row { cursor: grab; }
+.card-row:active { cursor: grabbing; }
+
+/* ── Booking a match on the card ─────────────────────────────────────────────
+   Four choices, inline. The five-step builder still exists for laying out the
+   beats by hand; this is the same decision at a shallower depth, and it is the
+   depth most matches on most cards deserve. */
+.quickbook {
+  margin: -2px 0 6px; padding: 12px 14px;
+  border: 1px solid var(--line); border-top: 0;
+  border-radius: 0 0 var(--r) var(--r);
+  background: var(--panel-2);
+  display: grid; gap: 10px;
+}
+.quickbook__row { display: grid; gap: 6px; }
+.quickbook__key {
+  font-size: var(--t-xs); letter-spacing: var(--track-label);
+  text-transform: uppercase; color: var(--faint); font-weight: 700;
+}
+
+@media (min-width: 720px) {
+  .quickbook__row { grid-template-columns: 130px 1fr; align-items: center; gap: 12px; }
+}
+
+/* ── The roster rail ─────────────────────────────────────────────────────────
+   Every other roster list in the app is a modal you open, use once and close,
+   which is right for one pick and wrong for casting a whole show. This one
+   stays. It caps its height and scrolls on its own so the rail below it —
+   the details, and the button that runs the night — never leaves the screen. */
+.roster-rail__list {
+  margin-top: 8px; max-height: 46vh; overflow-y: auto;
+  display: grid; gap: 2px;
+  -webkit-overflow-scrolling: touch;
+}
+.railrow {
+  display: grid; grid-template-columns: 1fr auto; gap: 2px 8px;
+  align-items: center; text-align: left;
+  width: 100%; min-height: 44px; padding: 6px 8px;
+  border: 0; border-radius: var(--r-sm); background: none;
+  color: inherit; font: inherit; cursor: pointer;
+}
+.railrow:focus-visible { outline: none; box-shadow: var(--ring); }
+@media (hover: hover) and (pointer: fine) {
+  .railrow:hover { background: rgba(255, 255, 255, .04); }
+}
+.railrow__name { font-weight: 700; font-size: var(--t-sm);
+                 display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.railrow__why  { grid-column: 1; font-size: var(--t-xs); color: var(--muted); }
+.railrow__pop  { grid-column: 2; grid-row: 1 / span 2; font-weight: 800; }
+
+/* With no corner chosen a tap has nowhere to go, so the list says so by receding
+   rather than by refusing. */
+.railrow.is-idle { opacity: .72; }
+
 /* ── Panels ──────────────────────────────────────────────────────────────── */
 
 .panel {

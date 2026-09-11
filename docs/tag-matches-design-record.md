@@ -4520,3 +4520,87 @@ own.
   share that makes a tag a protected rep never applies — which is a shame, because a tag loop
   is precisely how a real promotion brings somebody back.
 
+
+## Booking a card, instead of building one match at a time
+
+The booking screen was a mobile column on a 1920 monitor, four buttons deep, and it made you
+finish the first match before you could discover you wanted five. Four changes, in order.
+
+### The desktop
+
+Every screen was capped at 1120px. The cap lifts to 1560 for the screens that are a list beside
+a list — booking, the show report, the roster, the calendar, brands — and stays where it is
+everywhere else, because a form is *harder* to read at 1500px than at 1100: the eye has to
+cross the whole monitor from a label to its field.
+
+The card is two columns from 1100px. The running order is the work and takes the space; the
+roster, the details, the warnings and the button that runs the night are a rail that sticks as
+you scroll.
+
+The date leads, as a tile. A booking game's first question is which night this is and how much
+of it is still empty, and both of those were the smallest text on the page — an eleven-pixel
+amber eyebrow above the show's name. Three stacked fields are read at a glance; a sentence is
+read word by word, which is why a calendar looks like a calendar.
+
+### A battle royal is a match
+
+`RumblePlan.Kind` has returned `CardItemKind.Match` since it was written, and the kind enum
+only holds Match and Segment — a number drawing reports Segment for the same reason. **The
+four-button row was the only place in the codebase that disagreed with its own model**, and it
+asked the booker to choose between four builders before they had decided what they were
+booking. The format is a question inside what you are adding now, which is the order a booker
+thinks in.
+
+### The shape first, the cast after
+
+`MatchSide.Intended` is how many people a side is *waiting for*. Null means "whoever is in it",
+which is every side the engine, the tests and the old builder ever made — a default of one
+would have declared every tag team on every existing card to be half-empty.
+
+That one nullable is what lets a card hold a match nobody has cast. "Add a match" now puts an
+empty slot on the card in one click, the row draws its corners as `— vs —`, and the roster rail
+fills whichever corner is focused. Casting a match is a run of taps: the focus moves itself to
+the next gap in the same match, and then to the next gap on the card.
+
+**What makes it safe is one rule.** `ScheduledShow.IsRunnable` is not `IsBooked`: a show with
+something unfinished on it will not run, whatever the button says. An unfinished card is a card
+being worked on rather than a card that falls over at the bell.
+
+Two things had to be true for it to survive a reload, and the second is the subtle one:
+
+- An empty side must persist its intent, or a reloaded slot has no vacancies to draw and shows
+  as a blank row.
+- `Bind` returns null both for "this side is empty" and for "this side names a wrestler the
+  roster no longer has", and the reader drops an item whose side comes back null. Without
+  separating those two cases, **every planned slot would be silently deleted on reload** as
+  though it named a stranger.
+
+The roster rail re-ranks against whatever corner is focused, which is the whole reason it beats
+an alphabetical list: "this is his tag partner" and "she has a feud with him" are only worth
+pinning when the game knows who you are picking against. With nothing focused it degrades to
+card position, which is the honest answer to a question nobody has asked yet.
+
+### Four chips instead of five steps
+
+The brief already reduces a match to who goes over, what it is about, how long, and how it
+ends — and the grammar writes the beats from those four. So they are four rows of chips on the
+card row, and a match is booked without leaving the page. The five-step builder is still there
+for a booker who wants to lay the beats out by hand; neither is a lesser version of the other,
+they are the same decision at two depths.
+
+### Still not built
+
+- **Drag and drop is desktop-only and untested on touch.** Rows carry `draggable` and corners
+  accept a drop, but HTML5 drag is unreliable under a finger — mobile has tap-a-corner,
+  tap-a-name, which is the same model with a different input and is the path that was actually
+  verified.
+- **A segment is still built in its own screen.** Only matches can be planned as empty slots,
+  because a segment needs a template before it is anything, and there is no obvious `— vs —`
+  for a promo.
+- **The detailed builder cannot open an existing match.** The inline chips finish a planned
+  match and the full builder adds a finished one; editing a planned match beat by beat means
+  removing it and adding it again.
+- **Nothing checks the card as a whole.** `BriefCritique` reads one match, so nothing says
+  "this is your third grudge tonight" or "both your main-eventers are in the opener", which is
+  exactly the judgement a card-first view finally has the information to make.
+

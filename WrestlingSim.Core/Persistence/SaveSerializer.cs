@@ -255,6 +255,8 @@ namespace WrestlingSim.Persistence
                 TeamBId        = m.Plan.SideB.Team?.Id,
                 StartingIndexA = m.Plan.SideA.StartingIndex,
                 StartingIndexB = m.Plan.SideB.StartingIndex,
+                IntendedA      = m.Plan.SideA.Intended,
+                IntendedB      = m.Plan.SideB.Intended,
                 MatchType      = m.Plan.MatchType,
                 Stipulation    = m.Plan.Stipulation,
                 StructureName  = m.StructureName,
@@ -867,29 +869,38 @@ namespace WrestlingSim.Persistence
                 var sideBIds = dto.SideB ?? (dto.WrestlerB is null ? null : [dto.WrestlerB]);
                 if (sideAIds is null || sideBIds is null) return null;
 
-                var sideA = Bind(sideAIds, byId);
-                var sideB = Bind(sideBIds, byId);
+                // A side with nobody on it is legal now: a match somebody has planned onto the
+                // card and not yet cast. `Bind` returns null for both "empty" and "names a
+                // wrestler who has gone", so an empty list is separated out here before it is
+                // asked — otherwise every planned slot would be dropped on reload as though
+                // it named a stranger.
+                var sideA = sideAIds.Count == 0 ? [] : Bind(sideAIds, byId);
+                var sideB = sideBIds.Count == 0 ? [] : Bind(sideBIds, byId);
 
                 // A card item naming somebody the roster no longer has is dropped whole
                 // rather than rebuilt a man short — a three-quarters tag match is not a
                 // match, and silently running one would be worse than losing the booking.
                 if (sideA is null || sideB is null) return null;
 
-                var a = sideA[Math.Clamp(dto.StartingIndexA, 0, sideA.Count - 1)];
-                var b = sideB[Math.Clamp(dto.StartingIndexB, 0, sideB.Count - 1)];
+                // Clamped against an empty side gives -1, which is not an index. A planned
+                // side has no starter to remember yet.
+                int startA = sideA.Count == 0 ? 0 : Math.Clamp(dto.StartingIndexA, 0, sideA.Count - 1);
+                int startB = sideB.Count == 0 ? 0 : Math.Clamp(dto.StartingIndexB, 0, sideB.Count - 1);
 
                 var plan = new MatchPlanModel
                 {
                     SideA = new MatchSide
                     {
                         Members       = sideA,
-                        StartingIndex = Math.Clamp(dto.StartingIndexA, 0, sideA.Count - 1),
+                        StartingIndex = startA,
+                        Intended      = dto.IntendedA,
                         Team          = teams.FirstOrDefault(t => t.Id == dto.TeamAId)
                     },
                     SideB = new MatchSide
                     {
                         Members       = sideB,
-                        StartingIndex = Math.Clamp(dto.StartingIndexB, 0, sideB.Count - 1),
+                        StartingIndex = startB,
+                        Intended      = dto.IntendedB,
                         Team          = teams.FirstOrDefault(t => t.Id == dto.TeamBId)
                     },
                     MatchType = dto.MatchType,

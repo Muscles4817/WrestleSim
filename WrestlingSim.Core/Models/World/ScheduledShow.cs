@@ -60,6 +60,16 @@ namespace WrestlingSim.Models.World
 
         public bool IsBooked => Card.Count > 0 || IsLoop;
 
+        /// <summary>
+        /// Everything on the card is finished. A planned but uncast match keeps the show from
+        /// running, which is the whole safety net under letting a card be planned first: you
+        /// can leave a night half-built for as long as you like and you cannot run it.
+        /// </summary>
+        public bool IsRunnable => IsLoop || (Card.Count > 0 && Card.All(i => i.IsComplete));
+
+        /// <summary>The items still waiting to be finished, for the card to say so.</summary>
+        public IEnumerable<ICardItem> Unfinished => Card.Where(i => !i.IsComplete);
+
         // ── Derived ──────────────────────────────────────────────────────────
 
         public int BookedMinutes => Card.Sum(i => i.DurationMinutes);

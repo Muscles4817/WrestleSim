@@ -69,6 +69,12 @@ namespace WrestlingSim.Models.Rumble
         public CardItemKind Kind => CardItemKind.Match;
 
         /// <summary>
+        /// Enough bodies to be a battle royal. Two is a match; the format only starts to mean
+        /// anything once there is a pile-up to be thrown out of.
+        /// </summary>
+        public bool IsComplete => Field.Count >= 4;
+
+        /// <summary>
         /// Runtime. A Rumble runs as long as its entries take plus the closing stretch; a
         /// battle royal is short, because with everybody in at once there is nothing to wait
         /// for.
