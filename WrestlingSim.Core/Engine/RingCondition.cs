@@ -238,11 +238,14 @@ namespace WrestlingSim.Engine
         /// Geometric rather than linear, so the first weeks off cost the most and a
         /// wrestler who has been away a year is not still falling.
         /// </summary>
+        /// <summary>Share of the gap to the floor that a day away closes.</summary>
+        public const double RustFraction = 0.030;
+
         public static double RustPerDay(double sharpness, double selfMaintenance)
         {
             double floor = RestingFloor(selfMaintenance);
             if (sharpness <= floor) return 0.0;
-            return (sharpness - floor) * 0.030;
+            return (sharpness - floor) * RustFraction;
         }
 
         // ── What working gives back ──────────────────────────────────────────
@@ -330,6 +333,34 @@ namespace WrestlingSim.Engine
         /// </summary>
         public static double CraftFactor(double sharpness) =>
             0.78 + Math.Clamp(sharpness, 0, 100) / 100.0 * 0.22;
+
+        /// <summary>
+        /// Where a wrestler's sharpness starts when a career begins.
+        ///
+        /// **Not 100 for everybody.** The property defaults to razor because a wrestler built
+        /// in a test should not have to be warmed up first, but a whole roster at the ceiling
+        /// on day one means every rep in the booker's first months is worth literally nothing
+        /// — measured in the browser, six wrestlers on a three-town run came home with +0.0
+        /// sharpness each and only the fatigue, which makes the road look broken on the one
+        /// occasion a new player is most likely to try it.
+        ///
+        /// The seed is what a weekly schedule settles somebody at, because that is what the
+        /// roster has been doing: a spread from the low sixties to the high eighties, nobody
+        /// rusty and nobody finished. Which is the state the game wants to open in — the road
+        /// is worth using from the first week, and it is worth more to some of them than to
+        /// others.
+        /// </summary>
+        public static double OpeningSharpness(double selfMaintenance)
+        {
+            double floor = RestingFloor(selfMaintenance);
+
+            // Settled on one match a week, solved rather than simulated: a week's rust from S
+            // is (S - floor) * (1 - 0.97^7), and it balances one rep.
+            double weeklyRust = 1 - Math.Pow(1 - RustFraction, 7);
+            double rep = SharpnessGain(15, 1.0, selfMaintenance);
+
+            return Math.Clamp(floor + rep / weeklyRust, 0, 100);
+        }
 
         // ── Applying ─────────────────────────────────────────────────────────
 

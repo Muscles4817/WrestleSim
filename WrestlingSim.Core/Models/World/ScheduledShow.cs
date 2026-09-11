@@ -40,6 +40,17 @@ namespace WrestlingSim.Models.World
         /// <summary>The booked card, in running order. Empty until the player books it.</summary>
         public List<ICardItem> Card { get; set; } = new();
 
+        /// <summary>
+        /// A run of towns instead of a card, for an untelevised date. Null on every other kind
+        /// of show, and on a house show the player chooses to lay out match by match — the two
+        /// are alternatives rather than a mode flag, so a date is bookable either way and
+        /// whichever one has content is the one that runs.
+        /// </summary>
+        public HouseShowLoop? Loop { get; set; }
+
+        /// <summary>Whether this date is a run of towns rather than a card.</summary>
+        public bool IsLoop => Loop is { IsBookable: true } && Card.Count == 0;
+
         // ── Result ───────────────────────────────────────────────────────────
 
         /// <summary>Set once the show has been run. Null means it is still upcoming.</summary>
@@ -47,7 +58,7 @@ namespace WrestlingSim.Models.World
 
         public bool HasRun => Result != null;
 
-        public bool IsBooked => Card.Count > 0;
+        public bool IsBooked => Card.Count > 0 || IsLoop;
 
         // ── Derived ──────────────────────────────────────────────────────────
 

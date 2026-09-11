@@ -218,6 +218,15 @@ public class GameState
             Roster = DataLoaders.LoadEmbeddedWrestlers()
         };
 
+        // Not a roster of razor-sharp wrestlers. Everybody opens where a weekly schedule
+        // would have settled them, which is what they have been doing — a spread from the low
+        // sixties to the high eighties, nobody rusty and nobody finished. See
+        // RingCondition.OpeningSharpness for why a roster at the ceiling makes the road
+        // worthless in the booker's first months.
+        foreach (var wrestler in career.Roster)
+            wrestler.Sharpness = RingCondition.OpeningSharpness(RingCondition.SelfMaintenance(
+                wrestler.Mental?.Psychology ?? 70, wrestler.Mental?.RingIQ ?? 70));
+
         career.ShowDefinitions.AddRange(shows ?? DefaultSlate(promotion));
         career.MaterialiseSchedule();
 
@@ -254,6 +263,18 @@ public class GameState
                 Type = ShowType.Television,
                 Recurrence = RecurrenceKind.Weekly,
                 Day = DayOfWeek.Monday
+            });
+
+            // And a road date, because a promotion with television still tours — and because
+            // without one the house show loop is a feature nobody would ever find. The
+            // sharpness meter says most of a roster needs more than one match a week; this is
+            // the date those matches happen on. A booker who does not want it deletes it.
+            slate.Add(new ShowDefinition
+            {
+                Name = $"{promotion.Name} Live",
+                Type = ShowType.HouseShow,
+                Recurrence = RecurrenceKind.Weekly,
+                Day = DayOfWeek.Saturday
             });
         }
         else
@@ -479,7 +500,28 @@ public class GameState
     /// </summary>
     public async Task RunShowAsync(ScheduledShow show)
     {
-        if (Career == null || show.HasRun || show.Card.Count == 0) return;
+        if (Career == null || show.HasRun) return;
+
+        // A run of towns, rather than a card. No rating, because nobody was watching — see
+        // LoopSimulator. It still moves the clock and still saves, because the week happened.
+        if (show.IsLoop)
+        {
+            var loop = new LoopSimulator(tier: Career.Promotion.Tier).Run(show.Loop!, show.Date);
+            show.Result = new ShowResult
+            {
+                Loop          = loop,
+                BudgetMinutes = show.RuntimeMinutes,
+                Injuries      = loop.Injuries
+            };
+
+            if (Career.CurrentDate < show.Date) Career.CurrentDate = show.Date;
+            ActiveShow = show;
+            await SaveAsync();
+            Notify();
+            return;
+        }
+
+        if (show.Card.Count == 0) return;
 
         // The brand context is what charges the night's crossovers to the split. A
         // company-wide date passes a null home brand, which is how the inter-brand

@@ -4447,3 +4447,76 @@ settles short of their best on the same schedule and needs more time in a ring t
   career runs one show. The meter works; the calendar never feeds it. Whatever answers the
   local dates above is the same thing that answers this.
 
+*(Both done — see "A run of towns" below. It was the same answer to both, as expected.)*
+
+## A run of towns
+
+Booked as a cast and a number of towns rather than as a card, because that is the decision.
+Nobody lays a house show out beat by beat, and a game that asked you to would be asking you to
+spend the evening on the part of the week that does not matter.
+
+**It answers both of the gaps above with one mechanic**, which is the main argument for it.
+The sharpness meter was asking for reps the calendar could not supply, and the fatigue meter
+was calibrated for a workload the calendar could not reach. Six hard nights takes somebody from
+35 fatigue to cooked; three easy ones is a top-up. The road is where both meters finally live.
+
+### What a loop does not do
+
+`ShowType.HouseShow` is already defined as the night the television audience was not at, and
+the engine takes that literally. **No overness, no momentum, no feud heat, no titles, and no
+rating at all** — `LoopSimulator` is the only engine in the game that does not produce a score,
+because there is nothing for one to mean.
+
+The sharpest consequence is that a loop **does not write `LastAppearance`**, so the absence
+clock keeps running on somebody working six towns a week. Being in a ring and being on
+television are different currencies, and the road only pays in the first one: you can tour
+yourself to peak fitness and still be forgotten. Without that rule the road would quietly
+become a second, easier way to get people over, and booking television would stop mattering.
+
+### Three things the browser found that the tests could not
+
+The engine was green and the feature was still wrong three times over, each time in a way only
+visible by playing it:
+
+- **A promotion with television got no house show dates**, so the whole mechanic was
+  unreachable from a normal career unless the player thought to schedule one. The default slate
+  now carries a weekly road date alongside the weekly television one, because a promotion with
+  television still tours.
+- **Every wrestler on a new roster starts at 100 sharpness**, so the first six people sent out
+  on the road came home with **+0.0 sharpness each** and nothing but the fatigue — on the one
+  occasion a new player is most likely to try it. A career now opens the roster where a weekly
+  schedule would have settled them: 72 to 94, median 86. Nobody rusty, nobody finished.
+- **The forecast quoted a typical body** and promised +23 sharpness to six wrestlers who were
+  all at the ceiling. It reads the booked cast now and walks the nights, because a forecast
+  that cannot see the headroom is worse than no forecast.
+
+After all three, a three-town run of six reads +12.4 down to +2.6 — the spread is the point,
+and the people who gain least are the diligent ones who had least to gain.
+
+### The rate
+
+Doc 15 §1 puts 35–55% of a roster missing time in a year, and the match engine was calibrated
+against it. A loop is the other half of the year's workload, so it is sized against the same
+figure rather than guessed:
+
+| Pace | Per night | Across 156 nights |
+|---|---|---|
+| Going through it | 0.06% | 8% |
+| A working pace | 0.14% | 20% |
+| Full tilt | 0.34% | 42% |
+
+The dial is how many beats of risk a night carries, and nothing else in the tests reads it — it
+could have been set six times safer with everything green, which is why it has a test of its
+own.
+
+### Still not built
+
+- **The loop has no gate, no merchandise and no money**, which is what a house show is
+  *for* in a real promotion. It buys condition and costs condition, and that is all. The
+  business side of a touring schedule is a whole other system.
+- **Nobody can be told to stay home.** A wrestler not on the run simply is not on it, and there
+  is no way to say "rest this one" that reads differently from "forgot about this one".
+- **A loop cannot be a tag run.** Everybody on it works a singles match a night, so the work
+  share that makes a tag a protected rep never applies — which is a shame, because a tag loop
+  is precisely how a real promotion brings somebody back.
+

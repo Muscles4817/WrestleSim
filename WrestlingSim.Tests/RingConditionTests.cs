@@ -244,6 +244,38 @@ namespace WrestlingSim.Tests
         }
 
         /// <summary>
+        /// **A career does not open with a roster of razor-sharp wrestlers.**
+        ///
+        /// The property defaults to 100 so a wrestler built in a test does not have to be
+        /// warmed up first, and a career that took that default put the whole roster at the
+        /// ceiling on day one — which makes every rep in the booker's first months worth
+        /// literally nothing. Six wrestlers on a three-town run came home with +0.0 sharpness
+        /// each and only the fatigue, on the one occasion a new player is most likely to try
+        /// the road.
+        /// </summary>
+        [Fact]
+        public void ACareerOpensWithARosterThatHasSomewhereToGo()
+        {
+            var roster = DataLoaders.LoadEmbeddedWrestlers();
+
+            var opening = roster
+                .Select(w => RingCondition.OpeningSharpness(RingCondition.SelfMaintenance(
+                    w.Mental?.Psychology ?? 70, w.Mental?.RingIQ ?? 70)))
+                .OrderBy(x => x)
+                .ToList();
+
+            output.WriteLine($"  opening sharpness {opening.First():F0} to {opening.Last():F0}," +
+                             $" median {opening[opening.Count / 2]:F0}");
+
+            Assert.True(opening.Last() < 100,
+                "nobody starts at the ceiling, or the road buys them nothing");
+            Assert.True(opening.First() > RingCondition.RustyThreshold,
+                "and nobody starts rusty — they have been working, they just have not peaked");
+            Assert.True(opening.Last() - opening.First() > 10,
+                "and it is a spread, so the road is worth more to some of them than to others");
+        }
+
+        /// <summary>
         /// **One match a week holds a professional; it does not get anybody to their best.**
         ///
         /// The maintenance claim and the reps claim, which are two different claims and are

@@ -26,6 +26,77 @@
 *@
 @using WrestlingSim.Models.Rumble
 
+@if (Result.Loop is { } loop)
+{
+    @* A run of towns has no rating, because nobody was watching. What it has is condition,
+       so the report is the two meters and who came home hurt. *@
+    <div class="score-hero">
+        <div>
+            <div class="score-hero__label">Towns</div>
+            <div class="score-hero__main">@loop.Towns</div>
+        </div>
+        <div>
+            <div class="score-hero__label">On the run</div>
+            <div class="score-hero__main">@loop.Workers.Count</div>
+        </div>
+        <div>
+            <div class="score-hero__label">A night each</div>
+            <div class="score-hero__main">@loop.MinutesPerNight<span class="muted"> min</span></div>
+        </div>
+    </div>
+
+    @if (Result.Injuries.Count > 0)
+    {
+        <div class="notice notice--error mt">
+            <strong>Hurt on the road.</strong>
+            @foreach (var hurt in Result.Injuries)
+            {
+                <div>@hurt.Wrestler.RingName — @hurt.Injury.Reason(Today)
+                    @if (hurt.Repeat) { <text> · not the first time</text> }
+                </div>
+            }
+        </div>
+    }
+
+    <div class="panel">
+        <div class="panel__title">
+            The run
+            <span class="spacer"></span>
+            <span class="small muted">sharper · more tired</span>
+        </div>
+        @foreach (var worker in loop.Workers.OrderByDescending(w => w.SharpnessGained))
+        {
+            <div class="editor-row @(worker.HurtOnNight is null ? "" : "is-flagged")">
+                <div class="editor-row__n">@worker.NightsWorked</div>
+                <div>
+                    <div class="editor-row__name">@worker.Wrestler.RingName</div>
+                    <div class="editor-row__sub">
+                        @if (worker.HurtOnNight is { } night)
+                        {
+                            <text>Went home after town @night.</text>
+                        }
+                        else
+                        {
+                            <text>Worked all @worker.NightsWorked.</text>
+                        }
+                        @RingCondition.WarningFor(worker.Wrestler)
+                    </div>
+                </div>
+                <div class="editor-row__tools">
+                    <span class="tabnum grade--great">+@worker.SharpnessGained.ToString("F1")</span>
+                    <span class="tabnum grade--poor">+@worker.FatigueAdded.ToString("F1")</span>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="notice notice--advice mt">
+        Nothing on a house show reaches the television audience, so nobody got more over and
+        no story moved. They are only fitter, or more tired, than they were.
+    </div>
+}
+else
+{
 <div class="score-hero">
     <div>
         <div class="score-hero__label">Overall</div>
@@ -267,6 +338,8 @@
             }
         </div>
     </div>
+}
+
 }
 
 @code {

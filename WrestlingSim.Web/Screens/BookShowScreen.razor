@@ -74,6 +74,21 @@ else if (mode == Mode.AddDraw)
     <DrawBuilder Show="show" OnDone="AddDraw" OnCancel="@(() => mode = Mode.Card)"
                  ConfirmLabel="Add to card +" />
 }
+else if (mode == Mode.BookLoop)
+{
+    <div class="screen__head">
+        <div class="eyebrow">ON THE ROAD</div>
+        <h1 class="screen__title">A run of towns</h1>
+        <p class="screen__lede">
+            Untelevised dates, booked as a cast rather than as a card. Nothing on them reaches
+            the television audience, so nobody gets more over and no story moves — what a run
+            buys is ring time, for the people who need it and cannot get it on a weekly show.
+        </p>
+    </div>
+
+    <LoopBuilder OnDone="BookLoop" OnCancel="@(() => mode = Mode.Card)"
+                 ConfirmLabel="Book the run +" />
+}
 else
 {
     @* ── Card sheet ──────────────────────────────────────────────────────── *@
@@ -149,7 +164,21 @@ else
         {
             <div class="empty">
                 <div class="empty__mark">▦</div>
-                Nothing booked yet. Add a match or a segment below.
+                @if (show.IsLoop)
+                {
+                    <text>
+                        A run of @show.Loop!.Towns town@(show.Loop!.Towns == 1 ? "" : "s") for
+                        @show.Loop!.Cast.Count of them. No card, because nobody is filming it.
+                    </text>
+                }
+                else if (show.Type == ShowType.HouseShow)
+                {
+                    <text>Nothing booked yet. Add a match, or send them out on a run of towns.</text>
+                }
+                else
+                {
+                    <text>Nothing booked yet. Add a match or a segment below.</text>
+                }
             </div>
         }
 
@@ -238,11 +267,20 @@ else
             {
                 <button class="btn" @onclick="() => mode = Mode.AddDraw">+ Add a number drawing</button>
             }
+            @* Only on an untelevised date, and only while nothing is booked match by match.
+               A card and a run of towns are alternatives, not a mode — whichever one has
+               something in it is the one that runs. *@
+            @if (show.Type == ShowType.HouseShow && show.Card.Count == 0)
+            {
+                <button class="btn" @onclick="() => mode = Mode.BookLoop">
+                    @(show.IsLoop ? "Edit the run" : "+ Book a run of towns")
+                </button>
+            }
             <span class="spacer"></span>
             <button class="btn btn--primary"
-                    disabled="@(show.Card.Count == 0 || HurtOnCard(show).Count > 0)"
+                    disabled="@(!show.IsBooked || HurtOnCard(show).Count > 0)"
                     @onclick="() => Run(show)">
-                Run the show ★
+                @(show.IsLoop ? "Run the towns ★" : "Run the show ★")
             </button>
         </div>
 
@@ -263,7 +301,7 @@ else
 }
 
 @code {
-    private enum Mode { Card, AddMatch, AddSegment, AddRumble, AddDraw }
+    private enum Mode { Card, AddMatch, AddSegment, AddRumble, AddDraw, BookLoop }
 
     private Mode mode = Mode.Card;
 
@@ -319,6 +357,13 @@ else
     private async Task AddDraw(WrestlingSim.Models.Rumble.RumbleDraw draw)
     {
         State.ActiveShow?.Card.Add(draw);
+        mode = Mode.Card;
+        await Persist();
+    }
+
+    private async Task BookLoop(HouseShowLoop loop)
+    {
+        if (State.ActiveShow is { } show) show.Loop = loop;
         mode = Mode.Card;
         await Persist();
     }
