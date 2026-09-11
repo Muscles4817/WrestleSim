@@ -1,0 +1,280 @@
+@*
+    What a show did, once it has been run. One component, used by both the career screen and
+    the exhibition one.
+
+    **There were two of these.** `BookShowScreen` reports a career date and `ShowScreen`
+    reports a sandbox show, so each grew its own copy of the result markup — and the copies
+    then drifted, in both directions, until each one could report things the other could not:
+
+      • A battle royal booked in a *career* reported nothing at all. The eliminations and the
+        iron man were rendered only by the exhibition screen.
+      • A career show never said which item took the fatigue penalty, or what the position
+        weighting did to a score — the two lines that explain why a match scored lower than it
+        was worked. Exhibition had both.
+      • Exhibition never showed injuries, championship changes, or the brand report.
+      • Exhibition rendered the status and feud panels unconditionally, so a show where
+        nothing moved got two empty headings.
+
+    That is what duplicated markup costs: not the second copy, but the third thing somebody
+    adds to one of them.
+
+    **Nothing here is switched on a mode.** Every section is gated on whether the result
+    actually contains it — a brand report exists or it does not, a card item is a rumble or it
+    is not — so there is no flag saying "career" for the next section to forget to check. What
+    genuinely differs between the two screens is the heading above this and the buttons below
+    it, and those stay on the screens.
+*@
+@using WrestlingSim.Models.Rumble
+
+<div class="score-hero">
+    <div>
+        <div class="score-hero__label">Overall</div>
+        <div class="score-hero__main @Grades.OfScore(Result.OverallRating).Tone()">@Result.OverallRating.ToString("F1") <span class="muted">/ 100</span></div>
+    </div>
+    <div>
+        <div class="score-hero__label">Runtime</div>
+        <div class="score-hero__main">@Result.BookedMinutes<span class="muted"> / @Result.BudgetMinutes min</span></div>
+    </div>
+    <div>
+        <div class="score-hero__label">Final crowd</div>
+        <div class="score-hero__main">@Result.FinalCrowdMood.ToString("F1") <span class="muted">/ 10</span></div>
+    </div>
+</div>
+
+@if (Result.OverrunPenalty > 0)
+{
+    <div class="notice notice--error mt">
+        <strong>The show ran long.</strong> Overall score cut by
+        @((Result.OverrunPenalty * 100).ToString("F0"))%.
+    </div>
+}
+
+@* Above the card. A rating is a number; somebody being out for six months is the thing that
+   changes next month's booking. *@
+@if (Result.Injuries.Count > 0)
+{
+    <div class="notice notice--error mt">
+        <strong>Hurt tonight.</strong>
+        @foreach (var hurt in Result.Injuries)
+        {
+            <div>
+                @hurt.Wrestler.RingName — @hurt.Injury.Reason(Today)
+                @if (hurt.Repeat) { <text> · not the first time</text> }
+            </div>
+        }
+    </div>
+}
+
+@* The bill for the night's crossovers, presented after the rating they bought.
+   docs/wrestling-reference/22-brand-splits.md §4.1. Null on a company-wide show, on an
+   unsplit promotion, and in exhibition — so it is gated on the data rather than on the mode. *@
+@if (Result.Brand is { } brandReport)
+{
+    <div class="panel">
+        <div class="panel__title">
+            @brandReport.BrandName
+            <span class="spacer"></span>
+            <span class="small muted">
+                Split integrity @brandReport.IntegrityBefore.ToString("F1")
+                → @brandReport.IntegrityAfter.ToString("F1")
+            </span>
+        </div>
+
+        @if (brandReport.Crossovers.Count == 0)
+        {
+            <div class="notice notice--info">
+                Kept to its own roster. Worth
+                +@((brandReport.ExclusivityBonus * 100).ToString("F1"))% on the night, and it
+                is worth that only for as long as the split means something.
+            </div>
+        }
+        else
+        {
+            <div class="notice notice--warn">
+                <strong>
+                    @brandReport.Crossovers.Count crossover@(brandReport.Crossovers.Count == 1 ? "" : "s")
+                    — split integrity down
+                    @((brandReport.IntegrityBefore - brandReport.IntegrityAfter).ToString("F1")),
+                    ceiling now @brandReport.Ceiling.ToString("F1").
+                </strong>
+                <ul>
+                    @foreach (var crossover in brandReport.Crossovers)
+                    {
+                        <li>
+                            @crossover.Wrestler (@crossover.HomeBrand) —
+                            worth +@((crossover.Attraction * 100).ToString("F0"))% on the items they
+                            worked, cost @crossover.Cost.ToString("F1") integrity, of which
+                            @((crossover.Cost * BrandIntegrity.PermanentShare).ToString("F1")) does not come back.
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+
+        @if (brandReport.StarMakingFactor < 0.995)
+        {
+            <div class="notice notice--warn">
+                Winners on this show kept
+                @((brandReport.StarMakingFactor * 100).ToString("F0"))% of the standing they earned.
+                A brand that does not mean anything cannot make anybody.
+            </div>
+        }
+    </div>
+}
+
+<div class="panel">
+    <div class="panel__title">Card</div>
+    @for (int i = 0; i < Result.Items.Count; i++)
+    {
+        @* Counted, not `IndexOf`. Both copies searched the list for the item to number it —
+           correct, since these are reference-equal instances, but a scan per row to learn
+           something the loop already knows. *@
+        var item = Result.Items[i];
+        <div class="editor-row @(item.FatiguePenaltyApplied ? "is-flagged" : "")">
+            <div class="editor-row__n">@(i + 1)</div>
+            <div>
+                <div class="editor-row__name">@item.Label</div>
+                @* Why it scored what it scored. The position weighting and the fatigue
+                   penalty are the two reasons a well-worked match comes out low, and the
+                   career screen used to show neither. *@
+                <div class="editor-row__sub">
+                    @item.Kind · @item.DurationMinutes min · position ×@item.PositionWeight.ToString("0.0")
+                    @if (item.FatiguePenaltyApplied)
+                    {
+                        <text> · fatigue ×0.85</text>
+                    }
+                </div>
+                @foreach (var note in item.Notes)
+                {
+                    <div class="editor-row__sub">@note</div>
+                }
+            </div>
+            <div class="editor-row__tools">
+                @if (item.StarRating is { } stars)
+                {
+                    <Stars Rating="@stars" ShowNumber="false" />
+                }
+                <strong class="tabnum @Grades.OfScore(item.Score).Tone()">@item.Score.ToString("F1")</strong>
+            </div>
+        </div>
+    }
+</div>
+
+@* Status movement, feud movement and play-by-play exist only for a show run this session — a
+   reloaded save keeps the result summary, not the beat-by-beat detail. Injuries above are the
+   exception that matters: those are written onto the wrestler, so a reloaded save still knows
+   who is out even when these blocks have gone. Which is also why each is gated on its own
+   count: a reloaded show would otherwise render three empty headings. *@
+@if (Result.TitleUpdates.Count > 0)
+{
+    <TitleChanges Updates="@Result.TitleUpdates" />
+}
+
+@if (Result.StatusChanges.Count > 0)
+{
+    <StatusChanges Changes="@Result.StatusChanges" />
+}
+
+@if (Result.FeudUpdates.Count > 0)
+{
+    <FeudUpdates Updates="@Result.FeudUpdates" />
+}
+
+@foreach (var item in Result.Items.Where(i => i.MatchResult is not null))
+{
+    <div class="panel">
+        <div class="panel__title">@item.Label — play by play</div>
+        <PlayByPlay Result="item.MatchResult!" />
+    </div>
+}
+
+@* A battle royal reports differently because it is graded differently — no play by play,
+   because there are no beats, and the eliminations and the iron man instead. *@
+@foreach (var item in Result.Items.Where(i => i.RumbleResult is not null))
+{
+    var rumble = item.RumbleResult!;
+    <div class="panel">
+        <div class="panel__title">@item.Label</div>
+
+        @if (rumble.IronMan is { } iron && rumble.IronManOutlasted > 0 && iron != rumble.Winner)
+        {
+            <div class="notice notice--info">
+                <strong>@iron.RingName</strong> outlasted @rumble.IronManOutlasted of them
+                without winning it — the format's other rub, and a real one.
+            </div>
+        }
+
+        <div class="stack">
+            @foreach (var e in rumble.Eliminations)
+            {
+                <div class="beat-row">
+                    <div class="beat-row__n">@e.Order</div>
+                    <div class="beat-row__body">
+                        <span class="beat-row__name">@e.Wrestler.RingName</span>
+                        <span class="beat-row__sub">
+                            @(e.By is null ? "in the pile-up" : $"by {e.By.RingName}")
+                            · @e.Remaining left
+                        </span>
+                    </div>
+                </div>
+            }
+            <div class="beat-row is-finish">
+                <div class="beat-row__n">★</div>
+                <div class="beat-row__body">
+                    <span class="beat-row__name">@rumble.Winner.RingName</span>
+                    <span class="beat-row__sub">last one standing</span>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@* A drawing has no beats and no eliminations, so what it reports is what was said and what
+   the numbers came out as — plus how much of the drum anybody believed. *@
+@foreach (var item in Result.Items.Where(i => i.DrawResult is not null))
+{
+    var draw = item.DrawResult!;
+    <div class="panel">
+        <div class="panel__title">
+            @item.Label
+            <span class="spacer"></span>
+            <span class="small muted">
+                numbers @((draw.Reaction * 100).ToString("F0"))% ·
+                believed @((draw.Credibility * 100).ToString("F0"))%
+            </span>
+        </div>
+
+        <div class="stack">
+            @foreach (var pull in draw.Pulls)
+            {
+                <div class="beat-row @(pull.Rigged ? "is-flagged" : "")">
+                    <div class="beat-row__n">@pull.Number</div>
+                    <div class="beat-row__body">
+                        <span class="beat-row__name">@pull.Wrestler.RingName</span>
+                        <span class="beat-row__sub">
+                            @(pull.Rigged ? "handed it" : "drew it")
+                            · worth @((pull.Reaction * 100).ToString("F0"))%
+                        </span>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="mt">
+            @foreach (var line in draw.Commentary)
+            {
+                <div class="pbp__line">@line</div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public ShowResult Result { get; set; } = default!;
+
+    /// <summary>
+    /// The date the show ran, which is what turns an injury into "out 30 weeks". Passed rather
+    /// than read off a career, because the exhibition sandbox has a show and no career.
+    /// </summary>
+    [Parameter, EditorRequired] public DateOnly Today { get; set; }
+}

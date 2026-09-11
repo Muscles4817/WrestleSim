@@ -4297,6 +4297,64 @@ carries the state, and it carries it where the name is.
   story exists, which is exactly when it matters and exactly when a screenshot cannot see it.
 - **The two show-report screens are still two.** They render the same thing from separate
   markup, and every change to a rating readout has to be made twice.
+  *(Done — see "The two show reports had stopped being the same report" below.)*
 - **The play-by-play is still one colour.** Each beat prints its intensity, and that is the
   same shape argument as the beat sheet, one screen further on.
+
+
+## The two show reports had stopped being the same report
+
+`BookShowScreen` reports a career date and `ShowScreen` reports a sandbox show, so each had
+its own copy of the result markup. The copies were not the problem. The drift was: each one
+could report things the other could not, and nobody had noticed, because nobody reads both.
+
+| | Career | Exhibition |
+|---|---|---|
+| Battle royal — eliminations, iron man | **nothing at all** | yes |
+| Why an item scored what it did — position weighting, fatigue penalty | **no** | yes |
+| Injuries | yes | **no** |
+| Championship changes | yes | **no** |
+| Brand report | yes | n/a |
+| Number drawings | yes | **no** |
+| Status and feud panels on a night nothing moved | hidden | **two empty headings** |
+
+The first row is the one that matters. **A battle royal booked in a career reported nothing.**
+The engine ran it, picked a winner, recorded every elimination and the iron man, moved
+everybody's standing — and the screen showed a score and stopped. The eliminations existed
+only on the exhibition screen, where a Rumble is a sandbox toy rather than the thing the
+January show is built around.
+
+That is what duplicated markup costs. Not the second copy: the third thing somebody adds to
+one of them.
+
+### One component, and no mode flag in it
+
+`ShowReport` takes a `ShowResult` and the date, and every section is gated on whether the
+result actually holds it — a brand report exists or it does not, a card item is a rumble or it
+is not. There is deliberately **no parameter saying which screen this is**, because a flag like
+that is the thing the next section forgets to check, and it is how these two got here.
+
+What genuinely differs is the heading above the report and the buttons below it: a career show
+names its date and venue and offers the dashboard and the calendar, a sandbox one names its
+venue and offers "book another show". Those stay on the screens, which is all the screens are
+now. 876 lines across the two became 589 plus one 250-line component.
+
+The card numbering stopped being `IndexOf`. Both copies searched the list for the item to
+number it — correct, since the items are reference-equal instances, but a scan per row to
+learn something the loop already knows.
+
+Browser-verified at 390x844, both paths: an exhibition show reports the card, who moved, the
+feuds and the play-by-play; a twelve-wrestler career Rumble now reports its eleven
+eliminations and its winner, under a card line that says `position ×1.5`, which is also new
+there.
+
+### Still not built
+
+- **Nothing here is testable.** It is a razor component, and the argument for extracting it is
+  exactly the one the repo makes about `BookingSuggestions` — but unlike the ranking, there is
+  no decision in here to move somewhere a test can reach. The verification is a browser and
+  the table above.
+- **The exhibition report shows injuries now, and exhibition has no clock.** "Out 30 weeks" is
+  true about the match and means nothing about a sandbox that ends when you close it. It is
+  shown because the engine rolled it and hiding it would be the same lie the old screen told.
 
