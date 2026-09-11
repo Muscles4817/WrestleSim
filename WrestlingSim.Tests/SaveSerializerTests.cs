@@ -68,26 +68,38 @@ namespace WrestlingSim.Tests
         public void RoundTripKeepsABookedRunOfTowns()
         {
             var roster = Roster();
+            // A fourth body, because this run is booked as tag matches and a tag run needs
+            // two full sides.
+            roster.Add(TestRoster.Make("Delta Four", overness: 50));
             var career = NewCareer(roster);
 
             var show = career.Schedule("Saturday", career.CurrentDate.AddDays(3), ShowType.HouseShow);
+            // Bound against a fresh roster of the same four, since the default one is three.
+            var fresh = Roster();
+            fresh.Add(TestRoster.Make("Delta Four", overness: 50));
+            fresh[3].Id = roster[3].Id;
             show.Loop = new HouseShowLoop
             {
-                Cast            = [roster[0], roster[2]],
+                Cast            = [roster[0], roster[2], roster[1], roster[3]],
                 Towns           = 4,
                 Pace            = BeatIntensity.High,
-                MinutesPerNight = 16
+                MinutesPerNight = 16,
+                SideSize        = 2
             };
 
-            var loaded = RoundTrip(career);
+            var loaded = RoundTrip(career, fresh);
             var back   = loaded.Shows.Single(s => s.Id == show.Id);
 
             Assert.NotNull(back.Loop);
             Assert.Equal(4, back.Loop!.Towns);
             Assert.Equal(BeatIntensity.High, back.Loop.Pace);
             Assert.Equal(16, back.Loop.MinutesPerNight);
-            Assert.Equal(2, back.Loop.Cast.Count);
+            Assert.Equal(4, back.Loop.Cast.Count);
             Assert.True(back.HasRoadRun);
+
+            // The format, or a tag run reloads as a singles run and quietly stops being the
+            // protected thing it was booked as.
+            Assert.Equal(2, back.Loop.SideSize);
 
             // The cast has to be the roster's own instances, or running the loop sharpens
             // copies and the career never sees it.

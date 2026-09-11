@@ -4681,8 +4681,7 @@ times a browser found it and the tests could not.
 - **Nothing brings people home on its own.** A tour runs out on its date and they are simply at
   home again; there is no "they have been out three months, bring them in" prompt, which is the
   thing a booker would actually want telling them.
-- **The road cannot be a tag run**, so the work share that makes a tag a protected rep still
-  never applies on the road.
+- ~~**The road cannot be a tag run.**~~ *(Built — see "A tag run on the road" below.)*
 - ~~**A touring wrestler is not flagged on the card.**~~ *(Built. `BookingSuggestions` puts
   `out on the road until 2 Feb` on the condition line, below being injured and above the ring
   condition reading, because where they are is a fact about the week and being unable to work
@@ -4694,4 +4693,51 @@ times a browser found it and the tests could not.
   the surface where booking actually happens on the desktop was the one that never said
   somebody was hurt, cooked, or two states away. That is the third time in this session a
   feature landed on the half of a two-surface screen nobody was looking at.)*
+
+## A tag run on the road
+
+`HouseShowLoop.SideSize` is 1 for singles and 2 for a tag run, chosen with a chip in the loop
+builder beside the pace and the minutes.
+
+**This is the protected rep the whole sharpness model has been pointing at.** The answer to
+"how do you get somebody back to match fitness without putting them on television before they
+are ready" is reps at less than full exposure, and a tag is exactly that. Until this the road
+was singles only, so the one setting in wrestling that exists to protect somebody was the one
+the road could not book.
+
+The share of the work it buys is `RingCondition.WorkShare`, which is the card's own number —
+`0.45 + 0.55 / n`, so 0.725 for a tag rather than a half, because standing on the apron is a
+rest but you are still out there taking the double team. A tag on the road and a tag on
+television therefore cost the same body the same thing.
+
+**It keeps more of the benefit than of the cost, and that is the whole reason to book one.**
+`SharpnessGain` scales its *demand* term by the share and leaves its rep term alone: turning up
+and working a match is the rep whatever else happens, and the apron only discounts the bill.
+Measured over three towns on a wrestler with headroom:
+
+| | Sharpness | Fatigue |
+| --- | --- | --- |
+| Singles | +21.75 | +8.47 |
+| Tag | +19.39 | +6.14 |
+| Tag keeps | 89% of the rep | 73% of the bill |
+
+**And it is fewer rolls of the dice, not merely cheaper ones.** You cannot get hurt taking a
+bump you were on the apron for, so the nightly injury roll walks four beats where singles walks
+six. Over 3000 runs of four bodies, six towns, full tilt: 96 hurt in singles against 78 in
+tags, or 81% of the singles rate. The figure is printed by the test rather than pinned by it.
+
+**A tag run needs two full sides.** Three people booked into one is not a tag run with somebody
+sitting out, it is a card that has not been finished, so `IsBookable` asks for `SideSize * 2`.
+The format chip can make an already-booked run unbookable without anybody touching the cast, so
+the builder says which — a disabled button with no reason on it is the game refusing and not
+saying why.
+
+### Still not built here
+
+- **A mixed loop.** The format is the run's, not the wrestler's, because a house show loop is
+  booked as a cast and a number of towns and not as a card — the same reason nobody lays out
+  the beats. A real week is some of each, and this cannot express that.
+- **Nobody is paired with anybody.** `SideSize` buys the work share and the shorter shift; it
+  does not say who is teaming with whom, so a standing tag team on the run gets no chemistry
+  out of it and the report names no teams.
 

@@ -237,7 +237,8 @@ namespace WrestlingSim.Persistence
                 Cast            = show.Loop.Cast.Select(w => w.Id).ToList(),
                 Towns           = show.Loop.Towns,
                 Pace            = show.Loop.Pace,
-                MinutesPerNight = show.Loop.MinutesPerNight
+                MinutesPerNight = show.Loop.MinutesPerNight,
+                SideSize        = show.Loop.SideSize
             },
             Result         = show.Result == null ? null : ToDto(show.Result)
         };
@@ -668,7 +669,8 @@ namespace WrestlingSim.Persistence
                                                   .Where(w => w != null).Select(w => w!).ToList(),
                     Towns           = Math.Max(1, loopDto.Towns),
                     Pace            = loopDto.Pace,
-                    MinutesPerNight = Math.Max(1, loopDto.MinutesPerNight)
+                    MinutesPerNight = Math.Max(1, loopDto.MinutesPerNight),
+                    SideSize        = Math.Max(1, loopDto.SideSize)
                 };
             }
 
