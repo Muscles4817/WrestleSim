@@ -4358,3 +4358,92 @@ there.
   true about the match and means nothing about a sandbox that ends when you close it. It is
   shown because the engine rolled it and hiding it would be the same lie the old screen told.
 
+
+## The wrestler nobody booked was the one nobody could forget
+
+`LastAppearance` is written in exactly one place: `ShowSimulator`, when somebody works a show.
+So it is null for every name on the roster on day one, and stays null forever for anybody the
+booker never uses. The absence decay read null as **absent zero days**.
+
+The result is the inverse of doc 17 §3.9. A wrestler you sign and never put on television is
+the one person in the game immune to being forgotten. Measured over six months at 70 overness:
+
+| | Day 30 | Day 180 |
+|---|---|---|
+| Booked once, then dropped | 69.53 | 61.92 |
+| Never booked at all | 70.00 | **70.00** |
+
+Absence is now measured from the last appearance **or from the career's start date**, whichever
+is later, so a signing nobody uses fades at exactly the rate of somebody who worked once and
+was dropped. The two differ only in whether the game happened to write a date down, which is
+bookkeeping rather than a career.
+
+## The rust meter had a threshold nobody could reach
+
+`RestingFloor` ran 30–75 against a roster whose self-maintenance spans 0.30 to 0.77. So the
+median wrestler settled at 62, the rusty warning fires at 55, and **only 21% of the roster
+could ever read rusty however long they sat**. Two years off screen left the top of the card at
+66.5 and climbing down no further.
+
+That is not what the meter is for. Keeping yourself ring-ready with no ring in it is the
+exception; the old band made it the rule. Measured on the shipped roster now:
+
+| | Upkeep | Settles at |
+|---|---|---|
+| Least diligent | 0.30 | 20 |
+| Median | 0.59 | 43 |
+| Most diligent | 0.77 | 57 |
+
+95% of the roster goes rusty sitting still, against 21% before. A rookie reads rusty three
+weeks after his last match; the median wrestler after seven; the single most diligent name on
+the roster never quite does, which is the point of having the stat.
+
+**All seventeen tests in `RingConditionTests` passed with the old band and passed with it
+halved.** Every one of them asked about the shape of the curve — a veteran holds more than a
+rookie, rust stops at the floor, a day off mends one meter and spends the other — and not one
+asked where the curve actually landed. The new test measures the shipped roster and is written
+the same way `MatchEngine.TypicalInvestment` is: a roster change moves it, and the answer is to
+re-measure rather than to widen the bound.
+
+### A rep and a workout, and the rep is the bigger half
+
+What comes back in a ring is timing with another body, and you get that from having had the
+match at all. So `SharpnessGain` is now a rep that saturates at about eight minutes, plus a
+smaller term for the work in it — and `share` scales only the second half, because standing on
+the apron waiting to be tagged is still a night of timing a hot tag.
+
+| One match, median upkeep | Sharpness | Fatigue |
+|---|---|---|
+| 15-min singles, full pace | +8.31 | 3.5 |
+| 15-min tag, full pace | +7.28 (88%) | 2.6 (73%) |
+| 15-min singles, sensible pace | +7.66 (92%) | — |
+| 3-min squash | +2.46 (30%) | — |
+
+That shape is why a rusty wrestler is brought back in a tag rather than thrown into a
+twenty-minute singles match: the reps are almost the same and nothing else about it is. A
+squash stays what it is — an appearance, not a night's work — so a run of them does not get
+anybody ready.
+
+And the maintenance claim, which is a different claim and easy to confuse with the reps one:
+
+| Matches a week | Diligent | Median |
+|---|---|---|
+| 0 | 57 | 43 |
+| 1 | 86 | 77 |
+| 2 | 92 | 89 |
+
+A diligent professional on weekly television stays sharp doing nothing else. Everybody else
+settles short of their best on the same schedule and needs more time in a ring to close it.
+
+### Still not built
+
+- **The live local dates are not in the game.** The engine now says a protected rep is most of
+  a rep and that most of the roster needs more than one a week, and the only way to get a rep
+  is a televised match on a card the player books beat by beat. The reps the model is asking
+  for have nowhere to come from yet.
+- **Fatigue is calibrated for a schedule the game does not run.** A fifteen-minute match costs
+  7.6 and a week off repays about 14, so on one show a week it returns to zero before the next
+  bell, every time. It takes five matches a week to reach the cooked threshold of 70, and a
+  career runs one show. The meter works; the calendar never feeds it. Whatever answers the
+  local dates above is the same thing that answers this.
+

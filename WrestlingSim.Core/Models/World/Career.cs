@@ -181,7 +181,9 @@ namespace WrestlingSim.Models.World
             // Nothing stays hot. Momentum bleeds toward zero every day, and someone off
             // screen long enough starts to be forgotten — doc 17 §3 and §4.
             foreach (var wrestler in Roster)
-                HeatEconomy.ApplyDailyDecay(wrestler, CurrentDate);
+                // Measured from the career's start when a wrestler has never worked, so a
+                // signing who is never used fades like anybody else off screen.
+                HeatEconomy.ApplyDailyDecay(wrestler, CurrentDate, StartDate);
 
             // The two meters, moving in opposite directions on the same day off. A day of
             // rest pays back fatigue and costs sharpness, which is why there is no amount
