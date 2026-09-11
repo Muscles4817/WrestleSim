@@ -528,24 +528,20 @@ public class GameState
         // different people doing different things: the card is the night you booked and the
         // run is the rest of the roster out in the towns.
         //
-        // Anybody on the card stays home from the towns. Nobody is in two places, and the
-        // card is the half the booker built by hand — so it wins for that wrestler rather
-        // than for the whole run. Warning and running it anyway billed the same body twice,
-        // which is what the first version did.
+        // Anybody on the card works the run a town short. Nobody is in two places on the
+        // same night, but a week is not one night — the card is the Monday and the towns are
+        // the rest of it. Running them for the whole card *and* the whole run billed one
+        // body twice, which is what the first version did; taking them off the run entirely,
+        // which is what the second did, made television and the road mutually exclusive and
+        // closed the one route back to match fitness the sharpness meter describes.
         if (show.Loop is { IsBookable: true } loop)
         {
             var onTheCard = show.Card.SelectMany(i => i.Wrestlers).ToHashSet();
-            var travelling = new HouseShowLoop
-            {
-                Cast            = loop.Cast.Where(w => !onTheCard.Contains(w)).ToList(),
-                Towns           = loop.Towns,
-                Pace            = loop.Pace,
-                MinutesPerNight = loop.MinutesPerNight
-            };
+            var road = new LoopSimulator(tier: Career.Promotion.Tier)
+                .Run(loop, show.Date, onTheCard);
 
-            if (travelling.IsBookable)
+            if (road.Workers.Count > 0)
             {
-                var road = new LoopSimulator(tier: Career.Promotion.Tier).Run(travelling, show.Date);
                 result.Loop = road;
                 result.Injuries.AddRange(road.Injuries);
             }

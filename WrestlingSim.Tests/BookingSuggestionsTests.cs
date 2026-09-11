@@ -3,6 +3,7 @@ using WrestlingSim.Engine;
 using WrestlingSim.Enums;
 using WrestlingSim.Models;
 using WrestlingSim.Models.World;
+using WrestlingSim.Models.Person;
 using Band = WrestlingSim.Engine.BookingSuggestions.SuggestionBand;
 
 namespace WrestlingSim.Tests
@@ -432,6 +433,77 @@ namespace WrestlingSim.Tests
 
             Assert.Equal(new[] { "Story", "Partner", "Recent", "Plain", "Worn", "Already" },
                          ranked.Select(r => r.Wrestler.RingName));
+        }
+
+        // ── Where they are, not just how they feel ───────────────────────────
+
+        /// <summary>
+        /// **Somebody out on the road says so on their row.**
+        ///
+        /// A touring assignment is the booker's own standing instruction, and the picker
+        /// offered touring wrestlers with no trace of it — so you could put somebody in a
+        /// televised main event on a night you had already sent them to a gym two states
+        /// away, and find out from the show report.
+        ///
+        /// It is a reading and not a gate. A card beats the towns for that wrestler at the
+        /// price of one town, which is an ordinary week rather than a mistake, so the row
+        /// stays in the list and in its own band.
+        /// </summary>
+        [Fact]
+        public void SomebodyOutOnTheRoadIsSaidSoOnTheirRow()
+        {
+            var touring = W("Touring");
+            var home    = W("At home");
+            touring.TouringUntil = Today.AddDays(20);
+
+            var ranked = Rank([touring, home]);
+
+            var row = ranked.Single(r => r.Wrestler == touring);
+            output.WriteLine($"  {row.Wrestler.RingName}: {row.Condition}");
+
+            Assert.Contains("on the road", row.Condition);
+            Assert.Contains(Today.AddDays(20).ToString("d MMM"), row.Condition);
+            Assert.Null(ranked.Single(r => r.Wrestler == home).Condition);
+
+            // Offered, not withheld, and in the ordinary band.
+            Assert.Equal(Band.Plain, row.Band);
+        }
+
+        /// <summary>
+        /// And it stops the day the tour runs out, because a note that never clears is
+        /// furniture.
+        /// </summary>
+        [Fact]
+        public void TheRoadNoteClearsWhenTheTourDoes()
+        {
+            var w = W("Back home");
+            w.TouringUntil = Today.AddDays(-1);
+
+            Assert.Null(Rank([w]).Single().Condition);
+        }
+
+        /// <summary>
+        /// Being hurt still wins. Where they are is a fact about the week; being unable to
+        /// work is a fact about the match, and only one of the two can fit on the row.
+        /// </summary>
+        [Fact]
+        public void BeingHurtOutranksBeingOnTheRoad()
+        {
+            var w = W("Hurt on the road");
+            w.TouringUntil = Today.AddDays(20);
+            w.Injury = new Injury
+            {
+                Part      = BodyPart.Knee,
+                Sustained = Today.AddDays(-7),
+                ClearedOn = Today.AddDays(21),
+                WeeksOut  = 4
+            };
+
+            string? condition = Rank([w]).Single().Condition;
+            output.WriteLine($"  {condition}");
+
+            Assert.Contains("unavailable", condition);
+            Assert.DoesNotContain("on the road", condition);
         }
     }
 }

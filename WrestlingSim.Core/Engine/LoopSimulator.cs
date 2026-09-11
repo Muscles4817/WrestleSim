@@ -36,8 +36,16 @@ namespace WrestlingSim.Engine
             _tier = tier;
         }
 
-        public LoopResult Run(HouseShowLoop loop, DateOnly date)
+        /// <param name="onTelevision">
+        /// Anybody who also worked the card that shared this date. They work the run one town
+        /// short rather than not at all — see <see cref="HouseShowLoop.NightsFor"/> — and on a
+        /// single-town run that leaves nothing, so they are not billed at all.
+        /// </param>
+        public LoopResult Run(HouseShowLoop loop, DateOnly date,
+                              IReadOnlySet<Wrestler>? onTelevision = null)
         {
+            var televised = onTelevision ?? new HashSet<Wrestler>();
+
             var result = new LoopResult
             {
                 Towns           = loop.Towns,
@@ -48,13 +56,20 @@ namespace WrestlingSim.Engine
 
             foreach (var wrestler in loop.Cast)
             {
+                int nights = loop.NightsFor(wrestler, televised);
+
+                // Nothing left of the run for them — a one-town run they were on television
+                // for. A row reading "worked 0 nights" is not a fact about the road, it is
+                // the card being reported twice in different words.
+                if (nights <= 0) continue;
+
                 double sharpBefore = wrestler.Sharpness;
                 double tiredBefore = wrestler.Fatigue;
 
                 int  worked = 0;
                 int? hurtOn = null;
 
-                for (int night = 1; night <= loop.NightsEach; night++)
+                for (int night = 1; night <= nights; night++)
                 {
                     // Somebody carrying an injury does not go out for the next town.
                     if (wrestler.Injury is { } carried && carried.KeepsOut(date)) break;
@@ -81,7 +96,8 @@ namespace WrestlingSim.Engine
                     FatigueBefore   = tiredBefore,
                     FatigueAfter    = wrestler.Fatigue,
                     HurtOnNight     = hurtOn,
-                    NightsWorked    = worked
+                    NightsWorked    = worked,
+                    OnTelevision    = televised.Contains(wrestler)
                 });
             }
 

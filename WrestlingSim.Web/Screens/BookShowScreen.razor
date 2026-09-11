@@ -455,6 +455,14 @@ else
                         }
                     </span>
                     <span class="railrow__why @BookingSuggestions.Tone(row.Band)">@row.Reason</span>
+                    @* The same reading the picker sheet carries. The rail ranks with
+                       `BookingSuggestions` but dropped the condition line, so the surface
+                       where booking actually happens on desktop was the one that never said
+                       somebody was hurt, cooked, or two states away. *@
+                    @if (row.Condition is { } condition)
+                    {
+                        <span class="railrow__cond">⚠ @condition</span>
+                    }
                     <span class="railrow__pop tabnum @who.CardPosition.Tone()">@who.OvernessDisplay</span>
                 </button>
             }
@@ -561,17 +569,18 @@ else
                 </div>
             }
 
-            @* Nobody is in two places, and the card is the half you built by hand — so it
-               wins for that wrestler rather than for the whole run. Said rather than
-               enforced, because a booker who adds a name to the card has made the decision
-               already and should not have to go and unpick the run as well. *@
+            @* A televised match costs one town, not the run. Said rather than enforced,
+               because working television and then the towns is an ordinary week rather than
+               a mistake — the booker needs to know what it costs, not to be sent back to
+               unpick the run. *@
             @if (show.DoubleBooked.Any())
             {
                 <div class="notice notice--advice mt">
                     <strong>@string.Join(", ", show.DoubleBooked.Select(w => w.RingName))</strong>
-                    @(show.DoubleBooked.Count() == 1 ? "is" : "are")
-                    on the card, so @(show.DoubleBooked.Count() == 1 ? "they stay" : "they stay")
-                    home from the towns.
+                    @(show.DoubleBooked.Count() == 1 ? "is" : "are") on the card as well, so
+                    @(show.DoubleBooked.Count() == 1 ? "they work" : "they work")
+                    @(show.Loop!.NightsEach - 1) of the @show.Loop!.NightsEach
+                    town@(show.Loop!.NightsEach == 1 ? "" : "s") rather than all of them.
                 </div>
             }
 

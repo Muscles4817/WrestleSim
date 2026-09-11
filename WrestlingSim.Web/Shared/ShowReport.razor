@@ -339,6 +339,10 @@ else
                             {
                                 <text>Went home after town @night.</text>
                             }
+                            else if (worker.OnTelevision)
+                            {
+                                <text>On the card, so @worker.NightsWorked town@(worker.NightsWorked == 1 ? "" : "s") rather than @loop.Towns.</text>
+                            }
                             else
                             {
                                 <text>Worked all @worker.NightsWorked.</text>
