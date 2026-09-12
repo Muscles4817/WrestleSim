@@ -320,6 +320,19 @@ else
 @* The run of towns, wherever it is drawn — on its own, or under a card that shared the
    date with it. *@
 @code {
+    /// <summary>
+    /// What the run's heading says about its format: nothing for an ordinary singles run,
+    /// the format for a run that is all one thing, and a count for a mixed one.
+    /// </summary>
+    private static string FormatNote(LoopResult loop)
+    {
+        int protectedCount = loop.Protected.Count();
+
+        if (loop.SideSize > 1)   return "tag matches · ";
+        if (protectedCount == 0) return "";
+        return $"{protectedCount} protected · ";
+    }
+
     private RenderFragment RoadRun(LoopResult loop) =>
         @<div>
     <div class="panel">
@@ -330,7 +343,7 @@ else
                    night does and a booker reading a smaller number needs to know whether
                    that is the booking or the wrestler. *@
                 <span class="small muted">
-                    @(loop.SideSize > 1 ? "tag matches · " : "")sharper · more tired
+                    @FormatNote(loop)sharper · more tired
                 </span>
             </div>
             @foreach (var worker in loop.Workers.OrderByDescending(w => w.SharpnessGained))
@@ -351,6 +364,18 @@ else
                             else
                             {
                                 <text>Worked all @worker.NightsWorked.</text>
+                            }
+                            @* Said per row rather than only in the panel heading, because on
+                               a mixed run the heading cannot answer it: two people on the
+                               same run with different numbers were working different jobs.
+                               A badge rather than more prose, because two sentences run
+                               together in this line read as one. *@
+                            @if (worker.SideSize > loop.SideSize)
+                            {
+                                @* An explicit space: Razor emits no whitespace between the
+                                   sentence above and this badge, and the two render touching. *@
+                                @(" ")
+                                <span class="badge badge--sm badge--violet">protected · tags</span>
                             }
                             @RingCondition.WarningFor(worker.Wrestler)
                         </div>

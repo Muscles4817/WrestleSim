@@ -57,9 +57,8 @@ namespace WrestlingSim.Models.World
         /// loop was singles only, so the one setting in wrestling that exists to protect
         /// somebody was the one the road could not book.
         ///
-        /// It is the run's format rather than a per-wrestler one, because a house show loop
-        /// is booked as a cast and a number of towns and not as a card — the same reason
-        /// nobody lays out the beats. A mixed loop is not built; see the design record.
+        /// This is the run's **default**, and <see cref="InTags"/> overrides it for
+        /// individuals — see there for why a mixed run is the real shape of a week.
         ///
         /// The share of the work it buys is <c>RingCondition.WorkShare</c>, which is the same
         /// number the televised card uses, so a tag on the road and a tag on television cost
@@ -68,11 +67,46 @@ namespace WrestlingSim.Models.World
         public int SideSize { get; set; } = 1;
 
         /// <summary>
-        /// A run needs two full sides. Singles has always needed two bodies; a tag run needs
-        /// four, and booking three people into one is not a tag run with somebody sitting
-        /// out, it is a card that has not been finished.
+        /// Names that work tags whatever the run's default is. **The mixed loop.**
+        ///
+        /// The first version made the format the run's and said so: a house show loop is
+        /// booked as a cast and a number of towns, not as a card, so one chip for everybody
+        /// was the shape that matched. But a real week is not one format — a loop is
+        /// protected spots down the card and singles at the top of it, on the same night, and
+        /// a run that can only be all of one is a run that cannot do the job the tag format
+        /// was added for. The booker sending eight people out is usually protecting two of
+        /// them, not eight.
+        ///
+        /// It is still not a card, which is the line this has to stay on the right side of.
+        /// The decision is "who am I protecting", which is one tap on a name the booker has
+        /// already picked — not who faces whom, not who partners whom, and not in what order.
+        /// The engine bills bodies and never builds a match out here, so a flag on a body is
+        /// the whole of what it can honestly read.
         /// </summary>
-        public bool IsBookable => SideSize >= 1 && Cast.Count >= SideSize * 2 && Towns >= 1;
+        public List<Wrestler> InTags { get; set; } = new();
+
+        /// <summary>How many a side <paramref name="w"/> works, default or override.</summary>
+        public int SideSizeFor(Wrestler w) => InTags.Contains(w) ? 2 : SideSize;
+
+        /// <summary>
+        /// The biggest format anybody on this run is working, which is what decides how many
+        /// bodies it takes. Reads the cast rather than <see cref="InTags"/>, so a name marked
+        /// and then dropped does not keep demanding room for a match nobody is in.
+        /// </summary>
+        public int LargestSide =>
+            Cast.Count == 0 ? Math.Max(1, SideSize) : Cast.Max(SideSizeFor);
+
+        /// <summary>
+        /// A run needs two full sides of its largest format. Singles has always needed two
+        /// bodies; a tag needs four, and booking three people into one is not a tag with
+        /// somebody sitting out, it is a card that has not been finished.
+        ///
+        /// It is the *largest* and not the default, because protecting one person on an
+        /// otherwise singles run still means somebody out there is working a tag match, and a
+        /// tag match takes four bodies however few of them are the one being looked after.
+        /// </summary>
+        public bool IsBookable =>
+            SideSize >= 1 && Cast.Count >= LargestSide * 2 && Towns >= 1;
 
         /// <summary>Total nights of work this run asks of one wrestler.</summary>
         public int NightsEach => Math.Max(0, Towns);

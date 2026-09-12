@@ -238,7 +238,8 @@ namespace WrestlingSim.Persistence
                 Towns           = show.Loop.Towns,
                 Pace            = show.Loop.Pace,
                 MinutesPerNight = show.Loop.MinutesPerNight,
-                SideSize        = show.Loop.SideSize
+                SideSize        = show.Loop.SideSize,
+                InTags          = show.Loop.InTags.Select(w => w.Id).ToList()
             },
             Result         = show.Result == null ? null : ToDto(show.Result)
         };
@@ -670,8 +671,17 @@ namespace WrestlingSim.Persistence
                     Towns           = Math.Max(1, loopDto.Towns),
                     Pace            = loopDto.Pace,
                     MinutesPerNight = Math.Max(1, loopDto.MinutesPerNight),
-                    SideSize        = Math.Max(1, loopDto.SideSize)
+                    SideSize        = Math.Max(1, loopDto.SideSize),
+
+                    // Read the same way the cast is: names no longer on the roster drop off
+                    // rather than coming back from the dead. A mark on somebody who is not in
+                    // the cast would still be deciding how many bodies the run needs, through
+                    // `LargestSide`, so it is intersected with the cast below.
+                    InTags          = loopDto.InTags.Select(id => byId.GetValueOrDefault(id))
+                                                    .Where(w => w != null).Select(w => w!).ToList()
                 };
+
+                show.Loop.InTags.RemoveAll(w => !show.Loop.Cast.Contains(w));
             }
 
             if (dto.Result != null) show.Result = FromDto(dto.Result);

@@ -4734,10 +4734,54 @@ saying why.
 
 ### Still not built here
 
-- **A mixed loop.** The format is the run's, not the wrestler's, because a house show loop is
-  booked as a cast and a number of towns and not as a card — the same reason nobody lays out
-  the beats. A real week is some of each, and this cannot express that.
-- **Nobody is paired with anybody.** `SideSize` buys the work share and the shorter shift; it
-  does not say who is teaming with whom, so a standing tag team on the run gets no chemistry
-  out of it and the report names no teams.
+- ~~**A mixed loop.**~~ *(Built — see below. The paragraph that stood here argued the format
+  should be the run's because a loop is a cast and a number of towns rather than a card, and
+  then admitted in its own last sentence that a real week is some of each. The argument was
+  for the wrong thing: it defends not laying out matches, which is still true, and was used to
+  defend one format for everybody, which was never the same claim.)*
+
+### The mixed loop: who is being protected
+
+`HouseShowLoop.SideSize` is the run's default and `InTags` overrides it for individuals.
+`SideSizeFor(w)` is the one question the simulator asks, and it asks it per wrestler.
+
+**The booker sending eight people out is usually protecting two of them, not eight.** A run
+that can only be all of one thing cannot do the job the tag format was added for, because the
+case it was added for — somebody coming back who needs reps at less than full exposure — is by
+its nature a minority of the cast.
+
+**It is still not a card, and that is the line this has to stay on the right side of.** The
+decision is "who am I protecting": one tap on a name already picked, in a grid that only lists
+the booked cast. Not who faces whom, not who partners whom, not in what order. The engine
+bills bodies and never builds a match out here, so a flag on a body is the whole of what it
+can honestly read.
+
+**Protecting one person makes the whole run need four.** `IsBookable` asks for `LargestSide *
+2` rather than `SideSize * 2`, because somebody out there is working a tag match now and a tag
+match takes four bodies however few of them are the one being looked after. The builder says
+so rather than only grey out the button.
+
+`LargestSide` reads the **cast** and not the marks, so a name marked and then taken off the run
+stops deciding anything. The builder drops the mark on deselection and the save reader
+intersects with the cast, because two paths reach the same bad state and only one of them is
+the player's.
+
+Measured on one run of three towns, four bodies, one of them protected:
+
+| | Sharpness | Fatigue |
+| --- | --- | --- |
+| Singles on that run | +21.75 | +8.47 |
+| Protected on that run | +19.39 | +6.14 |
+
+The report says `1 protected` in the heading and badges the row, because on a mixed run the
+heading alone cannot answer it: two people with different numbers on the same run were doing
+different jobs, and a booker cannot tell which from the numbers.
+#### Still not built
+
+- **Nobody is paired with anybody.** `SideSizeFor` buys the work share and the shorter shift;
+  it does not say who is teaming with whom, so a standing tag team on the run gets no
+  chemistry out of it and the report names no teams.
+- **Trios on the road.** `SideSizeFor` returns 1 or 2 and the builder offers the same, though
+  `WorkShare` is general and the engine would take a 3 without noticing. A six-man house show
+  match is real; it is just not offered.
 

@@ -553,6 +553,87 @@ namespace WrestlingSim.Tests
             Assert.True(loop.IsBookable);
         }
 
+        /// <summary>
+        /// **A mixed run: some of them protected, the rest working singles, on the same
+        /// night.**
+        ///
+        /// One format for the whole run was the wrong shape. A booker sending eight people
+        /// out is usually protecting two of them, not eight, and a run that can only be all
+        /// of one thing cannot do the job the tag format was added for.
+        /// </summary>
+        [Fact]
+        public void SomeOfThemAreProtectedAndTheRestAreNot()
+        {
+            var looked_after = Worker("Coming back", sharpness: 40);
+            var ordinary     = Worker("Fine",        sharpness: 40);
+
+            var loop = Run(3, looked_after, ordinary, Worker("Three"), Worker("Four"));
+            loop.InTags.Add(looked_after);
+
+            Assert.Equal(2, loop.SideSizeFor(looked_after));
+            Assert.Equal(1, loop.SideSizeFor(ordinary));
+
+            var result = new LoopSimulator(seed: 9).Run(loop, Day);
+
+            var kept = result.Workers.Single(w => w.Wrestler == looked_after);
+            var full = result.Workers.Single(w => w.Wrestler == ordinary);
+
+            output.WriteLine($"  protected  +{kept.SharpnessGained:F2} sharp  +{kept.FatigueAdded:F2} tired");
+            output.WriteLine($"  singles    +{full.SharpnessGained:F2} sharp  +{full.FatigueAdded:F2} tired");
+
+            Assert.Equal(2, kept.SideSize);
+            Assert.Equal(1, full.SideSize);
+
+            // Two people on the same run, the same towns, the same pace, doing different jobs.
+            Assert.True(kept.FatigueAdded < full.FatigueAdded);
+            Assert.True(kept.SharpnessGained < full.SharpnessGained);
+            Assert.True(kept.SharpnessGained > 0);
+
+            // And the report can pick them out without being told which run this was.
+            Assert.Same(looked_after, result.Protected.Single().Wrestler);
+        }
+
+        /// <summary>
+        /// Protecting one person on an otherwise singles run still means somebody out there
+        /// is working a tag match, and a tag match takes four bodies however few of them are
+        /// the one being looked after.
+        /// </summary>
+        [Fact]
+        public void ProtectingOnePersonMakesTheWholeRunNeedFour()
+        {
+            var kept = Worker("Coming back");
+            var loop = Run(3, kept, Worker("Two"));
+
+            Assert.True(loop.IsBookable, "two is a singles run");
+
+            loop.InTags.Add(kept);
+            Assert.Equal(2, loop.LargestSide);
+            Assert.False(loop.IsBookable, "somebody out there is working a tag match now");
+
+            loop.Cast.Add(Worker("Three"));
+            loop.Cast.Add(Worker("Four"));
+            Assert.True(loop.IsBookable);
+        }
+
+        /// <summary>
+        /// A mark on somebody who is not on the run decides nothing. Otherwise a name taken
+        /// off the cast keeps demanding room for a match nobody is in.
+        /// </summary>
+        [Fact]
+        public void AMarkOnSomebodyWhoIsNotGoingCountsForNothing()
+        {
+            var dropped = Worker("Taken off");
+            var loop = Run(3, Worker("A"), Worker("B"));
+            loop.InTags.Add(dropped);
+
+            Assert.Equal(1, loop.LargestSide);
+            Assert.True(loop.IsBookable);
+
+            var result = new LoopSimulator(seed: 4).Run(loop, Day);
+            Assert.DoesNotContain(result.Workers, w => w.Wrestler == dropped);
+            Assert.Empty(result.Protected);
+        }
+
         // ── Who is on the road ───────────────────────────────────────────────
 
         /// <summary>

@@ -55,14 +55,16 @@ namespace WrestlingSim.Engine
 
             double pace = RingCondition.IntensityWeight(loop.Pace);
 
-            // How much of the match each of them is actually in. `WorkShare` is the card's
-            // own number rather than a road-specific one, so a tag out in the towns and a tag
-            // on television cost the same body the same thing.
-            double share = RingCondition.WorkShare(loop.SideSize);
-
             foreach (var wrestler in loop.Cast)
             {
                 int nights = loop.NightsFor(wrestler, televised);
+
+                // How much of the match this one is actually in — the run's default unless
+                // they are one of the people being protected. `WorkShare` is the card's own
+                // number rather than a road-specific one, so a tag out in the towns and a tag
+                // on television cost the same body the same thing.
+                int    sideSize = loop.SideSizeFor(wrestler);
+                double share    = RingCondition.WorkShare(sideSize);
 
                 // Nothing left of the run for them — a one-town run they were on television
                 // for. A row reading "worked 0 nights" is not a fact about the road, it is
@@ -103,7 +105,8 @@ namespace WrestlingSim.Engine
                     FatigueAfter    = wrestler.Fatigue,
                     HurtOnNight     = hurtOn,
                     NightsWorked    = worked,
-                    OnTelevision    = televised.Contains(wrestler)
+                    OnTelevision    = televised.Contains(wrestler),
+                    SideSize        = sideSize
                 });
             }
 
