@@ -9,11 +9,14 @@ namespace WrestlingSim.Models
         public int MinutesPerNight { get; init; }
 
         /// <summary>
-        /// How many a side worked out there: 1 for singles, 2 for a tag run. Reported because
-        /// a tag night moves both meters less than a singles night does, and a booker reading
-        /// a smaller number needs to know whether that is the format or the wrestler.
+        /// The run's default format: 1 for singles, 2 for a tag run. Individuals can be
+        /// working something else — see <see cref="LoopWorker.SideSize"/>.
         /// </summary>
         public int SideSize { get; init; } = 1;
+
+        /// <summary>Anybody working a bigger side than the run's default: the protected ones.</summary>
+        public IEnumerable<LoopWorker> Protected =>
+            Workers.Where(w => w.SideSize > SideSize);
 
         /// <summary>One row per wrestler, in the order they were booked.</summary>
         public List<LoopWorker> Workers { get; init; } = new();
@@ -51,5 +54,13 @@ namespace WrestlingSim.Models
         /// also means somebody went home hurt and the two read completely differently.
         /// </summary>
         public bool OnTelevision { get; init; }
+
+        /// <summary>
+        /// How many a side this one worked: 1 for singles, 2 for tags. Per wrestler rather
+        /// than per run, because a mixed loop is the real shape of a week — and a booker
+        /// reading a smaller pair of numbers needs to know whether that is the format or the
+        /// wrestler.
+        /// </summary>
+        public int SideSize { get; init; } = 1;
     }
 }

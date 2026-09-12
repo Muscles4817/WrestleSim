@@ -84,7 +84,8 @@ namespace WrestlingSim.Tests
                 Towns           = 4,
                 Pace            = BeatIntensity.High,
                 MinutesPerNight = 16,
-                SideSize        = 2
+                SideSize        = 1,
+                InTags          = [roster[2]]
             };
 
             var loaded = RoundTrip(career, fresh);
@@ -97,14 +98,50 @@ namespace WrestlingSim.Tests
             Assert.Equal(4, back.Loop.Cast.Count);
             Assert.True(back.HasRoadRun);
 
-            // The format, or a tag run reloads as a singles run and quietly stops being the
-            // protected thing it was booked as.
-            Assert.Equal(2, back.Loop.SideSize);
+            // The format, or a run reloads as something other than what it was booked as and
+            // quietly stops protecting the person it was booked to protect.
+            Assert.Equal(1, back.Loop.SideSize);
+            Assert.Equal(2, back.Loop.SideSizeFor(back.Loop.Cast.Single(w => w.Id == roster[2].Id)));
+            Assert.Equal(1, back.Loop.SideSizeFor(back.Loop.Cast.Single(w => w.Id == roster[0].Id)));
+
+            // By reference, like the cast — a mark on a copy protects nobody.
+            Assert.Same(back.Loop.Cast.Single(w => w.Id == roster[2].Id), back.Loop.InTags.Single());
 
             // The cast has to be the roster's own instances, or running the loop sharpens
             // copies and the career never sees it.
             foreach (var w in back.Loop.Cast)
                 Assert.Same(loaded.Roster.Single(r => r.Id == w.Id), w);
+        }
+
+        /// <summary>
+        /// A protection mark on somebody who is no longer on the roster drops off, like every
+        /// other cast. Left in, it would still be deciding how many bodies the run needs
+        /// through <c>LargestSide</c> — a match nobody is in, blocking a run that is fine.
+        /// </summary>
+        [Fact]
+        public void AProtectionMarkOnSomebodyWhoIsGoneDropsOff()
+        {
+            var roster = Roster();
+            var career = NewCareer(roster);
+
+            var show = career.Schedule("Saturday", career.CurrentDate.AddDays(3), ShowType.HouseShow);
+            show.Loop = new HouseShowLoop
+            {
+                Cast     = [roster[0], roster[1]],
+                Towns    = 3,
+                SideSize = 1,
+                InTags   = [roster[2]]      // marked, then never sent out
+            };
+
+            // It already counts for nothing in memory — `LargestSide` reads the cast, not the
+            // marks — and the point here is that a reload does not resurrect it as a live one.
+            Assert.Equal(1, show.Loop.LargestSide);
+
+            var back = RoundTrip(career).Shows.Single(s => s.Id == show.Id);
+
+            Assert.Empty(back.Loop!.InTags);
+            Assert.Equal(1, back.Loop.LargestSide);
+            Assert.True(back.Loop.IsBookable);
         }
 
         /// <summary>

@@ -319,6 +319,9 @@ namespace WrestlingSim.Persistence
 
         /// <summary>1 for singles, 2 for a tag run. Old saves have no value and read as singles.</summary>
         public int SideSize { get; set; } = 1;
+
+        /// <summary>Who works tags whatever the default is — the protected ones, by id.</summary>
+        public List<string> InTags { get; set; } = new();
     }
 
     public class CardItemDto

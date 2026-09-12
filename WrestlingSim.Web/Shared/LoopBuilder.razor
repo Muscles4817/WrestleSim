@@ -75,7 +75,7 @@
     @* The format, above the pace, because it is the bigger of the two protections and the
        one a booker sending somebody back out is actually reaching for. *@
     <div class="field mt">
-        <span class="field__label">What they work</span>
+        <span class="field__label">What most of them work</span>
         <div class="chips">
             @foreach (var n in new[] { 1, 2 })
             {
@@ -85,6 +85,33 @@
             }
         </div>
     </div>
+
+    @* And the exceptions, which is what makes the run a week rather than one format. The
+       decision is "who am I protecting" — one tap on a name already picked — and not who
+       faces whom or partners whom. A loop is still a cast and a number of towns. *@
+    @if (cast.Count > 0 && loop.SideSize < 2)
+    {
+        <div class="field mt">
+            <span class="field__label">
+                Protected — these work tags instead
+                <span class="spacer"></span>
+                <span class="small muted">@loop.InTags.Count of @cast.Count</span>
+            </span>
+            <div class="picks picks--2">
+                @foreach (var w in cast)
+                {
+                    var who = w;
+                    <button class="pick @(loop.InTags.Contains(who) ? "is-selected" : "")"
+                            @onclick="() => ToggleProtected(who)">
+                        <span class="pick__body">
+                            <span class="pick__name">@who.RingName</span>
+                            <span class="pick__desc">@FormatLabel(loop.SideSizeFor(who))</span>
+                        </span>
+                    </button>
+                }
+            </div>
+        </div>
+    }
 
     <div class="field mt">
         <span class="field__label">How hard they work</span>
@@ -120,16 +147,17 @@
             <strong>+@Expected(sharp: false).ToString("F0")</strong> fatigue apiece, averaged
             across the @cast.Count of them — the ones with the least left to gain will get the
             least. Nobody gets more over: the television audience is not there.
-            @if (loop.SideSize > 1)
+            @if (loop.LargestSide > 1)
             {
                 @* "Less of the match each" and not "half the match": `WorkShare(2)` is
                    0.725, because standing on the apron is a rest but you are still out
                    there taking the double team. Saying half would be the copy describing a
                    model the engine does not have. *@
                 <text>
-                    A tag run is the protected version: less of the match each, so a smaller
-                    bill and fewer chances to get hurt — and turning up is still the rep. It
-                    is where somebody who is not ready goes.
+                    @ProtectedLead
+                    the protected version: less of the match each, so a smaller bill and
+                    fewer chances to get hurt — and turning up is still the rep. It is where
+                    somebody who is not ready goes.
                 </text>
             }
         </div>
@@ -141,9 +169,16 @@
     @if (cast.Count > 0 && !loop.IsBookable)
     {
         <div class="notice notice--warn mt">
-            <strong>@(loop.SideSize * 2 - cast.Count) more needed.</strong>
-            @FormatLabel(loop.SideSize) out on the road needs @(loop.SideSize * 2) bodies for
-            a match, and @cast.Count @(cast.Count == 1 ? "is" : "are") booked.
+            <strong>@(loop.LargestSide * 2 - cast.Count) more needed.</strong>
+            @FormatLabel(loop.LargestSide) out on the road needs @(loop.LargestSide * 2)
+            bodies for a match, and @cast.Count @(cast.Count == 1 ? "is" : "are") booked.
+            @if (loop.LargestSide > loop.SideSize)
+            {
+                <text>
+                    Protecting one person still means somebody is working a tag match, and a
+                    tag match takes four however few of them are the one being looked after.
+                </text>
+            }
         </div>
     }
 
@@ -223,8 +258,16 @@
 
     private void Toggle(Wrestler w)
     {
-        if (!cast.Remove(w)) cast.Add(w);
+        // Taking somebody off the run takes the protection with them. Leaving the mark
+        // behind would have a name nobody is sending out still deciding how many bodies the
+        // run needs, through `LargestSide`.
+        if (!cast.Remove(w)) cast.Add(w); else loop.InTags.Remove(w);
         loop.Cast = cast.ToList();
+    }
+
+    private void ToggleProtected(Wrestler w)
+    {
+        if (!loop.InTags.Remove(w)) loop.InTags.Add(w);
     }
 
     private List<Wrestler> Cooked() =>
@@ -244,11 +287,11 @@
         if (cast.Count == 0) return 0;
 
         double pace  = RingCondition.IntensityWeight(loop.Pace);
-        double share = RingCondition.WorkShare(loop.SideSize);
         double total = 0;
 
         foreach (var w in cast)
         {
+            double share  = RingCondition.WorkShare(loop.SideSizeFor(w));
             double upkeep = RingCondition.SelfMaintenance(
                 w.Mental?.Psychology ?? 70, w.Mental?.RingIQ ?? 70);
 
@@ -272,6 +315,16 @@
 
     private static string TiredTone(Wrestler w) =>
         w.Fatigue >= RingCondition.CookedThreshold ? "grade--poor" : "grade--good";
+
+    /// <summary>
+    /// How the trade is introduced: the run's own format when everybody is on it, and a
+    /// count when only some of them are. Singular and plural both, because "the 1 in tags
+    /// are" is the copy telling the reader it was not written for this case.
+    /// </summary>
+    private string ProtectedLead =>
+        loop.SideSize > 1        ? "A tag run is"
+        : loop.InTags.Count == 1 ? "The one in tags is"
+                                 : $"The {loop.InTags.Count} in tags are";
 
     private static string FormatLabel(int sideSize) => sideSize switch
     {
