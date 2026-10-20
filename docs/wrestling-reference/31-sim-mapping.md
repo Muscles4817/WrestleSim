@@ -7,9 +7,8 @@ This document is **opinion about design**, unlike the rest of the reference whic
 description of the industry.
 
 **Audited against `ece8cd9`.** Every status claim below was checked by reading the code at
-that commit. Where a figure is an engine *output* rather than a constant it carries the commit
-it was measured at, because those two go stale at different rates and only one is checkable by
-reading.
+that commit, and the figures in A1, A2 and A4 were re-measured against it. Figures are quoted
+with the inputs that produce them, so they can be re-taken rather than trusted.
 
 This replaces a standing "check the code before trusting the current state column", which is
 what let the board drift: a caveat that applies to everything excuses keeping nothing current.
@@ -155,12 +154,13 @@ from someone who has it), a `gap` term measured from the winner's side, match qu
 `FinishWeight` — `Decisive` 1.00, `Fluke` 0.50, `Protected` 0.35, so the audience forgives a
 loss it understands. Gains compress near the ceiling and losses near the floor.
 
-Measured on the shipped roster at `3da5c40`, both in a good match:
+Measured at `ece8cd9` on the shipped roster, `ForMatch` at **3.5★ with a `Decisive`
+finish** — stated so it can be re-taken:
 
 ```
   Roman Reigns (96) beats Von Wagner (23)      Von Wagner (23) beats Roman Reigns (96)
-    Roman      overness  +0.00  momentum  +1     Von Wagner  overness  +5.12  momentum  +48
-    Von Wagner overness  −0.59  momentum −10     Roman       overness  −0.21  momentum   −3
+    Roman      overness  +0.00  momentum  +1     Von Wagner  overness  +6.54  momentum  +61
+    Von Wagner overness  −0.68  momentum −11     Roman       overness  −0.27  momentum   −4
     → net status destroyed                       → a star is made, at almost no cost
 ```
 
@@ -216,24 +216,36 @@ match well, what has gone is the appetite. There is a test asserting those two s
 bit-identical across a stale rematch. `ShowSimulator` reads familiarity from the feud book
 rather than `plan.Feud`, so declining to attach a feud does not dodge the rule.
 
-Measured across five consecutive weekly shows with an identical beat sheet, at `3da5c40`:
-3.45★ → 3.21★ → 3.14★ → **2.73★** → 2.52★, with the winner's overness gain falling
-+0.18 → 0.00. Rating falls 21% by the fourth while the *status* gain falls to nothing, which
-is the right shape — the work still gets credited, the audience stops caring who wins.
+What it is worth, measured at `ece8cd9` — the curve, and what it does to the status
+transfer for the same upset as A2 (3.5★, `Decisive`), re-runnable because both are pure
+functions:
 
-> Both figure sets above are stamped with the commit they were measured at because they are
-> **engine outputs, not constants**. The constants they came from — `Feud`'s curve, its 60/120
-> day freshness window, `HeatEconomy`'s scales and `FinishWeight`'s weights — are unchanged as
-> of `f38c999` and the curve itself is test-pinned by `MatchCountDecayTests`. The star
-> *ratings* are not pinned anywhere, and `MatchEngine` has gained the phase grammar, match
-> briefs and a dozen structures since they were taken, so treat the absolute numbers as a
-> reading from that commit and the 21%-and-nothing shape as the claim.
+| Meeting | Familiarity | Winner's overness | Winner's momentum |
+|---|---|---|---|
+| 1st | 1.00 | +6.54 | +61 |
+| 2nd | 0.90 | +5.89 | +55 |
+| 3rd | 0.85 | +5.56 | +52 |
+| 4th | 0.65 | +4.25 | +40 |
+| 5th | 0.57 | +3.73 | +35 |
+| 7th | 0.45 | +2.95 | +28 |
+
+A declared blow-off restores the third meeting to 1.00 against 0.85 otherwise. By the fourth,
+**35% of the status a result would have moved has gone**, and it keeps going to 55% at the
+floor — the work still gets credited, the audience stops caring who wins.
+
+> An earlier draft gave this as a five-show star curve (3.45★ → 2.52★) measured at `3da5c40`.
+> Those figures are **not reproducible**: they came from full `ShowSimulator` runs against a
+> beat sheet that was never recorded, and `MatchEngine` has since gained the phase grammar,
+> briefs and a dozen structures. The table above replaces them with readings off
+> `Feud.FamiliarityFor` and `HeatEconomy.ForMatch` at stated inputs, which anybody can re-take
+> and which `MatchCountDecayTests` already pins the left-hand column of. Prefer a number that
+> can be checked over a number that sounds more impressive.
 
 Note the third-match bump keys off **feud intensity** rather than a stipulation
 (`Feud.ReadsAsBlowOff` is `Intensity >= Hot`). That was the only signal available when A4
 shipped, and it no longer is: `MatchPlan.Stipulation` now exists with five rungs and its own
 validation (`StipulationRules`). So both `ReadsAsBlowOff` and its doc-comment — which still
-reads "there are no stipulations in the game yet" — are **stale as of `f38c999`**, and wiring
+reads "there are no stipulations in the game yet" — are **stale as of `ece8cd9`**, and wiring
 the real signal in is a live follow-up rather than a thing to wait for. Heat is not a bad
 stand-in, so this is a small improvement rather than a defect: a declared stipulation is a
 promise to the audience that this is the end, which is exactly what the bump is pricing, and
