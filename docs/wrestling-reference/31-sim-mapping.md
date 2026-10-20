@@ -42,27 +42,72 @@ Note that **tag matches do not appear below**. They are a genuine gap — the fo
 third of a real card — but a Tier-B-sized one that this analysis never listed. A plan for
 them lives in [../tag-matches-plan.md](../tag-matches-plan.md).
 
+> **This board has not been re-audited since `3da5c40` (PR #26).** Twenty-five PRs merged
+> after it and the Tier A/B entries below do not account for them. What visibly shipped in
+> that window, none of it listed here: **fatigue, ring sharpness and injuries**
+> (`RingCondition`, `InjuryRisk`, `Models.Person.Injury`, `Wrestler.Fatigue`/`.Sharpness`/
+> `.InjuryHistory`), **stipulations** (`Stipulation`, `StipulationRules`), **battle royals and
+> the Rumble**, **elimination, handicap and Survivor Series formats**, **house-show loops and
+> touring**, and the **match brief / phase grammar** layer. Doc
+> [15](15-injuries-and-attrition.md) in particular went from unrepresented to substantially
+> built, which is a bigger change than anything in Tier A.
+>
+> So read the entries below as accurate about *themselves* and silent about everything after
+> `3da5c40`. Re-auditing is its own piece of work and has not been done; writing that down is
+> cheaper than letting the next reader assume this is current, which is the mistake the
+> commit stamps in A2 and A4 exist to prevent.
+
 ### Tier A — high value, contained work
 
-#### A1. Split `Popularity` into `Overness` (stock) and `Momentum` (flow)
+#### A1. Split `Popularity` into `Overness` (stock) and `Momentum` (flow) — **implemented**
 **Reference:** [17](17-heat-and-getting-over.md) §1.1
-`Popularity` currently does both jobs. Splitting them enables hot/cold dynamics, the
-peak-and-cash-in decision, cooling from absence, and the entire heat lifecycle.
+`Popularity` did both jobs. Splitting them enables hot/cold dynamics, the peak-and-cash-in
+decision, cooling from absence, and the entire heat lifecycle.
 - `Overness` — slow-moving accumulated audience relationship; drives crowd ceiling
 - `Momentum` — fast-moving current trend; drives reaction growth week over week and
   decays without exposure
 - `CardPosition` should read `Overness`; crowd energy should read both.
 
-#### A2. Heat transfer on match results (status economics)
+Shipped as `Wrestler.Overness` and `Wrestler.Momentum`, combined by `EffectiveOverness`
+(`Overness + Momentum × 0.15`) which is what `PerformerProfile` and the opening bell read —
+being hot lets someone punch above their standing without a mid-carder reading as a main
+eventer. Decay is `HeatEconomy.ApplyDailyDecay`, charged by `Career.AdvanceOneDay`: momentum
+retains 0.967/day (a three-week half-life), and overness itself slips 0.06/day once someone
+has been off screen past a 21-day grace, damped so a cold performer has little further to
+fall.
+
+Two things worth recording. **`Overness` is a `double`, not an `int`** — as a whole number
+every change below half a point rounded to nothing and small transfers could never
+accumulate, which surfaced as a botched segment costing a wrestler exactly zero.
+And `MatchEngineState.Momentum` was renamed `Advantage` in the same change: it means
+in-match advantage and resets every match, and leaving it sharing a name with career
+momentum was a trap.
+
+#### A2. Heat transfer on match results (status economics) — **implemented**
 **Reference:** [17](17-heat-and-getting-over.md) §6, [12](12-pushes-and-positioning.md) §6.1
-The engine scores match *quality* but the result currently has no status consequence. Add:
+The engine scored match *quality* and the result had no status consequence, so booking a
+squash and booking the upset were mechanically identical.
 - Beating a higher-`Overness` opponent transfers a meaningful amount
 - Beating a lower-`Overness` opponent transfers almost nothing and costs the loser
 - Losing without a story (clean, no interference, no stipulation) costs more than losing
   with one
 
-This single addition makes booking decisions matter beyond the star rating, which is the
-most significant thing missing from the sim right now.
+Shipped as `HeatEconomy.ForMatch`. Transfer scales with `prize` (you can only take status
+from someone who has it), a `gap` term measured from the winner's side, match quality, and
+`FinishWeight` — `Decisive` 1.00, `Fluke` 0.50, `Protected` 0.35, so the audience forgives a
+loss it understands. Gains compress near the ceiling and losses near the floor.
+
+Measured on the shipped roster at `3da5c40`, both in a good match:
+
+```
+  Roman Reigns (96) beats Von Wagner (23)      Von Wagner (23) beats Roman Reigns (96)
+    Roman      overness  +0.00  momentum  +1     Von Wagner  overness  +5.12  momentum  +48
+    Von Wagner overness  −0.59  momentum −10     Roman       overness  −0.21  momentum   −3
+    → net status destroyed                       → a star is made, at almost no cost
+```
+
+The squash gains the star **literally nothing** while costing the roster real value, which
+is §6's central claim made mechanical.
 
 #### A3. Feud heat decay and blow-off as a terminal event — **implemented**
 **Reference:** [20](20-storylines-and-feuds.md) §9, §6, [04](04-booking-philosophy.md) §1.1
@@ -95,12 +140,46 @@ one-time **business** result, because there is no business axis to pay into yet.
 18 ("rate well vs draw well as two separate outputs") is the prerequisite, and it is not
 built. What ships is the quality and story half.
 
-#### A4. Match-count decay per pairing
+#### A4. Match-count decay per pairing — **implemented**
 **Reference:** [20](20-storylines-and-feuds.md) §9.1, [29](29-benchmarks-and-numbers.md) §10.1
-`Feud.MatchCount` already exists and is described as feeding fatigue decay. Extend it to a
-full curve: 1st 100%, 2nd 85–95%, 3rd (with stipulation) 90–110%, 4th+ 50–70% and falling.
-This forces roster rotation and makes fresh pairings valuable — one of the strongest
-pressures in real booking.
+`Feud.MatchCount` existed, was incremented in three places, displayed in four, and **read by
+zero engine code** — its doc-comment claimed it fed fatigue decay and it did not. A promotion
+could run the same main event fifty-two weeks running at full value.
+
+Shipped as `Feud.FamiliarityFor`: 1st 100%, 2nd 90%, 3rd 85% (100% when the feud reads as a
+blow-off), 4th 65%, 5th 57%, 6th 50%, 7th+ 45%, interpolated so a part-forgotten series lands
+between rows. Freshness recovers — 60 days of grace, then one meeting forgotten per 120 days
+idle — because doc 17 §4.2 says absence restores it and a rematch eight months later must not
+be graded as the fourth.
+
+It damps the **crowd ceiling and opening-bell energy** and the status transfer, and leaves
+the technical and storytelling accumulators alone: two good hands still wrestle their fifth
+match well, what has gone is the appetite. There is a test asserting those two scores are
+bit-identical across a stale rematch. `ShowSimulator` reads familiarity from the feud book
+rather than `plan.Feud`, so declining to attach a feud does not dodge the rule.
+
+Measured across five consecutive weekly shows with an identical beat sheet, at `3da5c40`:
+3.45★ → 3.21★ → 3.14★ → **2.73★** → 2.52★, with the winner's overness gain falling
++0.18 → 0.00. Rating falls 21% by the fourth while the *status* gain falls to nothing, which
+is the right shape — the work still gets credited, the audience stops caring who wins.
+
+> Both figure sets above are stamped with the commit they were measured at because they are
+> **engine outputs, not constants**. The constants they came from — `Feud`'s curve, its 60/120
+> day freshness window, `HeatEconomy`'s scales and `FinishWeight`'s weights — are unchanged as
+> of `f38c999` and the curve itself is test-pinned by `MatchCountDecayTests`. The star
+> *ratings* are not pinned anywhere, and `MatchEngine` has gained the phase grammar, match
+> briefs and a dozen structures since they were taken, so treat the absolute numbers as a
+> reading from that commit and the 21%-and-nothing shape as the claim.
+
+Note the third-match bump keys off **feud intensity** rather than a stipulation
+(`Feud.ReadsAsBlowOff` is `Intensity >= Hot`). That was the only signal available when A4
+shipped, and it no longer is: `MatchPlan.Stipulation` now exists with five rungs and its own
+validation (`StipulationRules`). So both `ReadsAsBlowOff` and its doc-comment — which still
+reads "there are no stipulations in the game yet" — are **stale as of `f38c999`**, and wiring
+the real signal in is a live follow-up rather than a thing to wait for. Heat is not a bad
+stand-in, so this is a small improvement rather than a defect: a declared stipulation is a
+promise to the audience that this is the end, which is exactly what the bump is pricing, and
+reading one should outrank inferring it from intensity.
 
 #### A5. Reaction *type*, not just magnitude — **implemented**
 **Reference:** [16](16-crowd-psychology.md) §2
