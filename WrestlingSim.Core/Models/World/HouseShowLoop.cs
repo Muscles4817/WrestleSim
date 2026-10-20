@@ -57,8 +57,13 @@ namespace WrestlingSim.Models.World
         /// loop was singles only, so the one setting in wrestling that exists to protect
         /// somebody was the one the road could not book.
         ///
-        /// This is the run's **default**, and <see cref="InTags"/> overrides it for
+        /// This is the run's **default**, and <see cref="Formats"/> overrides it for
         /// individuals — see there for why a mixed run is the real shape of a week.
+        ///
+        /// One, two or three. Three is a six-man, which is a real house show match and the
+        /// most protected setting on the road: <c>WorkShare</c> reads 0.63 for a trio against
+        /// 0.73 for a tag, so somebody who needs looking after more than a tag can look after
+        /// them goes in a six-man.
         ///
         /// The share of the work it buys is <c>RingCondition.WorkShare</c>, which is the same
         /// number the televised card uses, so a tag on the road and a tag on television cost
@@ -83,14 +88,32 @@ namespace WrestlingSim.Models.World
         /// The engine bills bodies and never builds a match out here, so a flag on a body is
         /// the whole of what it can honestly read.
         /// </summary>
-        public List<Wrestler> InTags { get; set; } = new();
+        /// It was a list of names working tags, which could say *that* somebody was being
+        /// protected but not *how much*. A side size says both, and the difference matters
+        /// out here: a trio is the more protected of the two, so "put him in six-mans" and
+        /// "put him in tags" are different instructions about the same wrestler and the
+        /// first version could only give one of them.
+        /// </summary>
+        public Dictionary<Wrestler, int> Formats { get; set; } = new();
 
         /// <summary>How many a side <paramref name="w"/> works, default or override.</summary>
-        public int SideSizeFor(Wrestler w) => InTags.Contains(w) ? 2 : SideSize;
+        public int SideSizeFor(Wrestler w) =>
+            Formats.TryGetValue(w, out int side) ? side : SideSize;
+
+        /// <summary>
+        /// Puts one wrestler on a format, or back on the run's default when it is the one
+        /// they would get anyway. Storing an override that matches the default would make
+        /// changing the run's chip silently leave people behind on the old one.
+        /// </summary>
+        public void SetFormat(Wrestler w, int sideSize)
+        {
+            if (sideSize == SideSize) Formats.Remove(w);
+            else                      Formats[w] = Math.Clamp(sideSize, 1, 3);
+        }
 
         /// <summary>
         /// The biggest format anybody on this run is working, which is what decides how many
-        /// bodies it takes. Reads the cast rather than <see cref="InTags"/>, so a name marked
+        /// bodies it takes. Reads the cast rather than <see cref="Formats"/>, so a name marked
         /// and then dropped does not keep demanding room for a match nobody is in.
         /// </summary>
         public int LargestSide =>
@@ -98,8 +121,9 @@ namespace WrestlingSim.Models.World
 
         /// <summary>
         /// A run needs two full sides of its largest format. Singles has always needed two
-        /// bodies; a tag needs four, and booking three people into one is not a tag with
-        /// somebody sitting out, it is a card that has not been finished.
+        /// bodies; a tag needs four and a six-man needs six, and booking three people into a
+        /// tag is not a tag with somebody sitting out, it is a card that has not been
+        /// finished.
         ///
         /// It is the *largest* and not the default, because protecting one person on an
         /// otherwise singles run still means somebody out there is working a tag match, and a

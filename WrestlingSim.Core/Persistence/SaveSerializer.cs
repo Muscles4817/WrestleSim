@@ -239,7 +239,12 @@ namespace WrestlingSim.Persistence
                 Pace            = show.Loop.Pace,
                 MinutesPerNight = show.Loop.MinutesPerNight,
                 SideSize        = show.Loop.SideSize,
-                InTags          = show.Loop.InTags.Select(w => w.Id).ToList()
+                Formats         = show.Loop.Formats
+                                      .Select(kv => new LoopSpotDto
+                                      {
+                                          Wrestler = kv.Key.Id,
+                                          SideSize = kv.Value
+                                      }).ToList()
             },
             Result         = show.Result == null ? null : ToDto(show.Result)
         };
@@ -677,16 +682,41 @@ namespace WrestlingSim.Persistence
                     // rather than coming back from the dead. A mark on somebody who is not in
                     // the cast would still be deciding how many bodies the run needs, through
                     // `LargestSide`, so it is intersected with the cast below.
-                    InTags          = loopDto.InTags.Select(id => byId.GetValueOrDefault(id))
-                                                    .Where(w => w != null).Select(w => w!).ToList()
+                    //
+                    // `InTags` is the shape this was saved in before trios: a list of names
+                    // working tags, with no room to say how many a side. It still loads, as
+                    // the two it could only have meant, so a run booked yesterday is not
+                    // quietly un-protected by today's build.
+                    Formats         = ReadFormats(loopDto, byId)
                 };
 
-                show.Loop.InTags.RemoveAll(w => !show.Loop.Cast.Contains(w));
+                foreach (var gone in show.Loop.Formats.Keys
+                                         .Where(w => !show.Loop.Cast.Contains(w)).ToList())
+                    show.Loop.Formats.Remove(gone);
             }
 
             if (dto.Result != null) show.Result = FromDto(dto.Result);
 
             return show;
+        }
+
+        /// <summary>
+        /// The per-wrestler formats on a run, from either shape the save can be in. A name in
+        /// both wins on <see cref="LoopDto.Formats"/>, which is the one with a number in it.
+        /// </summary>
+        private static Dictionary<Wrestler, int> ReadFormats(
+            LoopDto dto, Dictionary<string, Wrestler> byId)
+        {
+            var formats = new Dictionary<Wrestler, int>();
+
+            foreach (string id in dto.InTags)
+                if (byId.GetValueOrDefault(id) is { } w) formats[w] = 2;
+
+            foreach (var spot in dto.Formats)
+                if (byId.GetValueOrDefault(spot.Wrestler) is { } w)
+                    formats[w] = Math.Clamp(spot.SideSize, 1, 3);
+
+            return formats;
         }
 
         /// <summary>

@@ -4781,7 +4781,55 @@ different jobs, and a booker cannot tell which from the numbers.
 - **Nobody is paired with anybody.** `SideSizeFor` buys the work share and the shorter shift;
   it does not say who is teaming with whom, so a standing tag team on the run gets no
   chemistry out of it and the report names no teams.
-- **Trios on the road.** `SideSizeFor` returns 1 or 2 and the builder offers the same, though
-  `WorkShare` is general and the engine would take a 3 without noticing. A six-man house show
-  match is real; it is just not offered.
+- ~~**Trios on the road.**~~ *(Built — see below.)*
+
+### Six-mans on the road
+
+The override was `InTags`: a list of names working tags. It could say **that** somebody was
+being looked after and not **how much**, and out here that is a real distinction —
+`WorkShare` reads 0.63 for a trio against 0.73 for a tag, so "put him in six-mans" and "put
+him in tags" are different instructions about the same wrestler and the old shape could only
+give one of them. It is now `Formats`, a side size per wrestler, and `SideSizeFor` is the one
+question the simulator asks.
+
+Measured on one run of three towns with the three formats side by side, everything else held
+equal:
+
+| A side | Sharpness | Fatigue |
+| --- | --- | --- |
+| 1 | +21.75 | +8.47 |
+| 2 | +19.39 | +6.14 |
+| 3 | +18.60 | +5.37 |
+
+Monotone in both directions. A six-man gives up a little more of the rep than a tag does and
+saves a lot more of the bill, which is what "further down that road" means and why it is where
+somebody who needs more than a tag can give them goes.
+
+**A six-man needs six bodies**, which `LargestSide * 2` already said without being changed —
+the rule was written for the general case when tags went in, and trios only exercised it. The
+builder names the number rather than only greying the button out.
+
+**The run's format and a wrestler's are different kinds of thing, and the second outranks the
+first.** Changing the chip moves everybody who has not been put on a format; the ones who have
+keep theirs. The first version of that rebuilt every override through `SetFormat` afterwards,
+which drops one matching the new default — so switching the run to tags released somebody
+deliberately put on tags, and switching it back to singles left them working a full singles
+match with nothing on screen having changed. A choice made about one wrestler is not the run's
+to take back.
+
+`SetFormat` still drops an override equal to the default, and that is the *cycle's* business
+rather than the chip's: tapping a name goes singles → tags → six-man → singles, and the third
+tap has to read as "back to normal" rather than as a pin that happens to match.
+
+**Saves written before this still load as what they meant.** `InTags` is read as a side size
+of two and never written. Reading past it would have quietly un-protected the person a run was
+booked to protect, with the booking looking unchanged.
+
+#### Still not built here
+
+- **Four or more a side.** `SetFormat` clamps to three and the builder offers three. Eight-man
+  tags happen; `WorkShare` would take them.
+- **The format says nothing about the match.** A six-man books six bodies' worth of exposure
+  and nothing about who the other five are, which is the same honest limit the whole road has:
+  the engine bills bodies out here and never builds a match.
 
