@@ -42,6 +42,21 @@ Note that **tag matches do not appear below**. They are a genuine gap — the fo
 third of a real card — but a Tier-B-sized one that this analysis never listed. A plan for
 them lives in [../tag-matches-plan.md](../tag-matches-plan.md).
 
+> **This board has not been re-audited since `3da5c40` (PR #26).** Twenty-five PRs merged
+> after it and the Tier A/B entries below do not account for them. What visibly shipped in
+> that window, none of it listed here: **fatigue, ring sharpness and injuries**
+> (`RingCondition`, `InjuryRisk`, `Models.Person.Injury`, `Wrestler.Fatigue`/`.Sharpness`/
+> `.InjuryHistory`), **stipulations** (`Stipulation`, `StipulationRules`), **battle royals and
+> the Rumble**, **elimination, handicap and Survivor Series formats**, **house-show loops and
+> touring**, and the **match brief / phase grammar** layer. Doc
+> [15](15-injuries-and-attrition.md) in particular went from unrepresented to substantially
+> built, which is a bigger change than anything in Tier A.
+>
+> So read the entries below as accurate about *themselves* and silent about everything after
+> `3da5c40`. Re-auditing is its own piece of work and has not been done; writing that down is
+> cheaper than letting the next reader assume this is current, which is the mistake the
+> commit stamps in A2 and A4 exist to prevent.
+
 ### Tier A — high value, contained work
 
 #### A1. Split `Popularity` into `Overness` (stock) and `Momentum` (flow) — **implemented**
@@ -82,7 +97,7 @@ from someone who has it), a `gap` term measured from the winner's side, match qu
 `FinishWeight` — `Decisive` 1.00, `Fluke` 0.50, `Protected` 0.35, so the audience forgives a
 loss it understands. Gains compress near the ceiling and losses near the floor.
 
-Measured on the shipped roster, both in a good match:
+Measured on the shipped roster at `3da5c40`, both in a good match:
 
 ```
   Roman Reigns (96) beats Von Wagner (23)      Von Wagner (23) beats Roman Reigns (96)
@@ -143,14 +158,28 @@ match well, what has gone is the appetite. There is a test asserting those two s
 bit-identical across a stale rematch. `ShowSimulator` reads familiarity from the feud book
 rather than `plan.Feud`, so declining to attach a feud does not dodge the rule.
 
-Measured across five consecutive weekly shows with an identical beat sheet: 3.45★ → 3.21★ →
-3.14★ → **2.73★** → 2.52★, with the winner's overness gain falling +0.18 → 0.00. Rating falls
-21% by the fourth while the *status* gain falls to nothing, which is the right shape — the
-work still gets credited, the audience stops caring who wins.
+Measured across five consecutive weekly shows with an identical beat sheet, at `3da5c40`:
+3.45★ → 3.21★ → 3.14★ → **2.73★** → 2.52★, with the winner's overness gain falling
++0.18 → 0.00. Rating falls 21% by the fourth while the *status* gain falls to nothing, which
+is the right shape — the work still gets credited, the audience stops caring who wins.
 
-Note the third-match bump keys off feud intensity rather than a stipulation, because
-stipulations do not exist yet. `Feud.ReadsAsBlowOff` says so in its own comment and should be
-revisited when they do.
+> Both figure sets above are stamped with the commit they were measured at because they are
+> **engine outputs, not constants**. The constants they came from — `Feud`'s curve, its 60/120
+> day freshness window, `HeatEconomy`'s scales and `FinishWeight`'s weights — are unchanged as
+> of `f38c999` and the curve itself is test-pinned by `MatchCountDecayTests`. The star
+> *ratings* are not pinned anywhere, and `MatchEngine` has gained the phase grammar, match
+> briefs and a dozen structures since they were taken, so treat the absolute numbers as a
+> reading from that commit and the 21%-and-nothing shape as the claim.
+
+Note the third-match bump keys off **feud intensity** rather than a stipulation
+(`Feud.ReadsAsBlowOff` is `Intensity >= Hot`). That was the only signal available when A4
+shipped, and it no longer is: `MatchPlan.Stipulation` now exists with five rungs and its own
+validation (`StipulationRules`). So both `ReadsAsBlowOff` and its doc-comment — which still
+reads "there are no stipulations in the game yet" — are **stale as of `f38c999`**, and wiring
+the real signal in is a live follow-up rather than a thing to wait for. Heat is not a bad
+stand-in, so this is a small improvement rather than a defect: a declared stipulation is a
+promise to the audience that this is the end, which is exactly what the bump is pricing, and
+reading one should outrank inferring it from intensity.
 
 #### A5. Reaction *type*, not just magnitude — **implemented**
 **Reference:** [16](16-crowd-psychology.md) §2
