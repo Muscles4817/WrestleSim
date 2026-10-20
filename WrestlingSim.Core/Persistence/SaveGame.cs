@@ -320,8 +320,23 @@ namespace WrestlingSim.Persistence
         /// <summary>1 for singles, 2 for a tag run. Old saves have no value and read as singles.</summary>
         public int SideSize { get; set; } = 1;
 
-        /// <summary>Who works tags whatever the default is — the protected ones, by id.</summary>
+        /// <summary>
+        /// Who works tags whatever the default is, by id. **Superseded by
+        /// <see cref="Formats"/>**, which says how many a side rather than only that it was
+        /// more than one — still read so saves written before trios went in load as what
+        /// they meant, never written.
+        /// </summary>
         public List<string> InTags { get; set; } = new();
+
+        /// <summary>Anybody on a format of their own: their id and how many a side.</summary>
+        public List<LoopSpotDto> Formats { get; set; } = new();
+    }
+
+    /// <summary>One wrestler put on a format other than the run's default.</summary>
+    public class LoopSpotDto
+    {
+        public string Wrestler { get; set; } = "";
+        public int SideSize { get; set; } = 2;
     }
 
     public class CardItemDto

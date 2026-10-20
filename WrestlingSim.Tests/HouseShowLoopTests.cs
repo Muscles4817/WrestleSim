@@ -568,7 +568,7 @@ namespace WrestlingSim.Tests
             var ordinary     = Worker("Fine",        sharpness: 40);
 
             var loop = Run(3, looked_after, ordinary, Worker("Three"), Worker("Four"));
-            loop.InTags.Add(looked_after);
+            loop.SetFormat(looked_after, 2);
 
             Assert.Equal(2, loop.SideSizeFor(looked_after));
             Assert.Equal(1, loop.SideSizeFor(ordinary));
@@ -606,7 +606,7 @@ namespace WrestlingSim.Tests
 
             Assert.True(loop.IsBookable, "two is a singles run");
 
-            loop.InTags.Add(kept);
+            loop.SetFormat(kept, 2);
             Assert.Equal(2, loop.LargestSide);
             Assert.False(loop.IsBookable, "somebody out there is working a tag match now");
 
@@ -624,7 +624,7 @@ namespace WrestlingSim.Tests
         {
             var dropped = Worker("Taken off");
             var loop = Run(3, Worker("A"), Worker("B"));
-            loop.InTags.Add(dropped);
+            loop.SetFormat(dropped, 2);
 
             Assert.Equal(1, loop.LargestSide);
             Assert.True(loop.IsBookable);
@@ -632,6 +632,94 @@ namespace WrestlingSim.Tests
             var result = new LoopSimulator(seed: 4).Run(loop, Day);
             Assert.DoesNotContain(result.Workers, w => w.Wrestler == dropped);
             Assert.Empty(result.Protected);
+        }
+
+        /// <summary>
+        /// **A six-man is the more protected of the two multi-man formats, not another name
+        /// for a tag.**
+        ///
+        /// `WorkShare` reads 0.63 for a trio against 0.73 for a tag, so "put him in six-mans"
+        /// and "put him in tags" are different instructions about the same wrestler. The
+        /// first version of the override was a list of names working tags, which could say
+        /// *that* somebody was being looked after and not *how much*.
+        /// </summary>
+        [Fact]
+        public void ASixManLooksAfterSomebodyMoreThanATagDoes()
+        {
+            var singles = Worker("Singles", sharpness: 40);
+            var tag     = Worker("Tag",     sharpness: 40);
+            var trio    = Worker("Six-man", sharpness: 40);
+
+            var loop = Run(3, singles, tag, trio,
+                              Worker("Four"), Worker("Five"), Worker("Six"));
+            loop.SetFormat(tag, 2);
+            loop.SetFormat(trio, 3);
+
+            var result = new LoopSimulator(seed: 12).Run(loop, Day);
+
+            var s1 = result.Workers.Single(w => w.Wrestler == singles);
+            var s2 = result.Workers.Single(w => w.Wrestler == tag);
+            var s3 = result.Workers.Single(w => w.Wrestler == trio);
+
+            foreach (var row in new[] { s1, s2, s3 })
+                output.WriteLine($"  {row.SideSize} a side: +{row.SharpnessGained:F2} sharp " +
+                                 $"+{row.FatigueAdded:F2} tired");
+
+            Assert.Equal(new[] { 1, 2, 3 }, new[] { s1.SideSize, s2.SideSize, s3.SideSize });
+
+            // Monotone in both directions, on one run, with everything else held equal.
+            Assert.True(s3.FatigueAdded < s2.FatigueAdded);
+            Assert.True(s2.FatigueAdded < s1.FatigueAdded);
+            Assert.True(s3.SharpnessGained < s2.SharpnessGained);
+            Assert.True(s2.SharpnessGained < s1.SharpnessGained);
+
+            // And it is still a rep, which is the whole reason to book one.
+            Assert.True(s3.SharpnessGained > 0);
+        }
+
+        /// <summary>
+        /// A six-man takes six bodies, and the run says so before it refuses.
+        /// </summary>
+        [Fact]
+        public void ASixManRunNeedsSixBodies()
+        {
+            var kept = Worker("Coming back");
+            var loop = Run(3, kept, Worker("Two"), Worker("Three"), Worker("Four"));
+
+            loop.SetFormat(kept, 2);
+            Assert.True(loop.IsBookable, "four is a tag match");
+
+            loop.SetFormat(kept, 3);
+            Assert.Equal(3, loop.LargestSide);
+            Assert.False(loop.IsBookable, "a six-man is not four people");
+
+            loop.Cast.Add(Worker("Five"));
+            Assert.False(loop.IsBookable);
+
+            loop.Cast.Add(Worker("Six"));
+            Assert.True(loop.IsBookable);
+        }
+
+        /// <summary>
+        /// An override that matches the run's default is not stored, or moving the run's own
+        /// format would leave people behind on the old one without anybody touching them.
+        /// </summary>
+        [Fact]
+        public void PuttingSomebodyOnTheRunsOwnFormatIsNotAnOverride()
+        {
+            var w    = Worker("Ordinary");
+            var loop = Run(3, w, Worker("Two"), Worker("Three"), Worker("Four"));
+
+            loop.SetFormat(w, 2);
+            Assert.Single(loop.Formats);
+
+            loop.SetFormat(w, 1);                 // back to what the run works anyway
+            Assert.Empty(loop.Formats);
+            Assert.Equal(1, loop.SideSizeFor(w));
+
+            // And a side size out of range is clamped rather than stored as nonsense.
+            loop.SetFormat(w, 9);
+            Assert.Equal(3, loop.SideSizeFor(w));
         }
 
         // ── Who is on the road ───────────────────────────────────────────────

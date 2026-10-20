@@ -328,10 +328,18 @@ else
     {
         int protectedCount = loop.Protected.Count();
 
-        if (loop.SideSize > 1)   return "tag matches · ";
+        if (loop.SideSize > 1)   return $"{FormatWord(loop.SideSize)} · ";
         if (protectedCount == 0) return "";
         return $"{protectedCount} protected · ";
     }
+
+    /// <summary>What to call a side of this size, in running text.</summary>
+    private static string FormatWord(int sideSize) => sideSize switch
+    {
+        3 => "six-man matches",
+        2 => "tag matches",
+        _ => "singles"
+    };
 
     private RenderFragment RoadRun(LoopResult loop) =>
         @<div>
@@ -375,7 +383,7 @@ else
                                 @* An explicit space: Razor emits no whitespace between the
                                    sentence above and this badge, and the two render touching. *@
                                 @(" ")
-                                <span class="badge badge--sm badge--violet">protected · tags</span>
+                                <span class="badge badge--sm badge--violet">protected · @FormatWord(worker.SideSize)</span>
                             }
                             @RingCondition.WarningFor(worker.Wrestler)
                         </div>

@@ -77,11 +77,11 @@
     <div class="field mt">
         <span class="field__label">What most of them work</span>
         <div class="chips">
-            @foreach (var n in new[] { 1, 2 })
+            @foreach (var n in new[] { 1, 2, 3 })
             {
                 var side = n;
                 <button class="chip @(loop.SideSize == side ? "is-active" : "")"
-                        @onclick="() => loop.SideSize = side">@FormatLabel(side)</button>
+                        @onclick="() => SetDefault(side)">@FormatLabel(side)</button>
             }
         </div>
     </div>
@@ -89,23 +89,36 @@
     @* And the exceptions, which is what makes the run a week rather than one format. The
        decision is "who am I protecting" — one tap on a name already picked — and not who
        faces whom or partners whom. A loop is still a cast and a number of towns. *@
-    @if (cast.Count > 0 && loop.SideSize < 2)
+    @if (cast.Count > 0)
     {
         <div class="field mt">
             <span class="field__label">
-                Protected — these work tags instead
+                On a format of their own — tap to change
                 <span class="spacer"></span>
-                <span class="small muted">@loop.InTags.Count of @cast.Count</span>
+                <span class="small muted">@loop.Formats.Count of @cast.Count</span>
             </span>
             <div class="picks picks--2">
                 @foreach (var w in cast)
                 {
                     var who = w;
-                    <button class="pick @(loop.InTags.Contains(who) ? "is-selected" : "")"
-                            @onclick="() => ToggleProtected(who)">
+                    @* Tapping cycles singles → tags → six-man rather than toggling, because
+                       there are three formats now and a trio is the more protected of the
+                       two multi-man ones. A toggle could say *that* somebody was being
+                       looked after and not *how much*. *@
+                    <button class="pick @(loop.Formats.ContainsKey(who) ? "is-selected" : "")"
+                            @onclick="() => CycleFormat(who)">
                         <span class="pick__body">
                             <span class="pick__name">@who.RingName</span>
-                            <span class="pick__desc">@FormatLabel(loop.SideSizeFor(who))</span>
+                            <span class="pick__desc">
+                                @FormatLabel(loop.SideSizeFor(who))
+                                @* The explicit space is the same Razor trap the show
+                                   report hit: no whitespace survives between the label
+                                   above and this, and the two render touching. *@
+                                @if (!loop.Formats.ContainsKey(who))
+                                {
+                                    @(" ")<text>· the run's own</text>
+                                }
+                            </span>
                         </span>
                     </button>
                 }
@@ -152,12 +165,14 @@
                 @* "Less of the match each" and not "half the match": `WorkShare(2)` is
                    0.725, because standing on the apron is a rest but you are still out
                    there taking the double team. Saying half would be the copy describing a
-                   model the engine does not have. *@
+                   model the engine does not have — and a six-man is 0.63, further along
+                   the same line rather than a different kind of thing. *@
                 <text>
                     @ProtectedLead
                     the protected version: less of the match each, so a smaller bill and
                     fewer chances to get hurt — and turning up is still the rep. It is where
-                    somebody who is not ready goes.
+                    somebody who is not ready goes, and a six-man is further down that road
+                    than a tag.
                 </text>
             }
         </div>
@@ -175,8 +190,9 @@
             @if (loop.LargestSide > loop.SideSize)
             {
                 <text>
-                    Protecting one person still means somebody is working a tag match, and a
-                    tag match takes four however few of them are the one being looked after.
+                    Putting one person on a bigger side still means somebody out there is
+                    working that match, and it takes @(loop.LargestSide * 2) bodies however
+                    few of them are the one being looked after.
                 </text>
             }
         </div>
@@ -261,14 +277,25 @@
         // Taking somebody off the run takes the protection with them. Leaving the mark
         // behind would have a name nobody is sending out still deciding how many bodies the
         // run needs, through `LargestSide`.
-        if (!cast.Remove(w)) cast.Add(w); else loop.InTags.Remove(w);
+        if (!cast.Remove(w)) cast.Add(w); else loop.Formats.Remove(w);
         loop.Cast = cast.ToList();
     }
 
-    private void ToggleProtected(Wrestler w)
-    {
-        if (!loop.InTags.Remove(w)) loop.InTags.Add(w);
-    }
+    /// <summary>Singles, tags, six-man, and round again.</summary>
+    private void CycleFormat(Wrestler w) =>
+        loop.SetFormat(w, loop.SideSizeFor(w) % 3 + 1);
+
+    /// <summary>
+    /// Moving the run's own format moves everybody who has not been put on one, which is
+    /// what "most of them" means. The ones who have keep theirs.
+    ///
+    /// The first version of this rebuilt every override through `SetFormat` afterwards,
+    /// which does drop one that matches the new default — so switching the run to tags
+    /// released somebody deliberately put on tags, and switching it back to singles left
+    /// them working a full singles match with nothing on screen having changed. A choice
+    /// made about one wrestler is not the run's to take back.
+    /// </summary>
+    private void SetDefault(int sideSize) => loop.SideSize = sideSize;
 
     private List<Wrestler> Cooked() =>
         cast.Where(w => w.Fatigue >= RingCondition.CookedThreshold).ToList();
@@ -321,13 +348,23 @@
     /// count when only some of them are. Singular and plural both, because "the 1 in tags
     /// are" is the copy telling the reader it was not written for this case.
     /// </summary>
-    private string ProtectedLead =>
-        loop.SideSize > 1        ? "A tag run is"
-        : loop.InTags.Count == 1 ? "The one in tags is"
-                                 : $"The {loop.InTags.Count} in tags are";
+    private string ProtectedLead
+    {
+        get
+        {
+            var kept = cast.Where(w => loop.SideSizeFor(w) > loop.SideSize).ToList();
+
+            if (kept.Count == 0)
+                return loop.SideSize == 3 ? "A six-man run is" : "A tag run is";
+
+            return kept.Count == 1 ? "The one on a bigger side is"
+                                   : $"The {kept.Count} on bigger sides are";
+        }
+    }
 
     private static string FormatLabel(int sideSize) => sideSize switch
     {
+        3 => "Six-man",
         2 => "Tag matches",
         _ => "Singles"
     };
