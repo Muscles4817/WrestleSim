@@ -1003,6 +1003,13 @@ table.data tr:last-child td { border-bottom: 0; }
   to   { opacity: 1; transform: none; }
 }
 .reveal { animation: reveal-in .34s ease-out both; animation-delay: var(--d, 0s); }
+
+/* The builder's own state changes. A slot that has just been filled, a note that has
+   just appeared and a beat that has just moved all used to swap silently, which on a
+   screen with eight near-identical rows means the change is announced by nothing at
+   all — the player has to re-read the list to find what they just did. */
+@keyframes settle { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.slot.is-filled, .notice, .beat-row { animation: settle .2s ease-out both; }
 /* The verdict gets the overshoot. It is the one number the mode builds toward. */
 .reveal--pop { animation-name: reveal-pop; animation-timing-function: cubic-bezier(.2, .9, .3, 1.2); }
 
@@ -1057,6 +1064,18 @@ table.data tr:last-child td { border-bottom: 0; }
   color: var(--muted);
 }
 .pbp__crowd b { font-weight: 800; }
+
+/* The crowd's level, growing from where the previous beat left it. */
+.pbp__level {
+  display: inline-block; width: 86px; height: 5px; border-radius: 3px;
+  background: var(--panel-3); overflow: hidden; margin-left: 4px;
+}
+.pbp__level i {
+  display: block; height: 100%; border-radius: 3px; background: currentColor;
+  width: var(--to);
+  animation: crowd-to .42s cubic-bezier(.2, .7, .3, 1) both;
+}
+@keyframes crowd-to { from { width: var(--from); } to { width: var(--to); } }
 .pbp__crowd.is-up   { color: var(--face); }
 .pbp__crowd.is-down { color: var(--heel); }
 

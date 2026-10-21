@@ -64,6 +64,15 @@
                 <div class="pbp__crowd @CrowdClass(beat)">
                     <Icon Name="@CrowdMark(beat)" />
                     Crowd @beat.CrowdEnergyBefore.ToString("F0") → <b>@beat.CrowdEnergyAfter.ToString("F0")</b>
+                    @* The level, not just the delta. Read down the page these bars are the
+                       crowd's trajectory through the match — the heat segment visibly sags
+                       and the comeback visibly spikes — which is the shape a list of
+                       numbers cannot show. Each one grows from where the last beat left the
+                       room to where this one did, as the beat lands. *@
+                    <span class="pbp__level"
+                          style="--from:@Pct(beat.CrowdEnergyBefore); --to:@Pct(beat.CrowdEnergyAfter)">
+                        <i></i>
+                    </span>
                 </div>
             </div>
         </div>
@@ -164,6 +173,13 @@
     }
 
     public void Dispose() => reveal?.Cancel();
+
+    /// <summary>
+    /// Crowd energy as a width. Clamped because the engine's energy is not bounded at 100
+    /// and a bar wider than its track would simply overflow the row.
+    /// </summary>
+    private static string Pct(double energy) =>
+        Math.Clamp(energy, 0, 100).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture) + "%";
 
     /// <summary>Minutes into the match, as a bell-to-bell clock rather than a count.</summary>
     private static string Clock(int minutes) => $"{minutes}:00";
