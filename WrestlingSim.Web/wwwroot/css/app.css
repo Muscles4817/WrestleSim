@@ -983,13 +983,34 @@ table.data tr:last-child td { border-bottom: 0; }
 
 .pbp__skip { float: right; margin: -4px 0 6px 12px; }
 
-/* The rating lands rather than being simply present. One beat of attention on the one
-   number the whole mode is building toward. */
-@keyframes verdict-in {
+/* ── The result arrives in order ─────────────────────────────────────────────
+   The screen had every part of itself at once: the match details, the names, the
+   winner and the scorecard all landed in the same frame, which is how a form
+   reports a submission and not how a result is given. Each part now takes its
+   turn, in the order a broadcast would: what this was, who was in it, who won,
+   how good it was, and then the analysis.
+
+   The whole sequence is under a second — this is pacing, not a cutscene — and the
+   prefers-reduced-motion block below flattens it to nothing. --d is the stagger,
+   supplied per element by the markup so the order lives next to the content it
+   orders rather than in a pile of nth-child rules here. */
+@keyframes reveal-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes reveal-pop {
   from { opacity: 0; transform: scale(.94); }
   to   { opacity: 1; transform: none; }
 }
-.verdict { animation: verdict-in .34s cubic-bezier(.2, .9, .3, 1.2) both .12s; }
+.reveal { animation: reveal-in .34s ease-out both; animation-delay: var(--d, 0s); }
+/* The verdict gets the overshoot. It is the one number the mode builds toward. */
+.reveal--pop { animation-name: reveal-pop; animation-timing-function: cubic-bezier(.2, .9, .3, 1.2); }
+
+/* The bar grows to its reading rather than arriving at it, which is the difference
+   between a chart and a picture of one. It also means the eye follows the length,
+   which is the comparison the row is for. */
+@keyframes bar-in { from { width: 0; } to { width: var(--w); } }
+.chart__fill { width: var(--w); animation: bar-in .55s cubic-bezier(.2, .7, .3, 1) both .62s; }
 
 /* A clock column and a rail, so the beats read as one continuous match rather than as
    six separate paragraphs. The rail is drawn on the body and not the row, so it stops
@@ -1374,6 +1395,13 @@ table.data tr:last-child td { border-bottom: 0; }
     animation-duration: .001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: .001ms !important;
+    /* The delays too, or a staggered reveal still takes its full wall-clock time and
+       simply snaps each part into place along the way — measured on the result screen:
+       the winner strip was still invisible 150ms in, and the scorecard bars half a
+       second. Zeroing the duration without the delay removes the animation and keeps
+       the waiting, which is the worse half of the two. */
+    animation-delay: 0s !important;
+    transition-delay: 0s !important;
   }
 }
 
