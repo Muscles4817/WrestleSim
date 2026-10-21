@@ -1228,7 +1228,8 @@
     ]
   },
   {
-    "RealName": "Kiah Dean",
+    "RealName": "Kacy Catanzaro",
+    "Id": "kiah-dean",
     "Division": "Womens",
     "BornIn": 1990,
     "DebutedIn": 2018,
@@ -4482,9 +4483,10 @@
     ]
   },
   {
-    "RealName": "Ben Carter",
+    "RealName": "Benjamin Timms",
+    "Id": "ben-carter",
     "Division": "Mens",
-    "BornIn": 1999,
+    "BornIn": 1998,
     "DebutedIn": 2017,
     "Overness": 41,
     "Charisma": 2.7,
@@ -4868,7 +4870,8 @@
     ]
   },
   {
-    "RealName": "Tony D'Angelo",
+    "RealName": "Joseph Ariola",
+    "Id": "tony-d-angelo",
     "Division": "Mens",
     "BornIn": 1995,
     "DebutedIn": 2019,
@@ -4964,7 +4967,7 @@
   {
     "RealName": "Raymond Rowe",
     "Division": "Mens",
-    "BornIn": 1983,
+    "BornIn": 1984,
     "DebutedIn": 2003,
     "Overness": 35,
     "Charisma": 2.0,
@@ -5635,7 +5638,7 @@
     "RealName": "Stephanie Vaquer",
     "Division": "Womens",
     "BornIn": 1993,
-    "DebutedIn": 2011,
+    "DebutedIn": 2009,
     "Overness": 68,
     "Charisma": 3.7,
     "Style": "Technical",
@@ -6114,7 +6117,8 @@
     ]
   },
   {
-    "RealName": "Amanda Wilson",
+    "RealName": "Courtney Stewart",
+    "Id": "amanda-wilson",
     "Division": "Womens",
     "BornIn": 1994,
     "DebutedIn": 2013,
@@ -6690,7 +6694,8 @@
     ]
   },
   {
-    "RealName": "Jacy Jayne",
+    "RealName": "Taylor Grado",
+    "Id": "jacy-jayne",
     "Division": "Womens",
     "BornIn": 1996,
     "DebutedIn": 2018,
@@ -6784,7 +6789,8 @@
     ]
   },
   {
-    "RealName": "Sol Ruca",
+    "RealName": "Calyx Hampton",
+    "Id": "sol-ruca",
     "Division": "Womens",
     "BornIn": 1999,
     "DebutedIn": 2022,
@@ -6882,7 +6888,8 @@
     ]
   },
   {
-    "RealName": "Ivy Nile",
+    "RealName": "Emily Andzulis",
+    "Id": "ivy-nile",
     "Division": "Womens",
     "BornIn": 1992,
     "DebutedIn": 2020,
@@ -6976,7 +6983,8 @@
     ]
   },
   {
-    "RealName": "Thea Hail",
+    "RealName": "Madison Knisley",
+    "Id": "thea-hail",
     "Division": "Womens",
     "BornIn": 2003,
     "DebutedIn": 2021,
@@ -7070,7 +7078,8 @@
     ]
   },
   {
-    "RealName": "Karmen Petrovic",
+    "RealName": "Monika Klisara",
+    "Id": "karmen-petrovic",
     "Division": "Womens",
     "BornIn": 1995,
     "DebutedIn": 2023,
@@ -7164,7 +7173,8 @@
     ]
   },
   {
-    "RealName": "Wren Sinclair",
+    "RealName": "Madison Dombkowski",
+    "Id": "wren-sinclair",
     "Division": "Womens",
     "BornIn": 1995,
     "DebutedIn": 2019,
