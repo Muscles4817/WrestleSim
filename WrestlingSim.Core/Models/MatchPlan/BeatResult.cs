@@ -6,6 +6,16 @@ namespace WrestlingSim.Models.MatchPlan
     {
         public BeatType BeatType { get; set; }
 
+        /// <summary>
+        /// How long this beat ran, in minutes, copied from the beat that produced it.
+        ///
+        /// The result carried no time at all, so a play-by-play could report six beats of an
+        /// eleven-minute match with no sense that eleven minutes had passed — and a reader
+        /// had no way to tell a one-minute cut-off from a seven-minute heat segment except by
+        /// going back to the plan.
+        /// </summary>
+        public int DurationMinutes { get; set; }
+
         /// <summary>The control the booking asked for. See <see cref="Worker"/> for who that resolved to.</summary>
         public BeatControl Control { get; set; }
 

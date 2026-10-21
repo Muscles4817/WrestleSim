@@ -29,7 +29,7 @@
                     <div class="badge-row mt">
                         @foreach (var tag in update.NewTags)
                         {
-                            <span class="badge badge--cyan">+ @tag</span>
+                            <span class="badge badge--cyan">@tag.Label()</span>
                         }
                     </div>
                 }

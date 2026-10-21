@@ -1,30 +1,205 @@
+@implements IDisposable
+@inject IJSRuntime JS
+
+@*
+    The match, as something that happened over time.
+
+    This was a list of paragraphs, each followed by a monospace row reading
+    "Crowd 66 → 70  Advantage -0.7  Tech +2.0  Story +1.0". The numbers were quieter in
+    colour but structurally equal — same indent, same rhythm, one per beat — so a reader's
+    eye treated them as half the content, and the whole thing read as a debug log rather
+    than as a match. A review put it plainly: it does not yet deliver the fantasy of
+    watching the booked match unfold.
+
+    Two changes. The beats now sit on a clock, because an eleven-minute match that renders
+    as six undated paragraphs has no duration and no shape — and the minute mark is the
+    cheapest possible way to tell a one-minute cut-off from a seven-minute heat segment.
+    And the telemetry moves into a disclosure, so it is one keystroke away for anyone
+    tuning the engine and absent for everyone else.
+
+    What stays in the default view is what a person watching would have: what happened, and
+    how the room took it.
+
+    And it arrives in order. The whole match used to appear at once, which is the other half
+    of why it read as a log: the player pressed "Run the match" and the match was already
+    over, with no sense that eleven minutes of anything had happened. The beats now land one
+    at a time, fast enough not to be a cutscene — a six-beat match is done in under a second
+    — and "Skip" is there from the first frame for anyone who has seen it. A viewer who has
+    asked for reduced motion gets the whole thing immediately, which is the same screen,
+    just without the wait.
+*@
+@if (revealed < Result.BeatResults.Count)
+{
+    <button class="btn btn--sm btn--ghost pbp__skip" @onclick="Skip">Skip to the finish</button>
+}
+
 <div class="pbp">
+    @{ int elapsed = 0; int index = -1; }
     @foreach (var beat in Result.BeatResults)
     {
-        <div class="pbp__beat @StateClass(beat)">
-            <div class="pbp__label">@beat.BeatLabel</div>
-            @foreach (var line in beat.Commentary)
-            {
-                <div class="pbp__line">@line</div>
-            }
-            <div class="pbp__stats">
-                <span>Crowd <b>@Before(beat).ToString("F0") → @beat.CrowdEnergyAfter.ToString("F0")</b></span>
-                <span>Advantage <b>@beat.AdvantageAfter.ToString("+0.0;-0.0;0.0")</b></span>
-                <span>Tech <b>+@beat.TechnicalContribution.ToString("F1")</b></span>
-                <span>Story <b>+@beat.StorytellingContribution.ToString("F1")</b></span>
-                @if (beat.FeudalResonanceActivated)
+        index++;
+        var startedAt = elapsed;
+        elapsed += beat.DurationMinutes;
+
+        if (index >= revealed) { continue; }
+
+        <div class="pbp__beat pbp__beat--in @StateClass(beat)">
+            <div class="pbp__clock tabnum">@Clock(startedAt)</div>
+            <div class="pbp__body">
+                <div class="pbp__label">
+                    @beat.BeatLabel
+                    @if (beat.FeudalResonanceActivated)
+                    {
+                        <span class="pbp__flag"><Icon Name="star" /> Feud resonance</span>
+                    }
+                </div>
+                @foreach (var line in beat.Commentary)
                 {
-                    <span class="gold"><Icon Name="star" /> Feud resonance</span>
+                    <div class="pbp__line">@line</div>
                 }
+
+                @* The crowd is the one number a person in the building would have, so it is
+                   the one number that stays. As a movement rather than a reading: "68 → 73"
+                   says the beat worked in a way that "73" does not. *@
+                <div class="pbp__crowd @CrowdClass(beat)">
+                    <Icon Name="@CrowdMark(beat)" />
+                    Crowd @beat.CrowdEnergyBefore.ToString("F0") → <b>@beat.CrowdEnergyAfter.ToString("F0")</b>
+                    @* The level, not just the delta. Read down the page these bars are the
+                       crowd's trajectory through the match — the heat segment visibly sags
+                       and the comeback visibly spikes — which is the shape a list of
+                       numbers cannot show. Each one grows from where the last beat left the
+                       room to where this one did, as the beat lands. *@
+                    <span class="pbp__level"
+                          style="--from:@Pct(beat.CrowdEnergyBefore); --to:@Pct(beat.CrowdEnergyAfter)">
+                        <i></i>
+                    </span>
+                </div>
             </div>
         </div>
     }
 </div>
 
+@if (revealed >= Result.BeatResults.Count)
+{
+<details class="pbp__details">
+    <summary>Simulation details</summary>
+    <div class="pbp__table" role="table">
+        <div class="pbp__trow pbp__trow--head" role="row">
+            <span>Beat</span><span>Crowd</span><span>Advantage</span><span>Tech</span><span>Story</span>
+        </div>
+        @foreach (var beat in Result.BeatResults)
+        {
+            <div class="pbp__trow" role="row">
+                <span>@beat.BeatLabel</span>
+                <span class="tabnum">@beat.CrowdEnergyBefore.ToString("F0") → @beat.CrowdEnergyAfter.ToString("F0")</span>
+                <span class="tabnum">@beat.AdvantageAfter.ToString("+0.0;-0.0;0.0")</span>
+                <span class="tabnum">+@beat.TechnicalContribution.ToString("F1")</span>
+                <span class="tabnum">+@beat.StorytellingContribution.ToString("F1")</span>
+            </div>
+        }
+    </div>
+</details>
+}
+
 @code {
     [Parameter, EditorRequired] public MatchEngineResult Result { get; set; } = default!;
 
-    private static double Before(BeatResult beat) => beat.CrowdEnergyBefore;
+    /// <summary>
+    /// How many beats are on screen. Starts at zero and walks up, unless the viewer has
+    /// asked for reduced motion, in which case the match is simply there.
+    /// </summary>
+    private int revealed;
+
+    private CancellationTokenSource? reveal;
+
+    /// <summary>
+    /// Fast. This is pacing, not a cutscene: long enough that the beats read as a sequence
+    /// rather than a block, short enough that nobody reaches for Skip on their first match.
+    /// </summary>
+    private const int BeatDelayMs = 140;
+
+    protected override void OnParametersSet()
+    {
+        // A re-run hands this component a new result. Start the new match from the top
+        // rather than leaving the previous one's beats on screen.
+        reveal?.Cancel();
+        revealed = 0;
+        reveal = new CancellationTokenSource();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (revealed > 0 || reveal is null || reveal.IsCancellationRequested) { return; }
+
+        bool reduced;
+        try
+        {
+            reduced = await JS.InvokeAsync<bool>("wrestleSim.reducedMotion");
+        }
+        catch (JSException)
+        {
+            // Prerendering, or the script has not landed. Showing the match is the safe
+            // failure: the alternative is an empty panel.
+            reduced = true;
+        }
+
+        if (reduced)
+        {
+            revealed = Result.BeatResults.Count;
+            StateHasChanged();
+            return;
+        }
+
+        var token = reveal.Token;
+        try
+        {
+            while (revealed < Result.BeatResults.Count)
+            {
+                await Task.Delay(BeatDelayMs, token);
+                revealed++;
+                StateHasChanged();
+            }
+        }
+        catch (TaskCanceledException)
+        {
+            // Skipped, or the component went away mid-match.
+        }
+    }
+
+    private void Skip()
+    {
+        reveal?.Cancel();
+        revealed = Result.BeatResults.Count;
+    }
+
+    public void Dispose() => reveal?.Cancel();
+
+    /// <summary>
+    /// Crowd energy as a width. Clamped because the engine's energy is not bounded at 100
+    /// and a bar wider than its track would simply overflow the row.
+    /// </summary>
+    private static string Pct(double energy) =>
+        Math.Clamp(energy, 0, 100).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture) + "%";
+
+    /// <summary>Minutes into the match, as a bell-to-bell clock rather than a count.</summary>
+    private static string Clock(int minutes) => $"{minutes}:00";
+
+    /// <summary>
+    /// Which way the room went. The threshold is a whole point rather than zero so that
+    /// rounding noise does not draw an arrow — a beat that moved the crowd by 0.4 reads as
+    /// having held it, which is what it did.
+    /// </summary>
+    private static string CrowdMark(BeatResult b) =>
+        b.CrowdEnergyAfter - b.CrowdEnergyBefore >= 1 ? "up"
+        : b.CrowdEnergyBefore - b.CrowdEnergyAfter >= 1 ? "down"
+        : "steady";
+
+    private static string CrowdClass(BeatResult b) => CrowdMark(b) switch
+    {
+        "up"   => "is-up",
+        "down" => "is-down",
+        _      => "is-flat"
+    };
 
     private static string StateClass(BeatResult beat)
     {

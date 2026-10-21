@@ -24,3 +24,10 @@ window.wrestleSim.lockScroll = function (locked) {
 window.wrestleSim.toTop = function () {
     window.scrollTo(0, 0);
 };
+
+// Whether the viewer has asked for less motion. Read once per match rather than wired to a
+// change event: a preference that flips mid-reveal is not worth the subscription, and the
+// next match reads it again.
+window.wrestleSim.reducedMotion = function () {
+    return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+};

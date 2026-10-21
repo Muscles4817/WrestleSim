@@ -46,6 +46,31 @@ namespace WrestlingSim.Enums
         FactionConflict
     }
 
+    public static class FeudHistoryTags
+    {
+        /// <summary>
+        /// What a tag is called on screen.
+        ///
+        /// The enum name used to be printed directly, so a player who booked an exhibition
+        /// match was shown "+ PriorMatch" on the result — an identifier with the spaces
+        /// taken out, which is the single clearest sign that a screen is showing you the
+        /// inside of the program rather than the outside of the game.
+        /// </summary>
+        public static string Label(this FeudHistoryTag tag) => tag switch
+        {
+            FeudHistoryTag.Betrayal            => "A betrayal",
+            FeudHistoryTag.InjuryAngle         => "An injury angle",
+            FeudHistoryTag.TitleStolen         => "A stolen title",
+            FeudHistoryTag.PersonalInsult      => "Personal insults",
+            FeudHistoryTag.FamilyInvolved      => "Family involved",
+            FeudHistoryTag.ManagerConflict     => "A manager in it",
+            FeudHistoryTag.PriorMatch          => "A previous match",
+            FeudHistoryTag.ChampionshipRivalry => "A title rivalry",
+            FeudHistoryTag.FactionConflict     => "Faction warfare",
+            _                                  => tag.ToString()
+        };
+    }
+
     public enum FeudalResonanceType
     {
         Callback,    // references a prior moment in the feud

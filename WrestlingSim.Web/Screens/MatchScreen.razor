@@ -15,7 +15,8 @@ else
        The strip a broadcast puts the match details in, which is where they
        belong: they are context for the name, not a heading of their own. This
        replaces the gold eyebrow that sat above every title in the app. *@
-    <div class="bug">
+    <div class="result" @key="runId">
+    <div class="bug reveal" style="--d:0s">
         <span class="bug__tag">@(booked!.Plan.TitleAtStake is null ? "Exhibition" : "Title match")</span>
         <span class="bug__rest">
             @booked.StructureName
@@ -24,16 +25,16 @@ else
         </span>
     </div>
 
-    <h1 class="screen__title screen__title--hero">@booked.Name</h1>
+    <h1 class="screen__title screen__title--hero reveal" style="--d:.07s">@booked.Name</h1>
 
     @* The winner, at the size the one irreversible thing in a match deserves. *@
-    <div class="winstrip">
+    <div class="winstrip reveal" style="--d:.16s">
         <span class="winstrip__label">Winner</span>
         <span class="winstrip__who">@result.Winner.RingName</span>
         <span class="winstrip__how">@FinishLabel()</span>
     </div>
 
-    <div class="verdict">
+    <div class="verdict reveal reveal--pop" style="--d:.3s">
         <Stars Rating="@result.StarRating" ShowNumber="false" />
         <span class="verdict__num">@result.StarRating.ToString("F2")</span>
         <span class="verdict__word @Grades.OfStars(result.StarRating).Tone()">
@@ -41,7 +42,7 @@ else
         </span>
     </div>
 
-    <div class="panel">
+    <div class="panel reveal" style="--d:.46s">
         <div class="panel__title">
             How it scored
             <span class="spacer"></span>
@@ -59,7 +60,7 @@ else
                     <span class="chart__key">@row.Label</span>
                     <span class="chart__track">
                         <i class="chart__fill chart__fill--@row.Tone"
-                           style="width:@(row.Rating.ToString("0.#", Inv))%"></i>
+                           style="--w:@(row.Rating.ToString("0.#", Inv))%"></i>
                     </span>
                     <span class="chart__val tabnum">@row.Rating.ToString("F0")</span>
                     <span class="chart__contrib">@row.Contribution</span>
@@ -183,6 +184,8 @@ else
         </div>
     }
 
+    </div>
+
     <FeudUpdates Updates="@feudUpdates" />
 
     <div class="panel">
@@ -193,7 +196,13 @@ else
     <div class="wizard-bar">
         <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Exhibition)">← Main menu</button>
         <span class="wizard-bar__spacer"></span>
-        <button class="btn" @onclick="RunAgain">Run the same plan again</button>
+        @* "Run the same plan again" invited the reading that re-rolling is a strategy. The
+           engine has per-beat performance variance, so the same plan genuinely lands
+           differently twice — which is worth saying, because it is the difference between
+           a dice roll and a second take. *@
+        <button class="btn" @onclick="RunAgain" title="The booking is identical; the performances are not">
+            Run again with new variance
+        </button>
         <button class="btn btn--primary" @onclick="Reset">Book another match</button>
     </div>
 }
@@ -230,6 +239,16 @@ else
             .FirstOrDefault(t => t.Type == finish.Type)?.Name ?? "";
     }
 
+    /// <summary>
+    /// Bumped on every run, and used as the result block's @key.
+    ///
+    /// Without it, "Run again with new variance" re-renders the same element tree with new
+    /// numbers in it — Blazor reuses the DOM, so no element is new, so none of the reveal
+    /// animations fire and the second match simply blinks into its final state. The key
+    /// makes a re-run a genuinely new block.
+    /// </summary>
+    private int runId;
+
     private BookedMatch? booked;
     private MatchEngineResult? result;
     private List<FeudUpdate> feudUpdates = new();
@@ -243,12 +262,14 @@ else
     private async Task Run(BookedMatch match)
     {
         booked = match;
+        runId++;
         Execute();
         await Scroll.ToTopAsync();
     }
 
     private async Task RunAgain()
     {
+        runId++;
         Execute();
         await Scroll.ToTopAsync();
     }
