@@ -62,6 +62,39 @@ namespace WrestlingSim.Models
         public DateOnly? LastAppearance { get; set; }
 
         /// <summary>
+        /// The year they were born, or null if the roster does not say.
+        ///
+        /// **A year, not a date, on purpose.** These are real performers, and the engine
+        /// reads age in whole years for <see cref="Engine.AgeCurve"/> — so a precise
+        /// birthday would add nothing the curves can use while inviting a specific claim
+        /// about a real person that the roster data cannot support. A year is the precision
+        /// actually available and the precision actually needed.
+        ///
+        /// Nullable because not every entry on the shipped roster has one. A wrestler with
+        /// no birth year ages not at all: every drift in <see cref="Engine.AgeCurve"/>
+        /// returns 1.000 for them, which is exactly how the game behaved before ages
+        /// existed. Missing data degrades to the old behaviour rather than to a guess.
+        /// </summary>
+        public int? BornIn { get; set; }
+
+        /// <summary>
+        /// The year of their first match, or null if the roster does not say.
+        ///
+        /// Separate from <see cref="BornIn"/> because the reference says they drive
+        /// different things. Doc 15 §4.1: drawing power "is a function of accumulated
+        /// audience relationship, which takes a decade to build" — so the crowd's
+        /// attachment runs off tenure while the body runs off age, and a 38-year-old who
+        /// debuted at 34 is not the same proposition as a 38-year-old who debuted at 20.
+        /// </summary>
+        public int? DebutedIn { get; set; }
+
+        /// <summary>Their age on a given date, or null if <see cref="BornIn"/> is unset.</summary>
+        public int? AgeOn(DateOnly on) => BornIn is { } born ? on.Year - born : null;
+
+        /// <summary>Years since their debut on a given date, or null if unset.</summary>
+        public int? TenureOn(DateOnly on) => DebutedIn is { } debut ? Math.Max(0, on.Year - debut) : null;
+
+        /// <summary>
         /// How worked-out they are, 0 (fresh) to 100 (cooked).
         ///
         /// Charged by matches and paid back by days off — see

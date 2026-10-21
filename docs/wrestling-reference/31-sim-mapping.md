@@ -6,9 +6,10 @@ what to build next.*
 This document is **opinion about design**, unlike the rest of the reference which is
 description of the industry.
 
-**Audited against `ece8cd9`.** Every status claim below was checked by reading the code at
-that commit, and the figures in A1, A2 and A4 were re-measured against it. Figures are quoted
-with the inputs that produce them, so they can be re-taken rather than trusted.
+**Audited against `ece8cd9`**, with B6 and the attribute table updated when the aging curve
+shipped after it. Every status claim below was checked by reading the code, and the figures in
+A1, A2 and A4 were measured rather than recalled. Figures are quoted with the inputs that
+produce them, so they can be re-taken rather than trusted.
 
 This replaces a standing "check the code before trusting the current state column", which is
 what let the board drift: a caveat that applies to everything excuses keeping nothing current.
@@ -88,7 +89,8 @@ common than a clean open-to-closed transition, which is most of why this board d
 | B5 Markets | open | **partial** — the touring loop shipped, markets did not |
 | B4 Promotion layer | open | **partial** — tier and calendar shipped, revenue and the TV deal did not |
 | B3 Segments, C3 Regional modes | open | **open**, but some ingredients arrived by other routes |
-| A6, A7, A8, B2, B6, C1, C4, C5 | open | **still open**, each verified by reading |
+| B6 Age and the aging curve | open | **implemented** |
+| A6, A7, A8, B2, C1, C4, C5 | open | **still open**, each verified by reading |
 
 A3, A5 and B1 were already marked implemented and were re-checked rather than changed.
 
@@ -393,24 +395,48 @@ drawn into it by a market that has gone cold. That inversion matters: this entry
 that markets *produce* touring as a strategy, and shipping touring first means the strategy
 arrived without the thing that was supposed to motivate it.
 
-#### B6. Age and the aging curve
+#### B6. Age and the aging curve — **implemented**
 **Reference:** [15](15-injuries-and-attrition.md) §4
 `Wrestler` has no age. Adding one plus per-stat curves — athleticism declining from ~28,
 psychology rising to ~40, connection rising with tenure — reproduces the real career arc
 with the stats the model already has.
 
-Still true, and now the **single highest-leverage missing field in the model**, because other
-systems have been built up to its edge and stopped there. `InjuryRisk` implements every §3.1
-multiplier except age-over-35 (1.5–2×, "rising sharply"); `RingCondition`'s recovery rates
-have no age term; and `Stipulation` leaves out Career, Mask and Loser Leaves Town on the
-stated grounds that this codebase has no way to write somebody off — which is an age-and-
-retirement gap, not a stipulation gap.
+Shipped as `Wrestler.BornIn` / `.DebutedIn` and `AgeCurve`. Both fields, for the reason this
+entry guessed at: §4.1's drawing power tracks **tenure** while the body tracks **calendar
+age**, so a 38-year-old who debuted at 34 is not the proposition a 38-year-old who debuted at
+20 is. Year precision rather than dates, because the curves read whole years and a specific
+birthday for a real performer would be a claim the roster data cannot support.
 
-It is also a **data** task, not only a code one: all 76 entries in
-`WrestlingSim.Core/JSON/Wrestlers.json` carry `Physical`, `Mental`, `RingSkills`, `Style` and
-`Overness`, and nothing temporal at all. A `DebutedOn` is arguably worth more than a `BornOn`,
-since §4.1's point is that drawing power tracks accumulated audience relationship rather than
-athletic peak — but the injury multiplier wants calendar age, so probably both.
+**The design decision that matters is that the curve applies as a ratio, not a level.**
+`Wrestlers.json` was already authored with §4 applied by hand — Randy Orton at 46 is Agility
+58 and Psychology 96; Bron Breakker at 29 is Agility 84 and Psychology 62. Those readings are
+correct *for their age*, so an absolute curve on top would have priced every veteran's age
+twice and silently re-balanced a roster somebody tuned deliberately. Instead the authored
+stats are taken as true at `AgeCurve.RosterBaselineYear` and what the engine applies is the
+drift since. Day one of a save starting in the baseline year is exactly 1.000 on every axis —
+there is a test asserting that across the whole roster, and the 1,003 tests that predate this
+all still pass unchanged, which is the evidence that it worked.
+
+Where it is read:
+
+- `PerformerProfile` — athleticism (style-adjusted per §4.2: technical 0.55, high-flying 1.35
+  on the decline), ring psychology, and connection off tenure
+- `InjuryRisk.AgeRisk` — **the last of §3.1's factors to arrive**, and a U rather than a ramp,
+  because §4's band table gives the 18–23s the highest rate of all from inexperience while
+  §3.1 gives the over-35s 1.5–2×
+- `RingCondition.RecoveryPerDay` — an older body pays fatigue back slower. Charged to recovery
+  and not to the gas tank: doc 15 does not say a veteran has less stamina, it says the
+  schedule is what breaks them, so the tank is the same size and refills slower
+
+**59 of 76** roster entries carry years. The other 17 are mostly newer NXT names whose real
+birth years are not held with enough confidence to state, and a wrestler with no birth year
+ages not at all — every drift returns 1.000, which is exactly the pre-curve behaviour. Missing
+data degrades to the old reading rather than to a guess.
+
+Still open, and deliberately: **retirement**. Doc 15 §5's career length and §8's attrition
+have no representation, nobody ever leaves, and the Career/Mask/Loser-Leaves-Town stipulations
+are still excluded on the grounds that this codebase has no way to write somebody off. The
+field they were waiting for now exists; the system on top of it does not.
 
 #### B7. Injuries — **implemented**, and exceeded
 **Reference:** [15](15-injuries-and-attrition.md) §3
@@ -433,7 +459,8 @@ Two of the brief's inputs were solved sideways and one is still missing:
   rather than a new number to learn — and it quietly closes a line in §3's attribute table.
 - **Ring quality**, which this entry never asked for, is in as `RingRisk(PromotionTier)`.
   An indie ring really is a multiplier, per §3.1.
-- **Age** is absent, because there is still no age field. See B6.
+- **Age** was absent when this shipped and is not any more: `InjuryRisk.AgeRisk` now carries
+  it, so every row of §3.1 that this codebase can express is expressed. See B6.
 
 **And it went past the brief.** This entry asked only for injuries; what shipped is the whole
 attrition picture, including the one thing nothing in the reference's sim implications
@@ -526,7 +553,7 @@ Attributes the reference says matter. Status as of `ece8cd9`.
 | **Injury history** | [15](15-injuries-and-attrition.md) §3.1 | **Present** — `InjuryHistory`, read per body part by `InjuryRisk.HistoryRisk` |
 | **Safety** | [03](03-roles-and-competence.md) §5.4 | **Derived, not stored** — `InjuryRisk.OpponentRisk` reads `Psychology` + `RingIQ`. Enough for injury risk; not enough for the social/reputation half of §5.4 |
 | **Durability** | [15](15-injuries-and-attrition.md) | **Superseded** — the entry wanted schedule tolerance as distinct from bump tolerance; `Fatigue`/`Sharpness` with per-wrestler recovery express it as a pair of meters instead of a stat |
-| **Age** | [15](15-injuries-and-attrition.md) §4 | **Missing.** Gates the entire career arc, and now blocks B6, the age term in `InjuryRisk`, and the write-somebody-off stipulations |
+| **Age** | [15](15-injuries-and-attrition.md) §4 | **Present** — `BornIn` and `DebutedIn`, at year precision, on 59 of 76. Read by `AgeCurve`; see B6 |
 | **Reliability** | [03](03-roles-and-competence.md) §5.4 | Missing. Ends more careers than anything else |
 | **Adaptability** | [03](03-roles-and-competence.md) §5.1 | Missing. Mitigates style clash; the Flair attribute |
 | **Promo (scripted) / Promo (improv)** | [19](19-characters-and-promos.md) §3.5 | Missing as a split. `SegmentSimulator` has an improv *risk* keyed off `Psychology`, which is the consequence without the two skills behind it |
@@ -536,6 +563,10 @@ Attributes the reference says matter. Status as of `ece8cd9`.
 Two attributes now on `Wrestler` that this table never asked for, both from the attrition
 work: **`Fatigue`** and **`Sharpness`** (0–100, moving together on work and together on rest),
 plus **`TouringUntil`** as a standing road assignment. See B7.
+
+Note that **`Durability` is now answered twice over** and can come off anybody's list: the two
+meters cover schedule tolerance, and `AgeCurve.RecoveryMultiplier` covers the part of it that
+is really about getting older.
 
 And on `Gimmick`:
 
@@ -559,9 +590,11 @@ call and this board should stop implying otherwise.
 
 ### What is actually left
 
-**One field, which several things are queued behind:**
-- **Age** (B6, §3) — blocks the aging curve, the age term in `InjuryRisk`, and any stipulation
-  that writes somebody off. A data pass over 76 roster entries plus the curves.
+**~~One field, which several things are queued behind:~~** — done. `BornIn`/`DebutedIn` and
+`AgeCurve` shipped, and took the age term in `InjuryRisk` and the recovery slowdown with
+them. What was behind it and is still open is **retirement**: nobody ever leaves, so the
+stipulations that write somebody off remain excluded. That is now its own entry's worth of
+work rather than a missing field.
 
 **One output, which four entries are each separately blocked on:**
 - **C5 rate well vs draw well.** A3's blow-off payout, B3's revenue lines, B4's P&L and C1's
@@ -600,7 +633,7 @@ call and this board should stop implying otherwise.
 11. B2 Booked vs perceived position — open
 
 **Phase 4 — the world**
-12. B6/B7 Age and injuries — ~~injuries done~~, age not
+12. ~~B6/B7 Age and injuries~~ — both done
 13. B3 Audience segments — open
 14. C1 Merit vs Inertia — open
 15. ~~C2 Brands~~ — done; C3 regional rule sets, C4 eras, C5 dual outputs — open

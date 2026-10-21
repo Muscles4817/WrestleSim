@@ -23,7 +23,7 @@ namespace WrestlingSim.Engine
     {
         private readonly Random _rng = new(seed);
 
-        public RumbleResult Execute(RumblePlan plan)
+        public RumbleResult Execute(RumblePlan plan, DateOnly? on = null)
         {
             var errors = plan.Validate();
             if (errors.Count > 0)
@@ -31,7 +31,7 @@ namespace WrestlingSim.Engine
                     "Invalid rumble:\n" + string.Join("\n", errors.Select(e => "  • " + e)));
 
             var profiles = plan.Field.ToDictionary(
-                e => e.Wrestler, e => new PerformerProfile(e.Wrestler));
+                e => e.Wrestler, e => new PerformerProfile(e.Wrestler, on));
 
             var order      = plan.Field.OrderBy(e => e.Number).ToList();
             var winner     = plan.Winner!;

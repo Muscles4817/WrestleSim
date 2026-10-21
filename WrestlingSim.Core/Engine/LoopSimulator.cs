@@ -157,7 +157,7 @@ namespace WrestlingSim.Engine
             for (int beat = 0; beat < beats; beat++)
             {
                 double risk = InjuryRisk.PerBeat(
-                    w, pace, beat, conditioning, opponent: null, _tier, part);
+                    w, pace, beat, conditioning, opponent: null, _tier, part, date);
 
                 if (_rand.NextDouble() >= risk) continue;
 

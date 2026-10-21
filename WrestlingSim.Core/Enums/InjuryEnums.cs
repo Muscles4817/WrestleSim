@@ -8,10 +8,14 @@ namespace WrestlingSim.Enums
     ///
     /// The list stops short of doc 15's catastrophic spinal injury and of §2.2's chronic
     /// conditions — degenerative discs, arthritis, the cumulative concussion picture. Those
-    /// end careers, and this game has no way to end one: there is no retirement, no age, and
-    /// no aging curve for them to sit on. Modelling an injury that should finish somebody
-    /// and then handing them back after nine months would say something false about the
-    /// most serious thing in the reference.
+    /// end careers, and this game still has no way to end one. Modelling an injury that
+    /// should finish somebody and then handing them back after nine months would say
+    /// something false about the most serious thing in the reference.
+    ///
+    /// Half of what that waited on has since arrived: there is an age and an aging curve
+    /// (<see cref="Engine.AgeCurve"/>) for a chronic condition to sit on. What is still
+    /// missing is **retirement** — nobody ever leaves — so the omission stands, for one
+    /// reason now instead of three.
     /// </summary>
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum BodyPart
