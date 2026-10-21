@@ -1,14 +1,51 @@
 @*
-    A rating, in glyphs and in colour.
+    A rating, drawn.
 
     Every rating in the app used to be gold. Five stars and two drew a different number of
     glyphs in the same triumphant colour, with the same glow behind them — so the screen whose
     whole job is telling a booker whether the show was any good said "good" whatever happened.
     The band comes from `Grades`, which reads the stars, and the score elsewhere on the screen
     converts to stars rather than carrying its own thresholds.
+
+    The marks are drawn rather than typed. `★★★¾` set a vulgar fraction against three glyphs
+    at the biggest moment the app has, which reads as a typo rather than as three and three
+    quarters — and the fraction's size and baseline were whatever the system font felt like.
+    A partial star is now a partial star: one path, clipped at the fraction.
+
+    Rounding stays with `MatchEngineResult.GlyphsFor`, which the console front end and the
+    show notes still use. Two views of one rating that round differently is how a result ends
+    up reported as ★★★¾ in the log and four stars on screen.
 *@
 <span class="stars" title="@Grades.OfStars(Rating).Label()">
-    <span class="stars__glyphs @Grades.OfStars(Rating).Tone()">@MatchEngineResult.GlyphsFor(Rating)</span>
+    <svg class="stars__marks @Grades.OfStars(Rating).Tone()" viewBox="0 0 @Width 20"
+         role="img" aria-label="@Rating.ToString("F2") out of 5">
+        @for (int i = 0; i < 5; i++)
+        {
+            var fill = Quarters(i);
+            var x = i * 26;
+            if (fill >= 1)
+            {
+                <path d="@Mark" transform="translate(@x,0)" class="stars__on" />
+            }
+            else if (fill <= 0)
+            {
+                <path d="@Mark" transform="translate(@x,0)" class="stars__off" />
+            }
+            else
+            {
+                @* Clip rather than gradient: a hard edge at the quarter, which is what the
+                   rating actually is. A gradient stop at the same offset renders soft on
+                   some engines and looked like an antialiasing fault. *@
+                <clipPath id="@($"star{i}-{Key}")">
+                    <rect x="0" y="0" width="@((fill * 20).ToString("0.##", Inv))" height="20" />
+                </clipPath>
+                <path d="@Mark" transform="translate(@x,0)" class="stars__off" />
+                <g transform="translate(@x,0)" clip-path="url(#@($"star{i}-{Key}"))">
+                    <path d="@Mark" class="stars__on" />
+                </g>
+            }
+        }
+    </svg>
     @if (ShowNumber)
     {
         <span class="stars__num">@Rating.ToString("F2") / 5.00</span>
@@ -20,4 +57,35 @@
 @code {
     [Parameter, EditorRequired] public double Rating { get; set; }
     [Parameter] public bool ShowNumber { get; set; } = true;
+
+    private static readonly System.Globalization.CultureInfo Inv =
+        System.Globalization.CultureInfo.InvariantCulture;
+
+    private const string Mark = "M10 1.4l2.6 5.7 6.2.8-4.6 4.3 1.2 6.1-5.4-3-5.4 3 1.2-6.1L1.2 7.9l6.2-.8z";
+
+    private const int Width = 4 * 26 + 20;
+
+    /// <summary>
+    /// Unique per instance, because two ratings on one screen would otherwise both reference
+    /// the first one's clip path — SVG ids are document-global. The show report renders one of
+    /// these per match.
+    /// </summary>
+    private readonly string Key = Guid.NewGuid().ToString("N")[..6];
+
+    /// <summary>
+    /// How much of star <paramref name="index"/> is lit, quantised to quarters so the drawing
+    /// and <see cref="MatchEngineResult.GlyphsFor"/> can never disagree.
+    /// </summary>
+    private double Quarters(int index)
+    {
+        double rem = Math.Clamp(Rating - index, 0, 1);
+        return rem switch
+        {
+            >= 0.875 => 1.0,
+            >= 0.625 => 0.75,
+            >= 0.375 => 0.5,
+            >= 0.125 => 0.25,
+            _        => 0.0
+        };
+    }
 }
