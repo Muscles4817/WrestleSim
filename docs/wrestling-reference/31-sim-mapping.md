@@ -428,10 +428,12 @@ Where it is read:
   and not to the gas tank: doc 15 does not say a veteran has less stamina, it says the
   schedule is what breaks them, so the tank is the same size and refills slower
 
-**59 of 76** roster entries carry years. The other 17 are mostly newer NXT names whose real
-birth years are not held with enough confidence to state, and a wrestler with no birth year
-ages not at all — every drift returns 1.000, which is exactly the pre-curve behaviour. Missing
-data degrades to the old reading rather than to a guess.
+**74 of 76** roster entries carry years. The two blanks are deliberate: one performer has no
+published birth year at all, and one has two reports from the same month giving different
+ages. A wrestler with no birth year ages not at all — every drift returns 1.000, which is
+exactly the pre-curve behaviour — so missing data degrades to the old reading rather than to
+a guess, and guessing would put a false claim about a real person in the repo to move a curve
+by a fraction of a percent.
 
 Still open, and deliberately: **retirement**. Doc 15 §5's career length and §8's attrition
 have no representation, nobody ever leaves, and the Career/Mask/Loser-Leaves-Town stipulations
@@ -553,7 +555,7 @@ Attributes the reference says matter. Status as of `ece8cd9`.
 | **Injury history** | [15](15-injuries-and-attrition.md) §3.1 | **Present** — `InjuryHistory`, read per body part by `InjuryRisk.HistoryRisk` |
 | **Safety** | [03](03-roles-and-competence.md) §5.4 | **Derived, not stored** — `InjuryRisk.OpponentRisk` reads `Psychology` + `RingIQ`. Enough for injury risk; not enough for the social/reputation half of §5.4 |
 | **Durability** | [15](15-injuries-and-attrition.md) | **Superseded** — the entry wanted schedule tolerance as distinct from bump tolerance; `Fatigue`/`Sharpness` with per-wrestler recovery express it as a pair of meters instead of a stat |
-| **Age** | [15](15-injuries-and-attrition.md) §4 | **Present** — `BornIn` and `DebutedIn`, at year precision, on 59 of 76. Read by `AgeCurve`; see B6 |
+| **Age** | [15](15-injuries-and-attrition.md) §4 | **Present** — `BornIn` and `DebutedIn`, at year precision, on 74 of 76. Read by `AgeCurve`; see B6 |
 | **Reliability** | [03](03-roles-and-competence.md) §5.4 | Missing. Ends more careers than anything else |
 | **Adaptability** | [03](03-roles-and-competence.md) §5.1 | Missing. Mitigates style clash; the Flair attribute |
 | **Promo (scripted) / Promo (improv)** | [19](19-characters-and-promos.md) §3.5 | Missing as a split. `SegmentSimulator` has an improv *risk* keyed off `Psychology`, which is the consequence without the two skills behind it |

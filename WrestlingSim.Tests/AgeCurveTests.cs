@@ -254,8 +254,8 @@ namespace WrestlingSim.Tests
             {
                 if (w.BornIn is null)
                 {
-                    // A missing birth year is allowed, but a debut without one is not —
-                    // that pairing would age the connection and not the body.
+                    // A debut with no birth year would age the connection and not the
+                    // body, which is a half-aged wrestler and worse than an unaged one.
                     Assert.Null(w.DebutedIn);
                     continue;
                 }
@@ -263,8 +263,11 @@ namespace WrestlingSim.Tests
                 int age = w.AgeOn(new DateOnly(year, 6, 1))!.Value;
                 Assert.InRange(age, 18, 60);
 
-                Assert.NotNull(w.DebutedIn);
-                int debutAge = w.DebutedIn!.Value - w.BornIn!.Value;
+                // A birth year without a debut year is allowed, and is the honest state
+                // for somebody whose age is documented and whose first match is not.
+                if (w.DebutedIn is null) continue;
+
+                int debutAge = w.DebutedIn.Value - w.BornIn.Value;
                 Assert.InRange(debutAge, 14, 40);
                 Assert.True(w.DebutedIn <= year, $"{w.RealName} cannot debut in the future.");
             }
@@ -273,13 +276,16 @@ namespace WrestlingSim.Tests
         [Fact]
         public void MostOfTheRosterHasAnAge()
         {
-            // Not all of it: the entries left null are ones whose real birth years are not
-            // held with enough confidence to state. This pins the coverage so a future
-            // roster edit that drops ages wholesale is noticed.
+            // Not all of it. Two entries are deliberately blank: one performer has no
+            // published birth year at all, and one has two reports a month apart giving
+            // different ages. Guessing either would put a false claim about a real person
+            // into the repo to move a curve by a fraction of a percent.
+            //
+            // This pins the coverage so a roster edit that drops ages wholesale is noticed.
             var roster = DataLoaders.LoadEmbeddedWrestlers();
             int withAge = roster.Count(w => w.BornIn is not null);
 
-            Assert.True(withAge >= 55,
+            Assert.True(withAge >= 74,
                 $"Only {withAge} of {roster.Count} wrestlers have a birth year.");
         }
 

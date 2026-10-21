@@ -1230,6 +1230,8 @@
   {
     "RealName": "Kiah Dean",
     "Division": "Womens",
+    "BornIn": 1990,
+    "DebutedIn": 2018,
     "Overness": 33,
     "Charisma": 2.6,
     "Style": "HighFlyer",
@@ -2750,6 +2752,8 @@
   {
     "RealName": "Cal Bloom",
     "Division": "Mens",
+    "BornIn": 1994,
+    "DebutedIn": 2019,
     "Overness": 23,
     "Charisma": 1.6,
     "Style": "Powerhouse",
@@ -4382,6 +4386,8 @@
   {
     "RealName": "Carlos Ruiz",
     "Division": "Mens",
+    "BornIn": 1997,
+    "DebutedIn": 2012,
     "Overness": 43,
     "Charisma": 3.0,
     "Style": "HighFlyer",
@@ -4576,6 +4582,8 @@
   {
     "RealName": "Todd Smith",
     "Division": "Mens",
+    "BornIn": 1984,
+    "DebutedIn": 2001,
     "Overness": 38,
     "Charisma": 3.6,
     "Style": "Powerhouse",
@@ -4862,6 +4870,8 @@
   {
     "RealName": "Tony D'Angelo",
     "Division": "Mens",
+    "BornIn": 1995,
+    "DebutedIn": 2019,
     "Overness": 27,
     "Charisma": 2.9,
     "Style": "Grappler",
@@ -5338,6 +5348,8 @@
   {
     "RealName": "Aoife Cusack",
     "Division": "Womens",
+    "BornIn": 1996,
+    "DebutedIn": 2015,
     "Overness": 77,
     "Charisma": 3.3,
     "Style": "Technical",
@@ -6104,6 +6116,8 @@
   {
     "RealName": "Amanda Wilson",
     "Division": "Womens",
+    "BornIn": 1994,
+    "DebutedIn": 2013,
     "Overness": 59,
     "Charisma": 4.1,
     "Style": "Technical",
@@ -6396,6 +6410,8 @@
   {
     "RealName": "Beatrice Priestley",
     "Division": "Womens",
+    "BornIn": 1996,
+    "DebutedIn": 2012,
     "Overness": 50,
     "Charisma": 1.9,
     "Style": "Striker",
@@ -6488,6 +6504,8 @@
   {
     "RealName": "Sydney Zmrzel",
     "Division": "Womens",
+    "BornIn": 1997,
+    "DebutedIn": 2023,
     "Overness": 46,
     "Charisma": 3.4,
     "Style": "Technical",
@@ -6674,6 +6692,8 @@
   {
     "RealName": "Jacy Jayne",
     "Division": "Womens",
+    "BornIn": 1996,
+    "DebutedIn": 2018,
     "Overness": 40,
     "Charisma": 2.5,
     "Style": "Grappler",
@@ -6766,6 +6786,8 @@
   {
     "RealName": "Sol Ruca",
     "Division": "Womens",
+    "BornIn": 1999,
+    "DebutedIn": 2022,
     "Overness": 37,
     "Charisma": 3.5,
     "Style": "HighFlyer",
@@ -6862,6 +6884,8 @@
   {
     "RealName": "Ivy Nile",
     "Division": "Womens",
+    "BornIn": 1992,
+    "DebutedIn": 2020,
     "Overness": 34,
     "Charisma": 2.0,
     "Style": "Grappler",
@@ -6954,6 +6978,8 @@
   {
     "RealName": "Thea Hail",
     "Division": "Womens",
+    "BornIn": 2003,
+    "DebutedIn": 2021,
     "Overness": 32,
     "Charisma": 3.2,
     "Style": "Grappler",
@@ -7046,6 +7072,8 @@
   {
     "RealName": "Karmen Petrovic",
     "Division": "Womens",
+    "BornIn": 1995,
+    "DebutedIn": 2023,
     "Overness": 29,
     "Charisma": 2.4,
     "Style": "Striker",
@@ -7138,6 +7166,8 @@
   {
     "RealName": "Wren Sinclair",
     "Division": "Womens",
+    "BornIn": 1995,
+    "DebutedIn": 2019,
     "Overness": 26,
     "Charisma": 2.6,
     "Style": "Technical",
