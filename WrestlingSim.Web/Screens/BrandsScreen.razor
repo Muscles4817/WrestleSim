@@ -1,4 +1,5 @@
 @inherits StateComponent
+@inject ViewScroll Scroll
 
 @if (State.Career is not { } career)
 {
@@ -14,11 +15,6 @@ else if (mode == Mode.Wizard)
     <div class="screen__head">
         <div class="screen__eyebrow">Step @(step + 1) of 3</div>
         <h1 class="screen__title">Split the roster</h1>
-        <p class="screen__lede">
-            Two brands, each with its own exclusive roster and its own shows. The performers
-            all work for you; the fiction is that the brands are separate companies. Keeping
-            that fiction is the whole job.
-        </p>
     </div>
 
     @if (step == 0)
@@ -149,7 +145,7 @@ else if (mode == Mode.Wizard)
             @if (!career.ShowDefinitions.Any(d => d.Active) && newDefinitions.Count == 0)
             {
                 <div class="empty">
-                    <div class="empty__mark">◷</div>
+                    <div class="empty__mark"><Icon Name="clock" /></div>
                     No standing shows yet. You can hand them to a brand later on the Shows screen.
                 </div>
             }
@@ -185,13 +181,7 @@ else if (!career.Brands.Active)
 {
     @* ── One roster ──────────────────────────────────────────────────────── *@
     <div class="screen__head">
-        <div class="screen__eyebrow">One roster</div>
         <h1 class="screen__title">Brands</h1>
-        <p class="screen__lede">
-            A split divides the promotion into semi-autonomous brands, each with an exclusive
-            roster and its own shows. It buys screen time and main-event slots. It costs the
-            discipline to keep your biggest star off half your television.
-        </p>
     </div>
 
     @if (career.Brands.Ceiling < 100)
@@ -421,7 +411,8 @@ else
             </div>
 
             <button class="rcard__toggle" @onclick="() => Toggle(brand.Id)">
-                @(expanded.Contains(brand.Id) ? "Hide the roster ▲" : "Show the roster ▼")
+                @(expanded.Contains(brand.Id) ? "Hide the roster" : "Show the roster")
+                <Icon Name="@(expanded.Contains(brand.Id) ? "up" : "down")" />
             </button>
 
             @if (expanded.Contains(brand.Id))
@@ -493,7 +484,7 @@ else
         @if (split.Crossovers.Count == 0)
         {
             <div class="empty">
-                <div class="empty__mark">✓</div>
+                <div class="empty__mark"><Icon Name="check" /></div>
                 Nobody has worked the wrong show yet. This is the state the split is worth having in.
             </div>
         }
@@ -619,16 +610,20 @@ else
         mode = Mode.Wizard;
     }
 
-    private void WizardBack()
+    private async Task WizardBack()
     {
         if (step == 0) { mode = Mode.Overview; return; }
+
         step--;
+        await Scroll.ToTopAsync();
     }
 
-    private void WizardNext()
+    private async Task WizardNext()
     {
         if (step == 0 && wizardAssignment.Count == 0) Balance();
+
         step++;
+        await Scroll.ToTopAsync();
     }
 
     /// <summary>

@@ -1,42 +1,70 @@
 @inject GameState State
+@inject ViewScroll Scroll
 
 @if (result is null)
 {
     <div class="screen__head">
-        <div class="screen__eyebrow">Beat by beat</div>
         <h1 class="screen__title">Book a Match</h1>
-        <p class="screen__lede">
-            The engine does not decide who wins — you do, with the finish beat. It scores how
-            well the story you booked landed with the crowd.
-        </p>
     </div>
 
     <MatchBuilder OnDone="Run" OnCancel="@(() => State.Go(Screen.Exhibition))" ConfirmLabel="Run the match ★" />
 }
 else
 {
-    <div class="screen__head">
-        <div class="screen__eyebrow">@booked!.StructureName</div>
-        <h1 class="screen__title">@booked.Name</h1>
+    @* ── The bug ──────────────────────────────────────────────────────────
+       The strip a broadcast puts the match details in, which is where they
+       belong: they are context for the name, not a heading of their own. This
+       replaces the gold eyebrow that sat above every title in the app. *@
+    <div class="bug">
+        <span class="bug__tag">@(booked!.Plan.TitleAtStake is null ? "Exhibition" : "Title match")</span>
+        <span class="bug__rest">
+            @booked.StructureName
+            <span class="bug__sep">·</span> @booked.Plan.Beats.Count beats
+            <span class="bug__sep">·</span> @Models.BookedMatch.RuntimeOf(booked.Plan.Beats) min
+        </span>
     </div>
 
-    <div class="score-hero">
-        <div>
-            <div class="score-hero__label">Winner</div>
-            <div class="score-hero__main">@result.Winner.RingName</div>
-        </div>
-        <Stars Rating="@result.StarRating" />
+    <h1 class="screen__title screen__title--hero">@booked.Name</h1>
+
+    @* The winner, at the size the one irreversible thing in a match deserves. *@
+    <div class="winstrip">
+        <span class="winstrip__label">Winner</span>
+        <span class="winstrip__who">@result.Winner.RingName</span>
+        <span class="winstrip__how">@FinishLabel()</span>
+    </div>
+
+    <div class="verdict">
+        <Stars Rating="@result.StarRating" ShowNumber="false" />
+        <span class="verdict__num">@result.StarRating.ToString("F2")</span>
+        <span class="verdict__word @Grades.OfStars(result.StarRating).Tone()">
+            @Grades.OfStars(result.StarRating).Label()
+        </span>
     </div>
 
     <div class="panel">
-        <div class="panel__title">Scorecard</div>
-        <div class="stack">
-            <Meter Label="Technical" Value="@result.TechnicalScore" Max="60" />
-            <Meter Label="Storytelling" Value="@result.StorytellingScore" Max="80" Variant="cyan" />
-            <Meter Label="Crowd average" Value="@result.CrowdAverageEnergy" Max="100" Variant="face" />
-            <Meter Label="Crowd peak" Value="@result.CrowdPeakEnergy" Max="100" Variant="face" />
-            <Meter Label="Finish quality" Value="@result.FinishQuality" Max="100"
-                   Variant="@(result.FinishQuality < 70 ? "heel" : "gold")" />
+        <div class="panel__title">
+            How it scored
+            <span class="spacer"></span>
+            <span class="small muted">out of 100 · and what it was worth</span>
+        </div>
+
+        @* Two numbers per row, because they answer different questions: how well the
+           match worked on this axis, and how much this match type let that matter.
+           The bars used to be drawn against 60 and 80 — see MatchEngineResult.
+           TechnicalRating for what those were. *@
+        <div class="chart">
+            @foreach (var row in ScoreRows())
+            {
+                <div class="chart__row">
+                    <span class="chart__key">@row.Label</span>
+                    <span class="chart__track">
+                        <i class="chart__fill chart__fill--@row.Tone"
+                           style="width:@(row.Rating.ToString("0.#", Inv))%"></i>
+                    </span>
+                    <span class="chart__val tabnum">@row.Rating.ToString("F0")</span>
+                    <span class="chart__contrib">@row.Contribution</span>
+                </div>
+            }
         </div>
 
         @if (result.StalenessNote is { } stale)
@@ -171,17 +199,59 @@ else
 }
 
 @code {
+    private static readonly System.Globalization.CultureInfo Inv =
+        System.Globalization.CultureInfo.InvariantCulture;
+
+    private record ScoreRow(string Label, double Rating, string Contribution, string Tone);
+
+    /// <summary>
+    /// The scorecard. Rating is the 0–100 reading the engine graded on; Contribution is what
+    /// that was worth in points of the final score, which is where the match type shows up —
+    /// the same 63 on technical is worth half as much in a Storytelling match as in a
+    /// Technical one, and that is the whole point of declaring one.
+    /// </summary>
+    private IEnumerable<ScoreRow> ScoreRows()
+    {
+        var b = result!.Breakdown;
+        yield return new("Technical",    result.TechnicalRating,    Pts(b.Technical),    "gold");
+        yield return new("Storytelling", result.StorytellingRating, Pts(b.Storytelling), "cyan");
+        yield return new("Crowd",        result.CrowdAverageEnergy, Pts(b.Crowd),        "face");
+        yield return new("Finish",       result.FinishQuality,      Pts(b.FinishNudge),  "gold");
+    }
+
+    private static string Pts(double points) =>
+        $"{(points >= 0 ? "+" : "−")}{Math.Abs(points):F1} pts";
+
+    /// <summary>How it ended, in the booker's words rather than the enum's.</summary>
+    private string FinishLabel()
+    {
+        var finish = booked?.Plan.Beats.LastOrDefault(x => x.IsFinish);
+        return finish is null ? "" : BeatLibrary.All
+            .FirstOrDefault(t => t.Type == finish.Type)?.Name ?? "";
+    }
+
     private BookedMatch? booked;
     private MatchEngineResult? result;
     private List<FeudUpdate> feudUpdates = new();
 
-    private void Run(BookedMatch match)
+    /// <summary>
+    /// The result replaces the builder inside the same screen, so the shell's screen-change
+    /// reset does not see it. Without this the player presses "Run the match" at the bottom of
+    /// a beat sheet and the result opens at that offset, half way down the scorecard, with the
+    /// winner and the rating off the top of the screen.
+    /// </summary>
+    private async Task Run(BookedMatch match)
     {
         booked = match;
         Execute();
+        await Scroll.ToTopAsync();
     }
 
-    private void RunAgain() => Execute();
+    private async Task RunAgain()
+    {
+        Execute();
+        await Scroll.ToTopAsync();
+    }
 
     private void Execute()
     {
@@ -230,10 +300,11 @@ else
         State.Notify();
     }
 
-    private void Reset()
+    private async Task Reset()
     {
         booked = null;
         result = null;
         feudUpdates = new();
+        await Scroll.ToTopAsync();
     }
 }

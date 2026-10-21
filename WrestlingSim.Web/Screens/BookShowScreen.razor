@@ -139,10 +139,6 @@ else if (mode == Mode.AddDraw)
     <div class="screen__head">
         <div class="eyebrow">THE DRUM</div>
         <h1 class="screen__title">The draw</h1>
-        <p class="screen__lede">
-            The numbers, pulled in front of a crowd, for a match booked later. What it buys is
-            a building that has had a week to argue about who has to go the distance.
-        </p>
     </div>
 
     <DrawBuilder Show="show" OnDone="AddDraw" OnCancel="@(() => mode = Mode.Card)"
@@ -153,11 +149,6 @@ else if (mode == Mode.BookLoop)
     <div class="screen__head">
         <div class="eyebrow">ON THE ROAD</div>
         <h1 class="screen__title">A run of towns</h1>
-        <p class="screen__lede">
-            Untelevised dates, booked as a cast rather than as a card. Nothing on them reaches
-            the television audience, so nobody gets more over and no story moves — what a run
-            buys is ring time, for the people who need it and cannot get it on a weekly show.
-        </p>
     </div>
 
     @* Seeded from what is already booked, and from whoever the roster says is on the road.
@@ -311,11 +302,11 @@ else
                         </button>
                     }
                     <button class="btn btn--icon btn--ghost" disabled="@(i == 0)"
-                            title="Move up" @onclick="() => Move(i, -1)">↑</button>
+                            title="Move up" @onclick="() => Move(i, -1)"><Icon Name="up" /></button>
                     <button class="btn btn--icon btn--ghost" disabled="@(i == show.Card.Count - 1)"
-                            title="Move down" @onclick="() => Move(i, 1)">↓</button>
+                            title="Move down" @onclick="() => Move(i, 1)"><Icon Name="down" /></button>
                     <button class="btn btn--icon btn--danger" title="Remove"
-                            @onclick="() => Remove(item)">✕</button>
+                            @onclick="() => Remove(item)"><Icon Name="close" /></button>
                 </div>
             </div>
 
@@ -461,7 +452,7 @@ else
                        somebody was hurt, cooked, or two states away. *@
                     @if (row.Condition is { } condition)
                     {
-                        <span class="railrow__cond">⚠ @condition</span>
+                        <span class="railrow__cond"><Icon Name="warn" /> @condition</span>
                     }
                     <span class="railrow__pop tabnum @who.CardPosition.Tone()">@who.OvernessDisplay</span>
                 </button>

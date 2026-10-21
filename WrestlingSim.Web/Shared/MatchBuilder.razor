@@ -1,5 +1,6 @@
 @inject GameState State
 @inject IJSRuntime JS
+@inject ViewScroll Scroll
 @implements IAsyncDisposable
 
 @* Only the steps this booking actually has, numbered by where they sit in that list —
@@ -10,7 +11,7 @@
     {
         var (index, label) = shown[i];
         <div class="step @(step == index ? "is-current" : step > index ? "is-done" : "")">
-            <span class="step__n">@(step > index ? "✓" : (i + 1).ToString())</span>
+            <span class="step__n">@if (step > index) { <Icon Name="check" /> } else { @(i + 1) }</span>
             <span>@label</span>
         </div>
     }
@@ -267,7 +268,7 @@
                 <span class="label">@BeatTypeName(edit.Type)</span>
                 <span class="badge">@edit.DurationMinutes min</span>
             </div>
-            <button class="btn btn--icon btn--ghost" @onclick="CloseBeatSheet" aria-label="Close">✕</button>
+            <button class="btn btn--icon btn--ghost" @onclick="CloseBeatSheet" aria-label="Close"><Icon Name="close" /></button>
         </div>
         <div class="sheet__body sheet__body--pad">
             @if (BeatLibrary.All.FirstOrDefault(t => t.Type == edit.Type)?.BookerTip is { } tip
@@ -910,9 +911,9 @@
                 </button>
                 <div class="beat-row__move">
                     <button class="btn btn--icon btn--ghost" disabled="@(i == 0)"
-                            title="Move up" @onclick="() => Move(i, -1)">↑</button>
+                            title="Move up" @onclick="() => Move(i, -1)"><Icon Name="up" /></button>
                     <button class="btn btn--icon btn--ghost" disabled="@(i == beats.Count - 1)"
-                            title="Move down" @onclick="() => Move(i, 1)">↓</button>
+                            title="Move down" @onclick="() => Move(i, 1)"><Icon Name="down" /></button>
                 </div>
             </div>
         }
@@ -1939,6 +1940,10 @@
 
         step++;
         while (step < LastStep && !StepApplies(step)) step++;
+
+        // A step is a new view. Without this, step 4 opens at step 3's offset — and the longer
+        // the step you are leaving, the further down the one you are arriving at starts.
+        await Scroll.ToTopAsync();
     }
 
     private async Task Back()
@@ -1954,6 +1959,8 @@
 
         step--;
         while (step > 0 && !StepApplies(step)) step--;
+
+        await Scroll.ToTopAsync();
     }
 
     // PickA / PickB / PickPartner / Release are gone. Four pickers with four subtly

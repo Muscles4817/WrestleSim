@@ -12,4 +12,7 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services.AddSingleton<SaveStore>();
 builder.Services.AddSingleton<GameState>();
 
+// Needs the host's IJSRuntime, so it cannot be constructed before the host is built.
+builder.Services.AddScoped<ViewScroll>();
+
 await builder.Build().RunAsync();

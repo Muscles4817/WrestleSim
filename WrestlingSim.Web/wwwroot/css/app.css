@@ -1,7 +1,34 @@
 /* ============================================================================
    WrestlingSim — booking system
-   Dark broadcast-graphics aesthetic. Self-contained: no external fonts or CDNs.
+   Dark broadcast-graphics aesthetic. Self-contained: no CDNs, fonts included.
    ========================================================================= */
+
+/* ── The display face ────────────────────────────────────────────────────────
+   Big Shoulders Display, self-hosted, latin subset, variable 100–900 in 36KB.
+
+   The game was set entirely in the operating system's UI font, which is why it
+   read as an admin console rather than as a wrestling promotion: a booking sim
+   has names, counts and ratings to sell, and the system stack sells none of
+   them. Condensed buys the width back — a card position and an overness fit on
+   a picker row that previously had to drop one.
+
+   Not Oswald, Bebas, Anton or Barlow, which is the list every "free Druk
+   alternative" article returns and therefore the list everything already uses.
+
+   OFL-1.1, licence in wwwroot/fonts/OFL.txt. */
+@font-face {
+  font-family: "Shoulders";
+  src: url(../fonts/big-shoulders-display-latin.woff2) format("woff2");
+  font-weight: 100 900;
+  /* block, not swap: the file is 36KB and same-origin, so it effectively always
+     wins the race, and a flash of the fallback is worse here than a few frames of
+     nothing — the fallback is not condensed, so every name and heading would
+     reflow when it arrived. (size-adjust would not fix that: it scales the face
+     it is declared on, it does not match a fallback's metrics. That needs a
+     second @font-face for the fallback, which is worth doing if the block period
+     ever proves visible.) */
+  font-display: block;
+}
 
 :root {
   --bg:          #0a0b0f;
@@ -61,10 +88,39 @@
   --ring: 0 0 0 2px rgba(245, 185, 59, .55);
 
   --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* Names, counts, ratings and headings. Body copy stays on the system stack:
+     it is doing a job and doing it well, and one bought face used with intent
+     beats two used for variety. */
+  --display: "Shoulders", "Haettenschweiler", "Arial Narrow", var(--sans);
   --mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
 }
 
 * { box-sizing: border-box; }
+
+/* ── What wears the display face ─────────────────────────────────────────────
+   Named rather than blanket, so adding a component is a decision about whether
+   it is a name, a number or a heading — and so body copy can never drift into
+   it. Everything here is one of those three.
+
+   Weight goes up with it: Big Shoulders at 700 reads lighter than the system
+   stack at 800 because it is condensed, so the old weights would have been a
+   step backwards in hierarchy. */
+.brand__name, .boot__title,
+.screen__title, .screen__eyebrow, .panel__title, .group-label, .label,
+.tile__name, .tile__key, .pick__name,
+.slot__name, .prow__name, .rcard__name, .versus__name, .versus__corner,
+.beat-row__name, .written__beat, .written__phase, .pbp__label,
+.score-hero__main, .score-hero__label,
+.meter__label, .meter__value, .stars__num, .stars__verdict,
+.showstat__val, .feud__names, .badge, .chip, .btn, .nav__item, .step {
+  font-family: var(--display);
+}
+
+/* Condensed numerals want a touch more tracking to stay countable at a glance. */
+.tabnum, .meter__value, .stars__num, .showstat__val, .prow__pop, .rcard__stat b {
+  font-family: var(--display); letter-spacing: .02em;
+}
 
 html, body { height: 100%; }
 
@@ -285,9 +341,10 @@ a { color: var(--gold); }
   .chip:hover:not(:disabled) { background: var(--panel-3); color: var(--ink); }
 }
 .chip.is-active {
-  background: rgba(245, 185, 59, .13);
-  border-color: rgba(245, 185, 59, .4);
+  background: rgba(245, 185, 59, .16);
+  border-color: rgba(245, 185, 59, .65);
   color: var(--gold-2);
+  box-shadow: inset 0 -2px 0 var(--gold);
 }
 .chip:focus-visible { outline: none; box-shadow: var(--ring); }
 
@@ -346,12 +403,12 @@ a { color: var(--gold); }
 
 .screen__head { margin-bottom: clamp(16px, 2.6vw, 26px); }
 .screen__eyebrow {
-  font-size: 11px; letter-spacing: .24em; text-transform: uppercase;
-  color: var(--gold); font-weight: 700; margin-bottom: 6px;
+  font-size: 12px; letter-spacing: .26em; text-transform: uppercase;
+  color: var(--gold); font-weight: 700; margin-bottom: 8px;
 }
 .screen__title {
-  font-size: clamp(26px, 4.6vw, 40px); font-weight: 800;
-  letter-spacing: -.015em;
+  font-size: clamp(34px, 6vw, 62px); font-weight: 800;
+  letter-spacing: -.005em; text-transform: uppercase; line-height: .94;
 }
 .screen__lede { color: var(--muted); max-width: 62ch; margin-top: 8px; }
 
@@ -648,17 +705,37 @@ a { color: var(--gold); }
 }
 .pick:active:not(:disabled) { transform: translateY(1px); }
 .pick:focus-visible { outline: none; box-shadow: var(--ring); }
+/* Gold means six things in this app — selected, important, branded, warning, score,
+   positive result — so on its own it cannot carry selection. The filled edge is the
+   structural signal, and it survives greyscale and every form of colour blindness. */
 .pick.is-selected {
-  border-color: rgba(245, 185, 59, .55);
-  background: rgba(245, 185, 59, .09);
+  border-color: rgba(245, 185, 59, .7);
+  background: rgba(245, 185, 59, .1);
+  box-shadow: inset 3px 0 0 var(--gold);
 }
-.pick:disabled { opacity: .45; cursor: not-allowed; }
+.pick.is-selected .pick__name::after {
+  content: "Selected";
+  font-family: var(--display); font-weight: 800; font-size: 10.5px;
+  letter-spacing: .16em; text-transform: uppercase;
+  color: var(--gold); margin-left: 9px; vertical-align: .08em;
+}
+
+/* Disabled at .45 made the explanation unreadable. Dim the furniture, keep the words:
+   a disabled option still has to say why it is disabled. */
+.pick:disabled { cursor: not-allowed; background: var(--panel); border-color: var(--line-soft); }
+.pick:disabled .pick__name { color: var(--muted); }
+.pick:disabled .pick__desc { color: var(--ink-2); opacity: .8; }
+.pick:disabled .pick__meta { color: var(--faint); }
 
 .pick__body { flex: 1; min-width: 0; }
 .pick__name { font-weight: 700; font-size: 14.5px; }
-.pick__desc { color: var(--muted); font-size: 13px; margin-top: 3px; line-height: 1.45; }
+/* --ink-2, not --muted. This is the text that says what an option does, and on the
+   structure and beat-library lists it is the only thing that does — a review could not
+   read the disabled ones at all, which is the worst case because their text is the bit
+   that tells you how to unlock them. */
+.pick__desc { color: var(--ink-2); font-size: 13.5px; margin-top: 4px; line-height: 1.5; }
 .pick__meta {
-  font-size: 12px; color: var(--faint); font-variant-numeric: tabular-nums;
+  font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums;
   white-space: pre-line;      /* honours the line breaks the callers supply */
   text-align: right; padding-top: 2px; flex: none;
 }
@@ -750,11 +827,18 @@ table.data tr:last-child td { border-bottom: 0; }
 /* ── Stars ───────────────────────────────────────────────────────────────── */
 
 .stars { display: inline-flex; align-items: center; gap: 10px; }
-.stars__glyphs {
-  font-size: clamp(20px, 3.4vw, 28px); color: var(--gold);
-  letter-spacing: .06em; line-height: 1;
-  text-shadow: 0 0 18px rgba(245, 185, 59, .35);
-}
+.stars__marks { height: clamp(22px, 3.4vw, 32px); width: auto; display: block; }
+/* Gold, always — and the reason it is safe now is the empty stars.
+   The old glyph rating drew *only* the stars it had earned, so two stars and five
+   were the same colour and the same shape and differed by width alone, which is
+   what made a uniform gold read as a triumph whatever happened; the band colour was
+   the fix. Drawn marks always show all five, so a two-star match now reads as three
+   hollow stars at a glance and the comparison is in the drawing rather than the hue.
+   The band still has the verdict word beside it, which carries its own colour. */
+.stars__on  { fill: var(--gold); }
+.stars__off { fill: var(--panel-3); }
+/* The glow is the Classic band's alone — see the component comment. */
+.stars__marks.grade--classic .stars__on { filter: drop-shadow(0 0 7px rgba(245, 185, 59, .55)); }
 .stars__num {
   font-variant-numeric: tabular-nums; color: var(--muted);
   font-size: 13px; font-weight: 700;
@@ -776,7 +860,112 @@ table.data tr:last-child td { border-bottom: 0; }
   font-size: 11px; letter-spacing: .2em; text-transform: uppercase;
   color: var(--gold); font-weight: 800;
 }
-.score-hero__main { font-size: clamp(20px, 3.6vw, 27px); font-weight: 800; }
+/* ── Icons ──────────────────────────────────────────────────────────────────
+   Sized from the font size so an icon beside a word is the height of that word,
+   and never needs a magic pixel value per site. */
+.icon { width: 1em; height: 1em; display: inline-block; vertical-align: -.125em; flex: none; }
+.icon--lg { width: 1.5em; height: 1.5em; }
+.btn .icon { vertical-align: -.16em; }
+
+/* ── Broadcast furniture ─────────────────────────────────────────────────────
+   The result page was five progress bars and a heading: a form-submission
+   summary for the one thing the whole mode builds toward. These are the parts
+   that make it read as a result — the bug strip a broadcast carries its match
+   details in, the winner across the full width, and the verdict standing on
+   its own rather than tucked beside a title. */
+
+.bug { display: flex; align-items: stretch; min-height: 30px; margin-bottom: 14px; }
+.bug__tag {
+  background: var(--gold); color: #140f02;
+  font-family: var(--display); font-weight: 800; font-size: 14px;
+  letter-spacing: .16em; text-transform: uppercase;
+  display: flex; align-items: center; padding: 0 18px 0 14px;
+  /* The cut corner is the whole motif: it is on the tag, the winner strip and
+     nothing else, so it reads as "this is the result" rather than as texture. */
+  clip-path: polygon(0 0, 100% 0, calc(100% - 11px) 100%, 0 100%);
+}
+.bug__rest {
+  flex: 1; display: flex; align-items: center; gap: 8px;
+  padding-left: 16px;
+  background: linear-gradient(90deg, var(--panel-2), transparent 70%);
+  font-family: var(--display); font-weight: 600; font-size: 14px;
+  letter-spacing: .13em; text-transform: uppercase; color: var(--ink-2);
+}
+.bug__sep { color: var(--faint); }
+
+.screen__title--hero { margin-bottom: 18px; }
+
+.winstrip {
+  display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+  padding: 13px 22px;
+  background: linear-gradient(90deg, var(--gold) 0%, #e0a01f 60%, var(--gold-dim) 100%);
+  color: #140f02;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 18px 100%);
+}
+.winstrip__label {
+  font-family: var(--display); font-weight: 800; font-size: 13px;
+  letter-spacing: .24em; text-transform: uppercase; opacity: .72;
+}
+.winstrip__who {
+  font-family: var(--display); font-weight: 900;
+  font-size: clamp(24px, 3.4vw, 34px); line-height: 1;
+  letter-spacing: .01em; text-transform: uppercase;
+}
+.winstrip__how {
+  margin-left: auto; font-family: var(--display); font-weight: 600;
+  font-size: 15px; letter-spacing: .1em; text-transform: uppercase; opacity: .7;
+}
+
+.verdict {
+  display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+  padding: 22px 2px 6px;
+}
+.verdict__num {
+  font-family: var(--display); font-weight: 900;
+  font-size: clamp(36px, 5vw, 54px); line-height: 1; letter-spacing: -.01em;
+  font-variant-numeric: tabular-nums;
+}
+.verdict__word {
+  font-family: var(--display); font-weight: 800; font-size: 17px;
+  letter-spacing: .2em; text-transform: uppercase;
+  border: 2px solid currentColor; padding: 4px 12px;
+}
+
+/* ── The scorecard, as a chart ───────────────────────────────────────────── */
+
+.chart { display: grid; gap: 4px; }
+.chart__row {
+  display: grid; grid-template-columns: 112px 1fr 46px 92px;
+  gap: 14px; align-items: center; padding: 7px 0;
+}
+.chart__key {
+  font-family: var(--display); font-weight: 700; font-size: 17px;
+  letter-spacing: .05em; text-transform: uppercase;
+}
+.chart__track { height: 11px; background: var(--panel-3); border-radius: 2px; overflow: hidden; }
+.chart__fill { display: block; height: 100%; border-radius: 2px; }
+.chart__fill--gold { background: linear-gradient(90deg, var(--gold-dim), var(--gold)); }
+.chart__fill--cyan { background: linear-gradient(90deg, #2a7d88, var(--cyan)); }
+.chart__fill--face { background: linear-gradient(90deg, #2b7a4b, var(--face)); }
+.chart__val {
+  font-family: var(--display); font-weight: 900; font-size: 22px;
+  text-align: right; font-variant-numeric: tabular-nums;
+}
+.chart__contrib {
+  font-family: var(--display); font-weight: 600; font-size: 13px;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: var(--muted); text-align: right;
+}
+
+@media (max-width: 560px) {
+  .chart__row { grid-template-columns: 1fr 44px 84px; }
+  .chart__key { grid-column: 1 / -1; }
+}
+
+.score-hero__main {
+  font-size: clamp(30px, 5vw, 46px); font-weight: 900;
+  text-transform: uppercase; letter-spacing: .005em; line-height: 1;
+}
 
 /* ── Play by play ────────────────────────────────────────────────────────── */
 
@@ -916,10 +1105,13 @@ table.data tr:last-child td { border-bottom: 0; }
 
 /* ── Utility ─────────────────────────────────────────────────────────────── */
 
-.muted { color: var(--muted); }
-.faint { color: var(--faint); }
+/* These two were doing most of the illegibility between them: --muted on anything
+   instructional, --faint on anything secondary. The tokens move rather than every site,
+   so the whole app lifts at once, and --faint stays reserved for genuine furniture. */
+.muted { color: var(--ink-2); }
+.faint { color: var(--muted); }
 .gold  { color: var(--gold); }
-.small { font-size: 12.5px; }
+.small { font-size: 13px; }
 .tabnum { font-variant-numeric: tabular-nums; }
 
 /* ── How good it was ───────────────────────────────────────────────────────
@@ -935,8 +1127,7 @@ table.data tr:last-child td { border-bottom: 0; }
 .grade--poor    { color: var(--heel); }
 /* The glow is the thing that made every rating look like a triumph. It stays on
    the one band that has earned it. */
-.stars__glyphs { text-shadow: none; }
-.stars__glyphs.grade--classic { text-shadow: 0 0 18px rgba(245, 185, 59, .35); }
+
 
 /* ── How hard a beat goes ──────────────────────────────────────────────────
    A beat sheet is a shape, and the shape is what the intensities do down the
@@ -1074,7 +1265,7 @@ table.data tr:last-child td { border-bottom: 0; }
     display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3;
     overflow: hidden;
   }
-  .screen__title { font-size: clamp(24px, 7vw, 30px); }
+  .screen__title { font-size: clamp(30px, 9vw, 40px); }
   .screen__head { margin-bottom: 14px; }
 }
 
@@ -1094,7 +1285,7 @@ table.data tr:last-child td { border-bottom: 0; }
 @media (max-height: 480px) and (orientation: landscape) {
   .topbar { position: static; }
   .screen__head { margin-bottom: 12px; }
-  .screen__title { font-size: 22px; }
+  .screen__title { font-size: 28px; }
   .screen__lede { display: none; }
 }
 
@@ -1365,8 +1556,10 @@ table.data tr:last-child td { border-bottom: 0; }
   padding: 6px 0;
 }
 .beat-row__name { font-weight: 700; font-size: 15px; }
-.beat-row__sub  { font-size: var(--t-sm); color: var(--muted); }
-.beat-row__move { display: flex; gap: 4px; }
+/* The row's only description of the beat. It was --muted at 12.5px, which a review
+   could not read, on the screen where the beats are edited. */
+.beat-row__sub  { font-size: 13px; color: var(--ink-2); }
+.beat-row__move { display: flex; gap: 6px; }
 .beat-row__body:focus-visible { outline: none; box-shadow: var(--ring); }
 .beat-row.is-opening { border-left: 3px solid var(--gold-dim); }
 .beat-row.is-finish  { border-left: 3px solid var(--gold); }

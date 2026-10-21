@@ -2,7 +2,7 @@
    hot right now" is the single thing a booker most needs to read off a roster. *@
 
 <span class="trend @Cls" title="@Title">
-    <span class="trend__arrow" aria-hidden="true">@Arrow</span>
+    <Icon Name="@Arrow" Class="trend__arrow" />
     @if (ShowLabel)
     {
         <span>@Label</span>
@@ -25,11 +25,17 @@
         _         => "is-steady"
     };
 
+    /// <summary>
+    /// Which mark. "steady" is a drawn bar rather than an em-dash: a text dash in a column
+    /// of numbers reads as missing data, which is exactly what a review of the picker took
+    /// it for. Whether the steady state should show anything at all is #64's question — this
+    /// only stops it looking like a gap.
+    /// </summary>
     private string Arrow => Momentum switch
     {
-        >= Steady  => "▲",
-        <= -Steady => "▼",
-        _          => "—"
+        >= Steady  => "up",
+        <= -Steady => "down",
+        _          => "steady"
     };
 
     private string Label => Momentum switch

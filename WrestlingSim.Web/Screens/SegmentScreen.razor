@@ -3,12 +3,7 @@
 @if (result is null)
 {
     <div class="screen__head">
-        <div class="screen__eyebrow">How feuds get built</div>
         <h1 class="screen__title">Book a Segment</h1>
-        <p class="screen__lede">
-            Every segment deposits heat and history tags into the feud book. A turn generates
-            the most of anything in the game; a good promo builds a programme too, just slower.
-        </p>
     </div>
 
     <SegmentBuilder OnDone="Run" OnCancel="@(() => State.Go(Screen.Exhibition))" ConfirmLabel="Run the segment ★" />

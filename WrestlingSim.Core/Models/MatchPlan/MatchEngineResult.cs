@@ -86,6 +86,25 @@ namespace WrestlingSim.Models.MatchPlan
         // Accumulated scores (raw, pre-normalisation)
         public double TechnicalScore     { get; init; }
         public double StorytellingScore  { get; init; }
+
+        /// <summary>
+        /// How well the match worked on each axis, 0–100, which is the reading the engine
+        /// grades on — <c>Saturate(raw, scale)</c> before the match type's weight is applied.
+        ///
+        /// These exist because the raw sums are not comparable to anything. The scorecard
+        /// showed "Technical 30 / 60" and "Storytelling 40 / 80", denominators that came
+        /// from two constants nothing in the engine read, drawn as bars filled to half —
+        /// so a player optimising against them was optimising against a number that had no
+        /// part in the rating. Saturation has no maximum to divide by in the first place.
+        ///
+        /// What each axis then contributed to the final score, in points, is on
+        /// <see cref="ScoreBreakdown"/>. The two together are the whole story: how well it
+        /// went, and how much this match type let that matter.
+        /// </summary>
+        public double TechnicalRating    { get; init; }
+
+        /// <inheritdoc cref="TechnicalRating"/>
+        public double StorytellingRating { get; init; }
         public double CrowdPeakEnergy    { get; init; }
         public double CrowdAverageEnergy { get; init; }
         public double FinishQuality      { get; init; }

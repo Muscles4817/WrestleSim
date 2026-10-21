@@ -3,16 +3,12 @@
 <div class="screen__head">
     <div class="screen__eyebrow">@(feuds.Count) active</div>
     <h1 class="screen__title">Feud Book</h1>
-    <p class="screen__lede">
-        Intensity is derived from accumulated heat, not chosen. Book segments to build it —
-        the match editor unlocks feud-gated beats once a rivalry reaches Building.
-    </p>
 </div>
 
 @if (feuds.Count == 0)
 {
     <div class="empty">
-        <div class="empty__mark">◇</div>
+        <div class="empty__mark"><Icon Name="fire" /></div>
         <p><strong>No feuds yet.</strong></p>
         <p class="small">A betrayal or a weapon shot generates the most heat of anything you can book.</p>
         <button class="btn btn--primary mt" @onclick="() => State.Go(Screen.Segment)">Book a segment</button>

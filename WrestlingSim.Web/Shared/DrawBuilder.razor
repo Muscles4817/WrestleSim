@@ -16,7 +16,7 @@
 @if (Candidates.Count == 0)
 {
     <div class="empty">
-        <div class="empty__mark">▦</div>
+        <div class="empty__mark"><Icon Name="dice" /></div>
         Nothing to draw for. Book a Rumble with timed entries on a later date first —
         a drawing has to come before the match it is drawing for.
     </div>
@@ -35,7 +35,7 @@ else
                 @* .beat-row is a three-column grid — mark, body, tools — so a row that omits
                    the mark puts its body in the 28px column and wraps every word. *@
                 <div class="beat-row @(candidate.Rumble == target ? "is-finish" : "")">
-                    <div class="beat-row__n">@(candidate.Rumble == target ? "★" : "·")</div>
+                    <div class="beat-row__n">@if (candidate.Rumble == target) { <Icon Name="star" /> } else { <text>·</text> }</div>
                     <button class="beat-row__body" @onclick="() => Pick(candidate)">
                         <span class="beat-row__name">@candidate.Rumble.Name</span>
                         <span class="beat-row__sub">
@@ -103,7 +103,7 @@ else
                             {
                                 <button class="btn btn--icon @(isRigged ? "btn--danger" : "btn--ghost")"
                                         title="@(isRigged ? "Let them draw it" : "Hand them this number")"
-                                        @onclick="() => ToggleRig(w)">🔒</button>
+                                        @onclick="() => ToggleRig(w)"><Icon Name="lock" /></button>
                             }
                         </div>
                     </div>
@@ -122,7 +122,7 @@ else
             </div>
             <div class="stack">
                 <div class="beat-row @(host is not null ? "is-finish" : "")">
-                    <div class="beat-row__n">🎤</div>
+                    <div class="beat-row__n"><Icon Name="mic" /></div>
                     <button class="beat-row__body" @onclick="() => picking = true">
                         <span class="beat-row__name">@(host?.RingName ?? "Nobody in particular")</span>
                         <span class="beat-row__sub">

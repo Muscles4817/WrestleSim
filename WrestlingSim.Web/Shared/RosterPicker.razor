@@ -43,7 +43,7 @@
         {
             <button class="btn btn--ghost btn--sm" @onclick="Clear">Clear</button>
         }
-        <button class="btn btn--icon btn--ghost" @onclick="Cancel" aria-label="Close">✕</button>
+        <button class="btn btn--icon btn--ghost" @onclick="Cancel" aria-label="Close"><Icon Name="close" /></button>
     </div>
 
     @{
@@ -142,7 +142,7 @@
                            is a reading, not a gate. *@
                         @if (row.Condition is { } condition)
                         {
-                            <span class="prow__cond">⚠ @condition</span>
+                            <span class="prow__cond"><Icon Name="warn" /> @condition</span>
                         }
                         <span class="prow__pop tabnum @w.CardPosition.Tone()">@w.OvernessDisplay</span>
                         <Trend Momentum="@w.Momentum" ShowLabel="false" />

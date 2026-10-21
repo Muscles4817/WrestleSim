@@ -3,17 +3,12 @@
 
 @if (State.Career is not { } career)
 {
-    <div class="empty"><div class="empty__mark">★</div>No career loaded.</div>
+    <div class="empty"><div class="empty__mark"><Icon Name="star" /></div>No career loaded.</div>
 }
 else
 {
     <div class="screen__head">
-        <div class="screen__eyebrow">Standing commitments</div>
         <h1 class="screen__title">Your shows</h1>
-        <p class="screen__lede">
-            The shows that come round on a rhythm. Changing one moves its future dates on the
-            calendar; anything you have already booked or run is left alone.
-        </p>
     </div>
 
     @if (!career.Promotion.HasTelevision)
@@ -85,7 +80,7 @@ else
                     }
 
                     <button class="btn btn--icon btn--danger" title="Delete this show"
-                            @onclick="() => confirmingDelete = definition.Id">✕</button>
+                            @onclick="() => confirmingDelete = definition.Id"><Icon Name="close" /></button>
                 </div>
 
                 @if (career.Brands.Active)
@@ -126,7 +121,7 @@ else
     @if (career.ShowDefinitions.Count == 0)
     {
         <div class="empty">
-            <div class="empty__mark">◷</div>
+            <div class="empty__mark"><Icon Name="clock" /></div>
             No standing shows. Add one and it will fill the calendar forward from today.
         </div>
     }

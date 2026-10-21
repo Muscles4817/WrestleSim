@@ -339,9 +339,6 @@ namespace WrestlingSim.Engine
         private const double CrowdFloor      = 28.0;
         private const double CrowdCeilingRef = 95.0;
 
-        // Kept public-ish as documentation of the old ceilings; display code uses them.
-        public const double MaxTechnical    = 60.0;
-        public const double MaxStorytelling = 80.0;
 
         public MatchEngine(int? seed = null)
         {
@@ -3305,8 +3302,15 @@ namespace WrestlingSim.Engine
 
             // Saturating normalisation. Unlike a hard clamp this has no cliff: piling on
             // beats yields ever-smaller returns and can never reach the full component.
-            double techComponent  = Saturate(state.TechnicalScore, TechScale)     * 100 * techWeight;
-            double storyComponent = Saturate(state.StorytellingScore, StoryScale) * 100 * storyWeight;
+            // The 0–1 readings the grading is actually done on, kept so the result can
+            // report them. The scorecard used to print the raw sums over 60 and 80, which
+            // were two constants nothing else read: there is no ceiling to divide by here,
+            // because Saturate asymptotes and a category can never be full.
+            double techRating  = Saturate(state.TechnicalScore, TechScale);
+            double storyRating = Saturate(state.StorytellingScore, StoryScale);
+
+            double techComponent  = techRating  * 100 * techWeight;
+            double storyComponent = storyRating * 100 * storyWeight;
 
             // Crowd is normalised onto the same 0–1 footing as the other two. A raw reading
             // of 30 is a dead building and 95 is as loud as it gets; mapping that band to
@@ -3453,6 +3457,8 @@ namespace WrestlingSim.Engine
                 Defiance           = plan.IsHandicap ? defiance : 0.0,
                 TechnicalScore     = state.TechnicalScore,
                 StorytellingScore  = state.StorytellingScore,
+                TechnicalRating    = techRating  * 100,
+                StorytellingRating = storyRating * 100,
                 CrowdPeakEnergy    = state.CrowdPeakEnergy,
                 CrowdAverageEnergy = state.CrowdAverage,
                 FinishQuality      = state.FinishQuality,
