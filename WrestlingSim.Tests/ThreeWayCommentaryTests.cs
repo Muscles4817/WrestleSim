@@ -61,11 +61,12 @@ namespace WrestlingSim.Tests
             ]);
 
             var disposal = r.BeatResults.Single(x => x.BeatType == BeatType.DisposalSpot);
-            string line = disposal.Commentary.First();
-            output.WriteLine($"  {line}");
+            output.WriteLine($"  target {disposal.Target?.RingName}: {disposal.Commentary.First()}");
 
-            Assert.Contains("Charlie", line);
-            Assert.DoesNotContain("Bravo", line);
+            // The resolved target, not the sentence. The sentence is also moved by the
+            // disposal window, repetition decay, fatigue, attention and the RNG; the target
+            // is moved by exactly the rule this test is named after.
+            Assert.Equal("Charlie", disposal.Target?.RingName);
         }
 
         /// <summary>
@@ -84,12 +85,10 @@ namespace WrestlingSim.Tests
                 Finish()
             ]);
 
-            string line = r.BeatResults.Single(x => x.BeatType == BeatType.DisposalSpot)
-                           .Commentary.First();
-            output.WriteLine($"  aimed at {against}: {line}");
+            var disposal = r.BeatResults.Single(x => x.BeatType == BeatType.DisposalSpot);
+            output.WriteLine($"  aimed at {against}: target {disposal.Target?.RingName}");
 
-            Assert.Contains(named, line);
-            Assert.DoesNotContain(notNamed, line);
+            Assert.Equal(named, disposal.Target?.RingName);
         }
 
         /// <summary>
@@ -175,15 +174,16 @@ namespace WrestlingSim.Tests
                 Finish()
             ]);
 
-            string line = r.BeatResults.Single(x => x.BeatType == BeatType.PinBreak)
-                           .Commentary.First();
-            output.WriteLine($"  {line}");
+            var pinBreak = r.BeatResults.Single(x => x.BeatType == BeatType.PinBreak);
+            output.WriteLine($"  {pinBreak.Worker?.RingName} -> {pinBreak.Target?.RingName}: " +
+                             pinBreak.Commentary.First());
 
-            Assert.Contains("Charlie", line);
+            Assert.Equal("Charlie", pinBreak.Worker?.RingName);
 
-            // And nobody is doing something to themselves: the two names in the line differ.
-            Assert.DoesNotContain("Alpha covers — and Alpha", line);
-            Assert.DoesNotContain("Charlie covers — and Charlie", line);
+            // And nobody is doing something to themselves. The old version chased this by
+            // asserting two exact substrings — "Alpha covers — and Alpha" — which only
+            // covered the phrasings it happened to think of.
+            Assert.NotEqual(pinBreak.Worker, pinBreak.Target);
         }
 
         /// <summary>
@@ -204,18 +204,17 @@ namespace WrestlingSim.Tests
                 Finish()
             ]);
 
-            string line = r.BeatResults.Single(x => x.BeatType == BeatType.DisposalSpot)
-                           .Commentary.First();
+            var disposal = r.BeatResults.Single(x => x.BeatType == BeatType.DisposalSpot);
             string target = control == BeatControl.WrestlerA ? "Bravo" : "Alpha";
-            output.WriteLine($"  {control}: {line}");
+            output.WriteLine($"  {control}: {disposal.Worker?.RingName} -> {disposal.Target?.RingName}");
 
-            // Both the booked disposer and the booked victim are named, and they are
-            // different people. Asserting the disposer comes *first* was over-fitting to one
-            // of the beat's three phrasings — two of them name the victim first, so the
-            // assertion failed on correct behaviour.
-            Assert.Contains(expected, line);
-            Assert.Contains(target, line);
-            Assert.NotEqual(expected, target);
+            // Worker and target, rather than two names appearing somewhere in a sentence.
+            // The old version asserted on the line and had to be loosened once already:
+            // it required the disposer to be named first, which over-fitted one of the
+            // beat's three phrasings and failed on correct behaviour.
+            Assert.Equal(expected, disposal.Worker?.RingName);
+            Assert.Equal(target,   disposal.Target?.RingName);
+            Assert.NotEqual(disposal.Worker, disposal.Target);
         }
 
         /// <summary>
@@ -245,12 +244,10 @@ namespace WrestlingSim.Tests
                 Finish()
             ]);
 
-            string line = string.Join(" ", r.BeatResults
-                .Single(x => x.BeatType == type).Commentary);
-            output.WriteLine($"  {type} aimed at {against}: {line}");
+            var beat = r.BeatResults.Single(x => x.BeatType == type);
+            output.WriteLine($"  {type} aimed at {against}: target {beat.Target?.RingName}");
 
-            Assert.Contains(named, line);
-            Assert.DoesNotContain(notNamed, line);
+            Assert.Equal(named, beat.Target?.RingName);
         }
 
         /// <summary>
@@ -317,13 +314,17 @@ namespace WrestlingSim.Tests
 
             var duringWindow = r.BeatResults
                 .Where(x => x.BeatType == BeatType.NearFall)
-                .SelectMany(x => x.Commentary)
                 .ToList();
 
-            foreach (var line in duringWindow) output.WriteLine($"  {onTheFloor} is down: {line}");
+            foreach (var b in duringWindow)
+                output.WriteLine($"  {onTheFloor} is down -> target {b.Target?.RingName}");
 
-            Assert.All(duringWindow, line => Assert.DoesNotContain(onTheFloor, line));
-            Assert.Contains(duringWindow, line => line.Contains(stillUpright));
+            // The resolved target, not the absence of a name from a sentence. Absence is
+            // the weakest possible assertion: a crash before the line is emitted, a
+            // phrasing that names nobody, or a beat that never ran all produce the same
+            // green. The target is the thing the rule decides.
+            Assert.All(duringWindow, b => Assert.NotEqual(onTheFloor, b.Target?.RingName));
+            Assert.All(duringWindow, b => Assert.Equal(stillUpright, b.Target?.RingName));
         }
 
         /// <summary>
@@ -505,7 +506,7 @@ namespace WrestlingSim.Tests
                 var book = new FeudBook();
                 book.GetOrCreate(a, c).SetMinimumIntensity(FeudIntensity.Hot);
 
-                var lines = new MatchEngine(seed).Execute(new MatchPlanModel
+                var beat = new MatchEngine(seed).Execute(new MatchPlanModel
                 {
                     Sides = [MatchSide.Of(a), MatchSide.Of(b), MatchSide.Of(c)],
                     Feuds = book.Among([a, b, c]).ToList(),
@@ -517,13 +518,20 @@ namespace WrestlingSim.Tests
                         Beat(type, BeatControl.WrestlerA),
                         Finish()
                     ]
-                }).BeatResults.Single(x => x.BeatType == type).Commentary.ToList();
+                }).BeatResults.Single(x => x.BeatType == type);
 
-                if (seed == 0) foreach (var l in lines) output.WriteLine($"  {type}: {l}");
+                if (seed == 0)
+                {
+                    foreach (var l in beat.Commentary) output.WriteLine($"  {type}: {l}");
+                    output.WriteLine($"  billed: {string.Join(", ", beat.Billed.Select(w => w.RingName))}");
+                }
 
-                Assert.All(lines, line => Assert.DoesNotContain(onTheFloor, line));
-                Assert.All(lines, line => Assert.DoesNotContain("all three", line));
-                Assert.All(lines, line => Assert.DoesNotContain("All three", line));
+                // Who a room-wide line *would* name, recorded on every beat — so this holds
+                // even on the seeds where the beat happens to draw a phrasing that names
+                // nobody, which the old absence-of-a-substring version could not tell from
+                // success.
+                Assert.DoesNotContain(beat.Billed, w => w.RingName == onTheFloor);
+                Assert.Equal(2, beat.Billed.Count);
             }
         }
 
@@ -564,6 +572,16 @@ namespace WrestlingSim.Tests
         /// Pair-specific lines are left alone deliberately: a feud erupting *between two
         /// rivals* should say "these two", because it is about those two rather than about
         /// the match.
+        ///
+        /// **This one stays a text assertion, and that is correct.** Everywhere else in this
+        /// file the mechanism was pulled out of the sentence — the target, the worker, who
+        /// is billed — because the sentence was only ever a proxy for it. Here the sentence
+        /// *is* the mechanism: the claim is about the words a commentator says, and there is
+        /// nothing behind them to assert on instead. What that costs is a seed sweep and a
+        /// slower test, which is the honest price of a rule about phrasing.
+        ///
+        /// The count behind the phrasing is checked directly, via `Billed`, so a failure
+        /// tells you which of the two broke.
         /// </summary>
         [Fact]
         public void CommentaryThatCountsTheField_CountsItRight()
@@ -582,6 +600,13 @@ namespace WrestlingSim.Tests
                             .SelectMany(x => x.Commentary).ToList();
 
             foreach (var line in openings) output.WriteLine($"  {line}");
+
+            // The count the phrasing is derived from, asserted directly — so if this test
+            // fails you know whether the field was counted wrong or merely worded wrong.
+            Assert.All(r.BeatResults.Where(x => x.BeatType is BeatType.HotOpening
+                                                or BeatType.SlowOpening
+                                                or BeatType.StandardOpening),
+                       b => Assert.Equal(3, b.Billed.Count));
 
             Assert.All(openings, line =>
             {

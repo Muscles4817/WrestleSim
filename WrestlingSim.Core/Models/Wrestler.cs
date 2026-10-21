@@ -60,6 +60,95 @@ namespace WrestlingSim.Models
         /// Null means they have not worked yet this career.
         /// </summary>
         public DateOnly? LastAppearance { get; set; }
+
+        /// <summary>
+        /// The year they were born, or null if the roster does not say.
+        ///
+        /// **A year, not a date, on purpose.** These are real performers, and the engine
+        /// reads age in whole years for <see cref="Engine.AgeCurve"/> — so a precise
+        /// birthday would add nothing the curves can use while inviting a specific claim
+        /// about a real person that the roster data cannot support. A year is the precision
+        /// actually available and the precision actually needed.
+        ///
+        /// Nullable because not every entry on the shipped roster has one. A wrestler with
+        /// no birth year ages not at all: every drift in <see cref="Engine.AgeCurve"/>
+        /// returns 1.000 for them, which is exactly how the game behaved before ages
+        /// existed. Missing data degrades to the old behaviour rather than to a guess.
+        /// </summary>
+        public int? BornIn { get; set; }
+
+        /// <summary>
+        /// The year of their first match, or null if the roster does not say.
+        ///
+        /// Separate from <see cref="BornIn"/> because the reference says they drive
+        /// different things. Doc 15 §4.1: drawing power "is a function of accumulated
+        /// audience relationship, which takes a decade to build" — so the crowd's
+        /// attachment runs off tenure while the body runs off age, and a 38-year-old who
+        /// debuted at 34 is not the same proposition as a 38-year-old who debuted at 20.
+        /// </summary>
+        public int? DebutedIn { get; set; }
+
+        /// <summary>Their age on a given date, or null if <see cref="BornIn"/> is unset.</summary>
+        public int? AgeOn(DateOnly on) => BornIn is { } born ? on.Year - born : null;
+
+        /// <summary>Years since their debut on a given date, or null if unset.</summary>
+        public int? TenureOn(DateOnly on) => DebutedIn is { } debut ? Math.Max(0, on.Year - debut) : null;
+
+        /// <summary>
+        /// How worked-out they are, 0 (fresh) to 100 (cooked).
+        ///
+        /// Charged by matches and paid back by days off — see
+        /// <see cref="Engine.RingCondition"/>. Pulls against <see cref="Sharpness"/>, which
+        /// moves the other way on the same input, so resting somebody is always a trade
+        /// rather than a free repair.
+        /// </summary>
+        public double Fatigue { get; set; }
+
+        /// <summary>
+        /// How ring-ready they are, 0 (rusty) to 100 (razor). Starts sharp.
+        ///
+        /// Bought with live matches and lost to time away, at a rate that differs by
+        /// wrestler: somebody with the psychology to keep themselves ready stops falling
+        /// well short of useless, while a wrestler whose game is speed and timing needs the
+        /// reps week in and week out.
+        /// </summary>
+        public double Sharpness { get; set; } = 100;
+
+        /// <summary>
+        /// Out working the towns until this date, or null for somebody who is not on the road.
+        ///
+        /// A standing instruction rather than a booking. A promotion does not decide week by week
+        /// who tours; it puts people out for a stretch and brings them back, and the loop
+        /// builder reads this so a booker who has said "these eight are touring this month"
+        /// is not asked again every Saturday.
+        ///
+        /// It does not book anybody by itself. The run of towns is still confirmed on the
+        /// date, and taking somebody off that run does not bring them home — one is what you
+        /// intend and the other is what happened, and a game that conflated them would make
+        /// dropping somebody from one night cancel the tour.
+        /// </summary>
+        public DateOnly? TouringUntil { get; set; }
+
+        /// <summary>Whether they are out on the road on a given date.</summary>
+        public bool IsTouring(DateOnly on) => TouringUntil is { } until && on <= until;
+
+        /// <summary>
+        /// What is currently keeping them out, or null if they are fit.
+        ///
+        /// Stays set after it clears rather than being nulled, so the roster sheet can say
+        /// what somebody is coming back from — <see cref="IsInjured"/> reads the date.
+        /// </summary>
+        public Person.Injury? Injury { get; set; }
+
+        /// <summary>
+        /// Everything they have ever done to themselves. Permanent and compounding, which
+        /// doc 15's sim implications call "the most important detail": a performer with a
+        /// prior neck injury should be permanently more fragile.
+        /// </summary>
+        public List<Person.Injury> InjuryHistory { get; set; } = new();
+
+        /// <summary>Whether they are unavailable on a given day.</summary>
+        public bool IsInjured(DateOnly today) => Injury?.KeepsOut(today) == true;
         public RingSkills RingSkills { get; set; }
         public PhysicalAttributes Physical { get; set; } = new();
         public MentalAttributes Mental { get; set; } = new();

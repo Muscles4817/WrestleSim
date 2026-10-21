@@ -78,6 +78,32 @@ namespace WrestlingSim.Models.MatchPlan
         /// <summary>True when any side has a partner on the apron.</summary>
         public bool IsTagMatch => Sides.Any(s => s.IsTag);
 
+        /// <summary>
+        /// Two or more against one — or any uneven split. Doc 18 §2.5.
+        ///
+        /// Derived from the sides rather than declared, for the same reason
+        /// <see cref="Format"/> is: a plan that could disagree with itself about how many
+        /// people are on each side would be a plan with two answers to the only question
+        /// this format asks.
+        /// </summary>
+        public bool IsHandicap => Sides.Select(s => s.Size).Distinct().Count() > 1;
+
+        /// <summary>
+        /// The side carrying the numbers, and the side carrying them against it. Null when
+        /// the sides are even, and when three or more sides make "outnumbered" ambiguous —
+        /// a 1 v 2 v 3 is a shape nothing in doc 18 describes and the engine does not model.
+        /// </summary>
+        public (MatchSide Outnumbered, MatchSide Larger)? Numbers
+        {
+            get
+            {
+                if (!IsHandicap || Sides.Count != 2) return null;
+                var small = Sides.OrderBy(s => s.Size).First();
+                var large = Sides.OrderByDescending(s => s.Size).First();
+                return (small, large);
+            }
+        }
+
         public List<MatchBeat> Beats { get; set; } = new();
 
         /// <summary>
@@ -129,7 +155,47 @@ namespace WrestlingSim.Models.MatchPlan
         /// </summary>
         public bool IsBlowOff { get; set; }
 
+        /// <summary>
+        /// How the match is worked, as the scoring reads it.
+        ///
+        /// **No longer a player input.** It used to be a step in the builder, where the
+        /// booker declared a style and the engine graded them against the declaration —
+        /// which is not a decision a booker has. Nobody announces a technical classic; the
+        /// promise is made by who is in the match and what the feud has been, and it is kept
+        /// or broken by the beats. See <see cref="Engine.MatchExpectation"/> for the derived
+        /// half and <see cref="Brief"/> for the booked half.
+        ///
+        /// Still here because the scoring weights hang off it, and it is now set from the
+        /// brief's story rather than typed in.
+        /// </summary>
         public MatchType MatchType { get; set; } = MatchType.Standard;
+
+        /// <summary>
+        /// What the booker asked for, when this plan was written from a brief rather than
+        /// beat by beat.
+        ///
+        /// Kept after generation rather than thrown away, and kept through hand-editing.
+        /// It is what lets the review screen say a booking has drifted from its own
+        /// intention — "you booked a technical exhibition and six of thirteen beats are
+        /// brawling" — which is a sentence the game could not form when the beats were the
+        /// only record of what was wanted.
+        ///
+        /// Null for a plan built by hand or loaded from a save written before briefs
+        /// existed. Everything that reads it treats null as "no promise was made".
+        /// </summary>
+        public MatchBrief? Brief { get; set; }
+
+        /// <summary>
+        /// The gimmick, or <see cref="Stipulation.None"/> for a match under the rules.
+        ///
+        /// Separate from <see cref="MatchType"/>, which is the *style* being worked, and
+        /// separate from the format the sides describe. A stipulation is neither: doc 20
+        /// §6 puts it inside the blow-off, and what it changes is which finishes are legal
+        /// — see <see cref="Engine.StipulationRules"/>. A No-DQ technical singles match and
+        /// a No-DQ spotfest tag are both coherent bookings, which is the test that these
+        /// are genuinely different axes rather than one axis wearing two names.
+        /// </summary>
+        public Stipulation Stipulation { get; set; } = Stipulation.None;
 
         /// <summary>
         /// The championship on the line, or null for a non-title match.
@@ -234,16 +300,132 @@ namespace WrestlingSim.Models.MatchPlan
             // and a 1v4 grades identically to a 1v1. Meanwhile side-weighting means the
             // side with the *extra* man scores slightly worse. So a handicap match would
             // not be graded generously or harshly — it would be graded as something else
-            // entirely. A 2v1 also cannot be saved, because SaveSerializer refuses any
-            // plan where IsTagMatch is true.
+            // entirely.
             //
-            // The exit condition for this rule is a numbers term in the engine, not a
-            // decision that handicap is allowed.
-            if (Sides.Select(s => s.Size).Distinct().Count() > 1)
+            // That rule set its own exit condition: "a numbers term in the engine, not a
+            // decision that handicap is allowed." `MatchEngine.NumbersFatigue` is that term
+            // — being outnumbered denies you the rest, so fatigue arrives in proportion to
+            // how much of the work you are doing that they are not — and
+            // `MatchEngine.Defiance` is what the format is graded on instead of the result.
+            // So the rule is met rather than waived, and what is left is the shape the
+            // engine still has no reading of.
+            //
+            // (The rule also claimed a 2v1 could not be saved because the serializer refused
+            // any tag plan. That stopped being true when the save format moved to storing
+            // `Sides` as id lists; a handicap plan round-trips, and there is a test.)
+            if (IsHandicap && Sides.Count > 2)
                 errors.Add(
-                    $"Sides are uneven ({string.Join(" v ", Sides.Select(s => s.Size))}). The " +
-                    "engine has no model for a numbers advantage yet, so a handicap match " +
-                    "would be graded as a normal one.");
+                    $"Uneven sides in a {Sides.Count}-way ({string.Join(" v ", Sides.Select(s => s.Size))}). " +
+                    "Handicap is two or more against one — with three sides at different " +
+                    "sizes there is no single outnumbered man, and doc 18 describes no such " +
+                    "match.");
+
+                // ── Elimination (doc 18 §2.5) ────────────────────────────────
+                //
+                // Simulated in booking order, because every rule here is about *when*: a
+                // side can be eliminated once, cannot work a beat afterwards, and cannot be
+                // the target of one. The engine keeps the same running set at run time; this
+                // is the same walk done ahead of it so the player is told rather than the
+                // play-by-play going strange.
+                if (Beats.Any(b => b.IsElimination))
+                {
+                    // How many falls each side has taken so far, walking in booking order —
+                    // a side is only "eliminated" once it has taken as many as it has
+                    // members, which is the whole difference between a triple threat and a
+                    // Survivor Series.
+                    var taken_ = new int[Sides.Count];
+                    bool IsOut(int side) => taken_[side] >= Sides[side].Size;
+
+                    foreach (var (beat, i) in Beats.Select((b, i) => (b, i)))
+                    {
+                        if (SideIndex(beat.Control) is { } ci && ci < Sides.Count && IsOut(ci))
+                            errors.Add($"Beat {i + 1} is booked for a side that has already " +
+                                       "been eliminated.");
+
+                        if (beat.Against is { } tgt && SideIndex(tgt) is { } ti
+                            && ti < Sides.Count && IsOut(ti))
+                            errors.Add($"Beat {i + 1} is aimed at a side that has already " +
+                                       "been eliminated.");
+
+                        if (!beat.IsElimination) continue;
+
+                        if (beat.Against is not { } against)
+                        {
+                            errors.Add($"Beat {i + 1} is an elimination and has to say who " +
+                                       "goes out.");
+                            continue;
+                        }
+
+                        if (SideIndex(against) is not { } ai || ai >= Sides.Count)
+                        {
+                            errors.Add($"Beat {i + 1} eliminates somebody who is not in " +
+                                       "this match.");
+                            continue;
+                        }
+
+                        if (SideIndex(beat.Control) == ai)
+                            errors.Add($"Beat {i + 1} has a side eliminating itself.");
+
+                        taken_[ai]++;
+                    }
+
+                    // The format's one structural promise: it runs until one side is left.
+                    //
+                    // Counted in *people*, because an elimination beat takes out whoever is
+                    // legal rather than a whole side. With one wrestler a side those are the
+                    // same number and this is the triple-threat rule unchanged; with five
+                    // they are not, and a Survivor Series match ends when one team has
+                    // nobody left — with however many survivors the booker chose to leave
+                    // standing, which is the format's actual payoff and not something to
+                    // pin to one.
+                    var finishBeat = Beats.LastOrDefault(b => b.IsFinish);
+                    var falls = Beats.Where(b => b.IsElimination)
+                                     .Concat(finishBeat is null ? [] : [finishBeat])
+                                     .Select(b => b.Against)
+                                     .Where(a => a is not null)
+                                     .Select(a => SideIndex(a!.Value))
+                                     .Where(i => i is not null)
+                                     .Select(i => i!.Value)
+                                     .ToList();
+
+                    var wipedOut = new List<int>();
+                    for (int side = 0; side < Sides.Count; side++)
+                    {
+                        int taken = falls.Count(f => f == side);
+                        if (taken > Sides[side].Size)
+                            errors.Add($"Side {(char)('A' + side)} has {Sides[side].Size} in it " +
+                                       $"and the plan takes {taken} falls from them.");
+                        else if (taken == Sides[side].Size)
+                            wipedOut.Add(side);
+                    }
+
+                    if (wipedOut.Count != Sides.Count - 1)
+                        errors.Add("An elimination match runs until one side is left: " +
+                                   $"of {Sides.Count} sides this plan empties {wipedOut.Count}, " +
+                                   $"and it needs to empty {Sides.Count - 1}.");
+
+                    if (finishBeat is not null
+                        && SideIndex(finishBeat.Control) is { } wi && wi < Sides.Count
+                        && wipedOut.Contains(wi))
+                        errors.Add("The side booked to win is emptied by this plan.");
+                }
+
+            // And the mirror of it for the other direction. A pin break with nobody left to
+            // break the pin is not a beat with a missing target, it is a beat about a
+            // situation the match cannot be in.
+            foreach (var beat in Beats.Where(b => b.IsMultiManBeat))
+                if (!IsMultiMan)
+                    errors.Add($"{beat.Type} needs a third party in the match — there is " +
+                               "nobody to dispose of or steal from in a two-sided one.");
+
+            // And the weaker version of the same rule, for the beat that needs a third
+            // *person* rather than a third *side*. An elimination only needs somebody left
+            // to carry on against, which a four-a-side tag match has and a singles match
+            // does not — gating it on side count refused the Survivor Series outright.
+            foreach (var beat in Beats.Where(b => b.NeedsAThirdPerson))
+                if (AllParticipants.Count() <= 2)
+                    errors.Add($"{beat.Type} needs somebody left in the match afterwards. " +
+                               "With two wrestlers in it, taking one out is just a finish.");
 
             // Every beat has to be workable by the side it is booked for. This is the rule
             // that actually protects the tag formula — a hot tag needs someone to tag, and
@@ -355,6 +537,16 @@ namespace WrestlingSim.Models.MatchPlan
                 // actually in the match.
                 errors.Add($"Finish beat must be controlled by one of the {Sides.Count} sides " +
                            "— a finish decides who wins.");
+
+            // ── Stipulation ──────────────────────────────────────────────────
+            // The whole of what a gimmick match is, enforced where the booking is made.
+            // A stipulation the builder announces and then lets you finish with a
+            // disqualification is not a stipulation, it is a label.
+            if (Stipulation != Stipulation.None && finishBeats.Count == 1
+                && !Engine.StipulationRules.Allows(Stipulation, finishBeats[0].Type))
+                errors.Add(
+                    $"A {Engine.StipulationRules.Label(Stipulation)} match cannot end that " +
+                    $"way. {Engine.StipulationRules.Says(Stipulation)}");
 
             // ── Title ────────────────────────────────────────────────────────
             if (TitleAtStake is { } title)

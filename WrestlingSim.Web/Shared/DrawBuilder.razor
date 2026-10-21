@@ -1,0 +1,275 @@
+@using WrestlingSim.Models.Rumble
+@using WrestlingSim.Models.World
+@using WrestlingSim.Engine
+@inject GameState State
+
+@* ── Booking a number drawing ─────────────────────────────────────────────────
+   The draw used to be a 🎲 in the match builder: honest, and completely invisible. Doc 18
+   §2.5 says it is the entries that make the Rumble a story rather than a scramble, and a
+   story the audience is never told is not one — so the drawing goes where every other story
+   beat goes, on a card, in front of a building, costing a slot.
+
+   The one thing this flow does that no other builder does is reach forward: it books onto
+   *this* show and writes onto a match booked on a later one. Which is why the first
+   question it asks is which match, and why the answer can be "none yet". *@
+
+@if (Candidates.Count == 0)
+{
+    <div class="empty">
+        <div class="empty__mark">▦</div>
+        Nothing to draw for. Book a Rumble with timed entries on a later date first —
+        a drawing has to come before the match it is drawing for.
+    </div>
+    <div class="wizard-bar">
+        <button class="btn btn--ghost" @onclick="OnCancel">← Cancel</button>
+    </div>
+}
+else
+{
+    <div class="panel">
+        <div class="panel__title">Drawing for</div>
+        <div class="stack">
+            @foreach (var c in Candidates)
+            {
+                var candidate = c;
+                @* .beat-row is a three-column grid — mark, body, tools — so a row that omits
+                   the mark puts its body in the 28px column and wraps every word. *@
+                <div class="beat-row @(candidate.Rumble == target ? "is-finish" : "")">
+                    <div class="beat-row__n">@(candidate.Rumble == target ? "★" : "·")</div>
+                    <button class="beat-row__body" @onclick="() => Pick(candidate)">
+                        <span class="beat-row__name">@candidate.Rumble.Name</span>
+                        <span class="beat-row__sub">
+                            @candidate.Show.Name · @candidate.Show.Date.ToString("d MMM")
+                            @if (candidate.Rumble.Announced.Any())
+                            {
+                                <text> · @candidate.Rumble.Announced.Count() number(s) already announced</text>
+                            }
+                        </span>
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+
+    @if (target is { } plan)
+    {
+        <div class="panel">
+            <div class="panel__title">
+                Who comes out
+                <span class="spacer"></span>
+                <span class="small muted">@cast.Count pulling — @Runtime min</span>
+            </div>
+            <p class="small muted">
+                These are the numbers the crowd will know going in, and knowing them is what
+                the drawing is worth. Everything not pulled tonight is still drawn tonight —
+                the drum decides the whole field, the building only hears these.
+            </p>
+
+            <div class="stack">
+                @foreach (var e in plan.Field.OrderBy(e => e.Number))
+                {
+                    var entrant = e;
+                    var w = entrant.Wrestler;
+                    var inCast = cast.Contains(w);
+                    var isRigged = rigged.Contains(w);
+                    var blocked = Surprises.Contains(w);
+
+                    <div class="beat-row @(inCast ? "is-finish" : "")">
+                        <div class="beat-row__n">@entrant.Number</div>
+                        <button class="beat-row__body" disabled="@blocked"
+                                @onclick="() => Toggle(w)">
+                            <span class="beat-row__name">@w.RingName</span>
+                            <span class="beat-row__sub">
+                                @if (blocked)
+                                {
+                                    <text>booked as a surprise — cannot be announced</text>
+                                }
+                                else if (isRigged)
+                                {
+                                    <text>handed number @entrant.Number, in front of everybody</text>
+                                }
+                                else if (inCast)
+                                {
+                                    <text>pulls a number on the night</text>
+                                }
+                                else
+                                {
+                                    <text>tap to bring them out</text>
+                                }
+                            </span>
+                        </button>
+                        <div class="beat-row__move">
+                            @if (inCast)
+                            {
+                                <button class="btn btn--icon @(isRigged ? "btn--danger" : "btn--ghost")"
+                                        title="@(isRigged ? "Let them draw it" : "Hand them this number")"
+                                        @onclick="() => ToggleRig(w)">🔒</button>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel__title">
+                Running it
+                <span class="spacer"></span>
+                @if (host is not null)
+                {
+                    <button class="btn btn--sm btn--ghost" @onclick="() => host = null">Nobody</button>
+                }
+            </div>
+            <div class="stack">
+                <div class="beat-row @(host is not null ? "is-finish" : "")">
+                    <div class="beat-row__n">🎤</div>
+                    <button class="beat-row__body" @onclick="() => picking = true">
+                        <span class="beat-row__name">@(host?.RingName ?? "Nobody in particular")</span>
+                        <span class="beat-row__sub">
+                            @(host is null
+                                ? "the drum is just there — tap to put somebody behind it"
+                                : $"charisma {host.Charisma:F1} — worth ×{RumbleDrawEngine.HostFactor(host):F2} on the night")
+                        </span>
+                    </button>
+                </div>
+            </div>
+            @if (rigged.Count > 0 && host is null)
+            {
+                <div class="notice notice--warn mt">
+                    Somebody has to be seen handing those numbers out, or there is nobody for
+                    the crowd — or the wrestler — to blame. Without a host a fixed drawing
+                    still costs you the drum's credibility and buys you no grievance.
+                </div>
+            }
+        </div>
+
+        @if (rigged.Count > 0)
+        {
+            <div class="notice notice--warn">
+                <strong>
+                    @rigged.Count of @cast.Count numbers handed out — the drum is worth
+                    @((RumbleScoring.DrawCredibility(rigged.Count, cast.Count) * 100).ToString("F0"))%
+                    of an honest one.
+                </strong>
+                That is the price of a guaranteed number, and it is the only way to get one
+                once the drawing is on television. Rigging it off camera is not on offer:
+                a fix nobody sees costs nothing, and a thing that costs nothing is what
+                everybody does.
+            </div>
+        }
+    }
+
+    @if (Blockers.Count > 0)
+    {
+        <div class="notice notice--warn">
+            @foreach (var b in Blockers) { <div>@b</div> }
+        </div>
+    }
+
+    <div class="wizard-bar">
+        <button class="btn btn--ghost" @onclick="OnCancel">← Cancel</button>
+        <button class="btn btn--primary" disabled="@(target is null || Blockers.Count > 0)"
+                @onclick="Confirm">
+            @ConfirmLabel
+        </button>
+    </div>
+}
+
+@if (picking)
+{
+    <RosterPicker Title="Who runs the drawing"
+                  Current="@host"
+                  UsedAs="@(w => cast.Contains(w) ? "drawing" : null)"
+                  Picked="SetHost"
+                  Cleared="() => { host = null; picking = false; }"
+                  Cancelled="() => picking = false" />
+}
+
+@code {
+    /// <summary>The show this is being booked onto. Only later dates can be drawn for.</summary>
+    [Parameter, EditorRequired] public ScheduledShow Show { get; set; } = default!;
+
+    [Parameter] public EventCallback<RumbleDraw> OnDone { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public string ConfirmLabel { get; set; } = "Add to card +";
+
+    private readonly List<Wrestler> cast = new();
+    private readonly List<Wrestler> rigged = new();
+    private RumblePlan? target;
+    private ScheduledShow? targetShow;
+    private Wrestler? host;
+    private bool picking;
+
+    public record Candidate(RumblePlan Rumble, ScheduledShow Show);
+
+    /// <summary>
+    /// Every Rumble this drawing could be for: timed entries, on a later date, not yet run.
+    /// A battle royal is excluded because everybody starts together and there is no number
+    /// to draw — the same reason it scores no entry story.
+    /// </summary>
+    private List<Candidate> Candidates =>
+        State.Career is not { } career
+            ? new List<Candidate>()
+            : career.Shows
+                .Where(s => !s.HasRun && s.Date > Show.Date)
+                .OrderBy(s => s.Date)
+                .SelectMany(s => s.Card.OfType<RumblePlan>()
+                                       .Where(r => !r.IsBattleRoyal)
+                                       .Select(r => new Candidate(r, s)))
+                .ToList();
+
+    /// <summary>
+    /// Anybody the match is relying on being a shock. Disabled rather than merely rejected,
+    /// because the reason is worth reading before the tap rather than after it.
+    /// </summary>
+    private HashSet<Wrestler> Surprises =>
+        target is null
+            ? new HashSet<Wrestler>()
+            : target.Field.Where(e => e.IsSurprise).Select(e => e.Wrestler)
+                .Concat(target.Moments
+                    .Where(m => m.Kind == RumbleMomentKind.SurpriseReturn)
+                    .SelectMany(m => m.Cast))
+                .ToHashSet();
+
+    private RumbleDraw Draw => new()
+    {
+        Rumble      = target,
+        RumbleId    = target?.Id ?? "",
+        RumbleLabel = targetShow is null ? target?.Name ?? "the Rumble"
+                                         : $"{target!.Name} at {targetShow.Name}",
+        Cast        = cast.ToList(),
+        Host        = host,
+        Rigged      = rigged.ToList()
+    };
+
+    private int Runtime => Draw.DurationMinutes;
+    private List<string> Blockers => target is null ? new List<string>() : Draw.Validate();
+
+    private Task Confirm() => OnDone.InvokeAsync(Draw);
+
+    private void Pick(Candidate candidate)
+    {
+        if (target == candidate.Rumble) return;
+        target = candidate.Rumble;
+        targetShow = candidate.Show;
+        cast.Clear();
+        rigged.Clear();
+    }
+
+    private void Toggle(Wrestler w)
+    {
+        if (cast.Remove(w)) { rigged.Remove(w); return; }
+        cast.Add(w);
+    }
+
+    private void ToggleRig(Wrestler w)
+    {
+        if (!rigged.Remove(w)) rigged.Add(w);
+    }
+
+    private void SetHost(Wrestler w)
+    {
+        host = w;
+        picking = false;
+    }
+}

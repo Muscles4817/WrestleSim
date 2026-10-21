@@ -335,11 +335,14 @@ namespace WrestlingSim.Tests
         }
 
         [Fact]
-        public void UnevenSides_AreRejectedUntilTheEngineModelsNumbers()
+        public void UnevenSides_AreAHandicapMatchNow()
         {
-            // Not a rule about taste. The engine has no numbers term at all — a 1v2 grades
-            // identically to a 1v1 — so a handicap match would be graded as something it
-            // is not. The exit condition is the mechanic, not a policy change.
+            // This test used to assert the opposite, and was right to: the engine had no
+            // numbers term, so a 1v2 graded identically to a 1v1 and a handicap match would
+            // have been graded as something it is not. The rule wrote down its own exit
+            // condition — "a numbers term in the engine, not a decision that handicap is
+            // allowed" — and `MatchEngine.NumbersFatigue` is that term, so the rule is met
+            // rather than waived.
             var plan = new MatchPlanModel
             {
                 SideA = MatchSide.Of(W("Alone")),
@@ -351,7 +354,10 @@ namespace WrestlingSim.Tests
                 ]
             };
 
-            Assert.Contains(plan.Validate(), e => e.Contains("Sides are uneven"));
+            Assert.Empty(plan.Validate());
+            Assert.True(plan.IsHandicap);
+            Assert.Equal(1, plan.Numbers!.Value.Outnumbered.Size);
+            Assert.Equal(2, plan.Numbers!.Value.Larger.Size);
         }
 
         [Fact]

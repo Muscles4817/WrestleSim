@@ -40,6 +40,33 @@ namespace WrestlingSim.Models.MatchPlan
 
         public int Size => Members.Count;
 
+        /// <summary>
+        /// How many people this side is *meant* to hold, while the card is still being
+        /// planned. Null once the side is simply whoever is in it.
+        ///
+        /// This is what lets a card carry a match nobody has cast yet. A booker plans the
+        /// shape of a show first — five matches and four segments, in an order — and fills it
+        /// in afterwards, which is both how bookers work and the only way to see the shape of
+        /// a night before it is finished. Before this, a match had to be built to completion
+        /// the moment it was added, so you could not discover you wanted five of them until
+        /// you had finished the first.
+        ///
+        /// Nullable rather than defaulted to one, because every side built by the engine, the
+        /// tests and the old builder is "as many as are in it" — and a default of one would
+        /// have declared every tag team on every existing card to be half-empty.
+        /// </summary>
+        public int? Intended { get; set; }
+
+        /// <summary>
+        /// Whether this side has the people it is waiting for. A side with no intended size
+        /// is complete as soon as somebody is on it.
+        /// </summary>
+        public bool IsComplete =>
+            Intended is { } wanted ? Members.Count >= wanted && wanted > 0 : Members.Count > 0;
+
+        /// <summary>Empty places left on this side, for the card to draw.</summary>
+        public int Vacancies => Math.Max(0, (Intended ?? Members.Count) - Members.Count);
+
         /// <summary>True once there is someone on the apron to tag.</summary>
         public bool IsTag => Members.Count > 1;
 

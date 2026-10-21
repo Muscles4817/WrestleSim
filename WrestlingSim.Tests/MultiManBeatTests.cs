@@ -294,9 +294,13 @@ namespace WrestlingSim.Tests
             ], FeudIntensity.Nuclear));
 
             var beat = r.BeatResults.Single(b => b.BeatType == BeatType.SpiteBreak);
-            output.WriteLine($"  {beat.Commentary.FirstOrDefault()}");
+            output.WriteLine($"  target {beat.Target?.RingName}: {beat.Commentary.FirstOrDefault()}");
 
-            Assert.Contains("C", beat.Commentary.First());
+            // The resolved target. This was `Assert.Contains("C", ...)` — a one-character
+            // substring, which any sentence containing a capital C satisfies, including
+            // every sentence naming A or B in a match called a three-way. It asserted
+            // approximately nothing.
+            Assert.Equal("C", beat.Target?.RingName);
             Assert.False(beat.FeudalResonanceActivated,
                 "A and C have no story; aiming the beat at C must not cash in A and B's.");
         }

@@ -25,7 +25,8 @@ public enum Screen
     Exhibition,
     Match,
     Segment,
-    Show
+    Show,
+    Rumble
 }
 
 public enum AppMode { Landing, Career, Exhibition }
@@ -107,6 +108,38 @@ public class GameState
     public int ActiveFeudCount => FeudBook.All.Count;
     public IEnumerable<Wrestler> RosterByOverness => Roster.OrderByDescending(w => w.Overness);
 
+    // ── What the booking suggestions need ────────────────────────────────────
+    //
+    // Both of these were private to RosterPicker, which meant the segment builder could not
+    // rank its cast the way the match builder ranks a corner without copying them. They are
+    // questions about the career rather than about a component, so they live here and there
+    // is one of each.
+
+    /// <summary>Whoever this wrestler has a standing tag team with, or null.</summary>
+    public Wrestler? StandingPartnerOf(Wrestler w) =>
+        Career?.Teams.FirstOrDefault(t => t.IsActive && t.Contains(w))
+              ?.Members.FirstOrDefault(m => m != w);
+
+    private HashSet<Wrestler>? _lastCardCast;
+
+    /// <summary>
+    /// Who was on the most recent completed card.
+    ///
+    /// Cached, because the picker re-ranks the whole roster on every keystroke and this walks
+    /// a show's card to answer. <see cref="Notify"/> drops the cache, which is the one place
+    /// anything in the career changes.
+    /// </summary>
+    public IReadOnlySet<Wrestler> RecentlyBooked =>
+        _lastCardCast ??= Career is { } career
+            ? career.Completed
+                    .OrderByDescending(s => s.Date)
+                    .Take(1)
+                    .SelectMany(s => s.Card)
+                    .OfType<BookedMatch>()
+                    .SelectMany(m => m.Plan.AllParticipants)
+                    .ToHashSet()
+            : [];
+
     // ── Brands ───────────────────────────────────────────────────────────────
 
     /// <summary>The split, or an inert one outside a career so screens can read it safely.</summary>
@@ -185,6 +218,15 @@ public class GameState
             Roster = DataLoaders.LoadEmbeddedWrestlers()
         };
 
+        // Not a roster of razor-sharp wrestlers. Everybody opens where a weekly schedule
+        // would have settled them, which is what they have been doing — a spread from the low
+        // sixties to the high eighties, nobody rusty and nobody finished. See
+        // RingCondition.OpeningSharpness for why a roster at the ceiling makes the road
+        // worthless in the booker's first months.
+        foreach (var wrestler in career.Roster)
+            wrestler.Sharpness = RingCondition.OpeningSharpness(RingCondition.SelfMaintenance(
+                wrestler.Mental?.Psychology ?? 70, wrestler.Mental?.RingIQ ?? 70));
+
         career.ShowDefinitions.AddRange(shows ?? DefaultSlate(promotion));
         career.MaterialiseSchedule();
 
@@ -221,6 +263,18 @@ public class GameState
                 Type = ShowType.Television,
                 Recurrence = RecurrenceKind.Weekly,
                 Day = DayOfWeek.Monday
+            });
+
+            // And a road date, because a promotion with television still tours — and because
+            // without one the house show loop is a feature nobody would ever find. The
+            // sharpness meter says most of a roster needs more than one match a week; this is
+            // the date those matches happen on. A booker who does not want it deletes it.
+            slate.Add(new ShowDefinition
+            {
+                Name = $"{promotion.Name} Live",
+                Type = ShowType.HouseShow,
+                Recurrence = RecurrenceKind.Weekly,
+                Day = DayOfWeek.Saturday
             });
         }
         else
@@ -446,7 +500,13 @@ public class GameState
     /// </summary>
     public async Task RunShowAsync(ScheduledShow show)
     {
-        if (Career == null || show.HasRun || show.Card.Count == 0) return;
+        if (Career == null || show.HasRun) return;
+
+        // Not just "is there anything on it". A card can hold a match nobody has cast, and
+        // running one would take a side with nobody on it to the bell.
+        if (!show.IsRunnable) return;
+
+
 
         // The brand context is what charges the night's crossovers to the split. A
         // company-wide date passes a null home brand, which is how the inter-brand
@@ -455,8 +515,38 @@ public class GameState
             ? new BrandContext(Career.Brands, Career.BrandOfShow(show))
             : null;
 
-        var result = new ShowSimulator(Career.FeudBook, titles: Career.Titles, brands: brands)
-            .Simulate(show.ToShow());
+        // The card, when there is one. A date can be a run of towns and nothing else, which is
+        // the ordinary untelevised week.
+        var result = show.Card.Count > 0
+            ? new ShowSimulator(Career.FeudBook, titles: Career.Titles, brands: brands,
+                                stipulations: Career.Stipulations,
+                                tier: Career.Promotion.Tier)
+                .Simulate(show.ToShow())
+            : new ShowResult { BudgetMinutes = show.RuntimeMinutes };
+
+        // And the road, when anybody is on it. Both, on the same date, because they are
+        // different people doing different things: the card is the night you booked and the
+        // run is the rest of the roster out in the towns.
+        //
+        // Anybody on the card works the run a town short. Nobody is in two places on the
+        // same night, but a week is not one night — the card is the Monday and the towns are
+        // the rest of it. Running them for the whole card *and* the whole run billed one
+        // body twice, which is what the first version did; taking them off the run entirely,
+        // which is what the second did, made television and the road mutually exclusive and
+        // closed the one route back to match fitness the sharpness meter describes.
+        if (show.Loop is { IsBookable: true } loop)
+        {
+            var onTheCard = show.Card.SelectMany(i => i.Wrestlers).ToHashSet();
+            var road = new LoopSimulator(tier: Career.Promotion.Tier)
+                .Run(loop, show.Date, onTheCard);
+
+            if (road.Workers.Count > 0)
+            {
+                result.Loop = road;
+                result.Injuries.AddRange(road.Injuries);
+            }
+        }
+
         show.Result = result;
 
         if (Career.CurrentDate < show.Date) Career.CurrentDate = show.Date;
@@ -642,5 +732,10 @@ public class GameState
         Notify();
     }
 
-    public void Notify() => Changed?.Invoke();
+    public void Notify()
+    {
+        // Anything at all may have moved, so the derived caches go.
+        _lastCardCast = null;
+        Changed?.Invoke();
+    }
 }

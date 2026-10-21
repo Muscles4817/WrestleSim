@@ -244,6 +244,93 @@ namespace WrestlingSim.Engine
         /// </summary>
         public const double ConclusivenessPerExtraSide = 0.65;
 
+        /// <summary>
+        /// What a battle royal does to everybody's standing.
+        ///
+        /// **Not <see cref="ForMatch"/> with more losers**, and the difference is the reason
+        /// bookers reach for this format at all: nobody in it was beaten. Twenty-nine people
+        /// went over the top rope in a scramble, which costs them almost nothing, and one
+        /// person walks out having gone through the entire roster. It is the cheapest
+        /// elevation in wrestling — a way to make somebody without spending anybody.
+        ///
+        /// So the three parts are asymmetric on purpose:
+        ///
+        ///   • **The winner** takes a rub scaled by the *field* rather than by one opponent.
+        ///     Beating thirty is a bigger statement than beating one, but with heavy
+        ///     diminishing returns — the difference between twenty and thirty in the ring is
+        ///     not worth what the difference between one and ten is, because past a point
+        ///     nobody is counting.
+        ///   • **Everybody else** takes a loss small enough to be nearly free. Going out in
+        ///     a battle royal is not being pinned and the audience has never treated it as
+        ///     one. Making it cost real standing would break the format's whole use.
+        ///   • **The iron man**, if somebody genuinely went the distance, gains for the run
+        ///     without winning. That is the format's second rub and it is a real one — the
+        ///     wrestler who came out at two and was still there at the end is made by the
+        ///     match whoever won it.
+        /// </summary>
+        public static MatchStatusOutcome ForRumble(
+            Wrestler winner, IReadOnlyList<Wrestler> field, double starRating,
+            Wrestler? ironMan = null, double ironManShare = 0.0)
+        {
+            var beaten = field.Where(w => w != winner).ToList();
+
+            // What the room was worth. The average rather than the sum, so a field padded
+            // with enhancement talent does not out-rub a small field of main-eventers —
+            // which is the correct reading: thirty nobodies is not a bigger win than five
+            // stars, and a booker who thinks otherwise is counting bodies.
+            double fieldStanding = beaten.Count == 0
+                ? 0.0
+                : beaten.Average(w => w.EffectiveOverness) / 100.0;
+
+            // Diminishing in the size of the field. Ten is most of the way to thirty.
+            double scale = Math.Log(1 + beaten.Count) / Math.Log(31);
+
+            double quality = 0.6 + Math.Clamp(starRating, 0, 5) / 5.0 * 0.8;
+
+            double winnerGain = Math.Clamp(fieldStanding * scale * quality * RumbleWinRub, 0, 6.0);
+
+            var winnerChange = new StatusChange(
+                winner, winnerGain, winnerGain * 6.0,
+                $"Won a {field.Count}-wrestler battle royal");
+
+            // Nearly free, and flat: nobody was beaten in particular, so nobody in
+            // particular carries it.
+            var others = beaten
+                .Select(w => new StatusChange(
+                    w, -RumbleLossCost, -RumbleLossCost * 4.0, "Eliminated in a battle royal"))
+                .ToList();
+
+            // The run, if there was one worth the name.
+            if (ironMan is not null && ironMan != winner && ironManShare >= IronManThreshold)
+            {
+                double gain = Math.Clamp(ironManShare * fieldStanding * RumbleIronManRub, 0, 3.0);
+                others = others
+                    .Select(c => c.Wrestler == ironMan
+                        ? new StatusChange(ironMan, gain, gain * 6.0,
+                            "Went the distance in a battle royal")
+                        : c)
+                    .ToList();
+            }
+
+            return new MatchStatusOutcome(winnerChange, others[0], others);
+        }
+
+        /// <summary>What winning a full field is worth at the top of the scale.</summary>
+        public const double RumbleWinRub = 5.0;
+
+        /// <summary>
+        /// What going out costs. Deliberately tiny — a tenth of what losing a singles match
+        /// can cost — because that is the whole reason a booker puts twenty-nine people in
+        /// one match and only protects one of them.
+        /// </summary>
+        public const double RumbleLossCost = 0.12;
+
+        /// <summary>What a genuine iron-man run is worth to somebody who did not win.</summary>
+        public const double RumbleIronManRub = 2.4;
+
+        /// <summary>How much of the field you have to outlast before the run counts as one.</summary>
+        public const double IronManThreshold = 0.6;
+
         public static MatchStatusOutcome ForMatch(
             Wrestler winner, Wrestler loser, double starRating, FinishWeight finish,
             double familiarity = 1.0,
@@ -347,16 +434,29 @@ namespace WrestlingSim.Engine
         /// slips once someone has been off screen long enough for the audience to start
         /// forgetting (doc 17 §3.9).
         /// </summary>
-        public static void ApplyDailyDecay(Wrestler wrestler, DateOnly today)
+        /// <param name="since">
+        /// When the clock started for this wrestler — the career's start date, or the day
+        /// they were signed. Absence is measured from their last appearance **or from here
+        /// if they have never had one**.
+        ///
+        /// That fallback is the whole fix. `LastAppearance` is written only by
+        /// <c>ShowSimulator</c>, so it is null for every name on the roster on day one and
+        /// stays null forever for anybody the booker never uses — and the old reading took
+        /// null to mean "absent zero days". A wrestler who had never been on television was
+        /// therefore the one person in the game immune to being forgotten, which is the
+        /// exact inverse of doc 17 §3.9. Measured over six months: somebody booked once and
+        /// then dropped went 70.00 → 61.92, and somebody never booked at all stayed at
+        /// 70.00 to the decimal.
+        /// </param>
+        public static void ApplyDailyDecay(Wrestler wrestler, DateOnly today, DateOnly since)
         {
             wrestler.Momentum *= MomentumDailyRetention;
 
             // Stop it creeping around zero forever.
             if (Math.Abs(wrestler.Momentum) < 0.05) wrestler.Momentum = 0;
 
-            int absent = wrestler.LastAppearance is { } last
-                ? today.DayNumber - last.DayNumber
-                : 0;
+            var lastSeen = wrestler.LastAppearance ?? since;
+            int absent   = today.DayNumber - lastSeen.DayNumber;
 
             if (absent <= AbsenceGraceDays) return;
 

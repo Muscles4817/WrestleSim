@@ -43,8 +43,10 @@ namespace WrestlingSim.UI
             if (booked.Plan.IsBlowOff && booked.Plan.Feud is { } declared)
             {
                 var finish = booked.Plan.Beats.LastOrDefault(x => x.IsFinish);
+                // Doc 20 §6.1: a blow-off has to resolve, and whether a given finish does
+                // depends on the rules it happened under — see StipulationRules.SettlesAFeud.
                 bool settled = finish is null
-                            || HeatEconomy.WeightOf(finish.Type) != FinishWeight.Protected;
+                            || StipulationRules.SettlesAFeud(booked.Plan.Stipulation, finish.Type);
 
                 if (settled)
                 {

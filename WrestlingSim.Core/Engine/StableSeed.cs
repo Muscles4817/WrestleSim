@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace WrestlingSim.Tests
+namespace WrestlingSim.Engine
 {
     /// <summary>
     /// A seed that is the same on every run.
@@ -21,6 +21,11 @@ namespace WrestlingSim.Tests
     ///
     /// FNV-1a over the invariant string form of each part: stable across runs, processes and
     /// machines, and good enough for spreading seeds.
+    ///
+    /// It lives in Core rather than in the test project because the generated match sheet
+    /// needs the same property for the same reason. A brief is seeded from its own contents
+    /// so that saving a plan and reloading it regenerates the same match; with a per-process
+    /// hash the beats would change every time the app restarted.
     /// </summary>
     public static class StableSeed
     {

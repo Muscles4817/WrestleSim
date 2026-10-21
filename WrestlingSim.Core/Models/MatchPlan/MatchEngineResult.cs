@@ -1,3 +1,5 @@
+using WrestlingSim.Enums;
+
 namespace WrestlingSim.Models.MatchPlan
 {
     public class MatchEngineResult
@@ -42,6 +44,45 @@ namespace WrestlingSim.Models.MatchPlan
         /// </summary>
         public List<GrudgeMoment> GrudgeMoments { get; init; } = new();
 
+        /// <summary>
+        /// Who went out, in the order they went out, last one first — so reading it top to
+        /// bottom is the story working backwards from the win.
+        ///
+        /// Empty for a match with no eliminations in it. The order rather than the set,
+        /// because doc 18 §2.5 puts the drama of an elimination match in the order, and a
+        /// result that only said who won would be reporting the least interesting fact
+        /// about it.
+        /// </summary>
+        public List<EliminatedSide> Eliminations { get; init; } = new();
+
+        /// <summary>
+        /// How well the falls were spaced, 0–1. 1.0 is evenly spread or better, 0.0 is falls
+        /// with nothing between them. See <see cref="Engine.MatchEngine.EliminationPacing"/>.
+        /// Always 1.0 when nobody was eliminated.
+        /// </summary>
+        public double EliminationPacing { get; init; } = 1.0;
+
+        /// <summary>
+        /// Who was still standing when it ended, on the winning side.
+        ///
+        /// The Survivor Series payoff, and the reason that match has a name of its own: the
+        /// story is not that a team won, it is *who was left*. A sole survivor is a made
+        /// wrestler; four survivors is a squash of the other team. Empty outside an
+        /// elimination match of teams.
+        /// </summary>
+        public List<Wrestler> Survivors { get; init; } = new();
+
+        /// <summary>
+        /// In a handicap match, how much of it the outnumbered side spent fighting rather
+        /// than being beaten up, 0–1. Zero in every other match.
+        ///
+        /// The measure the format is actually graded on, because doc 18 §2.5 says the
+        /// statement is about the lone wrestler's toughness rather than the outcome — so a
+        /// valiant loss reads well here and a squash reads badly, which is the right way
+        /// round and not something the winner can tell you.
+        /// </summary>
+        public double Defiance { get; init; }
+
         // Accumulated scores (raw, pre-normalisation)
         public double TechnicalScore     { get; init; }
         public double StorytellingScore  { get; init; }
@@ -72,6 +113,37 @@ namespace WrestlingSim.Models.MatchPlan
         /// deserved — docs/wrestling-reference/20-storylines-and-feuds.md §9.1.
         /// </summary>
         public double Familiarity { get; init; } = 1.0;
+
+        /// <summary>
+        /// Crowd energy the gimmick put in the room, negative when the story had not earned
+        /// it. Recorded rather than only applied, because a rule that can be seen only
+        /// through a whole match's rating is a rule no test can hold — this codebase's
+        /// standing lesson, learned four separate times.
+        /// </summary>
+        public double StipulationStakes { get; init; }
+
+        /// <summary>The gimmick this was worked under.</summary>
+        public Stipulation Stipulation { get; init; } = Stipulation.None;
+
+        /// <summary>
+        /// What the crowd came for, derived rather than declared, or null when the plan was
+        /// built by hand and so promised nothing.
+        /// </summary>
+        public Engine.Expectation? Promised { get; init; }
+
+        /// <summary>
+        /// What serving or defying that promise was worth, in final-score points. Positive
+        /// for the match they came for, negative for one they did not — discounted by
+        /// whether these two could carry it.
+        /// </summary>
+        public double ExpectationNudge { get; init; }
+
+        /// <summary>
+        /// Anybody the match hurt, reported rather than applied. The show layer writes
+        /// these down; the engine only says what happened, which is why a match can be
+        /// simulated twice without maiming somebody twice.
+        /// </summary>
+        public IReadOnlyList<Engine.MatchEngine.InjuryRoll> Injuries { get; init; } = [];
 
         /// <summary>A plain-English reading of <see cref="Familiarity"/>, or null when fresh.</summary>
         public string? StalenessNote => Familiarity switch
@@ -174,6 +246,12 @@ namespace WrestlingSim.Models.MatchPlan
         public double VarietyNudge   { get; init; }
         public double CoherenceNudge { get; init; }
 
+        /// <summary>What the spacing of the eliminations was worth. Zero in every other match.</summary>
+        public double PacingNudge    { get; init; }
+
+        /// <summary>What the lone wrestler's resistance was worth. Zero outside a handicap match.</summary>
+        public double DefianceNudge  { get; init; }
+
         /// <summary>What investment was worth, in points of the final score.</summary>
         public double InvestmentPoints => Crowd - CrowdBeforeInvestment;
 
@@ -186,10 +264,36 @@ namespace WrestlingSim.Models.MatchPlan
                 ("Technical",    Technical),
                 ("Finish",       FinishNudge),
                 ("Variety",      VarietyNudge),
-                ("Match type",   CoherenceNudge)
+                ("Match type",   CoherenceNudge),
+                ("Fall spacing", PacingNudge),
+                ("Defiance",     DefianceNudge)
             }
             .Where(x => Math.Abs(x.Item2) > 0.005)
             .OrderByDescending(x => Math.Abs(x.Item2));
     }
+
+    /// <summary>One wrestler's exit from an elimination match, and who did it.</summary>
+    public class EliminatedSide
+    {
+        /// <summary>The one who went out.</summary>
+        public required Wrestler Wrestler { get; init; }
+
+        /// <summary>Who scored the fall.</summary>
+        public required Wrestler By { get; init; }
+
+        /// <summary>Which elimination this was, 1-based. The order is the story.</summary>
+        public int Order { get; init; }
+
+        /// <summary>
+        /// How many wrestlers were still in the match after this one went out.
+        ///
+        /// People, not sides. Sides was right for a triple threat, where a side is one
+        /// wrestler — and useless the moment teams arrived: in a Survivor Series both sides
+        /// are in until the last fall, so the eliminations panel counted "2 left" six times
+        /// running and told the reader nothing.
+        /// </summary>
+        public int Remaining { get; init; }
+    }
+
 
 }

@@ -9,8 +9,30 @@ namespace WrestlingSim.Engine
     {
         private readonly Random _rand;
 
+        /// <summary>
+        /// A second stream, for injury rolls only.
+        ///
+        /// **Injuries must not perturb the match.** They are drawn per wrestler per beat,
+        /// so taking them off <see cref="_rand"/> would shift every subsequent draw the
+        /// narrative makes and silently re-roll every seeded expectation in the game — the
+        /// measured medians this repo calibrates against included. The physical cost of a
+        /// match and the story it tells are independent questions; they get independent
+        /// dice.
+        /// </summary>
+        private readonly Random _injuryRand;
+
         /// <summary>Grudge moments this execution produced; see <see cref="GrudgeMoment"/>.</summary>
         private readonly List<GrudgeMoment> _grudges = new();
+
+        // Collected here rather than in MatchEngineState for the same reason as the grudges:
+        // the state deals in side indices, and the result has to name people.
+        private readonly List<EliminatedSide> _eliminations = new();
+
+        // Doc 18 §2.5 grades a handicap match on what the lone man survived rather than on
+        // who won, so the count has to be kept as the match runs — it cannot be read back
+        // off the result.
+        private int _handicapBeats;
+        private int _handicapResistance;
 
         // Scale constants for the saturating normalisation of each raw accumulator.
         // A raw score equal to the scale reads as ~0.63 of the component; twice the
@@ -222,6 +244,83 @@ namespace WrestlingSim.Engine
             };
         }
 
+        /// <summary>
+        /// What a near fall keeps when a third party is upright and free to break it.
+        ///
+        /// `multiMan` here means "more than two sides *still in*", not "the plan has more
+        /// than two sides" — see <see cref="Ctx.MultiManNow"/>. An elimination match that is
+        /// down to two has nobody left to break a cover, so its near falls are worth full
+        /// price, and that is the entire narrative payoff of the format: the crowd starts
+        /// believing counts again the moment the field is thin enough.
+        /// </summary>
+        // ── Handicap (doc 18 §2.5) ───────────────────────────────────────────
+        //
+        // "Two or more against one. Almost never a contest; it is a *statement*, and the
+        // statement is usually about the lone man's toughness rather than the outcome."
+        //
+        // Two claims, and the second one is the awkward one: a format whose point is not the
+        // result cannot be graded by an engine that grades results. So there are two
+        // mechanisms here rather than one — what the numbers actually do to the man carrying
+        // them, and what he earns for carrying them.
+
+        /// <summary>
+        /// What being outnumbered costs the side carrying it, as a multiplier on its output.
+        ///
+        /// Not a flat penalty for being outnumbered, because that is a fudge factor with a
+        /// story attached rather than a model. The real thing two-on-one does is deny you the
+        /// rest: `FadeFactor` already says a side wears down as the match goes long, and its
+        /// comment already argues the exception — "tagging out is literally how a team
+        /// resists fatigue, so a fresh partner should hold the match up late". A lone man has
+        /// nobody to tag. He works every beat of the match while the pair works half each.
+        ///
+        /// So the numbers show up as fatigue arriving faster, in proportion to how much of
+        /// the work you are doing that they are not: a man alone against two carries twice
+        /// the wear, against three, three times. It compounds over the match rather than
+        /// applying flat, which is why a short handicap match is a beating and a long one is
+        /// a slaughter — and why the way to book one well is to keep it short.
+        ///
+        /// Exactly 1.0 whenever the sides are even, which is every match that existed before
+        /// this. A term that is zero in the general case can be added without re-grading the
+        /// whole game.
+        /// </summary>
+        public static double NumbersFatigue(int mySize, int theirSize, int beatsBeyondFresh,
+                                            double conditioning)
+        {
+            if (mySize <= 0 || theirSize <= mySize || beatsBeyondFresh <= 0) return 1.0;
+
+            // The same per-beat wear FadeFactor uses, so the two are one rule at different
+            // strengths rather than two rules that happen to look alike.
+            double perBeat = Math.Clamp(0.855 + 0.115 * conditioning, 0.82, 0.99);
+
+            // Against twice your number you do twice the work, so you carry the extra once
+            // over; against three times, twice over.
+            double extraShare = (double)theirSize / mySize - 1.0;
+
+            return Math.Pow(perBeat, beatsBeyondFresh * extraShare);
+        }
+
+        /// <summary>
+        /// How much of a handicap match the outnumbered side spent fighting rather than being
+        /// beaten up, 0–1.
+        ///
+        /// This is the "statement" half, and it is what makes the format gradeable at all.
+        /// Doc 18 says the point is the lone man's toughness *rather than the outcome*, which
+        /// means the result cannot be the measure — a valiant loss is the format working and
+        /// a five-minute squash is the format failing, and both are losses.
+        ///
+        /// So what is counted is resistance: beats the outnumbered side worked, or survived
+        /// as a near fall it kicked out of, against every beat it was in. Nought is a squash
+        /// — he never had a moment — and that is a bad handicap match however cleanly it was
+        /// worked. It says nothing, which is the one thing this format cannot afford to do.
+        ///
+        /// Not the same question as winning, and deliberately so: a lone man who mounts three
+        /// comebacks and still loses scores well here, and one who wins off a single roll-up
+        /// having done nothing else scores badly. That is the right way round.
+        /// </summary>
+        public static double Defiance(int beatsWorkedOrSurvived, int beatsInTheMatch) =>
+            beatsInTheMatch <= 0 ? 0.0
+                                 : Math.Clamp((double)beatsWorkedOrSurvived / beatsInTheMatch, 0, 1);
+
         public static double MultiManNearFallFactor(bool multiMan, bool somebodyDisposed) =>
             multiMan && !somebodyDisposed ? CrowdedOutNearFall : 1.0;
 
@@ -247,6 +346,11 @@ namespace WrestlingSim.Engine
         public MatchEngine(int? seed = null)
         {
             _rand = seed.HasValue ? new Random(seed.Value) : Random.Shared;
+
+            // Derived from the same seed so a seeded match is still reproducible end to
+            // end, and offset so the two streams are not the same numbers in the same order.
+            _injuryRand = seed.HasValue ? new Random(unchecked(seed.Value * 31 + 7))
+                                        : Random.Shared;
         }
 
         // ── Per-match context ────────────────────────────────────────────────
@@ -269,13 +373,46 @@ namespace WrestlingSim.Engine
             public double Familiarity { get; init; } = 1.0;
 
             /// <summary>
-            /// The most connected performer in the match — whoever the room came for. Used
-            /// only by <see cref="AttentionShare"/>, and only when there are more than two
-            /// sides.
+            /// The night this is happening, or null when the caller did not say. Read by
+            /// the injury roll for <see cref="AgeCurve"/>; the profiles already had it
+            /// applied when they were built.
             /// </summary>
-            public double TopConnection => Profiles.Count == 0
-                ? 0.0
-                : Profiles.Values.Max(p => p.Connection);
+            public DateOnly? Date { get; init; }
+
+            /// <summary>
+            /// Crowd energy the gimmick puts in the room — negative when the story did not
+            /// earn it. See <see cref="StipulationRules.StakesBonus"/>.
+            /// </summary>
+            public double StipulationStakes { get; init; }
+
+            /// <summary>
+            /// The most connected performer *still in the match* — whoever the room came
+            /// for. Used only by <see cref="AttentionShare"/>, and only while more than two
+            /// sides are left.
+            ///
+            /// Still in, because the alternative measures every remaining sequence against
+            /// somebody who has gone to the back: eliminate the biggest name first and the
+            /// survivors work the rest of the match at a permanent discount, in a match that
+            /// is now entirely theirs.
+            ///
+            /// It shows up in the crowd *reaction* vector, not in CrowdEnergyDelta — this
+            /// feeds `RecordReaction`, which runs after the energy is computed. Over
+            /// twenty-five seeds, with the field and the beats held identical and only the
+            /// identity of the eliminated wrestler changed, it is worth 0.32 investment
+            /// against 0.22.
+            /// </summary>
+            public double TopConnection
+            {
+                get
+                {
+                    double top = 0.0;
+                    foreach (var side in Remaining)
+                        foreach (var w in side.Members)
+                            if (Profiles.TryGetValue(w, out var p) && p.Connection > top)
+                                top = p.Connection;
+                    return top;
+                }
+            }
 
             /// <summary>Whoever is legal for side A right now.</summary>
             public Wrestler LegalA => Plan.SideA.Members[State.LegalA];
@@ -359,23 +496,104 @@ namespace WrestlingSim.Engine
             /// </summary>
             public MatchSide OtherSide(MatchSide? mine)
             {
+                // A booked target is honoured — unless it has been eliminated, which the
+                // booking cannot do and the plan is refused for, so this only catches a plan
+                // built in code. An eliminated side is *gone*: naming it is not a wrong
+                // emphasis, it is a wrestler who left through the curtain two beats ago.
                 if (CurrentBeat is { } beat
                     && Models.MatchPlan.MatchPlan.SideIndex(beat.Against ?? BeatControl.Even) is { } i
-                    && i < Plan.Sides.Count && Plan.Sides[i] != mine)
+                    && i < Plan.Sides.Count && Plan.Sides[i] != mine
+                    && !State.IsEliminated(i))
                     return Plan.Sides[i];
 
-                var upright = Plan.Sides
-                    .Where(side => side != mine)
+                var candidates = Remaining.Where(side => side != mine).ToList();
+
+                var upright = candidates
                     .Where(side => !State.SomebodyIsDisposed
                                    || Plan.Sides.IndexOf(side) != State.DisposedSide)
                     .ToList();
 
+                // Disposal is a window and elimination is not, so the two filters fall back
+                // differently: a beat with nobody upright left to aim at settles for
+                // somebody who is down, and a beat with nobody *remaining* has run out of
+                // match. The last fallback is unreachable from a validated plan and exists
+                // so a bad one gets a wrong name rather than an exception.
+                var pool = upright.Count > 0 ? upright
+                         : candidates.Count > 0 ? candidates
+                         : Plan.Sides.Where(side => side != mine).ToList();
+
                 // Math.Max because BeatIndex is -1 before RegisterBeat has run, and C# gives
                 // -1 % 2 == -1 rather than 1. Callers are meant to be inside a registered
                 // beat; an index out of range is a crash, which is worse than a wrong name.
-                return upright.Count > 0
-                    ? upright[Math.Max(0, State.BeatIndex) % upright.Count]
-                    : Plan.Sides.FirstOrDefault(side => side != mine) ?? Plan.SideB;
+                return pool.Count > 0
+                    ? pool[Math.Max(0, State.BeatIndex) % pool.Count]
+                    : Plan.SideB;
+            }
+
+            /// <summary>
+            /// The sides still in the match, in side order.
+            ///
+            /// One notion of "still in", because this filter has now been wanted in four
+            /// places and each independent copy of a side predicate in this engine has been
+            /// wrong at least once.
+            /// </summary>
+            public IReadOnlyList<MatchSide> Remaining =>
+                Plan.Sides.Where((_, i) => !State.IsEliminated(i)).ToList();
+
+            /// <summary>
+            /// How many wrestlers are still in the match, across every side.
+            ///
+            /// Distinct from <see cref="Remaining"/>, which counts sides — and the two only
+            /// diverge once a side can be more than one person, which is exactly when the
+            /// difference starts to matter.
+            /// </summary>
+            public int PeopleLeft =>
+                Enumerable.Range(0, Plan.Sides.Count).Sum(State.SurvivorsOf);
+
+            /// <summary>
+            /// Whether this is a multi-man match *right now* — more than two sides still in.
+            ///
+            /// Distinct from <see cref="Models.MatchPlan.MatchPlan.IsMultiMan"/>, which is a
+            /// fact about the plan and stays true for the whole of an elimination match. The
+            /// two rules that ask "is the room split" and "can this cover be broken" are
+            /// asking about the ring, and a three-way that is down to two is not split and
+            /// has nobody left to break anything.
+            ///
+            /// The *structural* uses stay on the plan: `Opponent` and `LegalDefault` take
+            /// their two-sided shortcuts through `SideA`/`SideB` by index, which would name
+            /// an eliminated wrestler the moment the survivors are sides A and C.
+            /// </summary>
+            public bool MultiManNow => Remaining.Count > 2;
+
+            /// <summary>
+            /// What the numbers are costing the side this wrestler is on, **right now**.
+            ///
+            /// Counted from who is still in rather than from how the sides were booked,
+            /// which is the same correction elimination needed twice already — and here it
+            /// is not a fix but the point. A Survivor Series match that has gone 4-on-2 *is*
+            /// a handicap match, arrived at rather than booked, and the wrestlers left
+            /// carrying it should feel exactly what a booked handicap does. One rule serves
+            /// both because being outnumbered is being outnumbered.
+            ///
+            /// 1.0 while the sides are level, so it stays inert in every even match. This
+            /// wrestler's own conditioning is what is read, not the pair average
+            /// <see cref="FadeFactor"/> uses — the whole point is that he is the one doing
+            /// the work, so it is his gas tank the match is emptying.
+            /// </summary>
+            public double NumbersFatigueFor(Wrestler w)
+            {
+                if (Plan.Sides.Count != 2) return 1.0;
+
+                int mine = Plan.Sides.IndexOf(SideOf(w));
+                if (mine < 0) return 1.0;
+
+                int mySurvivors    = State.SurvivorsOf(mine);
+                int theirSurvivors = State.SurvivorsOf(1 - mine);
+
+                return MatchEngine.NumbersFatigue(
+                    mySurvivors, theirSurvivors,
+                    Math.Max(0, State.BeatIndex - 4),
+                    For(w).Conditioning);
             }
 
             /// <summary>
@@ -394,13 +612,16 @@ namespace WrestlingSim.Engine
             {
                 get
                 {
-                    if (!Plan.IsMultiMan || !State.SomebodyIsDisposed) return LegalA;
+                    if (!Plan.IsMultiMan) return LegalA;
+                    if (!State.SomebodyIsDisposed && !State.AnybodyEliminated) return LegalA;
 
-                    var upright = Plan.Sides
+                    var upright = Remaining
                         .Where(side => Plan.Sides.IndexOf(side) != State.DisposedSide)
                         .ToList();
 
-                    return LegalOf(upright.Count > 0 ? upright[0] : Plan.SideA);
+                    return LegalOf(upright.Count > 0 ? upright[0]
+                                 : Remaining.Count > 0 ? Remaining[0]
+                                 : Plan.SideA);
                 }
             }
 
@@ -424,13 +645,14 @@ namespace WrestlingSim.Engine
             {
                 get
                 {
-                    if (!State.SomebodyIsDisposed) return Plan.Sides.Select(LegalOf).ToList();
+                    var remaining = Remaining;
+                    if (!State.SomebodyIsDisposed) return remaining.Select(LegalOf).ToList();
 
-                    var upright = Plan.Sides
+                    var upright = remaining
                         .Where(side => Plan.Sides.IndexOf(side) != State.DisposedSide)
                         .ToList();
 
-                    return (upright.Count >= 2 ? upright : Plan.Sides).Select(LegalOf).ToList();
+                    return (upright.Count >= 2 ? upright : remaining).Select(LegalOf).ToList();
                 }
             }
 
@@ -593,8 +815,16 @@ namespace WrestlingSim.Engine
         /// the audience on the night, not of the booking. A card written six weeks out
         /// must be graded against how stale the pairing is when it actually goes on, and
         /// a plan the player never runs should not carry a stale reading around with it.
+        ///
+        /// <paramref name="on"/> is the night it happens, and it exists for the same
+        /// reason: how old everybody is on the night is a fact about the world, not about
+        /// the booking. Null means no aging curve, which is the reading this engine gave
+        /// before one existed.
         /// </summary>
-        public MatchEngineResult Execute(MatchPlan plan, double familiarity = 1.0)
+        public MatchEngineResult Execute(MatchPlan plan, double familiarity = 1.0,
+                                         int? daysSinceStipulation = null,
+                                         PromotionTier tier = PromotionTier.Established,
+                                         DateOnly? on = null)
         {
             var errors = plan.Validate();
             if (errors.Any())
@@ -603,31 +833,104 @@ namespace WrestlingSim.Engine
 
             var state = new MatchEngineState();
             state.InitialiseLegal(plan.SideA.StartingIndex, plan.SideB.StartingIndex);
+            state.InitialiseSides(plan.Sides.Select(s => s.Members.Count).ToList());
 
             var ctx = new Ctx
             {
                 Plan        = plan,
                 State       = state,
-                Profiles    = plan.AllParticipants.ToDictionary(w => w, w => new PerformerProfile(w)),
-                Familiarity = Math.Clamp(familiarity, 0.0, 1.5)
+                Profiles    = plan.AllParticipants.ToDictionary(w => w, w => new PerformerProfile(w, on)),
+                Date        = on,
+                Familiarity = Math.Clamp(familiarity, 0.0, 1.5),
+
+                // Computed here rather than passed in as a number, so the whole rule lives
+                // in one pure function and the engine reads it. The caller supplies the one
+                // fact only the world knows: how long since the promotion last ran this.
+                StipulationStakes = StipulationRules.StakesBonus(
+                    plan.Stipulation,
+                    plan.Feud?.Intensity ?? FeudIntensity.None,
+                    daysSinceStipulation)
             };
 
             InitialiseState(ctx);
 
             var beatResults = new List<BeatResult>();
+            var hurt = new List<InjuryRoll>();
 
             foreach (var beat in plan.Beats)
             {
                 var result = ExecuteBeat(beat, ctx);
                 beatResults.Add(result);
 
+                // Rolled per beat rather than once per match, because doc 15 §3.1's most
+                // specific claim is about *when*: "poor conditioning sharply increases
+                // late-match injury risk". A roll at the end could not tell the tenth
+                // minute from the second.
+                RollForInjury(beat, ctx, tier, hurt);
+
                 // Natural energy decay between beats (except after the finish)
                 if (!beat.IsFinish)
                     ctx.State.ApplyDecay();
             }
 
-            return BuildResult(ctx, beatResults);
+            return BuildResult(ctx, beatResults, hurt);
         }
+
+        /// <summary>
+        /// One beat's worth of physical risk, for everybody working it.
+        ///
+        /// **Reported, never applied.** The engine says who got hurt and the show layer
+        /// writes it down — the same split every other consequence in here uses, and the
+        /// reason a match can be simulated twice without maiming somebody twice.
+        ///
+        /// Nothing about the roll reads the rating. An injury is not a penalty for booking
+        /// a bad match; it is the physical cost of having had one.
+        /// </summary>
+        private void RollForInjury(MatchBeat beat, Ctx ctx, PromotionTier tier,
+                                   List<InjuryRoll> hurt)
+        {
+            var legal = ctx.AllLegal;
+            for (int i = 0; i < legal.Count; i++)
+            {
+                var wrestler = legal[i];
+
+                // Somebody already hurt tonight is not rolled again — a match produces at
+                // most one injury per wrestler, and the first one is the story.
+                if (AlreadyHurt(hurt, wrestler)) continue;
+
+                var part = PickBodyPart(wrestler);
+
+                double risk = InjuryRisk.PerBeat(
+                    wrestler, beat.Intensity, ctx.State.BeatIndex,
+                    ctx.For(wrestler).BaseConditioning,
+                    ctx.Opponent(wrestler), tier, part, ctx.Date);
+
+                if (_injuryRand.NextDouble() >= risk) continue;
+
+                var (low, high) = InjuryRisk.WeeksOut(part);
+                hurt.Add(new InjuryRoll(wrestler, part, _injuryRand.Next(low, high + 1)));
+            }
+        }
+
+        private static bool AlreadyHurt(List<InjuryRoll> hurt, Wrestler w)
+        {
+            for (int i = 0; i < hurt.Count; i++)
+                if (hurt[i].Wrestler == w) return true;
+            return false;
+        }
+
+        /// <summary>
+        /// Which injury this wrestler is most likely to pick up.
+        ///
+        /// The weighted draw and its cache moved to <see cref="InjuryRisk.PickPart"/> when the
+        /// house show loop needed the same answer. A second copy of a weighted table is how
+        /// two parts of one engine end up disagreeing about what a powerhouse hurts.
+        /// </summary>
+        private BodyPart PickBodyPart(Wrestler wrestler) =>
+            InjuryRisk.PickPart(wrestler, _injuryRand);
+
+        /// <summary>An injury the match produced, before the show layer writes it down.</summary>
+        public readonly record struct InjuryRoll(Wrestler Wrestler, BodyPart Part, int WeeksOut);
 
         // ── State initialisation ─────────────────────────────────────────────
 
@@ -658,6 +961,13 @@ namespace WrestlingSim.Engine
             // how much of that arrives is exactly the belt's prestige. A devalued title
             // adds almost nothing, which is the whole point of tracking prestige at all.
             double titleBonus = plan.TitleAtStake?.StakesBonus ?? 0;
+
+            // The gimmick, priced. It sits beside the title rather than inside it because
+            // it is the same kind of thing — stakes the crowd brings with them — and it is
+            // the only one of the three that can be *negative*: a cage nobody earned tells
+            // the room the promotion has run out of ideas, which is worse than announcing
+            // nothing at all (doc 20 §6).
+            double stipulationBonus = ctx.StipulationStakes;
 
             // How loud this pairing can ever get. A card full of people the audience has
             // no investment in tops out well short of a main-event reaction, which is what
@@ -695,12 +1005,12 @@ namespace WrestlingSim.Engine
             // can be deader than one they simply do not know.
             double roomForThisPairing =
                 40.0 + pairConnection * 46.0 + (pairCraft - 1.0) * 20.0
-                     - staminaPenalty + titleBonus * 0.45;
+                     - staminaPenalty + titleBonus * 0.45 + stipulationBonus * 0.45;
 
             state.CrowdCeiling = Math.Clamp(roomForThisPairing * ctx.Familiarity, 22, 100);
 
             state.CrowdEnergy = Math.Clamp(
-                (baseEnergy + feudBonus + titleBonus) * ctx.Familiarity,
+                (baseEnergy + feudBonus + titleBonus + stipulationBonus) * ctx.Familiarity,
                 8, Math.Min(90, state.CrowdCeiling));
             state.Advantage    = 0;
             state.CrowdPeakEnergy = state.CrowdEnergy;
@@ -732,17 +1042,46 @@ namespace WrestlingSim.Engine
             double fade = FadeFactor(ctx);
 
             // Wrestler references for this beat — resolved *after* RegisterBeat, because
-            // every handler recomputes `other` from the context, and dispatch reading a
-            // different beat number than its handlers is how the same beat got two answers.
-            // BeatIndex is -1 until RegisterBeat makes it a beat number at all.
+            // `Opponent` reads the beat number and dispatch reading a different one than its
+            // handlers is how the same beat got two answers. BeatIndex is -1 until
+            // RegisterBeat makes it a beat number at all.
+            //
+            // Dispatch used to resolve the opponent here too and hand it to fifteen handlers,
+            // every one of which threw it away and recomputed its own — and had to, because
+            // this value is worked out while `control` may still be null, so on an Even or
+            // Contested beat it was the opponent of a controller that did not exist yet,
+            // falling back to `LegalB`. Right for most beats and quietly wrong for the ones
+            // nobody booked a side for. It is gone; each handler resolves its own after the
+            // `?? LegalDefault` fallback, which is what they all already did.
             ctx.CurrentBeat   = beat;
             Wrestler? control = ctx.ControlLegal(beat);
-            Wrestler other    = control != null ? ctx.Opponent(control) : ctx.LegalB;
+
+            result.Worker = control ?? ctx.LegalDefault;
+            result.Target = ctx.Opponent(result.Worker);
+            result.Billed = ctx.AllLegal.ToList();
+
+            // What the numbers cost the man carrying them. Applied to the *working* side
+            // only, which is what makes it a numbers advantage rather than a slower match:
+            // the lone man's offence gets weaker as the beating goes on and the pair's does
+            // not, because they have been taking turns. Exactly 1.0 in every even match.
+            result.NumbersFatigue = ctx.NumbersFatigueFor(result.Worker!);
+
+            // Defiance, counted as it happens. A beat is resistance if the outnumbered side
+            // worked it, or survived it as a near fall — being the one who kicked out is a
+            // moment of toughness even though the other side had control.
+            if (plan.Numbers is { } numbers)
+            {
+                _handicapBeats++;
+                bool worked   = ctx.SideOf(result.Worker!) == numbers.Outnumbered;
+                bool survived = beat.Type == BeatType.NearFall
+                                && ctx.SideOf(result.Target!) == numbers.Outnumbered;
+                if (worked || survived) _handicapResistance++;
+            }
 
             // Technical work accumulates more legitimately than crowd reaction does —
             // limb work repeated is a story, a third identical brawl is not.
-            double repCrowd = repetition * fade;
-            double repTech  = Math.Sqrt(repetition) * fade;
+            double repCrowd = repetition * fade * result.NumbersFatigue;
+            double repTech  = Math.Sqrt(repetition) * fade * result.NumbersFatigue;
 
             result.RepetitionFactor = repetition;
 
@@ -765,52 +1104,56 @@ namespace WrestlingSim.Engine
                     break;
 
                 case BeatType.HeatSegment:
-                    ApplyHeatSegment(result, beat, ctx, control, other, iMod, dMod);
+                    ApplyHeatSegment(result, beat, ctx, control, iMod, dMod);
                     break;
 
                 case BeatType.Comeback:
-                    ApplyComeback(result, beat, ctx, control, other, iMod, dMod);
+                    ApplyComeback(result, beat, ctx, control, iMod, dMod);
+                    break;
+
+                case BeatType.HopeSpot:
+                    ApplyHopeSpot(result, ctx, control, iMod, feudMult);
                     break;
 
                 case BeatType.NearFall:
-                    ApplyNearFall(result, beat, ctx, control, other, iMod, feudMult, timesUsed);
+                    ApplyNearFall(result, beat, ctx, control, iMod, feudMult, timesUsed);
                     break;
 
                 case BeatType.Shine:
-                    ApplyShine(result, beat, ctx, control, other, iMod, dMod);
+                    ApplyShine(result, beat, ctx, control, iMod, dMod);
                     break;
 
                 case BeatType.Cutoff:
-                    ApplyCutoff(result, beat, ctx, control, other, iMod, dMod);
+                    ApplyCutoff(result, beat, ctx, control, iMod, dMod);
                     break;
 
                 case BeatType.Isolation:
-                    ApplyIsolation(result, beat, ctx, control, other, iMod, dMod);
+                    ApplyIsolation(result, beat, ctx, control, iMod, dMod);
                     break;
 
                 case BeatType.NearTag:
-                    ApplyNearTag(result, ctx, control, other, iMod, feudMult);
+                    ApplyNearTag(result, ctx, control, iMod, feudMult);
                     break;
 
                 case BeatType.HotTag:
-                    ApplyHotTag(result, beat, ctx, control, other, iMod);
+                    ApplyHotTag(result, beat, ctx, control, iMod);
                     break;
 
                 case BeatType.Tag:
                 case BeatType.BlindTag:
-                    ApplyTag(result, beat, ctx, control, other, iMod);
+                    ApplyTag(result, beat, ctx, control, iMod);
                     break;
 
                 case BeatType.DoubleTeam:
-                    ApplyDoubleTeam(result, beat, ctx, control, other, iMod, dMod);
+                    ApplyDoubleTeam(result, beat, ctx, control, iMod, dMod);
                     break;
 
                 case BeatType.Miscommunication:
-                    ApplyMiscommunication(result, ctx, control, other, iMod);
+                    ApplyMiscommunication(result, ctx, control, iMod);
                     break;
 
                 case BeatType.SaveBreakup:
-                    ApplySaveBreakup(result, ctx, control, other, iMod, timesUsed);
+                    ApplySaveBreakup(result, ctx, control, iMod, timesUsed);
                     break;
 
                 case BeatType.AllFourBrawl:
@@ -825,6 +1168,14 @@ namespace WrestlingSim.Engine
                     ApplyPinBreak(result, beat, ctx, control, iMod, timesUsed);
                     break;
 
+                case BeatType.Alliance:
+                    ApplyAlliance(result, beat, ctx, control, iMod, dMod);
+                    break;
+
+                case BeatType.Betrayal:
+                    ApplyBetrayal(result, beat, ctx, control, iMod, dMod);
+                    break;
+
                 case BeatType.SpiteBreak:
                     ApplySpiteBreak(result, beat, ctx, control, iMod);
                     break;
@@ -835,6 +1186,10 @@ namespace WrestlingSim.Engine
 
                 case BeatType.MutualDestruction:
                     ApplyMutualDestruction(result, beat, ctx, control, iMod, dMod);
+                    break;
+
+                case BeatType.Elimination:
+                    ApplyElimination(result, beat, ctx, control, iMod, dMod);
                     break;
 
                 case BeatType.HighSpot:
@@ -850,7 +1205,7 @@ namespace WrestlingSim.Engine
                     break;
 
                 case BeatType.PsychologicalWarfare:
-                    ApplyPsychologicalWarfare(result, beat, ctx, control, other, iMod, feudMult);
+                    ApplyPsychologicalWarfare(result, beat, ctx, control, iMod, feudMult);
                     break;
 
                 case BeatType.FeudalEscalation:
@@ -858,7 +1213,7 @@ namespace WrestlingSim.Engine
                     break;
 
                 case BeatType.RevengeSpot:
-                    ApplyRevengeSpot(result, beat, ctx, control, other, iMod, feudMult);
+                    ApplyRevengeSpot(result, beat, ctx, control, iMod, feudMult);
                     break;
 
                 case BeatType.ThirdPartyPullIn:
@@ -876,7 +1231,7 @@ namespace WrestlingSim.Engine
                 case BeatType.FinishCountout:
                 case BeatType.FinishInterference:
                 case BeatType.FinishSuperFinisher:
-                    ApplyFinish(result, beat, ctx, control, other, iMod, feudMult);
+                    ApplyFinish(result, beat, ctx, control, iMod, feudMult);
                     break;
             }
 
@@ -971,7 +1326,7 @@ namespace WrestlingSim.Engine
             // And in a multi-man match, how much of the room this beat has at all. The
             // share the beat does not hold does not vanish — it lands in the same place any
             // unheld attention lands, which is silence.
-            connection *= AttentionShare(connection, ctx.TopConnection, ctx.Plan.IsMultiMan);
+            connection *= AttentionShare(connection, ctx.TopConnection, ctx.MultiManNow);
 
             double attention = Math.Clamp((connection - 0.32) / 0.80, 0, 1);
 
@@ -1133,6 +1488,150 @@ namespace WrestlingSim.Engine
         }
 
         /// <summary>
+        /// A fall that takes somebody out and leaves the match running.
+        ///
+        /// The beat pays more than a near fall and less than a finish, which is the whole
+        /// shape of the format: something real just happened and the match is not over. Doc
+        /// 18 §2.5 calls elimination the thing that "solves the third-man problem by
+        /// construction" — nobody has to ask where the fourth man went once he has been
+        /// pinned — and says the drama moves to the *order*, which is why what this records
+        /// matters as much as what it scores.
+        ///
+        /// The last elimination before the finish is the loudest, because it is the one that
+        /// sets the final pairing, and the crowd knows what a two-man ring means.
+        /// </summary>
+        private void ApplyElimination(BeatResult r, MatchBeat beat, Ctx ctx,
+            Wrestler? control, double iMod, double dMod)
+        {
+            control ??= ctx.LegalDefault;
+            var target = TargetOf(beat, ctx, control);
+            var victim = ctx.LegalOf(target);
+            var state  = ctx.State;
+
+            // The *legal* wrestler on the target side goes out, because that is who you can
+            // pin — and it is what makes one beat serve two formats. With one wrestler a
+            // side that is the side, which is a triple-threat elimination; with five it is
+            // whoever is in the ring, which is a Survivor Series.
+            int targetSide = ctx.Plan.Sides.IndexOf(target);
+            state.Eliminate(targetSide, target.Members.IndexOf(victim));
+
+            // Whoever is left on that side is in now. Nobody tags in a Survivor Series
+            // elimination — the next man is already through the ropes.
+            if (!state.IsEliminated(targetSide) && targetSide <= 1)
+                state.Tag(targetSide == 0, target.Members.Count);
+
+            int left = ctx.Remaining.Count;
+
+            _eliminations.Add(new EliminatedSide
+            {
+                Wrestler  = victim,
+                By        = control,
+                Order     = state.EliminationCount,
+                Remaining = ctx.PeopleLeft
+            });
+
+            // Down to two is the loudest one: it is not another fall, it is the moment the
+            // match becomes the singles match everybody has been waiting for.
+            double weight = left <= 2 ? 1.35 : 1.0;
+
+            r.CrowdEnergyDelta = Rng(11, 19) * iMod * weight
+                                 * PerformerProfile.Blend(ctx.For(victim).Connection, 0.55);
+            r.AdvantageDelta = ControlSign(ctx, control) * Rng(6, 13) * iMod;
+            r.TechnicalContribution = 3.0 * iMod;
+            r.StorytellingContribution = 6.0 * dMod * weight;
+
+            r.Commentary.Add(Pick(
+                $"{control.RingName} pins {victim.RingName} — and {victim.RingName} is GONE!",
+                $"That is it for {victim.RingName}! {control.RingName} takes them out of this match!",
+                $"{victim.RingName} has been eliminated — {control.RingName} did it!"));
+
+            // The count is the story in this format, so it is said out loud rather than left
+            // for the viewer to keep in their head.
+            // What is worth saying depends on the format. Sides left is the count in a
+            // three-way; in a Survivor Series it is people, and the survivor count on each
+            // side is the whole scoreboard.
+            bool teams = ctx.Plan.Sides.Any(x => x.Members.Count > 1);
+
+            r.Commentary.Add(teams
+                ? SurvivorLine(ctx, target)
+                : left <= 2
+                    ? $"And then there were two. {Billing(ctx.AllLegal.Select(w => w.RingName))} — one of them wins this."
+                    : $"{left} left in this match.");
+        }
+
+        /// <summary>
+        /// The scoreboard after an elimination in a match of teams — which is the whole of
+        /// what a Survivor Series is about, and unreadable if the viewer has to keep it in
+        /// their head across eight falls.
+        /// </summary>
+        private static string SurvivorLine(Ctx ctx, MatchSide justLost)
+        {
+            var counts = ctx.Plan.Sides
+                .Select((side, i) => (Side: side, Left: ctx.State.SurvivorsOf(i)))
+                .ToList();
+
+            if (counts.Any(c => c.Left == 0))
+            {
+                var standing = counts.First(c => c.Left > 0);
+                return standing.Left == 1
+                    ? $"That is the match — and the sole survivor is " +
+                      $"{ctx.LegalOf(standing.Side).RingName}!"
+                    : $"That is the match! {standing.Side.Name} take it with " +
+                      $"{standing.Left} still standing.";
+            }
+
+            // "a man down" is the phrase a commentator reaches for and the one this game
+            // does not get to use — the scanner caught it in a match of eight women.
+            return string.Join("  ", counts.Select(c => $"{c.Side.Name}: {c.Left}"))
+                   + $" — {justLost.Name} are down to {ctx.State.SurvivorsOf(ctx.Plan.Sides.IndexOf(justLost))}.";
+        }
+
+        /// <summary>
+        /// How well the falls in an elimination match are spaced.
+        ///
+        /// Doc 18 §2.5 puts the drama in the *order* of eliminations, and the failure that
+        /// wrecks the order is falls landing on top of each other: three eliminations in
+        /// four minutes is a scramble, and nobody remembers who went second. What makes it a
+        /// story is work between the falls, so that each one is a thing the match arrived at
+        /// rather than a thing that happened while you were reading the last one.
+        ///
+        /// Measured as the smallest gap against the gap an evenly-spaced match would have.
+        /// The minimum rather than the mean deliberately: one bunched pair spoils the run,
+        /// and averaging lets a long stretch of work pay for two falls back to back.
+        ///
+        /// 1.0 is even or better; 0.0 is falls with nothing at all between them. Returns 1.0
+        /// for a match with no eliminations in it, which has no pacing to get wrong.
+        ///
+        /// A dead-even match only reaches exactly 1.0 when the fall count divides the beat
+        /// count — ten beats and three falls cannot be split evenly, so the best a booker
+        /// can do there is 0.9. That is a property of counting in whole beats rather than a
+        /// penalty, and it is small enough not to be worth rounding away.
+        /// </summary>
+        public static double EliminationPacing(IReadOnlyList<int> fallBeats, int totalBeats)
+        {
+            if (fallBeats.Count == 0 || totalBeats <= 0) return 1.0;
+
+            var falls = fallBeats.Where(b => b >= 0).OrderBy(b => b).ToList();
+            if (falls.Count == 0) return 1.0;
+
+            // The finish is a fall too — it is the last one — so the run being spaced is
+            // every fall including the end of the match.
+            double ideal = (double)totalBeats / (falls.Count + 1);
+            if (ideal <= 0) return 0.0;
+
+            int previous = -1;
+            double smallest = double.MaxValue;
+            foreach (int fall in falls)
+            {
+                smallest = Math.Min(smallest, fall - previous);
+                previous = fall;
+            }
+            smallest = Math.Min(smallest, totalBeats - 1 - previous);
+
+            return Math.Clamp(smallest / ideal, 0.0, 1.0);
+        }
+
+        /// <summary>
         /// Somebody breaks up the cover. The reason every near fall in this format is
         /// cheaper than a singles near fall: nobody believes a count until the third man
         /// is verifiably unable to reach it.
@@ -1171,6 +1670,118 @@ namespace WrestlingSim.Engine
         /// decision, it is a character decision, and a booking that never pays for it is
         /// not telling the story it thinks it is.
         /// </summary>
+        /// <summary>
+        /// **Two of them work the third.**
+        ///
+        /// Doc 18 §2.5 calls the temporary alliance "the format's single best story", and
+        /// this is the half of it the engine had no way to express. Every multi-man beat it
+        /// carried was about removing somebody — disposal, break, elimination — and none of
+        /// them could say two people were working together.
+        ///
+        /// It scores like a heat segment with two workers on it and a crowd that knows it
+        /// cannot last. The advantage goes hard against the victim, because it is two on
+        /// one; the storytelling is high, because everybody in the building is waiting for
+        /// one of the two to move first.
+        ///
+        /// **The victim is not disposed of.** That is the whole difference between this and
+        /// the disposal spot: they are the most involved person in the ring, being worked
+        /// over by both of the others, and the format's characteristic failure — a third man
+        /// nobody can account for — is solved rather than deferred.
+        /// </summary>
+        private void ApplyAlliance(BeatResult r, MatchBeat beat, Ctx ctx,
+            Wrestler? control, double iMod, double dMod)
+        {
+            control ??= ctx.LegalDefault;
+            var target = TargetOf(beat, ctx, control);
+            var victim = ctx.LegalOf(target);
+
+            // Whoever is neither the named worker nor the victim is the other half of it.
+            var partner = ctx.AllLegal.FirstOrDefault(w => w != control && w != victim);
+
+            // Two people working is worth more than one, but not twice as much: they are
+            // getting in each other's way and neither of them wants the other to score.
+            double pair = partner is null
+                ? 1.0
+                : 1.35 + 0.25 * PerformerProfile.Blend(ctx.For(partner).Workrate, 0.4);
+
+            r.CrowdEnergyDelta = Rng(8, 15) * iMod * pair
+                                 * PerformerProfile.Blend(ctx.For(victim).Connection, 0.55);
+
+            r.AdvantageDelta = -ControlSign(ctx, ctx.LegalOf(target)) * Rng(7, 15) * iMod * pair;
+
+            r.TechnicalContribution    = 3.0 * iMod * pair;
+            r.StorytellingContribution = 8.0 * dMod * pair;
+
+            r.Reaction = ReactionKind.Tension;
+
+            r.Commentary.Add(partner is null
+                ? Pick(
+                    $"{control.RingName} has {victim.RingName} isolated and there is nobody coming.",
+                    $"{victim.RingName} is being taken apart and has no way out of it.")
+                : Pick(
+                    $"{control.RingName} and {partner.RingName} have the same idea — and {victim.RingName} is in trouble!",
+                    $"An understanding between {control.RingName} and {partner.RingName}, and {victim.RingName} is paying for it!",
+                    $"Two on one! {victim.RingName} cannot fight both of them — and how long does this last?",
+                    $"{control.RingName} and {partner.RingName} are working together, and every soul in this building knows how that ends."));
+        }
+
+        /// <summary>
+        /// **The alliance breaks, and whoever moves first has the advantage.**
+        ///
+        /// Doc 18 §2.5: "the moment it breaks is the peak." It is priced like one — the
+        /// biggest crowd beat in a multi-man match that is not a finish.
+        ///
+        /// Unlike a <see cref="BeatType.SpiteBreak"/>, this *pays* the person who does it.
+        /// A spite break costs the spiter their position and is a character decision rather
+        /// than a good one; a betrayal is both, which is exactly why the audience spends the
+        /// whole alliance waiting for it and why the anticipation is worth something on its
+        /// own. Modelling them the same way would flatten the difference between the beat
+        /// somebody regrets and the beat somebody planned.
+        /// </summary>
+        private void ApplyBetrayal(BeatResult r, MatchBeat beat, Ctx ctx,
+            Wrestler? control, double iMod, double dMod)
+        {
+            control ??= ctx.LegalDefault;
+            var betrayed = ctx.LegalOf(TargetOf(beat, ctx, control));
+
+            // A betrayal between two people with history is a chapter; between strangers it
+            // is a wrestling move. The feud is not required — a three-way alliance is
+            // temporary by construction and everyone knows it — but it is worth a great deal.
+            var feud = ctx.Plan.FeudBetween(control, betrayed);
+            double grudge = feud?.IntensityMultiplier ?? 0.0;
+            r.FeudalResonanceActivated = feud is not null;
+            if (feud is not null)
+                _grudges.Add(new GrudgeMoment(control, betrayed, BeatType.Betrayal));
+
+            double weight = 1.0 + 0.5 * Math.Clamp(grudge, 0, 1.6) / 1.6;
+
+            r.CrowdEnergyDelta = Rng(14, 24) * iMod * weight
+                                 * PerformerProfile.Blend(ctx.For(control).Connection, 0.5);
+
+            // To the betrayer. They moved first, which is the whole of what this beat is.
+            r.AdvantageDelta = ControlSign(ctx, control) * Rng(8, 16) * iMod;
+
+            r.TechnicalContribution    = 1.5 * iMod;
+            r.StorytellingContribution = 11.0 * dMod * weight
+                                         * PerformerProfile.Blend(ctx.For(control).RingPsych, 0.45);
+
+            // A pop, not a new reaction kind. The crowd reaction vector is calibrated and
+            // a betrayal is a sudden cheer for something they wanted — which is what Pop
+            // already means. Inventing a Shock to sit beside it would be a sixth column
+            // nothing else knows how to weigh.
+            r.Reaction = ReactionKind.Pop;
+
+            r.Commentary.Add(feud is not null
+                ? Pick(
+                    $"THERE IT IS! {control.RingName} turns on {betrayed.RingName} — and after everything between these two, who is surprised?",
+                    $"{control.RingName} strikes first! That alliance was never going to survive what these two have been through!",
+                    $"The truce is over — {control.RingName} was waiting for that, and {betrayed.RingName} should have known it!")
+                : Pick(
+                    $"And there it goes! {control.RingName} turns on {betrayed.RingName} — every alliance in this match had an expiry date!",
+                    $"{control.RingName} moves first! {betrayed.RingName} never saw it coming!",
+                    $"The truce lasted exactly as long as it was useful — {control.RingName} makes sure of that!"));
+        }
+
         private void ApplySpiteBreak(BeatResult r, MatchBeat beat, Ctx ctx,
             Wrestler? control, double iMod)
         {
@@ -1286,6 +1897,9 @@ namespace WrestlingSim.Engine
 
             // A second comeback is a real moment, but never the first one again.
             BeatType.Comeback             => 0.70,
+            // Steeper than a comeback: the third flurry that goes nowhere is the crowd
+            // learning the flurries go nowhere, which is the opposite of what it is for.
+            BeatType.HopeSpot             => 0.55,
 
             // Near falls hold up best — the whole point is escalation — but still decay.
             BeatType.NearFall             => 0.85,
@@ -1476,10 +2090,10 @@ namespace WrestlingSim.Engine
         }
 
         private void ApplyHeatSegment(BeatResult r, MatchBeat beat, Ctx ctx,
-            Wrestler? control, Wrestler other, double iMod, double dMod)
+            Wrestler? control, double iMod, double dMod)
         {
             control ??= ctx.LegalDefault;
-            other = ctx.Opponent(control);
+            var other = ctx.Opponent(control);
 
             var pControl = ctx.For(control);
             var pOther   = ctx.For(other);
@@ -1539,11 +2153,71 @@ namespace WrestlingSim.Engine
             ));
         }
 
+        /// <summary>
+        /// A hope spot. Doc 18 §2.3: "brief comeback attempts that fail. Each raises
+        /// tension … the hope spots are essential — they keep the audience from giving up
+        /// during the heat."
+        ///
+        /// The mirror of <see cref="ApplyNearTag"/> and deliberately its opposite in the
+        /// one place that matters. A denied tag is a reach that fails, so the room groans
+        /// and energy goes *down*; a hope spot is offence that lands before it is cut off,
+        /// so the room pops and energy goes *up*. Both read as
+        /// <see cref="ReactionKind.Tension"/>, because in neither case has anything been
+        /// released — the crowd is leaning in, not let go.
+        ///
+        /// **It costs the hole it is dug out of**, and that is what stops hope spots being
+        /// free. The flurry genuinely claws back some of the deficit, and
+        /// <see cref="ApplyComeback"/>'s earned bonus is read off exactly that deficit. So
+        /// one or two wind the crowd tighter than they cost; a fourth has flattened the
+        /// heat it was supposed to be relieving, and a wrestler who keeps getting flurries
+        /// was never really in peril. No new rule was needed to say that — it falls out of
+        /// the two mechanisms already here.
+        /// </summary>
+        private void ApplyHopeSpot(BeatResult r, Ctx ctx,
+            Wrestler? control, double iMod, double feudMult)
+        {
+            // Control is the wrestler in trouble — this is their flurry. The opposite
+            // convention to Isolation and NearTag, where control is the side doing the
+            // punishing, and the right one here: on a beat sheet a hope spot is the one row
+            // in the heat section that says the face is on top, which is what it looks like.
+            control ??= ctx.LegalDefault;
+            var cutter = ctx.Opponent(control);
+
+            var pRally = ctx.For(control);
+
+            // The pop is for the person fighting back, so it scales with how much the room
+            // wants them to.
+            double investment = PerformerProfile.Blend(pRally.Connection, 0.70);
+
+            r.CrowdEnergyDelta = Rng(4, 9) * iMod * investment
+                                 * PerformerProfile.Blend(pRally.Athleticism, 0.40);
+
+            // A real dent, and a small one. Enough that the deficit the comeback reads is
+            // genuinely shallower for having booked this.
+            r.AdvantageDelta = ControlSign(ctx, control) * Rng(5, 11) * iMod;
+
+            r.TechnicalContribution    = 2.5 * iMod * pRally.Workrate;
+            r.StorytellingContribution = 7.0 * iMod * feudMult
+                                         * PerformerProfile.Blend(pRally.Selling, 0.50)
+                                         * investment;
+
+            r.Reaction = ReactionKind.Tension;
+
+            ctx.State.RecordHopeSpot(ctx.IsSideA(control));
+
+            r.Commentary.Add(Pick(
+                $"{control.RingName} catches them! A flurry — the crowd is up! — and {cutter.RingName} shuts it down again.",
+                $"There it is, the first sign of life from {control.RingName}! But {cutter.RingName} cuts them off before it goes anywhere.",
+                $"{control.RingName} will not stay down — two big shots and the building is on its feet — and then {cutter.RingName} takes the legs out again.",
+                $"A desperate elbow from {control.RingName}, and another! They are trying to build something here — and {cutter.RingName} ends it."
+            ));
+        }
+
         private void ApplyComeback(BeatResult r, MatchBeat beat, Ctx ctx,
-            Wrestler? control, Wrestler other, double iMod, double dMod)
+            Wrestler? control, double iMod, double dMod)
         {
             control ??= ctx.LegalDefault;
-            other = ctx.Opponent(control);
+            var other = ctx.Opponent(control);
 
             var state    = ctx.State;
             var pControl = ctx.For(control);
@@ -1554,10 +2228,18 @@ namespace WrestlingSim.Engine
             double advantageDeficit = Math.Abs(state.RawAdvantage);
             double earnedBonus = Math.Min(advantageDeficit / 120.0 * 0.5, 0.5); // up to +50% bonus
 
+            // And what the hope spots bought — doc 18 §2.3. Separate from the deficit term
+            // because they measure different things: the deficit is how deep the hole is,
+            // this is how many times the room was made to believe they might get out of it.
+            // A crowd given neither has stopped watching by the time the comeback comes.
+            int hopeSpots = state.HopeSpotsGiven(ctx.IsSideA(control));
+            double hopeCharge = ComebackCharge(hopeSpots);
+
             // The pop belongs to the person making the comeback. A crowd that does not care
             // about them does not come alive no matter how well the spot is executed.
             // A comeback is a burst of fast offence — how explosive it looks is athleticism.
-            r.CrowdEnergyDelta = Rng(12, 20) * iMod * (1.0 + earnedBonus) * pControl.Connection
+            r.CrowdEnergyDelta = Rng(12, 20) * iMod * (1.0 + earnedBonus) * hopeCharge
+                                 * pControl.Connection
                                  * PerformerProfile.Blend(pControl.Athleticism, 0.45);
 
             // Swing momentum back hard. A comeback's job is to wipe out the heat that came
@@ -1579,9 +2261,18 @@ namespace WrestlingSim.Engine
 
             r.TechnicalContribution    = 4.5 * (AvgRingSkill(ctx) / 5.0) * iMod * pControl.Workrate
                                          * PerformerProfile.Blend(pControl.Athleticism, 0.40);
-            r.StorytellingContribution = 8.0 * iMod                              // comebacks are prime storytelling
+            r.StorytellingContribution = 8.0 * iMod * hopeCharge                 // comebacks are prime storytelling
                                          * PerformerProfile.Blend(pControl.Connection, 0.55)
                                          * PerformerProfile.Blend(pControl.RingPsych, 0.35);
+
+            // Spent. A second heat section has to buy its own payoff — otherwise the two
+            // heat/comeback cycles doc 18 §3.1 calls the 15–25 minute shape would let the
+            // second comeback bank the first one's tension for nothing.
+            state.ClearHopeSpots(ctx.IsSideA(control));
+
+            if (hopeSpots == 0)
+                r.Commentary.Add("They were never given a reason to believe, so there is " +
+                                 "not much left in here to release.");
 
             r.Commentary.Add(Pick(
                 $"{control.RingName} fires back! The crowd erupts!",
@@ -1600,10 +2291,10 @@ namespace WrestlingSim.Engine
         }
 
         private void ApplyNearFall(BeatResult r, MatchBeat beat, Ctx ctx,
-            Wrestler? control, Wrestler other, double iMod, double feudMult, int timesUsed)
+            Wrestler? control, double iMod, double feudMult, int timesUsed)
         {
             control ??= ctx.LegalDefault;
-            other = ctx.Opponent(control);
+            var other = ctx.Opponent(control);
 
             var state  = ctx.State;
             var pOther = ctx.For(other);
@@ -1626,7 +2317,8 @@ namespace WrestlingSim.Engine
             // Which makes disposal → sequence → near fall the loop a good multi-man match
             // runs over and over, and gives the format its own reason to exist rather than
             // being a singles match with a spare body in it.
-            energyFactor *= MultiManNearFallFactor(ctx.Plan.IsMultiMan, state.SomebodyIsDisposed);
+            r.NearFallJeopardy = MultiManNearFallFactor(ctx.MultiManNow, state.SomebodyIsDisposed);
+            energyFactor *= r.NearFallJeopardy;
 
             // The drama is entirely about whether the crowd believes the other person can
             // survive — that is toughness and selling, on someone they care about.
@@ -1761,10 +2453,10 @@ namespace WrestlingSim.Engine
         }
 
         private void ApplyPsychologicalWarfare(BeatResult r, MatchBeat beat, Ctx ctx,
-            Wrestler? control, Wrestler other, double iMod, double feudMult)
+            Wrestler? control, double iMod, double feudMult)
         {
             control ??= ctx.LegalDefault;
-            other = ctx.Opponent(control);
+            var other = ctx.Opponent(control);
 
             var pControl = ctx.For(control);
 
@@ -1838,10 +2530,10 @@ namespace WrestlingSim.Engine
         }
 
         private void ApplyRevengeSpot(BeatResult r, MatchBeat beat, Ctx ctx,
-            Wrestler? control, Wrestler other, double iMod, double feudMult)
+            Wrestler? control, double iMod, double feudMult)
         {
             control ??= ctx.LegalDefault;
-            other = ctx.Opponent(control);
+            var other = ctx.Opponent(control);
 
             var state    = ctx.State;
             var pControl = ctx.For(control);
@@ -1934,10 +2626,10 @@ namespace WrestlingSim.Engine
         /// them saved later.
         /// </summary>
         private void ApplyShine(BeatResult r, MatchBeat beat, Ctx ctx,
-            Wrestler? control, Wrestler other, double iMod, double dMod)
+            Wrestler? control, double iMod, double dMod)
         {
             control ??= ctx.LegalDefault;
-            other = ctx.Opponent(control);
+            var other = ctx.Opponent(control);
 
             var pControl = ctx.For(control);
             var side     = ctx.SideOf(control);
@@ -1976,10 +2668,10 @@ namespace WrestlingSim.Engine
         /// which is why it does not need to be clean to work.
         /// </summary>
         private void ApplyCutoff(BeatResult r, MatchBeat beat, Ctx ctx,
-            Wrestler? control, Wrestler other, double iMod, double dMod)
+            Wrestler? control, double iMod, double dMod)
         {
             control ??= ctx.LegalDefault;
-            other = ctx.Opponent(control);
+            var other = ctx.Opponent(control);
 
             var pControl = ctx.For(control);
             var pOther   = ctx.For(other);
@@ -2012,10 +2704,10 @@ namespace WrestlingSim.Engine
         /// worked over is their opponent's legal performer.
         /// </summary>
         private void ApplyIsolation(BeatResult r, MatchBeat beat, Ctx ctx,
-            Wrestler? control, Wrestler other, double iMod, double dMod)
+            Wrestler? control, double iMod, double dMod)
         {
             control ??= ctx.LegalDefault;
-            other = ctx.Opponent(control);
+            var other = ctx.Opponent(control);
 
             var pControl    = ctx.For(control);
             var pIsolated   = ctx.For(other);
@@ -2099,10 +2791,10 @@ namespace WrestlingSim.Engine
         /// would have made it (docs/wrestling-reference/16-crowd-psychology.md §2).
         /// </summary>
         private void ApplyNearTag(BeatResult r, Ctx ctx,
-            Wrestler? control, Wrestler other, double iMod, double feudMult)
+            Wrestler? control, double iMod, double feudMult)
         {
             control ??= ctx.LegalDefault;
-            other = ctx.Opponent(control);
+            var other = ctx.Opponent(control);
 
             var pDenied  = ctx.For(other);
             var deniedSide = ctx.SideOf(other);
@@ -2146,10 +2838,10 @@ namespace WrestlingSim.Engine
         /// from isolation beats and denied tags since this side last got someone fresh in.
         /// </summary>
         private void ApplyHotTag(BeatResult r, MatchBeat beat, Ctx ctx,
-            Wrestler? control, Wrestler other, double iMod)
+            Wrestler? control, double iMod)
         {
             control ??= ctx.LegalDefault;
-            other = ctx.Opponent(control);
+            var other = ctx.Opponent(control);
 
             var state = ctx.State;
             bool sideA = ctx.IsSideA(control);
@@ -2213,6 +2905,25 @@ namespace WrestlingSim.Engine
         /// fourth isolation is a crowd getting bored rather than a crowd getting desperate,
         /// which is the same diminishing-returns shape the rest of the engine uses.
         /// </summary>
+        /// <summary>
+        /// What the hope spots bought the comeback. 1.0 with none, saturating just above
+        /// 1.4 — the same shape and the same argument as <see cref="HotTagCharge"/>.
+        ///
+        /// Doc 18 §2.3 says the hope spots are what keep the audience from giving up during
+        /// the heat, so a comeback that had them lands on a room that is still there. It
+        /// saturates at two because a third is the crowd learning that the flurries do not
+        /// mean anything, which is the diminishing-returns shape used everywhere else here.
+        ///
+        /// This is only the upside. The cost is not in this function and does not need to
+        /// be: a hope spot claws back deficit, and the comeback's earned bonus is read off
+        /// that deficit, so booking four flattens the hole they were meant to make deeper.
+        /// </summary>
+        public static double ComebackCharge(int hopeSpots) =>
+            1.0 + 0.45 * Math.Min(hopeSpots, HopeSpotPatience) / (double)HopeSpotPatience;
+
+        /// <summary>Hope spots past which the crowd stops believing the flurries.</summary>
+        public const int HopeSpotPatience = 2;
+
         private static double HotTagCharge(int isolations, int nearTags)
         {
             double isolationTerm = 0.55 * Math.Min(isolations, IsolationPatience) / (double)IsolationPatience;
@@ -2241,10 +2952,10 @@ namespace WrestlingSim.Engine
 
         /// <summary>A routine or blind tag. Changes who is legal without being a moment.</summary>
         private void ApplyTag(BeatResult r, MatchBeat beat, Ctx ctx,
-            Wrestler? control, Wrestler other, double iMod)
+            Wrestler? control, double iMod)
         {
             control ??= ctx.LegalDefault;
-            other = ctx.Opponent(control);
+            var other = ctx.Opponent(control);
 
             bool sideA = ctx.IsSideA(control);
             var side   = ctx.SideOf(control);
@@ -2276,10 +2987,10 @@ namespace WrestlingSim.Engine
         /// chemistry will attach to.
         /// </summary>
         private void ApplyDoubleTeam(BeatResult r, MatchBeat beat, Ctx ctx,
-            Wrestler? control, Wrestler other, double iMod, double dMod)
+            Wrestler? control, double iMod, double dMod)
         {
             control ??= ctx.LegalDefault;
-            other = ctx.Opponent(control);
+            var other = ctx.Opponent(control);
 
             var side   = ctx.SideOf(control);
             var pOther = ctx.For(other);
@@ -2324,10 +3035,10 @@ namespace WrestlingSim.Engine
         /// saying out loud rather than leaving to a sign convention.
         /// </summary>
         private void ApplyMiscommunication(BeatResult r, Ctx ctx,
-            Wrestler? control, Wrestler other, double iMod)
+            Wrestler? control, double iMod)
         {
             control ??= ctx.LegalDefault;
-            other = ctx.Opponent(control);
+            var other = ctx.Opponent(control);
 
             var side = ctx.SideOf(control);
             var pControl = ctx.For(control);
@@ -2368,10 +3079,10 @@ namespace WrestlingSim.Engine
         /// is being openly ignored.
         /// </summary>
         private void ApplySaveBreakup(BeatResult r, Ctx ctx,
-            Wrestler? control, Wrestler other, double iMod, int timesUsed)
+            Wrestler? control, double iMod, int timesUsed)
         {
             control ??= ctx.LegalDefault;
-            other = ctx.Opponent(control);
+            var other = ctx.Opponent(control);
 
             var side  = ctx.SideOf(control);
             var saver = SpotPartner(side, control, ctx.State.BeatIndex);
@@ -2422,14 +3133,45 @@ namespace WrestlingSim.Engine
         }
 
         private void ApplyFinish(BeatResult r, MatchBeat beat, Ctx ctx,
-            Wrestler? control, Wrestler other, double iMod, double feudMult)
+            Wrestler? control, double iMod, double feudMult)
         {
             control ??= ctx.LegalDefault;
-            other = ctx.Opponent(control);
+            var other = ctx.Opponent(control);
 
             var state    = ctx.State;
             var pControl = ctx.For(control);
             var pOther   = ctx.For(other);
+
+            // The finish is a fall too, and in an elimination match it is the last one — so
+            // it takes somebody out like any other. Without this the engine and
+            // `MatchPlan.Validate` disagreed about the final wrestler: validation counted
+            // the finish towards emptying a side (correctly, it is what ends the match) and
+            // the engine never recorded it, so a Survivor Series reported the losing team
+            // with one still standing.
+            //
+            // Only in a match that has already had an elimination in it, or every singles
+            // finish in the game would start recording one.
+            if (state.AnybodyEliminated)
+            {
+                var beaten = ctx.SideOf(other);
+                state.Eliminate(ctx.Plan.Sides.IndexOf(beaten), beaten.Members.IndexOf(other));
+
+                _eliminations.Add(new EliminatedSide
+                {
+                    Wrestler  = other,
+                    By        = control,
+                    Order     = state.EliminationCount,
+                    Remaining = ctx.PeopleLeft
+                });
+
+                // And the payoff line, which is the entire reason this match has a name of
+                // its own. Every elimination along the way gets a scoreboard; the last one
+                // gets the thing the crowd came to hear. Without it the play-by-play counts
+                // the field down and then says "it's over", which is the one moment a
+                // Survivor Series cannot afford to be vague about.
+                if (ctx.Plan.Sides.Any(x => x.Members.Count > 1))
+                    r.Commentary.Add(SurvivorLine(ctx, beaten));
+            }
 
             // Was the finish earned? Advantage should favour the winner
             bool advantageFavours = (beat.Control == BeatControl.WrestlerA && state.Advantage > 0)
@@ -2553,7 +3295,8 @@ namespace WrestlingSim.Engine
 
         // ── Final rating ─────────────────────────────────────────────────────
 
-        private MatchEngineResult BuildResult(Ctx ctx, List<BeatResult> beatResults)
+        private MatchEngineResult BuildResult(Ctx ctx, List<BeatResult> beatResults,
+                                              List<InjuryRoll> hurt)
         {
             var plan  = ctx.Plan;
             var state = ctx.State;
@@ -2615,8 +3358,72 @@ namespace WrestlingSim.Engine
                 ? 0.0
                 : Math.Clamp((coherence - 0.55) * 16.0, -8.0, 8.0);
 
+            // ── What the match promised, and whether it delivered ────────────
+            //
+            // The other half of the coherence question, and the half the booker does not
+            // declare. Doc 18 §3.2 and doc 16: a crowd arrives wanting something, decided by
+            // who is in the ring, what the feud has been, what the rules are and what is at
+            // stake. Giving them it pays. Giving them something else costs, unless these two
+            // are good enough to win the room round — which is a question about the
+            // performers, not about the plan.
+            //
+            // Only for a plan booked from a brief. A hand-built plan made no promise, so
+            // there is nothing here to keep or break and the term is zero.
+            double expectationNudge = 0.0;
+            Expectation? promised = null;
+
+            if (plan.Brief is { } brief)
+            {
+                var reading = MatchExpectation.Of(
+                    plan.Sides, plan.Feud, plan.Stipulation, plan.TitleAtStake is not null);
+
+                promised = reading;
+                expectationNudge = MatchExpectation.Reward(
+                    reading, brief.Story, MatchExpectation.CanCarryIt(plan.Sides));
+            }
+
+            // ── Elimination pacing ───────────────────────────────────────────
+            //
+            // Doc 18 §2.5 says the drama of this format is the *order* of the eliminations,
+            // and a measure that is recorded but never scored is not a claim about the
+            // format, it is a number on a screen. So spacing pays.
+            //
+            // Asymmetric on purpose, and the asymmetry is the honest bit: even spacing is
+            // what the format is *supposed* to do, so it earns little, while falls landing
+            // on top of each other genuinely wreck it — three eliminations in four minutes
+            // is a scramble and nobody remembers who went second. Worth about a fifth of a
+            // star at its best and three fifths at its worst.
+            // The falls *before* the finish. `EliminationPacing` counts the finish itself as
+            // the last fall — that is in its contract — so handing it a list that already
+            // contains the finish counts it twice and reports a gap of zero at the end,
+            // which is a perfectly-spaced match scoring as a scramble. It only started
+            // containing the finish when `ApplyFinish` learned to record one.
+            double eliminationPacing = EliminationPacing(
+                state.EliminationBeats.Where(b => b < plan.Beats.Count - 1).ToList(),
+                plan.Beats.Count);
+            double pacingNudge = state.AnybodyEliminated
+                ? (eliminationPacing >= 1.0 ? 4.0 : (eliminationPacing - 1.0) * 12.0)
+                : 0.0;
+
+            // ── Defiance (doc 18 §2.5) ───────────────────────────────────────
+            //
+            // "Almost never a contest; it is a *statement*, and the statement is usually
+            // about the lone man's toughness rather than the outcome." So a handicap match
+            // is graded on what he survived, and a squash — no comebacks, no kickouts, no
+            // moment where he was anything but a body — is a bad handicap match however
+            // cleanly it was worked, because it says nothing.
+            //
+            // Centred at a third rather than a half: he is *supposed* to be losing most of
+            // it. A man alone who controls half the beats against two is not defiant, he is
+            // in a match the booking forgot was a handicap.
+            double defiance = Defiance(_handicapResistance, _handicapBeats);
+            double defianceNudge = plan.IsHandicap
+                ? Math.Clamp((defiance - 0.34) * 22.0, -7.0, 7.0)
+                : 0.0;
+
             double finalScore = Math.Clamp(
-                techComponent + storyComponent + crowdComponent + finishNudge + varietyNudge + coherenceNudge,
+                techComponent + storyComponent + crowdComponent + finishNudge + varietyNudge
+                    + coherenceNudge + pacingNudge + defianceNudge + expectationNudge,
                 0, 100);
 
             double starRating = Math.Clamp(finalScore / 20.0, 0, 5);
@@ -2636,14 +3443,27 @@ namespace WrestlingSim.Engine
                 LosingSide         = losingSide.Members.ToList(),
                 BeatResults        = beatResults,
                 GrudgeMoments      = _grudges.ToList(),
+                Eliminations       = _eliminations.ToList(),
+                Survivors          = state.AnybodyEliminated && plan.Sides.Any(x => x.Members.Count > 1)
+                    ? plan.BookedWinningSide!.Members
+                          .Where((_, i) => !state.IsEliminated(plan.Sides.IndexOf(plan.BookedWinningSide!), i))
+                          .ToList()
+                    : [],
+                EliminationPacing  = eliminationPacing,
+                Defiance           = plan.IsHandicap ? defiance : 0.0,
                 TechnicalScore     = state.TechnicalScore,
                 StorytellingScore  = state.StorytellingScore,
                 CrowdPeakEnergy    = state.CrowdPeakEnergy,
                 CrowdAverageEnergy = state.CrowdAverage,
                 FinishQuality      = state.FinishQuality,
                 MatchTypeCoherence = coherence,
+                Promised           = promised,
+                ExpectationNudge   = expectationNudge,
                 Reaction           = state.Reaction,
                 Familiarity        = ctx.Familiarity,
+                Stipulation        = ctx.Plan.Stipulation,
+                Injuries           = hurt,
+                StipulationStakes  = ctx.StipulationStakes,
                 Breakdown          = new ScoreBreakdown
                 {
                     Technical             = techComponent,
@@ -2653,7 +3473,9 @@ namespace WrestlingSim.Engine
                     InvestmentFactor      = investmentFactor,
                     FinishNudge           = finishNudge,
                     VarietyNudge          = varietyNudge,
-                    CoherenceNudge        = coherenceNudge
+                    CoherenceNudge        = coherenceNudge,
+                    PacingNudge           = pacingNudge,
+                    DefianceNudge         = defianceNudge
                 },
                 FinalScore         = finalScore,
                 StarRating         = starRating
@@ -2711,6 +3533,7 @@ namespace WrestlingSim.Engine
                 // The tag formula is the most story-driven structure the engine has: a man
                 // kept from his corner, the tag denied, and the release. Leaving these out
                 // meant declaring a Southern Tag "Storytelling" was a pure penalty.
+                or BeatType.HopeSpot
                 or BeatType.Cutoff or BeatType.Isolation or BeatType.NearTag or BeatType.HotTag
                 or BeatType.Miscommunication or BeatType.SaveBreakup,
 

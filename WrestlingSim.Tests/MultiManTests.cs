@@ -141,10 +141,16 @@ namespace WrestlingSim.Tests
                                          Control = BeatControl.WrestlerA, Against = BeatControl.SideC }]
             };
 
+            // Still refused, but for a different reason than it used to be. Uneven sides are
+            // a handicap match now — except that handicap means "two or more against one",
+            // and with three sides at different sizes there is no single outnumbered man for
+            // the numbers term to be about. Doc 18 describes no such match, so the engine
+            // does not pretend to have a reading of it.
+            //
             // Sides A and B match, so a check that only compared those two would pass this.
             var errors = plan.Validate();
             output.WriteLine("  " + string.Join(" | ", errors));
-            Assert.Contains(errors, e => e.Contains("uneven"));
+            Assert.Contains(errors, e => e.Contains("no single outnumbered man"));
         }
 
         [Fact]

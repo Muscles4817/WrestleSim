@@ -78,14 +78,24 @@ namespace WrestlingSim.Tests
         [Fact]
         public void NoCommentaryLine_AssumesAWrestlersGender()
         {
-            var roster = DataLoaders.LoadEmbeddedWrestlers().Take(8).ToList();
+            var roster = DataLoaders.LoadEmbeddedWrestlers().Take(12).ToList();
             var offenders = new HashSet<string>();
             var seen = new HashSet<BeatType>();
             int lines = 0;
 
+            var skipped = new HashSet<string>();
+
             void Scan(MatchPlanModel plan, int seed)
             {
-                if (plan.Validate().Count > 0) return;
+                // Silently, because most of the sweep's plans are deliberately impossible —
+                // but recorded, because a beat type going unscanned always shows up here
+                // first and "never reached" without a reason costs a round trip to diagnose.
+                if (plan.Validate() is { Count: > 0 } bad)
+                {
+                    foreach (var beat in plan.Beats.Select(b => b.Type).Distinct())
+                        skipped.Add($"{beat}: {bad[0]}");
+                    return;
+                }
 
                 foreach (var beat in new MatchEngine(seed).Execute(plan).BeatResults)
                 {
@@ -131,10 +141,18 @@ namespace WrestlingSim.Tests
             // use, and the coverage is asserted rather than hoped for.
             foreach (var template in BeatLibrary.All)
             {
-                foreach (int size in new[] { 1, 2, 3 })
+                // The multi-man beats need a third party to be booked at all, so they are
+                // run as a three-way of singles and skip the tag sizes. Without this the
+                // gate that stopped a disposal spot being offered in a singles match also
+                // stopped five beat types from ever being scanned — which this test caught,
+                // and which is the whole reason the coverage below is an assertion.
+                bool multiMan = template.ToMatchBeat(BeatControl.WrestlerA).IsMultiManBeat;
+
+                foreach (int size in multiMan ? [1] : new[] { 1, 2, 3 })
                 {
                     var sideA = MatchSide.Of(roster.Take(size).ToArray());
                     var sideB = MatchSide.Of(roster.Skip(4).Take(size).ToArray());
+                    var sideC = MatchSide.Of(roster.Skip(8).Take(size).ToArray());
 
                     var beats = new List<MatchBeat>
                     {
@@ -146,6 +164,20 @@ namespace WrestlingSim.Tests
                     if (template.ToMatchBeat(BeatControl.WrestlerA).IsFinish)
                     {
                         beats.Add(template.ToMatchBeat(BeatControl.WrestlerA));
+                    }
+                    else if (template.ToMatchBeat(BeatControl.WrestlerA).IsElimination)
+                    {
+                        // An elimination match runs until one side is left, so a three-way
+                        // takes exactly one elimination plus the finish. Booking this beat
+                        // twice like the others would eliminate everybody including the
+                        // winner, and Validate — correctly — refuses it.
+                        var elim = template.ToMatchBeat(BeatControl.WrestlerA);
+                        elim.Against = BeatControl.WrestlerB;
+                        beats.Add(elim);
+
+                        var win = BeatLibrary.Find("Clean Victory")!.ToMatchBeat(BeatControl.WrestlerA);
+                        win.Against = BeatControl.SideC;
+                        beats.Add(win);
                     }
                     else
                     {
@@ -166,9 +198,18 @@ namespace WrestlingSim.Tests
                         beats.Insert(1, BeatLibrary.All.First(t => t.Type == BeatType.ThirdPartyPullIn)
                                                        .ToMatchBeat(BeatControl.WrestlerB));
 
+                    // A multi-man finish has to name who takes the fall. The elimination
+                    // branch above has already said, and says something different.
+                    if (multiMan)
+                        foreach (var b in beats.Where(x => x.IsFinish && x.Against is null))
+                            b.Against = BeatControl.SideC;
+
                     for (int seed = 0; seed < 4; seed++)
-                        Scan(new MatchPlanModel { SideA = sideA, SideB = sideB, Feud = feud,
-                            Beats = beats.Select(x => x.Clone()).ToList() }, seed);
+                        Scan(multiMan
+                            ? new MatchPlanModel { Sides = [sideA, sideB, sideC], Feud = feud,
+                                Beats = beats.Select(x => x.Clone()).ToList() }
+                            : new MatchPlanModel { SideA = sideA, SideB = sideB, Feud = feud,
+                                Beats = beats.Select(x => x.Clone()).ToList() }, seed);
                 }
             }
 
@@ -176,7 +217,12 @@ namespace WrestlingSim.Tests
             output.WriteLine($"  {lines:N0} commentary lines scanned across {seen.Count} beat types; " +
                              $"{offenders.Count} gendered");
             foreach (var o in offenders.Take(10)) output.WriteLine($"    {o}");
-            if (unreached.Count > 0) output.WriteLine($"  never reached: {string.Join(", ", unreached)}");
+            if (unreached.Count > 0)
+            {
+                output.WriteLine($"  never reached: {string.Join(", ", unreached)}");
+                foreach (var why in skipped.Where(x => unreached.Any(u => x.StartsWith($"{u}:"))))
+                    output.WriteLine($"    {why}");
+            }
 
             Assert.Empty(offenders);
 

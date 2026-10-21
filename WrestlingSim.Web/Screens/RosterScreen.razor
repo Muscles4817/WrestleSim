@@ -1,3 +1,4 @@
+@using WrestlingSim.Models.Person
 @inject GameState State
 
 <div class="screen__head">
@@ -59,11 +60,80 @@
                    into the expandable detail below, where the paragraph explaining it lives.
                    The card keeps the three a booker reads, each against its own ceiling. *@
                 <div class="rcard__stats">
-                    <div class="rcard__stat"><b>@w.OvernessDisplay</b><span>Over / 100</span></div>
+                    <div class="rcard__stat"><b class="@w.CardPosition.Tone()">@w.OvernessDisplay</b><span>Over / 100</span></div>
                     <div class="rcard__stat"><b>@w.Charisma.ToString("F1")</b><span>Cha / 5</span></div>
                     <div class="rcard__stat"><b>@w.RingSkills.GetOverallSkill().ToString("F2")</b><span>Skill / 5</span></div>
                     <div class="rcard__stat"><b class="gold">@w.CardPosition.Label()</b><span>Card</span></div>
+                    @* Age only when the roster knows it. A dash would be a column of
+                       nothing for the seventeen entries with no birth year; leaving the
+                       tile out says the same thing without taking the space. *@
+                    @if (w.AgeOn(Today) is { } age)
+                    {
+                        <div class="rcard__stat" title="@AgeCurve.Reading(age)">
+                            <b>@age</b><span>@AgeCurve.Band(age)</span>
+                        </div>
+                    }
                 </div>
+
+                @* The two meters, on the card rather than behind the expander, because they
+                   are the two numbers that decide whether somebody should be on this week's
+                   show at all. Fresh and sharp is the quiet case and says nothing. *@
+                <div class="rcard__meters">
+                    <Meter Label="Fresh" Value="@(100 - w.Fatigue)" Max="100"
+                           ValueText="@($"{100 - w.Fatigue:F0} / 100")"
+                           Variant="@(w.Fatigue >= RingCondition.CookedThreshold ? "heel" : "gold")" />
+                    <Meter Label="Sharp" Value="@w.Sharpness" Max="100"
+                           ValueText="@($"{w.Sharpness:F0} / 100")"
+                           Variant="@(w.Sharpness <= RingCondition.RustyThreshold ? "heel" : "gold")" />
+                </div>
+                @* Injury outranks the meters: it is a fact rather than advice, and a
+                   wrestler in a sling does not also need telling he is tired. *@
+                @if (w.Injury is { } injury && injury.KeepsOut(Today))
+                {
+                    <div class="rcard__out">🩹 @injury.Describe(Today)</div>
+                }
+                else if (RingCondition.WarningFor(w) is { } condition)
+                {
+                    <div class="rcard__warn">⚠ @condition</div>
+                }
+
+                @if (w.InjuryHistory.Count > 0)
+                {
+                    <div class="rcard__history">
+                        History: @string.Join(", ",
+                            w.InjuryHistory.GroupBy(i => i.Part)
+                                .OrderByDescending(g => g.Count())
+                                .Select(g => g.Count() > 1
+                                    ? $"{Injury.Label(g.Key).ToLowerInvariant()} ×{g.Count()}"
+                                    : Injury.Label(g.Key).ToLowerInvariant()))
+                    </div>
+                }
+
+                @* On the road, or at home. A standing instruction rather than a booking: it
+                   says who the loop builder opens on, so a booker who has decided these eight
+                   are touring this month is not asked again every Saturday. Career only —
+                   exhibition has no clock for a stretch of weeks to mean anything against. *@
+                @if (State.InCareer)
+                {
+                    <div class="rcard__road">
+                        @if (w.IsTouring(Today))
+                        {
+                            <span class="badge badge--cyan">
+                                On the road until @w.TouringUntil!.Value.ToString("d MMM")
+                            </span>
+                            <button class="btn btn--sm btn--ghost" @onclick="() => SendHome(w)">Bring home</button>
+                        }
+                        else
+                        {
+                            <span class="small muted">On the road</span>
+                            @foreach (var weeks in new[] { 2, 4, 8 })
+                            {
+                                var run = weeks;
+                                <button class="btn btn--sm" @onclick="() => SendOut(w, run)">@run wk</button>
+                            }
+                        }
+                    </div>
+                }
 
                 <button class="rcard__toggle" @onclick="() => Toggle(w.RingName)">
                     @(expanded.Contains(w.RingName) ? "Hide ring skills ▲" : "Ring skills ▼")
@@ -119,11 +189,15 @@
                     @if (State.IsSplit) { <th>Brand</th> }
                     <th>Align</th>
                     <th>Style</th>
+                    <th class="num">Age</th>
                     <th class="num">Pop</th>
                     <th class="num">Skill</th>
                     <th class="num">Cha</th>
                     <th class="num">Disp</th>
                     <th>Trend</th>
+                    @* The road column is career-only: a stretch of weeks means nothing against
+                       an exhibition with no clock. *@
+                    @if (State.InCareer) { <th>On the road</th> }
                 </tr>
             </thead>
             <tbody>
@@ -142,11 +216,36 @@
                         }
                         <td><span class="badge @AlignBadge(w)">@(w.Gimmick?.NaturalAlignment.ToString() ?? "—")</span></td>
                         <td class="small muted nowrap">@w.Style</td>
-                        <td class="num">@w.OvernessDisplay</td>
+                        <td class="num small @(w.AgeOn(Today) is { } a && a >= 40 ? "muted" : "")"
+                            title="@(w.AgeOn(Today) is { } at ? AgeCurve.Band(at) : "")">
+                            @(w.AgeOn(Today)?.ToString() ?? "—")
+                        </td>
+                        <td class="num @w.CardPosition.Tone()">@w.OvernessDisplay</td>
                         <td class="num">@w.RingSkills.GetOverallSkill().ToString("F2")</td>
                         <td class="num">@w.Charisma.ToString("F1")</td>
                         <td class="num gold">@Disposition(w).ToString("F2")</td>
                         <td><Trend Momentum="w.Momentum" /></td>
+                        @if (State.InCareer)
+                        {
+                            <td class="nowrap">
+                                @if (w.IsTouring(Today))
+                                {
+                                    <button class="btn btn--sm btn--ghost" title="Bring them home"
+                                            @onclick="() => SendHome(w)">
+                                        Until @w.TouringUntil!.Value.ToString("d MMM") ✕
+                                    </button>
+                                }
+                                else
+                                {
+                                    @foreach (var weeks in new[] { 2, 4, 8 })
+                                    {
+                                        var run = weeks;
+                                        <button class="btn btn--sm btn--ghost" title="@($"Out for {run} weeks")"
+                                                @onclick="() => SendOut(w, run)">@run</button>
+                                    }
+                                }
+                            </td>
+                        }
                     </tr>
                 }
             </tbody>
@@ -198,6 +297,28 @@
 </div>
 
 @code {
+    /// <summary>
+    /// Puts somebody out on the road for a stretch. Nothing is booked by this — the run of
+    /// towns is still confirmed on its date — it only decides who that builder opens on.
+    /// </summary>
+    private async Task SendOut(Wrestler w, int weeks)
+    {
+        w.TouringUntil = Today.AddDays(weeks * 7);
+        await State.SaveAsync();
+        State.Notify();
+    }
+
+    private async Task SendHome(Wrestler w)
+    {
+        w.TouringUntil = null;
+        await State.SaveAsync();
+        State.Notify();
+    }
+
+    /// <summary>The career's clock, or today in exhibition — injuries are read against a date.</summary>
+    private DateOnly Today =>
+        State.Career?.CurrentDate ?? DateOnly.FromDateTime(DateTime.Today);
+
     private string query = "";
     private Division? division;
     private readonly HashSet<string> expanded = new();
@@ -227,12 +348,13 @@
         ("Striker",   w.RingSkills.Striker),
     ];
 
-    private static string AlignBadge(Wrestler w) => w.Gimmick?.NaturalAlignment switch
-    {
-        Alignment.Face => "badge--face",
-        Alignment.Heel => "badge--heel",
-        _              => "badge--muted"
-    };
+    /// <summary>
+    /// The alignment colour, from the one place that decides it. This screen carried its own
+    /// copy of the same three-way map; the picker needed the same answer, and two copies of a
+    /// colour rule is how a face ends up red on one screen and green on another.
+    /// </summary>
+    private static string AlignBadge(Wrestler w) =>
+        w.Gimmick?.NaturalAlignment.Badge() ?? "badge--muted";
 
     /// <summary>
     /// The raw popularity + fan-group appeal blend the engine calls Disposition.

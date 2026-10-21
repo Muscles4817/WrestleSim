@@ -50,7 +50,7 @@
                             @if (State.Split.BrandOf(w) is { } was) { <text> · was @was.Name</text> }
                         </span>
                     </span>
-                    <span class="pick__meta">Over @w.OvernessDisplay</span>
+                    <span class="pick__meta">Over <span class="tabnum @w.CardPosition.Tone()">@w.OvernessDisplay</span></span>
                 </button>
             }
         </div>

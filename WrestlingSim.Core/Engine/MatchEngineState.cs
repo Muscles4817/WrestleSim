@@ -97,6 +97,14 @@ namespace WrestlingSim.Engine
                 ? i
                 : (current + 1) % Math.Max(1, memberCount);
 
+            // Skip anybody already pinned out. In a Survivor Series match the next man
+            // round is often somebody who left ten minutes ago, and tagging in a wrestler
+            // who has been eliminated is the same class of mistake as naming one in
+            // commentary — except this one would have him win the match.
+            int sideIndex = sideA ? 0 : 1;
+            for (int step = 0; step < memberCount && IsEliminated(sideIndex, next); step++)
+                next = (next + 1) % Math.Max(1, memberCount);
+
             if (sideA) _legalA = next; else _legalB = next;
 
             // Coming in fresh is the whole point of a tag, so the charge the isolation
@@ -113,6 +121,13 @@ namespace WrestlingSim.Engine
         private readonly int[] _isolations = new int[2];
         private readonly int[] _nearTags   = new int[2];
 
+        /// <summary>
+        /// Hope spots each side has been given while in trouble. The singles equivalent of
+        /// <see cref="_nearTags"/>, and it charges the comeback the same way a denied tag
+        /// charges the hot tag.
+        /// </summary>
+        private readonly int[] _hopeSpots  = new int[2];
+
         // How many isolation beats in a row this side has taken with no hope spot in
         // between. Deliberately separate from the charge above, because the two measure
         // different things: the charge is what was spent buying the payoff and resets on a
@@ -127,6 +142,19 @@ namespace WrestlingSim.Engine
 
         /// <summary>Tags this side has been denied since its last successful one.</summary>
         public int NearTagsDenied(bool sideA) => _nearTags[sideA ? 0 : 1];
+
+        /// <summary>How many hope spots this side has had while in trouble.</summary>
+        public int HopeSpotsGiven(bool sideA) => _hopeSpots[sideA ? 0 : 1];
+
+        /// <summary>Records a hope spot for the side that is in trouble and had it.</summary>
+        public void RecordHopeSpot(bool rallyingSideA) => _hopeSpots[rallyingSideA ? 0 : 1]++;
+
+        /// <summary>
+        /// Spent when the comeback lands, so a second heat section has to buy its own
+        /// payoff. Two heat/comeback cycles is doc 18 §3.1's 15–25 minute shape, and it
+        /// would be a cheat if the second comeback could bank the first one's hope spots.
+        /// </summary>
+        public void ClearHopeSpots(bool sideA) => _hopeSpots[sideA ? 0 : 1] = 0;
 
         /// <summary>Consecutive isolations this side has taken without a hope spot.</summary>
         public int IsolationRun(bool sideA) => _isolationRun[sideA ? 0 : 1];
@@ -209,6 +237,84 @@ namespace WrestlingSim.Engine
         {
             DisposedSide      = sideIndex;
             DisposedUntilBeat = BeatIndex + beats;
+        }
+
+        // ── Elimination (doc 18 §2.5) ────────────────────────────────────────
+
+        // (side, member, beat). Member-level, because a Survivor Series match eliminates
+        // *people* and a side is out only when it has nobody left — where a triple threat
+        // eliminates whole sides because each side is one person. One rule, and the
+        // difference between the two formats is entirely how many members a side has.
+        private readonly List<(int Side, int Member, int Beat)> _eliminations = new();
+
+        // How many members each side started with, so "is this side out" is a comparison
+        // rather than an assumption. Set once, at the top of the match.
+        private int[] _sideSizes = [];
+
+        /// <summary>Records how big each side is. Called once before the first beat.</summary>
+        public void InitialiseSides(IReadOnlyList<int> memberCounts) =>
+            _sideSizes = memberCounts.ToArray();
+
+        /// <summary>How many of this side are still in.</summary>
+        public int SurvivorsOf(int sideIndex) =>
+            (sideIndex >= 0 && sideIndex < _sideSizes.Length ? _sideSizes[sideIndex] : 1)
+            - _eliminations.Count(e => e.Side == sideIndex);
+
+        /// <summary>
+        /// The sides that have been eliminated, in the order they went out.
+        ///
+        /// The order, not the set, because doc 18 §2.5 is explicit that in an elimination
+        /// match "the drama moves from the fall to the *order* of eliminations". A set would
+        /// answer who won and lose the entire story — which of the favourites went first,
+        /// who outlasted whom, whether the winner had to go through everybody or inherited
+        /// a ring somebody else emptied.
+        /// </summary>
+        public IReadOnlyList<int> EliminationOrder =>
+            _eliminations.Select(e => e.Side).ToList();
+
+        /// <summary>The beat each elimination landed on, in the same order.</summary>
+        public IReadOnlyList<int> EliminationBeats =>
+            _eliminations.Select(e => e.Beat).ToList();
+
+        /// <summary>
+        /// Whether this side is out of the match for good.
+        ///
+        /// Distinct from <see cref="DisposedSide"/>, and the distinction is the point:
+        /// disposal is a window somebody comes back from and elimination is not. A
+        /// disposed man is expected back and the commentary should be asking where he is;
+        /// an eliminated man is gone and mentioning him is a mistake.
+        /// </summary>
+        public bool IsEliminated(int sideIndex) => SurvivorsOf(sideIndex) <= 0;
+
+        /// <summary>Whether this particular wrestler has been pinned out of the match.</summary>
+        public bool IsEliminated(int sideIndex, int memberIndex) =>
+            _eliminations.Any(e => e.Side == sideIndex && e.Member == memberIndex);
+
+        /// <summary>True once anybody has been eliminated — this is an elimination match.</summary>
+        public bool AnybodyEliminated => _eliminations.Count > 0;
+
+        /// <summary>How many eliminations have happened.</summary>
+        public int EliminationCount => _eliminations.Count;
+
+        /// <summary>
+        /// Records an elimination. Idempotent per side, because a plan that eliminates the
+        /// same side twice is refused by <see cref="Models.MatchPlan.MatchPlan.Validate"/>
+        /// and the engine should not be the thing that notices second.
+        /// </summary>
+        public void Eliminate(int sideIndex, int memberIndex)
+        {
+            if (IsEliminated(sideIndex, memberIndex)) return;
+            _eliminations.Add((sideIndex, memberIndex, BeatIndex));
+
+            // Somebody who has just been eliminated is not also lying on the floor waiting
+            // to come back. Leaving the window open would have the disposal filter hiding a
+            // side that is already gone, and free the *next* beat to be aimed at somebody
+            // who left the match.
+            if (DisposedSide == sideIndex && IsEliminated(sideIndex))
+            {
+                DisposedSide      = null;
+                DisposedUntilBeat = -1;
+            }
         }
 
         /// <summary>Total near falls executed so far; drives near-fall specific commentary.</summary>

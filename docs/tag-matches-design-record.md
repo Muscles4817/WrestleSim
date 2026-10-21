@@ -2064,3 +2064,2772 @@ Two mutations killed, and the second is the interesting one:
 | M8 | names filtered, count still off `Sides.Count` | crowd brawl red |
 
 **625 tests passing.**
+
+## A multi-man beat needs somebody to use it on
+
+The last of the three items review round two logged. The five multi-man beats had no gate in
+`GateFor` and no rule in `Validate`, so they were offered enabled in a singles match, where a
+disposal spot narrates
+
+> Alpha puts Bravo down hard on the outside — for now, this is one on one.
+
+about a match that was already one on one. Nothing threw and the numbers were sane. It is a beat
+the booker can pick that means nothing, which is the mirror image of the rule in `CLAUDE.md`:
+the engine could not do the thing, and the booker could book it anyway.
+
+The tag formula has had exactly this gate all along — nothing in it works without somebody on
+the apron — so the fix is that rule pointed the other way, in the same three places:
+`MatchBeat.IsMultiManBeat` beside `IsTagBeat`, a `Validate` rule beside the tag one, and one
+line in `GateFor`. Gated beats are hidden rather than greyed, so in a singles match the count of
+"beats this match cannot use" goes from 12 to 17 and the five simply are not in the list.
+
+### The gate cost five beat types their commentary coverage, and a test said so
+
+`NoCommentaryLine_AssumesAWrestlersGender` books **every** beat type in the library by hand
+rather than trusting the presets, and asserts the coverage rather than hoping for it. Adding the
+gate made five of them unbookable in the two-sided plans it builds, and it failed with
+
+> 5 beat types never ran, so their commentary is unscanned: DisposalSpot, PinBreak, SpiteBreak,
+> IgnoredOpportunity, MutualDestruction
+
+That assertion is the most valuable line in the file and it is worth saying why: the natural
+version of this test scans whatever it happens to reach and reports zero offenders, which is
+green whether the coverage is total or nil. This one cannot be quietly narrowed. It caught a
+coverage regression introduced by a fix in an unrelated file, which is precisely the failure a
+suite normally absorbs in silence.
+
+The five now run as a three-way. Scanning went from 32 beat types to **37** — their commentary
+had never been checked for gendered language at all, because until this work nothing could book
+them in a plan the sweep built. `Scan` also records *why* it skipped a plan now, and prints the
+reason for any unreached beat type: "never reached" without a reason costs a round trip to
+diagnose, and I paid it.
+
+One mutation killed: disabling the `Validate` rule reddens all five refusal cases.
+
+Browser-verified, since the gate is an affordance: in a singles match the five are absent from
+the library and the blocked count reads 17; revealing them shows all five disabled and badged
+**needs a third party**; in a triple threat they are listed and bookable. No console errors.
+
+**625 tests passing.**
+
+## Elimination — falls remove people, and the order is the match
+
+Doc 18 §2.5, which is the whole specification:
+
+> **Elimination.** Falls remove people; last one standing wins. Solves the third-man problem
+> by construction, which is why it scales where a four-way does not. The drama moves from the
+> fall to the *order* of eliminations.
+
+Three claims, and each one is a thing to build rather than a thing to describe.
+
+### "Solves the third-man problem by construction"
+
+A three-way's characteristic failure is the man who vanishes and comes back with no
+explanation — which is why the disposal window exists, and why it is deliberately short. An
+elimination match does not have that problem, because the reason somebody is not in the ring
+is that he was pinned and went to the back.
+
+So the engine needs two different kinds of absence, and keeping them apart is most of the
+work. Disposal is a **window**: the man is coming back, the commentary should be aware he
+exists, and the filter is soft — a beat with nobody upright left to aim at settles for
+somebody who is down. Elimination is **permanent**: naming him is not a wrong emphasis, it is
+a wrestler who left through the curtain two beats ago. `MatchEngineState.Eliminate` also
+clears the disposal window if the man being eliminated was the one on the floor, because
+otherwise the soft filter would be hiding somebody who is already gone and the *next* beat
+would be free to aim at him.
+
+Everything that asks "who else is in this match" goes through one property, `Ctx.Remaining`.
+That is not tidiness: this codebase has now had the BeatControl→side mapping wrong in four
+separate places and the disposal filter missing from two more, and every one of those was an
+independent copy of a side predicate. A fifth copy was not going to be the one that came out
+right.
+
+### "The drama moves from the fall to the order"
+
+A result that reported only the winner would be reporting the least interesting fact about
+the match. `MatchEngineResult.Eliminations` carries who went out, in order, who did it, and
+how many were left after — and the result screen renders it as the field thinning, ending in
+the one still standing.
+
+The order is also *said*, in the play-by-play, because a viewer keeping a count in their head
+is a viewer doing the commentary team's job:
+
+> That is it for Cody Rhodes! Rhea Ripley takes them out of this match!
+> **3 left in this match.**
+> Becky Lynch has been eliminated — Roman Reigns did it!
+> **And then there were two. Roman Reigns and Rhea Ripley — one of them wins this.**
+
+Down to two is scored louder than the others (×1.35 on crowd and story), because it is not
+another fall — it is the moment the match becomes the singles match everybody has been
+waiting for.
+
+### The order only means something if the falls are spaced
+
+This is the part that would have been easy to leave as a comment. Three eliminations in four
+minutes is a scramble, and nobody remembers who went second; what makes the order a story is
+work between the falls, so each one is something the match arrived at rather than something
+that happened while you were reading the last one.
+
+`MatchEngine.EliminationPacing` is a `public static` pure function — the smallest gap between
+falls, measured against the gap an evenly spaced match would have, with the finish counted as
+the last fall. **The minimum rather than the mean, deliberately**: averaging lets a long
+stretch of work pay for two falls back to back, and it does not. One bunched pair spoils the
+run whatever else the match did, and there is a test that fails if the measure ever starts
+averaging.
+
+It is scored, asymmetrically, and the asymmetry is the honest part: even spacing is what the
+format is *supposed* to do, so it earns about a fifth of a star, while falls landing on top of
+each other genuinely wreck it and cost up to three fifths. Measured over 25 seeds, the same
+beats with the falls spread out beat the same beats with the falls bunched **25 times out of
+25, by a mean of 4.7 points** — nearly a quarter of a star, from nothing but where the falls
+sit.
+
+A dead-even match only reaches exactly 1.0 when the fall count divides the beat count. Ten
+beats and three falls cannot be split evenly, so the best a booker can do there is 0.90. That
+is a property of counting in whole beats, not a penalty, and it is written down rather than
+rounded away.
+
+### The format's one structural promise, enforced
+
+An elimination match runs until one side is left. A plan that eliminates one of four and then
+books a finish has not had an elimination match — it has had a four-way with a spare beat in
+it, and the two are graded differently, so the difference has to be real rather than a matter
+of what the booker called it. `Validate` walks the beats in booking order and refuses:
+
+- a plan that does not thin the field to exactly one,
+- a beat booked for, or aimed at, a side that has already gone,
+- an elimination that does not say who goes out,
+- a side eliminating itself,
+- and an elimination in a two-sided match, free from the gate added the day before — a
+  two-sided elimination match is a normal finish with a longer name.
+
+### Bookable, because that is the rule
+
+Two presets (Triple Threat Elimination, Four-Way Elimination), the beat in the library gated
+to multi-man, and the beat sheet's target row relabelled: **who goes out**, with the
+"whoever is standing" option withheld, because an elimination that does not name somebody is
+not a booking.
+
+Browser-verified at 390×844 with touch. A four-way of Reigns / Ripley / Lynch / Rhodes on the
+shipped preset: Rhodes out first by Ripley, Lynch second by Reigns, Reigns last one standing,
+4.42 stars, the eliminations panel reading the field down, no console errors.
+
+### Five mutations, all killed
+
+| | Mutation | Result |
+|---|---|---|
+| M1 | `EliminationPacing` returns 1.0 always | 6 red, including the averaging test |
+| M2 | pacing measured but never scored | the scramble comparison goes red |
+| M3 | `OtherSide` treats eliminated as returnable | the eliminated wrestler is named again |
+| M4 | `Remaining` returns every side | 3 red — names, counts and the recorded order |
+| M5 | the field need not thin to one | the structural rule goes unenforced |
+
+M2 is the one worth keeping: a measure that is recorded but never scored is not a claim about
+the format, it is a number on a screen, and only a test that compares two *matches* catches
+the difference.
+
+**650 tests passing.**
+
+### Review round one: two rules that asked the plan instead of the ring
+
+The review agent died on a rate limit before starting, so I ran the round myself. Every
+reachable booking I could construct ran without throwing — an elimination immediately after
+the opening, two back to back, one landing inside an open disposal window, one eliminating the
+side that was already on the floor, a whole tail of undirected beats afterwards — and
+`EliminationPacing` was clean at every edge I could find, including empty input, duplicates,
+unsorted input and a fall count larger than the beat count.
+
+What it did find was a pair of rules keyed off `Plan.IsMultiMan`, which is a fact about the
+*booking* and stays true for the whole of an elimination match. Both are questions about the
+ring:
+
+- **`TopConnection`** was the most connected performer in the match, including people who had
+  been eliminated. Take the biggest name out first and the survivors work the rest of the
+  match measured against somebody in the back — in a match that is now entirely theirs. Worth
+  0.32 investment against 0.22 with the field and beats held identical.
+- **The near-fall discount** exists because everybody knows a cover in a multi-man can be
+  broken. Down to two, nobody can break anything — so the crowd starts believing counts again,
+  which is the format's whole narrative payoff and was being withheld.
+
+Both now go through `Ctx.MultiManNow` — more than two sides *still in*. The structural uses of
+`Plan.IsMultiMan` stay as they are, deliberately: `Opponent` and `LegalDefault` take two-sided
+shortcuts through `SideA`/`SideB` **by index**, which would name an eliminated wrestler the
+moment the survivors happen to be sides A and C.
+
+### And I misattributed both of them first
+
+Worth writing down, because it is the same mistake twice in one review and the third time in a
+day.
+
+**The attention finding was measured on the wrong axis.** I compared crowd energy across a
+three-way and a singles match, found a 6.4% gap, and wrote "6.4% of the crowd term" into a code
+comment. Attention feeds `RecordReaction`, which runs *after* the energy is computed — the gap
+I measured was the near-fall rule, the other bug, in the same experiment. Two mechanisms, one
+number, confidently attributed to the wrong one. The comment is corrected and the test reads
+`Reaction.Investment`, which is what the rule actually moves.
+
+**The near-fall test then measured crowd build-up.** It compared a near fall before an
+elimination against one after it, reported a 2.1× swing, and **passed against a mutation that
+reverted the mechanism completely** — because an elimination pops the room, so the later near
+fall lands on a hotter crowd whatever the jeopardy rule says. The honest fix was not a cleverer
+comparison: two matches cannot be held equal enough. `BeatResult.NearFallJeopardy` records the
+factor, and the test asserts it directly — three sides in gives 0.60, two gives 1.00, and
+reverting the rule reddens it.
+
+The general lesson, sharper than "be careful": **when a fix and its measurement live in the
+same experiment, the experiment cannot tell you which one moved.** Isolating that needs either
+a variable held genuinely constant, or the mechanism made observable. Here it needed both.
+
+Two more mutations, both killed: `TopConnection` over every side again, and `MultiManNow`
+reverting to the plan's side count.
+
+**653 tests passing.**
+
+### Still not built, and why
+
+- **Survivor Series elimination** — five a side, eliminating *individuals* rather than sides.
+  A different axis entirely: this work eliminates whole sides, and that needs elimination
+  inside `MatchSide.Members`, plus the tag formula running with a shrinking team. Not a
+  variation on what is here.
+- **Battle royals and the Rumble.** Over-the-top elimination with everyone in at once, and
+  timed entry for the Rumble — and doc 18 is blunt that these are "barely a match: a vehicle
+  for a spectacle, a surprise return, and one story told in eliminations. Judged on moments,
+  not on work." The grading model this engine is built on measures work, so a Rumble scored
+  by it would be scored on the wrong axis. That is a design problem before it is a
+  code problem, and pretending otherwise would produce a feature that runs and lies.
+- **Handicap matches**, still: the engine has no numbers-advantage term.
+
+## Rules you can assert on without running a match
+
+A fair question, asked after the elimination review: *why are you mutating things instead of
+writing tests that cover this?*
+
+The answer is that mutation is not a substitute for the tests — it is a check on them, and I
+needed it because my tests kept passing on broken code. Three times in a day: an undirected-beat
+test that asserted the exact behaviour of the bug it was written against, a near-fall test that
+measured the crowd level an elimination had built, and two disposal tests whose doc comments
+claimed to cover a bug they never touched. Every one of them passed against the deletion of the
+mechanism it named.
+
+But the follow-up question is the better one. **Why were they so easy to get wrong?**
+
+### Seven mechanisms, and everything else
+
+`MatchEngine` is about 2,700 lines. Exactly seven things in it can be called directly:
+
+```
+AttentionShare  Billing  BlameHeat  BoredShare
+EliminationPacing  InvestmentFactor  MultiManNearFallFactor
+```
+
+Those have good tests, and none of them needed mutation to be believed. Everything else was
+observable only by running a whole match and reading a commentary string or a score — and a
+commentary line is moved by control resolution, the disposal window, eliminations, repetition
+decay, fatigue, attention and the RNG *at once*. Assert on one and you have asserted on all of
+them, which is precisely how the near-fall finding got attributed to the wrong rule: two rules
+were both moving the number, and the experiment could not say which.
+
+So the fix is not more mutation. It is more of the seven.
+
+### What the engine already knew and threw away
+
+`ExecuteBeat` works out, for every beat, who is working it, who it lands on, and who a room-wide
+line would name. It used all three and recorded none, which left the play-by-play as the only
+window onto them. `BeatResult` now carries them:
+
+| | |
+|---|---|
+| `Worker` | who the engine resolved as working the beat — *not* `Control`, which is the booking |
+| `Target` | who it lands on: the booked `Against`, or whoever the engine picked |
+| `Billed` | the legal wrestler of every side still in the exchange |
+
+`Billed` is recorded on **every** beat, not only the ones that use it, because the useful
+assertion is usually that somebody is *absent* — the man on the floor, the man who has been
+eliminated — and absence cannot be checked against a line that was never emitted.
+
+`Target` is resolved the way the handlers resolve it, not the way dispatch does. All seventeen
+handlers that take `other` recompute it from `control ??= ctx.LegalDefault`, so on an `Even` or
+`Contested` beat the dispatch value (computed while control was still null, falling back to
+`LegalB`) is not what the beat was about. Recording that would have shipped a field that is
+right for most beats and quietly wrong for the ones nobody booked a side for.
+
+### What the tests turned into
+
+Before and after, the same test:
+
+```csharp
+// was — moved by seven rules, passes if the line is never emitted
+Assert.Contains("Charlie", line);
+Assert.DoesNotContain("Bravo", line);
+
+// now — moved by one rule
+Assert.Equal("Charlie", disposal.Target?.RingName);
+```
+
+Ten assertions across `ThreeWayCommentaryTests`, `EliminationTests` and `MultiManBeatTests` made
+that move. Three of them dropped a seed sweep they only needed because a phrasing might not name
+anybody. One of them was `Assert.Contains("C", beat.Commentary.First())` — a **one-character
+substring**, satisfied by any sentence containing a capital C, which in a match whose wrestlers
+are called A, B and C is very nearly all of them. It asserted approximately nothing and had been
+green for weeks.
+
+All four of the original mutations still die: `Opponent` ignoring `Against`, `ControlLegal`
+knowing only A and B, `AllLegal` ignoring the disposal window, and `Remaining` returning every
+side. They die faster and against narrower tests.
+
+### What stays end-to-end, and why
+
+The collective-phrasing test — "these two" versus "all three" — keeps its text assertions and a
+forty-seed sweep, because there the sentence *is* the mechanism. The claim is about the words a
+commentator says and there is nothing behind them to assert instead. What it costs is a slower
+test, which is the honest price of a rule about phrasing. The count behind the wording is now
+asserted separately through `Billed`, so a failure says whether the field was counted wrong or
+merely worded wrong.
+
+That is the whole distinction this pass was after: **a test asserts on a sentence when the
+sentence is the claim, and on a value when the sentence is a proxy.** Nearly every test here was
+in the second category and written as though it were in the first.
+
+**653 tests passing**, and materially fewer of them need mutation to be believed.
+
+## The parameter fifteen handlers were handed and none could use
+
+Found while making beat resolution observable, logged rather than fixed in-flight, and done
+here on its own.
+
+`ExecuteBeat` resolved the opponent and threaded it into fifteen `Apply*` handlers. Every one
+of them ignored it and recomputed its own on the first line it touched the name.
+
+That is not redundancy, it is a trap, and the reason is the order of two lines:
+
+```csharp
+Wrestler? control = ctx.ControlLegal(beat);            // null on Even / Contested
+Wrestler other    = control != null ? ctx.Opponent(control) : ctx.LegalB;
+```
+
+`control` is null for `Even` and `Contested`, so `other` falls back to `LegalB` — the opponent
+of a controller that does not exist yet. Every handler then opens with `control ??=
+ctx.LegalDefault` and recomputes, which is the only reason the engine was ever right. The
+parameter was correct for beats booked to a side and quietly wrong for the ones nobody booked a
+side for, sitting in fifteen signatures looking available.
+
+Anyone tidying a handler by using the argument it was already given would have got the wrong
+wrestler on exactly the beats the multi-man work spent two review rounds fixing. It is gone
+now, and the dispatch-level resolution with it: each handler resolves its own after the
+fallback, which is what all fifteen already did.
+
+### Verified by byte-identity, not by the suite passing
+
+A refactor claiming no behaviour change should be made to prove it, and "653 tests still pass"
+is not that proof — the suite does not cover every structure at every seed, and a pure
+refactor is exactly the case where a subtle change hides in the gaps.
+
+So: every shipped structure, at every side size it supports, at twelve seeds — final score,
+star rating, winner, technical, storytelling, crowd peak, finish quality, and for every beat
+its crowd delta, advantage delta, resolved reaction and full commentary text. Dumped before and
+after and compared.
+
+**3,600 lines, 526,336 bytes, byte-identical.**
+
+The harness was deleted afterwards rather than committed, because as written it asserted
+nothing and a test that asserts nothing is the thing this documentation has spent a day
+complaining about. It is a five-minute rebuild from this paragraph when the next refactor wants
+it.
+
+### And the count in the last section was wrong
+
+The previous section says "all seventeen handlers". It is fifteen. The seventeen came from a
+`grep -c "Wrestler other"`, which counted the declaration in `ExecuteBeat` and a line in a
+comment alongside the real signatures — and I then repeated it into a code comment and a pull
+request without checking. A number produced by grep is a number about text, not about code;
+this one was wrong by two and nothing downstream depended on it, which is exactly why it
+survived being written down three times.
+
+## Handicap — a format that is not about who wins
+
+Doc 18 §2.5, in full:
+
+> **Handicap.** Two or more against one. Almost never a contest; it is a *statement*, and the
+> statement is usually about the lone man's toughness rather than the outcome.
+
+Two sentences, and the second is a problem before it is a feature: **an engine that grades
+results cannot grade a format whose point is explicitly not the result.** Everything this
+simulator does converges on a score for how well a match was worked and who it sent home
+happy, and doc 18 says that for this one match those are the wrong questions.
+
+So there are two mechanisms rather than one — what the numbers cost the wrestler carrying
+them, and what they earn for carrying them.
+
+### The rule it inherited wrote its own exit condition
+
+The old `Validate` refused uneven sides, and said exactly why:
+
+> The exit condition for this rule is a numbers term in the engine, not a decision that
+> handicap is allowed.
+
+That is a better note than most, because it makes the rule falsifiable — it names what would
+have to be true to lift it, so lifting it is a thing that can be *earned* rather than argued
+for. `NumbersFatigue` is that term. The rule is met, not waived.
+
+(It also claimed a 2v1 could not be saved, because the serializer refused any tag plan. That
+stopped being true when the save format moved to storing `Sides` as id lists. A stale
+justification inside a live rule is worth noticing: the rule was still right, and one of its
+two reasons had quietly expired.)
+
+### What the numbers do
+
+Not a penalty multiplier for being outnumbered. That is a fudge factor with a story attached,
+and it would have been an hour's work and a lie.
+
+What two-on-one actually does is deny you the rest. `FadeFactor` already says a side wears
+down as a match goes long, and its comment already argues the exception — *"tagging out is
+literally how a team resists fatigue, so a fresh partner should hold the match up late"*. A
+lone wrestler has nobody to tag. He works every beat while the pair works half each.
+
+So the numbers arrive as fatigue, in proportion to how much of the work you are doing that
+they are not: against twice your number you carry the wear once over, against three times,
+twice over. It **compounds**, which produces the right advice without anyone writing the
+advice down — a short handicap match is a beating and a long one is a slaughter, so the way to
+book one is to keep it short.
+
+| | at beat 6 | at beat 14 |
+|---|---|---|
+| one against two | 0.833 | 0.400 |
+| one against three | — | 0.160 |
+
+It applies to the **working** side only, which is what makes it a numbers advantage rather than
+a slower match: the lone wrestler's offence weakens as the beating goes on and theirs does not,
+because they have been taking turns. And it is exactly 1.0 whenever the sides are even, so it
+is inert in every match that existed before it — which matters more than it sounds, because
+`MatchEngine.TypicalInvestment` is a *measured median of this roster* and a term that moved
+every match would have moved that too, silently.
+
+### What he earns
+
+`Defiance` is the share of a handicap match the outnumbered side spent fighting rather than
+being beaten up — beats it worked, plus near falls it kicked out of, because being the one who
+kicks out is a moment of toughness even when the other side has control.
+
+Centred at a third rather than a half, deliberately: he is *supposed* to be losing most of it.
+A lone wrestler controlling half the beats against two is not defiant, he is in a match the
+booking forgot was a handicap.
+
+The measure is what the format is graded on, and it is the half that makes doc 18's claim into
+a rule rather than a comment. Two plans, same length, same people, both **lost by the lone
+wrestler** — one with two comebacks in it and one without:
+
+> the valiant loss scored higher in **25/25** seeds, mean gap **6.51 points**
+
+A third of a star, from nothing but whether he ever got a moment. A squash is a bad handicap
+match however cleanly it was worked, because it says nothing, which is the one thing this
+format cannot afford to do.
+
+### One number could not describe two-against-one
+
+The builder had a single `sideSize` for the whole match, and `MatchStructure` a single
+`SideSize`. Neither can express a shape whose sides differ — so the engine could have been
+taught the numbers term and the booker still could not have offered a match to apply it to.
+That is the same shape of assumption as `SlotRef(bool IsA, …)` and `a`/`b`/`partnersA`: fine
+until the format it cannot express turns up.
+
+`sideSizes` is per side now, `MatchStructure.SideSizeB` is the second side when it differs, and
+`ForShape` takes both. Two new shapes (1 v 2, 1 v 3), three presets — Two on One, Beat the
+Odds, Three on One — all short, because being outnumbered compounds.
+
+A side effect worth keeping: the title picker asked `t.SideSize == SideSize`, which has no
+answer when sides differ. It asks whether *every* side can field the title's size now, which is
+both more correct and agrees with `Validate` — no belt is offered in a handicap match, and none
+would have been legal.
+
+### Caught by the tests I did not write
+
+Two of the guards from earlier work fired on this without being asked:
+
+- **The gendered-copy scanner** caught my own preset descriptions — *"He is not winning this…
+  whether he makes them work for it"*. Doc 18 says "the lone man"; the game's copy does not get
+  to. Both rewritten.
+- **Three tests asserted the rule I was deliberately lifting**, which is exactly what they were
+  for. They were rewritten to the new contract rather than deleted — and one of them still
+  refuses its case, for a different reason: uneven sides across *three* sides is still no match,
+  because handicap means two or more against **one** and a 1 v 2 v 3 has no single outnumbered
+  wrestler for the term to be about.
+
+Four mutations, all killed: `NumbersFatigue` returning 1.0, the term landing on both sides,
+defiance measured but not scored, and defiance counting every beat rather than only resistance.
+
+Browser-verified at 390×844: both handicap shapes offered, the lineup rendering one slot
+against two, only the handicap presets shown, and the result reading **"A loss that did its
+job… Roman Reigns made 2 of them work for it"** at 57% defiance. No console errors.
+
+**677 tests passing.**
+
+### Still not built
+
+- **What it should cost, afterwards.** The result screen says a win against the numbers is "a
+  bill somebody pays later", and no bill is actually sent — two people beaten by one should
+  damage them, and enduring a beating should be worth something to the man who took it. That
+  lives in the status and heat systems rather than the match engine, and it is the honest
+  half-finish here: the match models the statement, the career does not yet hear it.
+- **Three or more sides at uneven sizes**, refused rather than modelled, because doc 18
+  describes no such match.
+
+## Survivor Series — the handicap match nobody booked
+
+The elimination work took out whole *sides*, which is right for a triple threat where a side
+is one wrestler. A Survivor Series is the same rule with bigger sides: teams, tag rules, and a
+fall sends you to the back rather than ending the match.
+
+Doc 18 has no section on it — only the elimination bullet — so the design came from what the
+format is rather than from a paragraph to implement. Which turned out to be the interesting
+part, because **the thing that makes it its own match had already been built**.
+
+### It needed one field and no new beat
+
+An elimination is aimed at a *side*, and who goes out is **whoever is legal** — which is who
+you can pin. With one wrestler a side that is the side, so the triple-threat behaviour is
+unchanged by construction; with four it is whoever is in the ring, and the team carries on a
+wrestler down. One beat, two formats, and the difference is entirely how many members a side
+has.
+
+`MatchEngineState` went member-level: `_eliminations` records `(side, member, beat)`, a side
+is out when `SurvivorsOf` hits zero, and `Tag` skips anybody already pinned — because in this
+format the next man round is often somebody who left ten minutes ago, and tagging in an
+eliminated wrestler is the same class of mistake as naming one in commentary, except this one
+would have them win the match.
+
+### The handicap term was already the answer
+
+Four against three **is** a handicap match. Not like one — it is one, arrived at rather than
+booked, and the wrestlers carrying it should feel exactly what a booked handicap does.
+
+`NumbersFatigue` shipped the day before reading `Plan.Numbers`, the booked side sizes. It reads
+live survivor counts now, and that single change is the whole of what makes a Survivor Series
+more than a long tag match: the back half of every one of them is a handicap match, and the
+short-handed team's offence weakens while the full-strength team's does not.
+
+That is the same correction elimination has now needed in four separate places — ask what is
+true *now*, not what the plan said at the top. It is worth naming as a pattern rather than
+fixing a fifth time: **in a format where people leave, every question about the field is a
+question about this moment.**
+
+### Two gates that had been drawn in the wrong place
+
+**The multi-man gate conflated sides and people.** Yesterday's rule said an elimination
+"needs a third party" and checked side count — so a Survivor Series, two sides and eight
+wrestlers, was refused outright. A disposal spot genuinely needs a third *side*, because there
+has to be somebody outside the pairing to dispose of. An elimination only needs a third
+*person*. `NeedsAThirdPerson` is the weaker rule for the beat that needs the weaker rule, and
+the only thing it still refuses is a singles match, where taking one wrestler out is a finish
+with a longer name.
+
+**The finish was not recording its fall.** In side elimination that never showed: the finish
+ends the match, and who lost is in `BookedLosingSide`. With teams it is the fall that empties
+the losing side, so the engine and `Validate` disagreed about the last wrestler — validation
+counted the finish towards emptying a side, correctly, and the engine never marked them out.
+A Survivor Series reported the losing team with one still standing.
+
+Fixing it changed `Eliminations` from "everybody who went out except the final loser" to
+"everybody who went out", which is the better contract and the necessary one here. It also
+introduced a bug in the same commit: `EliminationPacing` counts the finish as the last fall
+*itself*, so a list that now contained the finish counted it twice and reported a gap of zero
+at the end — a perfectly spaced match scoring as a scramble. The measure was right; the input
+had changed underneath it.
+
+### What the browser found and the tests did not
+
+Both of these passed every test and were obvious in about four seconds of looking:
+
+- **The eliminations panel read "2 left" six times running.** `Remaining` counted *sides*,
+  which is fine when a side is one wrestler and useless the moment it is four — both sides are
+  in until the last fall. It counts people now, and there is a test asserting `[5, 4, 3]`,
+  which no test had thought to look at.
+- **The result said "last one standing" with two survivors.** True in a triple threat, wrong
+  in the match that is named after its survivors.
+
+And the shipped preset tripped its own pacing warning, which turned out to be **correct** — I
+had booked the last elimination adjacent to the finish, two falls in a row at the end of the
+match. The measure was doing its job on the person who wrote it. A beat between them fixed the
+preset rather than the rule.
+
+The gendered-copy scanner also caught `"are a man down"` in a match of eight women, which is
+the phrase a commentator reaches for and this game does not get to use.
+
+Four mutations, all killed: elimination taking whole sides, `Tag` bringing back the
+eliminated, the numbers term reading booked sizes, and the finish recording no fall.
+
+Browser-verified at 390×844: eight wrestlers, the falls counting 7-6-5-4-3-2, the scoreboard
+after each one, **"That is the match! … take it with 2 still standing"**, and the panel closing
+on *2 survivors* rather than a winner. 4.41 stars, no console errors.
+
+**690 tests passing.**
+
+### Still not built
+
+- **Elimination in a multi-man match of teams** — three sides of three, say. The state
+  supports it and `Tag` does not: the tag rotation is `_legalA`/`_legalB`, two sides only, so a
+  third side's members cannot rotate. That is a real limit with a real fix, and not one to make
+  while pretending it is free.
+- **Battle royals and the Rumble**, still: over-the-top plus timed entry, and doc 18 says they
+  are judged on moments rather than work, so this engine would grade them on the wrong axis.
+- **What any of it costs afterwards.** Survivors, sole survivors and the wrestler who went out
+  first are all recorded and none of them changes a career. Same half-finish as the handicap
+  work, and the same place it belongs: the status and heat systems, not the match engine.
+
+## Battle royals and the Rumble — the format the engine could not grade
+
+Written down as not built twice, on the grounds that it is a design problem before a code
+problem. That held up on inspection, and it is worth stating precisely rather than as a
+feeling:
+
+> **The battle royal / Rumble.** Over-the-top elimination. Everyone starts together in a
+> battle royal; timed continuous entry is the Rumble variant, and it is the entries that make
+> the Rumble a story rather than a scramble. Barely a match: a vehicle for a spectacle, a
+> surprise return, and one story told in eliminations. **Judged on moments, not on work.**
+
+Two independent reasons the match engine cannot take this format, and both are load-bearing:
+
+- **It cannot be expressed.** `BeatControl` names four sides and `MatchPlan.Validate` caps a
+  plan at four. A thirty-person field has no way to say who a beat is for. That is not a limit
+  to widen — a booker does not author twenty-nine falls, and a format where they would have to
+  is a format the beat model is the wrong shape for.
+- **It cannot be graded.** The whole scoring model measures how well a match was *worked*, and
+  doc 18 says in as many words that this one is not judged that way. Running it through that
+  machinery would not be generous or harsh; it would answer a different question and print the
+  number anyway.
+
+So it has its own plan, its own engine and its own scoring, and none of them inherit from the
+match. That is the design, not a shortcut around one.
+
+### What a booker actually decides
+
+Who is in it, what order they come out, who wins, and a handful of moments. The eliminations
+in between are the engine's, because nobody books those in real life either.
+
+The moment vocabulary is deliberately six words long — a surprise return, an iron-man run, a
+showdown, a mass elimination, a betrayal, a near-elimination — because a format whose point is
+that a few things stand out is not improved by a longer list of things that can stand out.
+
+### Scoring, and the rule that stops it being gamed
+
+Moments are half the score, the field is a third, and the entry story and iron-man run split
+what is left. No technical component at all.
+
+The load-bearing rule is **repetition decay per kind, weighted so the cheap moments wear out
+fastest**. A second surprise return is still a surprise; a fourth near-elimination is the crowd
+waiting for it to end. Without that a booker pads a Rumble to five stars with hanging-on spots,
+which is the exact opposite of what the format is for. Measured: four near-eliminations score
+below two surprise returns, and four different moments beat four showdowns by more than a
+third.
+
+The total divides by a target of six rather than by the count, so booking more moments pays up
+to a point and then stops. A Rumble where every minute is a highlight has no highlights.
+
+### "It is the entries that make the Rumble a story rather than a scramble"
+
+That sentence is a claim, so it is a number here. `EntryStory` is what the winner's entry
+position was worth — linear from last to first, because there is nothing clever about it, the
+further back you started the longer you were out there — and it is **zero for a battle royal**.
+Not as a penalty: everybody started together, so there is no number to have a story about.
+
+The same field therefore scores lower as a battle royal than as a Rumble, and there is a test
+that fails if it does not. That is doc 18's sentence made falsifiable rather than repeated.
+
+### The same mistake, a fourth time in a day
+
+`TheBiggestNamesLastLongest` — a battle royal that dumps its biggest name at number four has
+spent the only thing it had, so who goes out is weighted against connection. The test ran a
+match and compared where the stars and the jobbers landed in the elimination order.
+
+**It passed with the weighting replaced by a bare random roll.**
+
+Entry position decides who is even *in the ring* to be picked, so an end-to-end test measures
+that and reports it as the weighting. The first version of the test was worse still — it put
+the stars at numbers 1–5 and reported them going out *first*, which was true and had nothing to
+do with connection.
+
+That one also found a real bug underneath: the ring was capped at two or three, so eliminations
+began at the third entrant and the only people available to be dumped were whoever came out
+earliest. Entering at number one was a death sentence — the precise opposite of the format's
+best story. A Rumble keeps six to ten in there, and it does now.
+
+The fix for the test is the one this codebase keeps arriving at: `RumbleScoring.EliminationRisk`
+is a pure function, asserted directly, and the end-to-end version is kept as a thirty-seed
+sanity sweep that is honest about being the weaker claim. Mutating the risk rule to a constant
+now reddens both.
+
+Four mutations, all killed: moments never wearing out, a battle royal having an entry story,
+the risk rule ignoring connection, and moments not being scored at all.
+
+### Bookable and legible
+
+Its own screen, because the match builder cannot express it: pick the format, build the field
+in entry order, tap somebody to make them the winner, add moments. An iron-man run is the one
+moment the chip row refuses to book — it is read off the match, from who came out early and was
+still there at the end, and taking the booker's word for it would be the format's best story
+handed over rather than earned.
+
+Browser-verified at 390×844: a ten-strong Rumble at twenty minutes, two moments booked, 3.60
+stars, the scorecard reading **The field / Moments / Entry story / Iron man** and no technical
+term anywhere. No console errors.
+
+**710 tests passing.**
+
+### Still not built
+
+- **A Rumble on a career card.** It is `ICardItem` and validates, and `ShowSimulator` has never
+  seen one — the show grader reads `BookedMatch` and would need to learn a second kind of
+  thing. Reachable from the exhibition menu, not yet from a show.
+- **Entry numbers as a booking asset.** Drawing number one is a thing that happens *to* a
+  wrestler in a storyline, and here the booker simply chooses the order. The interesting
+  version of this format is the one where the number is a consequence.
+- **What any of it costs.** Same half-finish as the last three: a Rumble win is the biggest
+  thing a card can hand somebody and it changes nothing about their career yet.
+
+## A battle royal on a show card
+
+The Rumble shipped reachable from the exhibition menu and nowhere else, which by this
+project's own rule is half a feature. It was worse than the usual half-feature, though, and
+worth writing down because the failure mode was invisible rather than absent:
+
+`ShowSimulator` dispatches card items with a `switch` ending in `_ => 0`. A Rumble added to a
+career card would have **run, scored zero, and dragged the show's rating down with a number
+that meant nothing.** Not a crash, not a blank — a plausible bad show. The fallthrough is worth
+keeping for exactly that reason, but only if somebody notices when a new kind of item starts
+falling through it.
+
+Three seams, and each had to be found rather than assumed.
+
+### The dispatch
+
+`RunRumble` is a sibling of `RunMatch` rather than a wrapper: the two share the shape — run it,
+note it, move standing — and nothing else, because what is being run is graded on moments and
+what is being moved is a whole field's standing rather than two people's.
+
+One deliberate omission: no feud familiarity is read. A battle royal is not a pairing, so there
+is no pairing for the crowd to be sick of. Running the same thirty people again next month is a
+real problem and not one the staleness rule models.
+
+### The status economy, which is genuinely different
+
+`HeatEconomy.ForRumble` is not `ForMatch` with more losers, and the difference is the reason
+bookers reach for this format at all.
+
+**Nobody in a battle royal was beaten.** Twenty-nine people went over the top rope in a
+scramble, and the audience has never treated that as a loss. So going out costs a tenth of what
+being pinned costs — measured, and asserted — because making it cost real standing would break
+the one thing the match is for: **elevating somebody without spending anybody.** It is the
+cheapest rub in wrestling and the engine should say so.
+
+The winner's rub reads the field's *standing*, not its size. Thirty enhancement wrestlers is
+not a bigger night than five main-eventers, and a booker who thinks otherwise is counting
+bodies. Size only scales it, with heavy diminishing returns — ten is most of the way to thirty,
+because past a point nobody is counting.
+
+And a genuine iron-man run pays somebody who did not win. That is the format's second rub and
+a real one: the wrestler who came out early and was still there at the end is made by the match
+whoever won it.
+
+### The save file, where it would have vanished
+
+`SaveSerializer.ToDto` returns null for a card item it does not recognise. A booked Rumble was
+written as nothing and was simply gone when the player came back — silent, and not the kind of
+thing anybody finds out about until the show they booked is missing its main event.
+
+It is a sub-object on `CardItemDto` rather than a new `CardItemKind`, deliberately: the Kind
+drives the show's pacing rules, and a Rumble **is** a match as far as an audience sitting
+through the card is concerned. It needs telling apart when reading a save, not when pacing a
+show. Null on every older save, so an existing file reads back as exactly what it was.
+
+The load path also drops a card naming somebody the roster has lost, rather than rebuilding it
+short — the rule the match branch already follows, and more obviously right here: a
+thirty-strong Rumble quietly becoming a twenty-nine is a booking the player never made.
+
+### And the builder became a component
+
+The screen written last time was a screen. `MatchBuilder` and `SegmentBuilder` are components
+with `OnDone`/`OnCancel`/`ConfirmLabel`, which is exactly how a thing gets booked in two places
+— the sandbox and a card slot. `RumbleBuilder` is that now, and both screens use it.
+
+That is the shape of the original miss: a format that could be *run* but not *booked* is a
+screen where there should have been a component, and it is visible in the file layout before it
+is visible in the game.
+
+Four mutations, all killed: the dispatch forgetting rumbles, going out costing a full loss, the
+rub counting bodies rather than standing, and the save forgetting rumbles.
+
+Browser-verified at 390×844: **+ Add a battle royal** beside the match and segment buttons, an
+eight-strong field at seventeen minutes added to a card, the show run, and the result reading
+*"Roman Reigns wins the 8-wrestler rumble — 3.29★"* with the eliminations listed. No console
+errors.
+
+**718 tests passing.**
+
+### Still not built
+
+- **Entry numbers as something that happens *to* a wrestler.** Drawing number one is a
+  storyline beat; here the booker picks the order outright. The interesting version of this
+  format is the one where the number is a consequence of something else.
+- **What a Rumble win entitles you to.** It moves standing now, which is the general currency,
+  but the thing a Rumble win *is* in wrestling is a title shot at the biggest show of the year
+  — and the calendar has no notion of a booked future match.
+
+## The number is drawn, and it means opposite things to opposite people
+
+Written down as not built at the end of the Rumble work: *"drawing number one is a storyline
+beat; here the booker picks the order outright."* There was a concrete design hole behind that
+sentence, and it is worth naming precisely because it is the kind that hides inside a feature
+that works.
+
+**`EntryStory` rewarded a low number, and the booker chose the order with no friction.** So the
+optimal play was always "the winner enters at two". A dominant strategy is not a difficulty
+setting, it is a decision the game has already made for the player — and the format's best
+story became a box to tick.
+
+### What a number is worth depends on who drew it
+
+That is not a balance patch, it is how the format works in the ring:
+
+| | early number | late number |
+|---|---|---|
+| **face** | the biggest rub the format produces — outlasted the field | a coronation nobody bought |
+| **heel** | little; nobody wants to admire a heel's endurance | the steal, and the fury is the point |
+
+Heat is engagement and engagement is good (A5), so a heel swanning out last and stealing it is
+a legitimate thing to book rather than a failure to protect somebody. What it is *not* is the
+same booking as a face going the distance, and the old rule could not tell them apart.
+
+A face's iron-man run still out-scores a heel's steal at its best, because admiration is a
+bigger currency than outrage — but they peak at opposite ends, which is what turns picking a
+number back into a decision about who you are making tonight.
+
+**Conditioning gates the face's version and not the heel's.** A wrestler with no gas tank
+outlasting twenty-eight people is not an underdog story, it is a booking the crowd can see
+through; arriving fresh and last requires nothing of anybody. So the low number is not merely a
+choice, it is a choice that needs the right wrestler in it.
+
+### And the number happens to you
+
+`RumblePlan.DrawNumbers` assigns entry positions at random, and the builder offers it as one
+tap. The booker can still reorder by hand afterwards — an authority figure putting somebody in
+at number one on purpose is one of the format's oldest angles, and refusing to allow it would
+be modelling a fantasy — but the honest version is now the default rather than something you
+have to decline to do. `pinned` keeps named wrestlers on the numbers they already hold, which
+is that angle expressed rather than worked around.
+
+It is a Fisher–Yates shuffle, and there is a test that would catch it not being one. The usual
+shortcut — `OrderBy` on a random key — is not uniform, and a draw that is quietly biased is
+exactly the sort of thing that never fails visibly. Four hundred draws, ten wrestlers, every
+mean position inside 4.9–6.1 against an expected 5.5.
+
+The draw is also *said*: number one and number two get told they have drawn the worst number in
+the match, and the last entrant is called the freshest man in it. A number nobody mentions is a
+setting rather than a story.
+
+Four mutations, all killed: alignment ignored so early is always best, conditioning not gating
+the run, the draw done as an `OrderBy`, and pinned numbers redrawn anyway.
+
+Browser-verified at 390×844: eight in the field, **🎲 Draw the numbers**, the order visibly
+changing, the note reading *"Roman Reigns drew number 1 — a long night, and the biggest story
+this match can tell if they survive it"*, and the call opening *"Number 1: Roman Reigns — and
+that is about the worst number you can draw."* No console errors.
+
+**727 tests passing.**
+
+### Still not built
+
+- ~~**The draw as an event on the card.**~~ Built — see *The drum goes on television* below.
+- **What a Rumble win entitles you to**, still: it moves standing, but what a Rumble win *is*
+  in wrestling is a title shot at the biggest show of the year, and the calendar has no notion
+  of a booked future match.
+
+## The drum goes on television
+
+The drawing shipped as a 🎲 in the match builder. It was honest and it was completely
+invisible: the numbers moved, and no crowd ever saw it happen. Doc 18 §2.5 says it is the
+entries that make the Rumble a story rather than a scramble, and a story the audience is not
+told is not a story — it is a setting with good prose around it.
+
+So `RumbleDraw` is a card item. It goes on a show *before* the one holding the match, which is
+what a go-home show is for, and it is the only thing on a card that reaches forward: the
+numbers it draws are written onto a `RumblePlan` booked on a later date.
+
+### What it buys and what it costs
+
+Three prices, and all three had to be real or the drawing is free — and a free thing is a
+thing everybody books, which is not a decision.
+
+**It buys anticipation.** `RumbleScoring.Anticipation` is worth up to 0.5, applied as a
+multiplier on the entry story, and most of it (0.35) rides on the *winner's* number being one
+of the announced ones. "Can they go the distance from two" is the story, and it is only a
+story if the building has had a week to argue about it. Announcing more of the field on top
+adds 0.15 at most: a drawing is worth booking for one number, not for breadth.
+
+It is **zero when nothing was announced**, deliberately. A Rumble booked without a drawing
+scores exactly what it scored before this existed. The alternative — discounting an
+unannounced number — silently rebalances every Rumble in every existing save, and dresses a
+new feature up as a tax on not having it.
+
+**It costs a card slot** and its runtime, like anything else worth booking. It is
+`CardItemKind.Segment`, so it takes the fatigue penalty when it follows one. A drawing after a
+promo is two people talking.
+
+**It costs the surprise.** Somebody whose number was read out on television cannot walk out to
+a shocked building, so a wrestler flagged `IsSurprise` or booked into a `SurpriseReturn` moment
+cannot be in the cast. That is a validation error rather than a quiet scoring cut, because it
+is a booking decision and the booker should meet it while they are making it rather than read
+about it in the show report.
+
+### Rigging, and why the fix has to be on camera
+
+The obvious hole: book a drawing, hand your winner number two, collect the anticipation. That
+is the dominant strategy the entry-number work was written to kill, walking back in through a
+new door.
+
+`Rigged` is the only way to keep a number once the drum is on television — the engine calls
+`DrawNumbers` on the night, so an order arranged by hand in the match builder is overwritten.
+And rigging is priced: `DrawCredibility` takes 60% of the drum away as the share of handed-out
+numbers goes to one, flooring at 0.4 because a crowd that knows the fix is in is still watching
+the fix. The wrestler it was done to gets a `PersonalInsult` with whoever did it.
+
+The rule that makes the price stick is that **rigged ⊆ cast**. Fixing a number for somebody who
+never comes out to collect it would cost nothing, so it is a booking error. There is no
+off-camera fix.
+
+### A number read from the other end
+
+`PullReaction` is `EntryStory`'s asymmetry, read from the drawing instead of the match. In the
+match, a number is worth what the winner can do with it; at the drawing it is worth what the
+building does the second it hears it.
+
+|         | early                              | late                          |
+|---------|------------------------------------|-------------------------------|
+| Face    | 1.00 — the sentence, and the crowd gets behind it | 0.45 — relief is not a reaction |
+| Heel    | 0.80 — the cheap pop, and a real one | 1.00 — the injustice, which is the point |
+| Tweener | 0.60                               | 0.60                          |
+
+Split from `NumberDrama` — the symmetrical U that says number one and number thirty are both
+something and number fifteen is nothing — so either can be asserted without the other. A
+drawing's crowd score is `DrawCrowd`: 65% the best pull of the night, 35% the mean, so parading
+four more people past the drum to hear four middling numbers makes the segment worse rather
+than longer.
+
+Momentum only, and no overness. A drawing is not a rub — nobody's standing moves because of a
+number. What moves is whether they are the story of the week.
+
+### Two shows, one save file
+
+The only cross-show reference on a card, and a save reads one card at a time: the December
+television is deserialised before the January pay-per-view exists. So `RumblePlan` gained an
+`Id`, the drawing holds it, and `SaveSerializer.ResolveDraws` binds them in a second pass once
+every card is built. A drawing whose match is gone is dropped rather than left on a sheet
+pointing at nothing — and removing a Rumble from a card removes any drawing for it, at the
+moment the booker is looking at the thing they removed.
+
+`ShowSimulator.RunDraw` reports a dangling reference rather than throwing, and that is the one
+place it differs from every other card item. A missing match is a state something outside this
+card can create; every other way a drawing can be wrong is something the builder will not let
+you book.
+
+### Verified
+
+Eleven mutations, all killed:
+
+1. `PullReaction` ignores alignment (all weights 1.00)
+2. `DrawCredibility` always returns 1.0
+3. `Anticipation` ignores whether it was the winner's number
+4. `DrawCrowd` is the maximum alone, with no mean to drag it
+5. `NumberDrama` linear — earlier is simply better
+6. the drawing does not draw, it reads the numbers already set
+7. the drawing never sets `NumberAnnounced`
+8. a fixed number generates no grievance
+9. the match never applies the anticipation it was handed
+10. a surprise can be announced after all
+11. the reload never runs the second pass
+
+Browser-verified at 390×844, through the whole loop: an eight-strong Rumble booked on the
+31 January premium event, a drawing booked on the 5 January television, three of them out to
+pull, Roman Reigns handed number one and Kevin Owens running it. The builder read *"1 of 3
+numbers handed out — the drum is worth 80% of an honest one"*; the night reported *"Kevin
+Owens hands Roman Reigns number 1. No drum, no draw, no pretence"*, *"Number 8 for Rhea
+Ripley — last in, and they are loving it"*, and *"That did not look like luck, and the crowd
+is telling them so"*; the feud panel showed **Roman Reigns vs Kevin Owens +3.1 heat ·
+PersonalInsult**. Running the premium event afterwards, the Rumble read the numbers back. No
+console errors.
+
+One layout bug found by looking rather than by testing: `.beat-row` is a three-column grid
+(mark, body, tools), so the two new rows that omitted the mark put their body in the 28px
+column and wrapped every word onto its own line. Fixed by giving them marks — ★ for the match
+being drawn for, 🎤 for whoever is running it.
+
+**743 tests passing.**
+
+### Still not built
+
+- **A career Rumble's eliminations are not shown.** `ShowScreen` renders them for an exhibition
+  card; `BookShowScreen` shows only the item notes and the winner. Pre-existing, surfaced by
+  putting a drawing's play-by-play next to a Rumble that has none.
+- **A drawing on a show run *after* the match** is not prevented. The builder only offers
+  Rumbles on later dates, but a player who runs shows out of calendar order can strand one.
+  It scores normally and writes numbers nobody will read.
+- **The order the numbers are revealed in is the cast order**, not something the booker sets.
+  Building to the big number is a real piece of segment craft and this does not model it.
+- **What a Rumble win entitles you to**, still. Unchanged: the calendar has no notion of a
+  booked future match.
+
+
+## The gimmick match, defined as what it takes away
+
+**The spec is not doc 18.** Every format built so far — multi-man, elimination, handicap,
+Survivor Series, the battle royal — comes out of doc 18 §2.5, and all of them change *who is
+in the match* or *how a fall works*. A stipulation is neither. It lives in **doc 20 §6**,
+inside "The blow-off", and doc 04 §5 lists it in the booker's toolkit beside the turn and the
+title change. Doc 20 is explicit: "the stipulation must match the escalation. A cage match for
+a feud that never got past words…"
+
+So this is a feud mechanic, and the vocabulary is deliberately the rungs of doc 20 §6.2's
+ladder that can be stated as **which finishes are legal**. Doc 04 prices the screwjob finish
+as "protects both, sells the rematch". Every rung is the removal of exactly that, and one
+sentence covers the whole feature:
+
+> In a gimmick match you can no longer lose cheaply.
+
+`StipulationRules.Allows` makes it literal: **every rung forbids the disqualification and the
+count-out**, which are the two finishes that let somebody lose without being beaten. Asserted
+across the whole enum rather than rung by rung, so a rung added later cannot quietly opt out of
+the only rule they all share.
+
+### The one line that does the most work
+
+In a No-DQ match a run-in is a *clean* loss. Interference reads as `Protected` because it is
+against the rules, and the audience forgives a loss it can blame on a rule being broken;
+announce that there are no rules and there is nothing left to blame. `StipulationRules.Weigh`
+promotes exactly that one cell.
+
+`TitleEconomy.ChangesHands(finish) => finish != Protected` then does the rest with no change of
+its own — so **a belt moves on a run-in once the match is No DQ**, which is the classic, and
+the reason a booker who needs a title off somebody who will not lose clean reaches for a
+stipulation. The same promotion makes a blow-off *settle* under a stipulation when the same
+finish would have left it open (`SettlesAFeud`, doc 20 §6.1) — which is doc 20's argument for
+reaching for a stipulation at the end of a feud, arrived at as arithmetic rather than restated.
+
+### Two prices, and an asymmetry between them
+
+Without both of these it is a free rating bonus with no counter — the shape closed twice
+already on the Rumble.
+
+**It has to be earned.** `Escalation` grades the booking against the feud's intensity: No DQ
+wants Building, a cage or Last Man Standing wants Hot, I Quit wants Nuclear. Below that it goes
+**negative** rather than merely to zero, because announcing stakes the room can see were not
+earned is an active statement that the promotion has run out of ideas. Above it there is no
+extra credit — the heat that got the feud there is already paying out through
+`Feud.StartingEnergyBonus`, and crediting it twice would make a nuclear feud's cage worth more
+than the nuclear feud.
+
+**It has to be rare.** `StipulationBook` is the promotion-level counter doc 20 §9 asks for by
+name, and doc 17 §4.1 sets the period: one to two per year. Promotion-level and not per feud,
+because the audience's sense that a cage is special is a fact about the show — two different
+feuds running cages a fortnight apart devalue each other exactly as much as one feud doing it
+twice.
+
+**Scarcity multiplies the reward and not the penalty.** This is the load-bearing line. If a
+long gap softened an unearned stipulation, the way to book an unearned cage would be to *wait*
+— which is not a lesson about wrestling. Being overdue can make a good idea better; it cannot
+make a bad one good.
+
+### Falls Count Anywhere is deliberately absent
+
+In a model whose entire vocabulary is which finishes are legal, it is indistinguishable from No
+DQ: what it actually removes is the ring as a boundary, and the engine has no notion of
+location. A menu entry that is a mechanical duplicate of the one above it is a menu that lies,
+so it is not offered. The same reasoning excludes Hell in a Cell, Ladder/TLC and the permanent
+stakes — those are paid for with bodies and with roster departures, and there is neither a
+match injury model nor a way to write somebody off.
+
+### The interaction worth knowing
+
+A multi-man match already forbids the disqualification and the count-out by its own rule (doc
+18 §2.5, "first fall wins"). So a stipulation on a three-way removes strictly less than the
+same stipulation removes in a singles match — the cage takes away the run-in and nothing else,
+because the escape routes were already gone. That is correct rather than a gap, and it is why a
+gimmick match reads as a bigger deal in a singles blow-off than anywhere else.
+
+### Verified
+
+Twelve mutations, all killed:
+
+1. the cheap loss survives — DQ still legal under a stipulation
+2. the run-in stays an excuse — no promotion to Decisive
+3. an unearned stipulation costs nothing instead of costing
+4. scarcity softens the penalty as well as the reward
+5. no cooldown — everything always fresh
+6. the cage lets the run-in in
+7. the plan never checks its own stipulation
+8. the engine never puts the stipulation in the room
+9. the show never records that it ran one
+10. the show weighs the finish under the rules regardless
+11. the cooldown is not saved
+12. the booked stipulation is not saved
+
+**Number 10 survived the first pass**, and it is the finding. `StipulationRules.Weigh` was
+asserted directly and thoroughly; nothing checked that `ShowSimulator` actually *called* it. So
+the headline consequence of the whole feature — the belt moving on a run-in — was resting on
+nothing, and the mutation that reverted the wiring passed thirteen green tests. The fix is a
+paired end-to-end assertion: same booking, same seed, same finish, and the only difference is
+whether the match was announced as No DQ. This is the same lesson in a new shape: extracting a
+rule so it can be asserted does not, on its own, prove anything is using it.
+
+The same pass moved the blow-off resolution check out of `MatchScreen.razor` and
+`MatchBookingFlow.cs` — where it was written twice and tested in neither — into
+`StipulationRules.SettlesAFeud`.
+
+Browser-verified at 390×844. The builder's stipulation panel reads *"Steel Cage · needs Hot+ ·
+Nobody escapes, nobody interferes. No DQ, count-out, interference · never run"*; booking one on
+a feud that does not exist warns *"The story has not got there… it is worth −11.0 crowd energy,
+which is worse than booking nothing"*; the beat palette shows **DQ Finish** and **Count-Out**
+disabled with the badge *"not in a Steel Cage"*; and the show report says *"Steel Cage — the
+story had not got there yet. The room knew (−11.0 crowd energy)."* No console errors.
+
+Three copy defects found by looking rather than by testing: `.pick__desc` is inline, so two of
+them ran onto one line; `.pick__meta` is `white-space: pre-line`, so a `<br />` in the string
+was escaped rather than rendered; and lower-casing the forbidden-finish list turned "DQ" into
+"dq".
+
+**758 tests passing.**
+
+### What review found
+
+Three findings, all in the Blazor builder, which the test suite does not reach. Corrected
+before merge.
+
+**The blocker, and it was a real one.** `GateFor` called `StipulationRules.Allows` for *every*
+beat template, but `Allows` was written as a question about finishes — `Last Man Standing` is
+`is FinishClean or FinishSuperFinisher`, which is `false` for a hot opening. Choosing Last Man
+Standing or I Quit therefore disabled the entire beat library, and **two of the four rungs were
+unbookable**. Steel Cage and No DQ happen to return true for non-finishes, which is exactly why
+a browser pass that only booked a cage found nothing — a reminder that verifying one member of
+a set is not verifying the set.
+
+Fixed in `Allows` rather than at the call site: there were already three callers and the trap
+was invisible from all of them. A stipulation constrains how a match can *end*; it has nothing
+to say about how one is worked. Pinned by
+`AStipulationHasNoOpinionAboutBeatsThatAreNotFinishes`, written red first.
+
+**The panel was reading a feud that did not exist yet.** It sat on the match-type step, three
+steps before `ResolveFeud` assigns `feud`, so on the forward path every rung was badged "needs
+Hot+" and quoted its full negative — while the engine graded the same booking off the feud that
+did exist and applied a large positive. The "Earned" branch was unreachable. A panel that
+advertises −11 and delivers +11 is worse than no panel.
+
+The fix is not a different variable but a different *place*: the panel moved onto the feud step,
+below the feud picker, reading `PendingIntensity`. That is also the design being consistent with
+itself — doc 20 §6 puts the stipulation inside the blow-off, so its price cannot be read until
+the story it escalates from has been chosen.
+
+**Freshness was priced on the wrong night.** The panel used `Career.CurrentDate` and the engine
+uses the show date; the clock only advances when a show is run, so a card booked two months out
+was quoted today's staleness. Booking a cage for a pay-per-view eight weeks away is precisely
+how a booker gets a stale one fresh again, and the panel was hiding it.
+
+Re-verified in the browser: with a Nuclear feud declared, all four rungs lose their "needs"
+badges and I Quit reads *"Earned, and it has been a while — worth +15.0 crowd energy"*; the beat
+library under I Quit offers **27 of 27** picks enabled, where before it offered none.
+
+**759 tests passing.**
+
+### Still not built
+
+- **The escalation level doc 20 §9 asks for.** `Demands` grades against `Feud.Intensity`, which
+  is derived from heat — so it measures how *much* has happened, not *what*. Doc 20 wants a
+  feud that has reached "injury" to unlock different beats and stipulations from one at
+  "words", with skipping levels penalised. The history tags are the foundation for it and
+  nothing reads them that way yet. `Demands` is the one function to move when it exists.
+- **Falls Count Anywhere**, until the engine has a notion of where a match is happening.
+- **Hell in a Cell and Ladder/TLC**, until a match can injure somebody. A spectacle stipulation
+  that costs nothing is a rating multiplier, which is the thing the two prices above exist to
+  prevent.
+- **Career, Mask, Hair, Loser Leaves Town**, until there is a way to write somebody off the
+  roster with a story.
+- **War Games**, which is a format rather than a stipulation — staggered entry into a cage, and
+  much closer to the Rumble than to this.
+- **The cage keeping anybody out.** There are no managers, seconds or stables, so the most
+  famous reason a cage match exists has nobody to exclude. `SteelCage` bans the interference
+  finish, which is the closest this codebase can currently get.
+
+
+## The stage the singles structures did not have
+
+Doc 18 §2.3 draws the face-in-peril structure as seven stages, says of the middle one that
+"the hope spots are **essential** — they keep the audience from giving up during the heat",
+and then says of the whole thing: *"this structure … is the reason 'face in peril' is in this
+repo's `MatchStructureLibrary`."*
+
+The structure named after it implemented four of the seven.
+
+```
+doc 18 §2.3   SHINE → CUT-OFF → HEAT → HOPE SPOTS → COMEBACK → FINISHING STRETCH → FINISH
+shipped       ·       ·         HEAT   ·            COMEBACK   ·                    FINISH
+```
+
+`Face-in-Peril` was `Hot Start → Power Beatdown → Methodical Grind → Hot Comeback → Clean
+Victory`. Five beats. No shine, no cut-off, **no hope spots — there was no `HopeSpot` beat
+type at all** — and no finishing stretch: the comeback ran straight into the pin with zero
+near falls, which is doc 18 §3.3's pyramid rule inverted. A detail that gives the game away:
+the structure called Face-in-Peril contained no `Face in Peril` beat, because that beat is
+`BeatType.Isolation` and `IsTagBeat` gates it to matches with a partner on the apron.
+
+The asymmetry is the tell. Southern Tag has thirteen beats, two peril/near-tag cycles, an
+everybody-in and a save; Six-Man War has fourteen. **The tag formula got the full treatment
+and the singles formula — which doc 18 calls the dominant structure in wrestling, seventy
+years old and working in every culture — had five beats.**
+
+### The beat
+
+`BeatType.HopeSpot`, and it is the mirror of `NearTag` rather than a small `Comeback`. A
+comeback releases the tension; a hope spot winds it tighter. Both read as
+`ReactionKind.Tension`, and they are opposite in the one place it can be measured: a hope
+spot is offence that *lands* before it is cut off, so the room goes up; a near tag is a reach
+that *fails*, so the room groans. If the pair ever agreed in sign, one of the two beats would
+be redundant.
+
+`ComebackCharge(hopeSpots)` mirrors `HotTagCharge`: 1.0 with none, saturating just above 1.4
+at two, because a third flurry that goes nowhere is the crowd learning that the flurries go
+nowhere. Spent when the comeback lands, so the second cycle of a two-cycle match buys its own
+payoff.
+
+**The cost needed no new rule.** A hope spot claws back real deficit, and the comeback's
+earned bonus is read off exactly that deficit — so past the saturation point every further
+flurry is spending the heat it was supposed to be relieving. A wrestler who keeps getting
+flurries was never really in peril. That falls out of two mechanisms that were already there,
+which is a better reason to believe it than a rule written to produce it.
+
+### The library, rebuilt
+
+| Structure | Before | After | Band (doc 18 §3.1) |
+|---|---|---|---|
+| TV Formula | 4 beats, 9 min, 0 near falls | 6 / 9 | 5–8, TV standard |
+| Face-in-Peril | 5 / 16 / 0 | 11 / 15 / 2 | 10–15, the workhorse |
+| Technical Showcase | 7 / 20 / 2 | 11 / 22 / 2 | 15–25, big match |
+| Feud Blowoff | 8 / 20 / 2 | 12 / 20 / 3 | 15–25 |
+| Big Match *(was "Big Match Epic")* | 9 / 16 / 3 | 13 / 25 / 2 | 15–25, two cycles |
+| **Epic** *(new)* | — | 17 / 34 / 3 | 25–40, false finishes |
+
+"Big Match Epic" was renamed because it was not one. Doc 18 §2.4 defines an epic as "25–40
+minutes, multiple false finishes"; it ran sixteen. Nothing in the library reached that band
+except the three multi-person structures, so a booker laying out the main event of the
+biggest show of the year had no template for it.
+
+**Spotfest and Grudge Brawl deliberately did not get the peril shape.** Doc 18 §2.4 calls a
+spotfest "sequential high spots, weakest psychology" and a brawl "little structure, escalating
+violence". Forcing seven stages onto those would make every match the same match, which is the
+opposite of the point. They got longer finishing stretches instead.
+
+`Shine` and `Cut-Off` were also recategorised out of `CatTag`. `BeatEnums.cs` already said in
+its own comment that they "describe the singles face-in-peril structure just as well" — but
+they were filed under Tag, so a booker building a singles match never saw them in the palette.
+Bookable and invisible is the same as absent.
+
+### What the rebuild broke, and what that revealed
+
+Two tests went red, and neither was widened.
+
+`FeudIntensity_PaysOffThroughTheMultiplier` read the live `Grudge Brawl`; when it grew from
+six beats to nine, the measured feud gap fell from **0.253 to 0.177** stars and the 0.20
+threshold failed. `PreviouslyUnusedAttributes_NowChangeTheResult` read the live `Big Match`;
+the Toughness sweep fell from **0.056 to 0.033**.
+
+Nothing about feuds or toughness had changed. `Saturate()` is documented as giving ever-
+smaller returns per beat, and the consequence nobody had written down is that **the longer a
+match is, the less any single factor moves its rating** — so both thresholds were silently
+calibrated against a beat count rather than against the claim they were making. A library
+edit moved them.
+
+The fix is the lesson this repo keeps arriving at: both tests now own their beat lists, copied
+verbatim from the structures as they stood, so they measure the mechanism instead of something
+downstream that another edit can move. Both reproduce their original numbers exactly (0.253
+and 0.056).
+
+The property itself is left standing and recorded below, because it is arguably backwards — a
+thirty-four-minute epic should be *more* revealing of conditioning and connection than an
+eight-minute television match, not less — and fixing it is a scoring recalibration rather than
+a structure change.
+
+### Verified
+
+Seven mutations, all killed: the hope spot draining the room instead of lifting it; the charge
+never saturating; the comeback ignoring it; the flurry costing no deficit; the charge never
+being spent; Face-in-Peril losing both hope spots; the Epic losing its second heat cycle.
+
+Two earlier attempts at the last two survived and were **bad mutations rather than weak
+tests** — one swapped a `Hope Spot` for a heat beat while leaving a `Desperation Strike` (also
+a `HopeSpot`) in place, and the other trimmed three minutes off a structure whose band is
+fifteen wide. Worth recording: a surviving mutation is a claim about the tests, and it has to
+be checked before it is believed.
+
+Browser-verified at 390×844. The Epic books from the structure list at seventeen beats, and
+its play-by-play reads *"A desperate elbow from Roman Reigns, and another! They are trying to
+build something here — and Seth Rollins ends it"* (crowd 64→68), *"Roman Reigns will not stay
+down — two big shots and the building is on its feet — and then Seth Rollins takes the legs
+out again"* (60→63), with both comebacks landing after their hope spots. No console errors.
+
+**770 tests passing.**
+
+### Still not built
+
+- **The saturation property above.** Per-factor effects shrink as matches lengthen. It is
+  recorded rather than fixed because the fix is a recalibration of `TechScale`, `StoryScale`
+  and the crowd normalisation, which would move every rating in the game.
+- **The finishing stretch is only a count of near falls.** Nothing distinguishes a finisher
+  kickout from a roll-up near fall, and doc 18 §5.3's "protected finisher" is not modelled at
+  all — so an epic's four false finishes are four of the same thing with repetition decay
+  applied.
+- **The limb chain, still.** Doc 18 §2.2 is five links — attack → sell → limits offence →
+  finisher targets it → match ends because of it — and in code "limb story" exists only in
+  `BeatLibrary` descriptions and one booker tip. `Technical Showcase` has the beats named for
+  it and nothing joins them up.
+- **Hope spots in tag matches.** `NearTag` does the job there, which is right, but a tag match
+  cannot book a hope spot that is not a reach for the corner.
+
+
+## Two meters that pull against each other
+
+Before this the engine had fatigue *inside* a match — `FadeFactor`, the stamina penalty, the
+extra wear of being outnumbered — and nothing whatever outside one. A wrestler left a
+thirty-four-minute epic in exactly the state they entered it. Eight months off cost them
+overness and not one point of ring sharpness. Work every night for a month: no wear. Sit out
+a year: come back as sharp as you left.
+
+```
+                works a match      rests a week
+  Fatigue          ▲ up             ▼ down
+  Sharpness        ▲ up             ▼ down
+```
+
+**A day off pays back fatigue and costs sharpness.** That is the whole design and the reason
+the two live in one file: resting somebody is a trade rather than a repair, and there is no
+correct amount of it. Rest your main eventer two months and they come back fresh and rusty;
+work them every week and they are sharp and cooked. Neither is the right answer, which is
+what makes it a decision.
+
+### Danger is not fatigue
+
+Nothing in `RingCondition` reads match type or stipulation. What costs a wrestler is how long
+they were out there and how fast they went:
+
+```
+paced  = minutes × PaceLoad(style)   × pace²        × 0.20
+lasted = minutes × VolumeLoad(style) × minutes / 20 × 0.18
+cost   = paced + lasted
+```
+
+**Pace is squared and volume is not**, and that asymmetry is the point. Going flat out is
+anaerobic and the bill grows far faster than the clock does. Measured: a striker's twelve
+minutes at near-Extreme costs **13.0** against **12.0** for a twenty-six-minute steady match —
+the sprint is the more expensive night. A powerhouse is the reverse by a mile (9.1 against
+13.1). A ladder match is dangerous without being especially tiring, and the two axes are
+modelled as the different things they are.
+
+The first implementation multiplied *both* halves by the running time, which made length
+dominate everything and a sprint always the cheap option — the exact reading this system
+exists to deny. It was caught by measuring, not by reading the code.
+
+### A style is a shape, not a number
+
+| Style | Pace load | Volume load | |
+|---|---|---|---|
+| HighFlyer | 1.30 | 1.05 | every spot is a full-body landing |
+| Striker | 1.25 | 0.80 | throwing and eating strikes at that rate |
+| Brawler | 1.00 | 1.00 | robust, no extremes |
+| Grappler | 0.80 | 0.95 | efficient, constant isometric load |
+| **Powerhouse** | 0.75 | **1.45** | big men gas — the clock is the killer, not the speed |
+| Technical | 0.70 | 0.70 | the economical one, which is why they could work every night |
+
+The two columns rank the styles differently, and a test asserts that they do — if they ranked
+the same, one of them would be redundant and the interaction would collapse into "some styles
+are tiring".
+
+### Two routes to sharpness, and they are inverses
+
+`SelfMaintenance` is read off psychology and ring IQ, because that is what this model has to
+say *veteran* with — doc 15 §4 has psychology rising into a wrestler's forties while
+athleticism declines from around twenty-eight. It is also right on the merits: what a veteran
+keeps at home is the knowing. What goes is timing with another body, and no amount of
+understanding replaces live reps for that.
+
+`RestingFloor` is where somebody stops falling when they are not working at all — a **floor**,
+not a ceiling. Measured, from 100:
+
+| | floor | 4 weeks | 8 weeks | 26 weeks |
+|---|---|---|---|---|
+| veteran (psych 95) | 72 | 84 | 77 | 72 |
+| regular (psych 78) | 64 | 79 | 70 | 64 |
+| rookie (psych 58) | 54 | 73 | 62 | 54 |
+
+The veteran settles at "fine" — able to go out and have a good match. What he cannot reach
+from home is his own best.
+
+And the rep side is the inverse: the young one's body answers a match harder (+3.5 against
++2.4 for the same twelve minutes). What that produces once rust is in the picture is the
+thing worth having, and it is *not* what that line says on its own — because the youngster
+also falls fastest, he needs **more** matches a week to hold a high reading. Measured, working
+twice a week from a sharpness of 40, the veteran is back to razor in fourteen weeks and the
+rookie is still climbing after a year. Not because a rep does less for him, but because five
+days off does more against him. That is the young wrestler needing the reps week in and week
+out, arrived at rather than asserted.
+
+### Where the meters bite
+
+| Meter | Feeds | |
+|---|---|---|
+| Fatigue | `Conditioning`, half as much `Athleticism` | conditioning already drives the late-match fade, the long-match penalty **and** the outnumbered wear — one hook, three mechanisms |
+| Sharpness | `Workrate`, `RingPsych`, and `WorkrateFor(style)` | rust is timing and crispness |
+| — | **never `Connection`** | |
+
+That last row keeps three different things apart. Rusty and forgotten are not the same, and
+the game already models forgotten (absence bleeds overness, doc 17 §3.9). Keeping rust off
+the crowd axis is what lets a returning legend be white hot and unable to go, which is the
+actual problem with returning legends.
+
+`WorkrateFor(style)` needed the factor separately: without it a beat carrying a `StyleHint`
+read the raw skills and routed around the meter, the one path on which being ring rusty would
+have cost nothing.
+
+### Calibrated, not guessed
+
+Doc 06 gives **100–150 dates a year** for a full-timer at Tier 0. A throwaway harness ran a
+simulated year at several volumes per style; the first pair of scale constants put a
+mid-card technical wrestler and a high-flyer both at a pinned 100 on the same schedule, which
+is a meter that has stopped saying anything. The shipped values give:
+
+| | 2/wk 10-min | 3/wk 10-min | 3/wk 20-min | 1/wk 30-min epic |
+|---|---|---|---|---|
+| Technical | 4 | 4 | 47 | 10 |
+| Powerhouse | 6 | 6 | 79 | 24 |
+| HighFlyer | 8 | 17 | 92 | 33 |
+
+### Verified
+
+**787 tests passing.** Fourteen mutations killed — pace linear instead of squared; either
+style load flattened; pace counted per beat instead of per minute; a rest day costing no
+sharpness; rust running past the floor; a rep worth the same to everybody; either performance
+factor neutered; the style-hinted workrate routing around rust; tagging out costing a full
+match; the show charging once a night; the meters not persisted; and fatigue compounding on
+itself.
+
+**The last one survived the first pass and is worth recording.** The initial wiring read a
+wrestler's conditioning through `PerformerProfile.Conditioning`, which by then already had the
+fatigue factor taken off it — so a tired wrestler paid *more* for the same match and recovered
+*slower* from it, twice over. It was spotted and fixed during the build, and left nothing
+behind that would notice it coming back. `BaseConditioning` exists for exactly this, and there
+is now a test on it. Fixing a bug mid-build and moving on is how the bug gets back in.
+
+Two other mutations survived and were **bad mutations rather than weak tests** on inspection.
+
+`InternalsVisibleTo` was added to the Core project so tests can reach `PerformerProfile`. It
+is internal on purpose — nothing outside the engine should depend on its shape — but that also
+meant no test could assert on it, which is the coupling this repo keeps removing everywhere
+else. `HotTagCharge` sat private and untested for the same reason.
+
+Browser-verified at 390×844: a fresh career shows every wrestler at Fresh 100 / Sharp 100; one
+thirty-four-minute Epic took a powerhouse to **Fresh 78**, matching the calibration table; four
+of them on one card took him to **Fresh 12** with *"⚠ cooked — they need time off more than
+they need this match"* on the roster card, in the picker row while choosing him for the next
+show, and in the builder. No console errors.
+
+One placement bug found by looking: the builder notice was anchored inside the beats step, so
+it only appeared once every other decision had already been made. It now sits above the step
+bodies and follows the booker through the wizard. And `.prow__why` is a single grid area, so
+the picker's condition line was rendering on top of the booking reason until it got a row of
+its own.
+
+### Still not built
+
+- **Fatigue does not cause injury**, which is the doc-faithful version (doc 15 §3.1 lists
+  fatigue and conditioning as multipliers) and needs the match injury model that does not
+  exist. Chosen deliberately: the meters are real and legible before anything can take a
+  wrestler off the roster for three months.
+- **No age**, so doc 15 §4's aging curve still has nothing to hang on. `SelfMaintenance` uses
+  psychology as the veteran proxy, which is the honest substitute rather than the real thing.
+- **Segments cost nothing.** A promo, a beatdown and a number drawing all read the same here,
+  which is right for the promo and thin for the beatdown.
+- **A battle royal's cost is estimated from entry order**, not from how long each entrant was
+  actually in the ring — the engine knows, and the card layer does not ask.
+- **Style still only affects fatigue.** The other half of what a style should touch —
+  entertainment, crowd fit — is a separate axis and deliberately out of this.
+
+## The cost of having had the match
+
+The ring-condition meters ended with fatigue as an expense. This makes it a danger.
+
+Before this, injury did not exist. A booker could work their main eventer three times a
+night, every week, for a year, and the worst that happened was a number went down and some
+matches got worse. Doc 15 §3.1 gives a table of risk multipliers and calls them "directly
+usable", so `InjuryRisk` is that table rather than a curve somebody liked the shape of:
+
+```
+risk = 0.00013 × style × intensity × fatigue×lateness × size
+                × opponent × history × ring
+```
+
+per beat, per wrestler, for everybody legal in the ring.
+
+**Nothing in it reads the rating.** An injury is not a punishment for booking a bad match; it
+is what a body does after enough of them. The one thing the model refuses to say is that a
+badly-worked match is a dangerous one.
+
+### Per beat, because the reference's sharpest claim is about *when*
+
+Doc 15 §3.1: "poor conditioning sharply increases **late-match** injury risk." A roll taken
+once at the end of a match cannot tell the tenth minute from the second, so the roll is per
+beat and reads both terms — how tired they arrived and how deep in they are — and the two
+compound:
+
+| carried fatigue | beat 2 | beat 12 |
+|---|---|---|
+| 0 | ×1.00 | ×1.63 |
+| 30 | ×1.39 | ×2.27 |
+| 60 | ×1.78 | ×2.90 |
+| 90 | ×2.17 | ×3.54 |
+
+The lateness term starts at beat 6, the same threshold `FadeFactor` uses, so the engine has
+one idea of "late" rather than two. A cooked wrestler in a long match is carrying **3.5×**,
+and that is the whole reason the fatigue meter was worth building.
+
+### Three styles orderings, deliberately not one
+
+`StyleRisk` does **not** rank the styles the way either fatigue load does, and a test asserts
+that it doesn't:
+
+| Style | Pace load | Volume load | **Injury risk** |
+|---|---|---|---|
+| HighFlyer | 1.30 | 1.05 | **2.30** |
+| Powerhouse | 0.75 | 1.45 | **1.45** |
+| Brawler | 1.00 | 1.00 | 1.25 |
+| Striker | 1.25 | 0.80 | 1.15 |
+| Grappler | 0.80 | 0.95 | 0.90 |
+| Technical | 0.70 | 0.70 | 0.80 |
+
+A powerhouse is punished by the clock, a striker by the pace, and a high-flyer by the
+landing. Three different questions, three different answers, which is the reason none of them
+is a single "how hard is this style" number. A striker goes second-fastest of the six and is
+the third *safest*; a powerhouse is second-slowest, carries the heaviest volume load of any
+style, and is the second most dangerous. Neither ordering predicts the other.
+
+### History is permanent and it compounds
+
+Doc 15 calls injury history "the strongest single predictor", says a prior **back or neck**
+injury roughly doubles recurrence risk, and its sim implications call a permanent compounding
+history "the most important detail". So:
+
+| prior injuries to that part | back / neck | ankle |
+|---|---|---|
+| 0 | ×1.00 | ×1.00 |
+| 1 | **×1.99** | ×1.58 |
+| 2 | ×2.53 | ×1.91 |
+| 3 | ×2.83 | — |
+
+Saturating rather than unbounded: a wrestler with nine prior knee injuries is not nine times
+likelier than one with one, he is somebody whose knee is gone, and the model says that once.
+Injuries elsewhere in the file count for less but they do count, because a body that has been
+broken before breaks again.
+
+The first version used one weight for every part and reached only ×1.47 for a prior neck,
+which is not "roughly doubles". The weight is part-dependent now.
+
+### Reported, never applied
+
+`MatchEngine` returns `InjuryRoll`s on the result and writes nothing. `ShowSimulator` turns
+them into `Injury` records on the wrestler. Same split as every other consequence in here,
+and the reason a match can be simulated twice without maiming somebody twice.
+
+An `Injury` holds a **date, not a countdown**. `Career.CurrentDate` jumps when a show runs on
+a date three weeks out, so anything decremented once per `AdvanceOneDay` would quietly skip
+those weeks. A wrestler is fit when the calendar says so.
+
+### The shape of the year is in the frequencies, not the bands
+
+Doc 15 §3 says 35–55% of full-time performers miss time in a year but only 10–18% lose three
+months or more. Those two together force most of what happens to be **short** — the
+concussion, the tweaked back, the rolled ankle — regardless of how often the reference calls
+a shoulder injury "very common".
+
+The first calibration weighted body parts by that "common" language and put **85%** of a
+roster on the shelf inside a year, over half of them for three months or more. Every
+individual multiplier looked reasonable. Nothing but running a season would have found it.
+The shipped weights, measured over 40 wrestlers × 120 dates:
+
+| | measured | doc 15 §3 |
+|---|---|---|
+| missed time | 50% | 35–55% |
+| out 3 months or more | 18% | 10–18% |
+| average weeks lost | 7.9 | 6–12 |
+
+`BaseBeatRisk` came down by 3.5× to get there.
+
+### What the booker sees
+
+A meter is advice. This is a fact, and it is the one thing in the builder that **refuses**
+rather than warns:
+
+- **Roster card** — `🩹 Knee — out 30 weeks`, in place of the ring-condition line rather than
+  alongside it. A wrestler in a sling does not also need telling he is tired. Underneath,
+  a history line: `History: back ×2, concussion`.
+- **Roster picker** — `unavailable — knee, out 30 weeks` under the name, before any booking
+  reason.
+- **Match builder** — a red *Cannot be booked* block above the wizard, and `Finish` adds a
+  validation error. Everything else in this builder lets you do it anyway; this does not,
+  because a game that lets you book a wrestler in a sling is lying about its own injury model.
+- **Show report** — a *Hurt tonight* block above the title changes, marked *· not the first
+  time* on a repeat. A rating is a number; somebody being out for six months is the thing
+  that changes next month's booking.
+
+### The two systems already handle coming back
+
+Nothing was added for the return. `ApplyDayOff` runs over the whole roster every day, injured
+or not, so somebody out for six months comes back with fatigue at zero and sharpness down at
+their resting floor — **fresh and rusty**, which is what a returning wrestler is. The
+veteran's floor is 72 and the rookie's is 54, so the young one loses more of himself sitting
+out, exactly as the sharpness model already said.
+
+### Injuries roll on their own dice
+
+`MatchEngine` carries two `Random`s now. The injury roll happens per wrestler per beat, so
+taking it off the narrative stream would shift every subsequent draw the engine makes and
+silently re-roll every seeded expectation in the game — the measured medians this repo
+calibrates against included. `_injuryRand` is derived from the same seed, so a seeded match is
+still reproducible end to end, and offset so the two streams are not the same numbers in the
+same order. The physical cost of a match and the story it tells are independent questions and
+they get independent dice.
+
+That is why 800 existing tests went green on the first run of a change that adds a roll to
+every beat of every match.
+
+`PickBodyPart` also runs for every wrestler on every beat, and the first version did it with
+`Enum.GetValues` and three LINQ passes — reflection and four allocations each time. The weight
+table depends only on style and size, and there are thirty of those, so it is built once and
+cached.
+
+### Verified
+
+**802 tests passing.** Twenty-three mutations killed: lateness not biting; carried fatigue
+ignored; back and neck weighted like everything else; injuries elsewhere counting for nothing;
+style risk ranked like fatigue; intensity flat at the top; the indie ring as safe as anywhere;
+size not mattering; a powerhouse no likelier to tear a pectoral; a blown knee healing in a
+fortnight; a rolled ankle costing half a year; nobody ever healing; history not kept; the
+picker never saying unavailable; injuries not saved; a match hurting the same wrestler twice;
+every seeded match rolling the same injuries; nothing ever rolled; an unparseable clear date
+guessed at; weeks out counted as days; a part week rounding down to nothing; the first
+calibration that crippled a roster; and every injury getting an ankle's time out.
+
+**Four of those survived the first pass and three were real gaps**, each closed by a test
+rather than by an argument:
+
+- *A blown knee healing in a fortnight.* A season's headline rate barely moves when knees are
+  rare, so the frequency weights could not check the time-out column they were calibrated
+  against. `TheTimeOutIsDecidedByWhatTheInjuryIs` now holds the short and the long injuries
+  apart.
+- *Weeks out counted as days.* Every assertion on the show test stayed true — somebody hurt on
+  the night is still hurt on the night — while a torn ACL came back inside two months. The
+  test now pins the clear date arithmetic.
+- *A part week rounding down.* "Knee — out 0 weeks" on the roster sheet beside a wrestler the
+  builder refuses to book: the game contradicting itself on one screen.
+- *A match hurting the same wrestler twice.* At the shipped risk this is a one-in-tens-of-
+  thousands event, so nothing could see it. `AMatchHurtsAWrestlerAtMostOnce` builds the worst
+  wrestler in the world — cooked, oversized, high-flying, a file of prior injuries, extreme
+  beats, an indie ring, a careless opponent — which is about a hundredfold, and runs 2500
+  matches. 707 injuries, no doubles. The count is printed because it is the evidence the
+  assertion means anything.
+
+Browser-verified at 390×844 on a real career, with no console errors:
+
+| Surface | What it showed |
+|---|---|
+| Roster card | `🩹 Knee — out 30 weeks`, and `History: back ×2, ankle` on somebody cleared |
+| Roster picker | `⚠ unavailable — knee, out 30 weeks` under the name |
+| Match builder | *Cannot be booked. Rhea Ripley — knee, out 30 weeks*, above the wizard |
+| Book Show | *1 on this card cannot work.* … *Take them off the card before running it*, with **Run the show ★ disabled** |
+| Show report | *Hurt tonight. Becky Lynch — ankle, out 5 weeks* |
+
+The show report needed `BaseBeatRisk` temporarily raised to make an injury happen on demand;
+the constant was restored before the suite was re-run.
+
+Two things were found by looking rather than by testing. The picker read *"unavailable — knee
+— out 30 weeks"*, two dashes doing different jobs, so `Injury.Reason` exists beside
+`Injury.Describe` for the position after a name. And the builder's refusal only fires at
+booking time, which is wrong for a career that books a month ahead: the wrestler on next
+month's card was fit when you booked him and got hurt on tonight's show. The card is now
+checked again on the night, and that check disables the button rather than warning.
+
+### Still not built
+
+- **No age.** Doc 15 §3.1 puts over-35 at 1.5–2× and rising, and there is no age on a
+  wrestler. Inventing a proxy out of stats that merely correlate with it would produce a
+  number that looks authoritative and is not.
+- **Opponent safety is a proxy** off ring psychology and ring IQ. Defensible — a wrestler who
+  does not know where he is putting people is the one who hurts them — but it will read a
+  green athletic worker as safer than he is.
+- **No catastrophic outcome.** Doc 15 says a neck can be eighteen months and often
+  career-ending; the game cannot end a career, so `WeeksOut` truncates at 52 and the model
+  stops where it can still tell the truth about what happens next.
+- **Stipulations do not raise risk.** A ladder match and a technical exhibition of the same
+  intensity are the same roll. `Stipulation` is on the plan and the hook is a one-line
+  multiplier; it is out because nothing has measured what it should be.
+- **Nobody is written off television.** An injured wrestler is refused at the builder and
+  that is all — no automatic angle, no title vacated, no storyline consequence.
+- **Segments cannot hurt anybody**, so a beatdown angle is free. Same gap the fatigue meters
+  have, for the same reason.
+
+## The booker states the booking, and the game writes the match
+
+This started as a complaint about the triple threat, which was eight beats and twelve
+minutes, and it was correct. So were `The Grudge Three-Way`, `Triple Threat Elimination` and
+`Fatal Four-Way`. Every multi-man format in the library was the same length whoever was in
+it, none could be booked as a main event, and none contained the thing doc 18 §2.5 calls
+"the format's single best story", because the engine had no beat for it.
+
+An earlier change rebuilt the *singles* structures and reported it as fixing "the match
+plans", which overstated what it had done. This is the rest of it, and the rethink the fix
+turned out to need.
+
+### The structure list was the wrong unit
+
+A `MatchStructure` was a frozen list of beats. Booking `Face-in-Peril` twice gave the
+identical eleven beats twice, and a beat nobody hand-wrote into a structure was a beat no
+booker ever saw — which is how `Hope Spot` shipped reachable from three singles structures
+and none of the multi-man ones.
+
+A booker does not think in beat lists. They think in outcomes, and the beats are how you get
+there. So the structure step became a step where you state intent:
+
+> **a big match** built as **a technical exhibition**.
+> **Becky Lynch** goes over **clean**.
+> **Becky Lynch** comes out **as they are**; **Charlotte Flair** comes out **protected**.
+> **Nobody outside it gets involved**
+
+Every bold fragment is a tap target that opens its own chooser below the sentence. Selections
+compose the sentence, so nothing has to be parsed and the same brief always means the same
+thing. The old structure names survive as one-tap presets that fill a brief, and the one that
+suits the pairing is marked.
+
+**Who wins and how each side comes out are separate questions on purpose.** Doc 20 §4 runs
+feuds on the difference: a challenger who takes the champion to the limit and loses is worth
+more afterwards than one who wins a nothing match. Booking somebody `Elevated` makes them the
+protagonist even in defeat — they shine, they take the hope spots, they make the comeback,
+and they still lose. No structure in the library could express that; every singles structure
+had WrestlerA shine, come back and win.
+
+### Phases, not templates
+
+The grammar fills **phases**, which is how doc 18 §2.3 already describes a match:
+
+```
+opening
+  [shine]
+  cycle × N:
+      cut-off → heat → hope spot × 0..2 → comeback
+  [finishing stretch: near falls × 1..3]
+finish
+```
+
+The cycle count comes straight off §3.1's table, which is a table of *contents* rather than
+of minutes: "15–25 min adds a second heat/comeback cycle and a real finishing stretch." So
+length is the cycle count and the minutes follow.
+
+The split between shape and fill is the point. The shape is deterministic — a face-in-peril
+big match is always opening, shine, two cycles, two near falls, finish — and what fills those
+slots is not. Same brief, same match; same brief, different sheet.
+
+### The proof that it is the same rule
+
+The claim is that the grammar is what the structure library was written *from*, not a
+plausible replacement. Checked two ways:
+
+| | Result |
+|---|---|
+| The shape of each shipped structure, on every draft | Controller, duration, running time, and intensity from beat two |
+| The exact beat list | Reachable — not on a nominated draft, somewhere in the space |
+
+The second half matters. The first version asserted beat-for-beat exactness on draft zero and
+passed, which was luck rather than a property: it broke the moment the test cast changed,
+because an opening that can legitimately be a collar-and-elbow or a hot start will be one of
+them.
+
+`Epic` disagrees by one beat and the grammar is right. Its third hope spot drops back to
+Medium after the second was High, and §3.3's pyramid says a later tease cannot be smaller
+than an earlier one. That is pinned as a disagreement rather than glossed, so if it ever
+starts matching exactly, somebody changed one of the two and should say which.
+
+Three faults the comparison found, one of which mattered:
+
+- The grammar was restating an opening's intensity when the beat template already knew it.
+- A technical match was not being given the extra time its mat work takes.
+- **Style was overruling story.** A technical exhibition worked by a powerhouse drew Power
+  Beatdown for its heat, because a matching style hint was worth ×2.5 and a matching story
+  ×3.0 against a mismatched hint's ×0.4. That is the generator quietly overruling the booker.
+  Story now dominates and style only modulates; the place to charge for a cast that cannot
+  deliver the booking is the score, not a substituted beat nobody chose.
+
+### The match type was the wrong question
+
+`MatchType` asked the booker to declare a style so the engine could grade the beats against
+the declaration. It was worth up to eight points, and it was the least understood thing in
+the game for a good reason: **it is not a decision a booker has.** A promotion never announces
+that tonight's semi-main will be a technical classic.
+
+The promise is made by who is in the match, what the feud has been, what the rules are and
+what is at stake, and it is kept or broken entirely by how the match is booked. So it is
+derived, in that order of loudness:
+
+| Source | Because |
+|---|---|
+| The stipulation | Printed on the poster. The least deniable promise a card can make |
+| The feud | Nuclear or hot means they came for a fight, not a wrestling match |
+| The bodies | Two mat wrestlers promise a contest; a size gap of two promises a question about survival |
+| The belt | Firms up whatever the promise already was without saying what kind of match to have |
+
+The engine scores the distance between that and what was booked, and the stories are not
+equidistant: a crowd promised a fight will take a face-in-peril, which is still somebody
+suffering, and will not take a mat classic.
+
+**Defying the room is a gamble on the performers rather than a flat penalty.** Doc 18 §3.2
+has great workers adjusting in real time, which is exactly the skill of giving a crowd
+something it did not ask for and winning it round; limited ones cannot, so the identical
+booking is a triumph for one pair and a disaster for another. Read off the weakest link,
+because one great worker cannot rescue a mismatched booking alone.
+
+A plan built by hand promised nothing, so the term is zero. That is why 802 existing tests
+passed unchanged with a new scoring term added — the null case being the honest answer rather
+than a convenient one.
+
+### What the brief buys that a beat list could not
+
+The old builder could tell you a plan was invalid and nothing else, because the beats were
+the only record of what was wanted and so there was no intention to drift from. With a brief
+attached the game can form sentences it could not before:
+
+- this runs 34 minutes and there are 12 left in the slot
+- booked as a technical exhibition, 3 of 11 beats are not
+- they want a fight and you are giving them a mat classic, and this pair cannot talk a crowd
+  round
+- Bravo is booked elevated and loses without a comeback or a near fall, so nothing in the
+  match says they were ever in it
+
+All advice, and none of it refuses. That includes the runtime: an over-long match is the
+loudest note because the card charges up to 35% for overrunning, but it is a price rather
+than a rule and the show screen has offered that trade since long before any of this. The
+weight is called `Costly` and not `Blocking` for exactly that reason.
+
+### The three-way, finally
+
+Two beats the engine did not have. **Alliance** is two of them working the third, which is
+the answer to the odd one out that does not involve removing anybody — all three are busy,
+which is what a real three-way opens with. Every multi-man beat the library carried was about
+*removing* somebody, and none could say two people were working together. **Betrayal** is the
+moment it breaks, priced as §2.5 prices it. Unlike a spite break it *pays* the person who
+does it, which is why the audience spends the whole alliance waiting for it.
+
+And the bracketing rule, which is §2.5's central claim written as code:
+
+> The entire craft of a multi-man match is disposing of people plausibly and then bringing
+> them back at the right moment. A triple threat that never explains where the third man went
+> is the format's characteristic failure.
+
+Everything between the opening and the finishing stretch is a two-person passage — a cut-off,
+a heat section and a comeback all assume somebody to work and somebody to work on — so in a
+three-way it is opened by putting the odd one out somewhere and closed by bringing them back.
+**One bracket around the whole run, not one per beat**: a disposal before every cut-off would
+be absurd and the crowd stops believing the fourth one anyway. Then one more immediately
+before the fall, because outside a disposal window every cover in a three-way is breakable.
+
+The shape that produces, measured:
+
+```
+OPENING    Standard Collar-and-Elbow   Both
+SHINE      Shine                       Becky Lynch
+ALLIANCE   Uneasy Truce                Becky Lynch      → Rhea Ripley
+BETRAYAL   The Betrayal                Charlotte Flair  → Becky Lynch
+DISPOSAL   Disposal Spot               Charlotte Flair  → Rhea Ripley
+CUT-OFF    Cut-Off                     Charlotte Flair
+HEAT       Technical Dissection        Charlotte Flair
+COMEBACK   Slow Burn Rally             Becky Lynch
+RETURN     Pin Break                   Rhea Ripley
+DISPOSAL   Disposal Spot               Becky Lynch      → Rhea Ripley
+FINISH     Clean Victory               Becky Lynch      → Charlotte Flair
+```
+
+And in the play-by-play: *"Two on one! Rhea Ripley cannot fight both of them — and how long
+does this last?"* takes the crowd 69 → 85. *"And there it goes! Charlotte Flair turns on
+Becky Lynch — every alliance in this match had an expiry date!"* takes it 82 → 95.
+
+A three-way can now run as an epic, and it can still be a six-minute opener, which was never
+the problem.
+
+### Verified
+
+**897 tests.** Thirty mutations killed across the grammar, the expectation, the critique and
+the multi-man rules.
+
+Four survivors were real and each closed a genuine gap: nothing pinned that a beat on the
+wrong body is rarer than one on a merely different body; the end-to-end expectation test
+compared two plans generated from two different briefs, so the beats carried the difference
+and deleting the whole scoring term failed nothing; deleting the kept-promise branch still
+returned a positive number, because the miss arithmetic on a distance of zero happens to come
+out positive; and a guard keeping a match winner out of a warning was untested because three
+assertions searched for "never in it" against a note that says "ever in it".
+
+That last one is worth keeping. **Three assertions had been passing on any input.** Fixing
+the phrase then exposed that the test case was also wrong — it elevated the winner of a
+showcase, and the grammar hands the protagonist a comeback in every shape, so the guard was
+never reached.
+
+Three survivors were bad mutations that exposed redundant guards rather than weak tests: a
+side-count check in two places where the search below it already answered the same question.
+A guard that can never change an answer looks like a rule and is not one. Removed.
+
+Browser-verified at 390×844, in a career and in exhibition: preset, adjust, re-roll, book,
+run, for singles and for a triple threat. Four faults found by looking rather than by
+testing:
+
+- `.sheet` was already the beat editor's fixed bottom sheet, so the written match painted
+  `position: fixed` over the whole page.
+- The runtime warning summed the beats and the card charges the beats *plus the entrances*,
+  so a match that overran a show by exactly its own entrances was reported as fitting. Both
+  now read `BookedMatch.RuntimeOf`.
+- A mixed pairing scored 0.3, just above the vague threshold, so the critique quoted "nothing
+  is being promised that you cannot change" and then told the booker off for changing it.
+- The main menu still described a match as "pick two wrestlers, choose a structure, then edit
+  the beats", which is a wizard that no longer exists.
+
+### Still not built
+
+- **The console app still offers the structure list.** README already calls it "the original
+  session-scoped sandbox — no save, no clock", and this widens that gap rather than creating
+  it. The Blazor app is the game.
+- **Tag and trios do not use the phase grammar.** `Isolation`, `NearTag` and `HotTag` exist as
+  beats and the grammar has no phases for them, so a tag match books from a preset and a
+  hand-edited sheet. The grammar is the right home for them and this change did not do it.
+  *(Done — see "A tag match is the same skeleton with different furniture" below.)*
+- **Elimination is not a phase separator.** A `Triple Threat Elimination` is bookable only by
+  hand. The rule — a fall removes somebody and the match carries on — is a change to how
+  cycles terminate rather than a new phase, and it is the next real piece of work here.
+- **The play-by-play prints raw enum names for some beats** — `DISPOSALSPOT` rather than
+  `Disposal Spot`. Pre-existing, visible, and not touched here.
+- **The critique cannot see the card.** It knows the runtime left in the slot and nothing
+  about what is on either side of this match, so it cannot say "this is your third grudge in
+  a row", which doc 06 §4 on card variety would want.
+
+
+## A tag match is the same skeleton with different furniture
+
+The grammar generated singles matches and three-ways and left tag matches booking from a
+preset and a hand-edited sheet. Closing that turned out to be smaller than expected, which is
+the strongest evidence available that the grammar was the right abstraction: doc 18 §2.3's
+stages do not change when there are two people a side.
+
+**Three substitutions.** The heat becomes an isolation, because the thing being denied is a
+corner rather than a comeback. The hope spot becomes a near tag. The comeback becomes a hot
+tag. That is the whole of it in `BriefDirector.TypesFor` — three pool swaps behind a
+`sideSize > 1`, and everything else falls through to the singles pools it already had.
+
+**Three phases a singles match has no room for.** These are additions to the shape rather
+than substitutions in it:
+
+| Phase | Where | Why |
+|---|---|---|
+| `Tandem` | after the last comeback | The hot tag is a comeback with a second half. The tandem offence is what the isolation was building to, and one body has nowhere to put it. |
+| `AllFour` | after the tandem, not in an opener | Everybody in is a *loss* of control, and a six-minute tag has not established enough control to lose. |
+| `Save` | after the near falls, before the finish | A near fall in a tag match is broken up by a partner rather than surviving on its own. It is why the format's near falls read differently: the count is never the only question. |
+
+**And one that only trios buys.** Doc 18 §2.5 on the American six-man says what the third body
+is for: "three fresh opponents rotating on one man, which two a side cannot book". So at three
+or more a side the valley gains a `Rotation` after each near tag — the heat gets *deeper*
+rather than longer, which is the distinction the format exists on. The fresh body arrives
+after the tease, not before it, because that is what makes the tease cost something.
+
+The shine also runs longer in a tag. A tag team's shine is two of them looking good together
+with the quick tags that establish they can work as a unit, and that takes more than the
+singles beat's worth of time.
+
+### Lucha is a different match, and it took two tries to say so
+
+Doc 25 §3.3 has three a side as the *default* in lucha rather than a variant, with "rapid tag
+rules that allow constant motion". So a trios booked as a spectacle drops the isolation
+entirely — there is no long stretch of somebody being kept from a corner — and the beat where
+an American six-man slows down is the beat where this one changes bodies.
+
+**The first version got that exactly backwards.** It had lucha rotate *instead of* the
+American rotation, on the rest beat alone. There is at most one rest in a valley, so a lucha
+trios changed bodies once where an American six-man of the same length changed them twice. It
+read as the format's opposite and every test passed, because each of them asked *where* the
+rotation was and none asked *how many* there were. What found it was printing the shape of
+every length and side size and reading the table.
+
+Switching lucha on for both openings then produced two rotations back to back, which is not
+motion, it is a gap — on the written sheet the pair read as one long tag with a dead beat in
+it. The rotation after a near tag now looks ahead one phase and stands down when the next beat
+is going to change bodies anyway.
+
+### What the booker sees
+
+`BriefPreset` gained a `MinimumPerSide` alongside `MinimumSides`, because they are different
+questions. A trios is two sides of three: gating it on side count would have offered it to a
+three-way, which cannot book it, and hidden it from the match it was written for. Four presets
+sit behind it — **Southern Tag**, **Tag Sprint**, **Six-Man War** and **Lucha Trios**.
+
+Two of them carry the same brief as a singles preset, because a tag Face-in-Peril *is* a
+Face-in-Peril; only the furniture changes. That made `Matching` ambiguous — it returned the
+first preset in the list with the same story, length and finish, so tapping "Southern Tag" lit
+up "Face-in-Peril" and the control looked broken. It now prefers the most specific preset the
+match can book, which also makes the three-way presets correct on purpose rather than by
+accident of list order.
+
+A booked trios, in the browser at 390×844:
+
+```
+Six-Man War   Feeling-Out Process · Shine · Cut-Off · Face in Peril · Near Tag ·
+              Blind Tag · Hot Tag · Cut-Off · Face in Peril · Near Tag · Blind Tag ·
+              Hot Tag · Double Team · Everybody In · Shock Kickout · Signature Cover ·
+              Save · Dominant Statement                              18 beats · 36 min
+
+Lucha Trios   Hot Start · Aerial Assault · Cut-Off · Jaw-Dropper · Hope Spot ·
+              Blind Tag · Desperation Strike · Quick Tag · Fighting Spirit ·
+              Double Team · Everybody In · Jaw-Dropper · Shock Kickout · Save ·
+              Clean Victory                                          15 beats · 26 min
+```
+
+And the play-by-play of a tag match reads as one: *"Becky Lynch keeps Roman Reigns grounded in
+the wrong corner — miles from help."*
+
+### What the tests are worth
+
+Thirty mutations. Twenty-nine killed; the thirtieth turned out to be a redundant arm and was
+deleted rather than tested. Five needed a test written first and three needed the code
+changed:
+
+- The legality sweep that checks nobody is tagged in who is not in the match swept one story.
+  Lucha rotates on a different phase, so the branch that counts bodies fastest was the one
+  branch the check could not see.
+- The pools with two beats in them — a rotation is a tag or a blind tag, a lucha heat is a
+  double team or a high spot — could each be narrowed to their first member with the suite
+  green. Every test asked what *kind* of beat filled a phase; none asked whether the second
+  member was ever chosen. Re-rolling the same brief is the whole design, so pool width is a
+  claim and now has a test.
+- The longer tag shine had no test at all.
+- `incoming < sideSize` was written twice and only the near tag's copy was reachable: every
+  valley holds at most one rest and it sits in the first cycle. Said once, as a `Fresh()`
+  local, it is exercised — and the unreachable copy stopped looking like a rule it was not.
+- `SuggestedFor` had a Face-in-Peril arm and a catch-all that gave the same answer for a tag
+  match, so each covered the other and neither could be shown to matter. Southern Tag is the
+  tag match's Face-in-Peril, so it is the fallback and not a story of its own.
+
+The suggestion test worth keeping is not any particular pairing of story to preset name. It is
+that whatever is suggested is something this match can *book*: naming a preset outside the
+offered list does not misfire loudly, it renders no star on any chip and the feature quietly
+stops existing.
+
+### Still not built
+
+- **A tag match has no rules about who is legal.** `IncomingIndex` says which partner comes
+  in and `MatchPlan.Validate` refuses a tag that brings in somebody already legal, but nothing
+  models the five-count, the referee's back being turned, or a blind tag being illegal in the
+  first place. The `BlindTag` beat is flavour, not a rule.
+- **Chemistry does not reach the tandem beat.** Teams have chemistry and the tandem offence is
+  the beat where it should show; it currently grades like any other double team.
+- **Survivor Series still books by hand.** Four a side generates a legal sheet — it is in the
+  legality sweep — but elimination is not a phase separator, so the shape it writes is one
+  long tag match rather than a match that loses people. Same blocker as the three-way
+  elimination named above, and the same fix.
+
+
+## Everything in the roster list was the same colour
+
+The picker showed seventy names, and the only thing that varied down the page was the digits.
+Overness was `--ink-2` on every row, so a 91 and a 34 read as equally important; alignment
+appeared as a grey lowercase word at the end of the reason line; and the two divisions were
+indistinguishable. A booker comparing two names had to read rather than look.
+
+**The bands are the game's own.** Overness is painted by `CardPosition` — main event, upper
+card, midcard, lower card, enhancement — rather than by new thresholds. A second set of
+cut-offs would drift from the first, and then the group heading would say "Midcard" over a
+number painted main-event gold. The ramp is lightness as much as hue, so it survives a
+colour-blind reader and a phone in daylight, and the heading above each group already says the
+same thing in words.
+
+**Colour is never the only channel.** Face and heel take the two colours the palette already
+carried, but each badge carries the word as well: red and green are the pair most likely to be
+one colour to whoever is reading. A tweener is deliberately not a third colour — it is the
+absence of one, because painting it would say there are three kinds of alignment to weigh when
+there are two and an undecided.
+
+**The division badge appears only while the list holds both.** Once the filter is on one of
+them the badge is on every row and says nothing; a label that never varies is furniture.
+
+Three things fell out of doing this rather than being the point of it:
+
+- **`badge--dim` was never defined in the stylesheet.** The picker had been asking for it on
+  every already-booked name since the sheet was written, and it rendered as a bare outline.
+- **The crossover cost was painted `--heel`.** Once red means the wrestler *is* a heel, a red
+  cost badge beside a babyface's name reads as a contradiction. It is `--cost` now, and gold
+  means a price everywhere.
+- **`.rcard__stat b` pinned `color` on the element**, which is more specific than any
+  one-class utility, so every class put on that `<b>` lost silently. The "Card" label on the
+  roster card had been asking for `.gold` and rendering plain ink since it was written. The
+  colour is off the element now and both utilities work.
+
+The alignment word came *out* of `BookingSuggestions.Plain` at the same time. Said in both
+places, a row read "Powerhouse · heel" underneath a HEEL badge, and the reason line is the half
+that has to fit on a phone.
+
+`RosterScreen` had its own copy of the alignment-to-colour map, which is how a face ends up
+green on one screen and red on another. There is one now.
+
+### The picker opens on the division already booked
+
+Picking a tag team meant answering "women, not men" once per slot, to a filter that reset every
+time the sheet opened. `RosterFilters.DivisionFor` answers it from the lineup instead.
+
+It returns null — the whole roster — in two cases, and the second is the one worth stating.
+Nobody is booked yet, so there is nothing to match. **Or the people already booked disagree**,
+because an intergender match is a legitimate booking, and once a booker has made one, filtering
+to the first name's division would hide half of what they have visibly already chosen. The
+picker would be arguing with a decision that has been taken.
+
+It is a default and never a gate. The division chips sit directly above the list and override
+it, and the sheet says so in one line while the filter is still the one it opened with — a
+filter the booker did not set is one they have to be told about, or a name they know is on the
+roster is simply missing and the picker looks broken. The line disappears the moment they touch
+the chips.
+
+Twelve mutations, all killed. Browser-verified at 390x844: the first slot opens on everybody,
+the second opens on the first pick's division with the line explaining why, tapping **All**
+clears both, and a lineup that is already intergender opens on the whole roster again.
+
+### Still not built
+
+*(All three were done in the pass below.)*
+
+- **The colour stops at the roster.** Beat intensity, match ratings and heat readings are still
+  monochrome, and the same argument applies to all three.
+- **The reason line is still grey for everybody.** "There is a story here" and "the crowd has
+  seen this" are the two most consequential things a row can say, and they are the same colour
+  as the wrestling style beside them.
+- **`SegmentBuilder` still ranks by overness** rather than through `BookingSuggestions`, so its
+  lists got the badges but not the ordering. Already named in the review record.
+
+## The rest of the palette
+
+### Every rating in the app was gold
+
+A two-star match and a five-star one drew a different number of glyphs in the same triumphant
+colour, with the same glow behind them, and the 0–100 score beside them was gold at 42 and gold
+at 95. The one screen whose whole job is telling a booker whether the show was any good said
+"good" whatever happened.
+
+`Grades` bands a rating: **Poor, Forgettable, Good, Very good, Classic**. Two things about how
+it is defined:
+
+- **The thresholds are on the stars, and the 0–100 view converts.** `MatchEngine` defines the
+  star rating as the final score over twenty, so they are one number on two scales; giving the
+  score its own cut-offs would let a hero reading "Very good" sit beside stars painted for a
+  good one, on the same screen, two inches apart. A test walks all 101 integer scores and
+  checks the two agree at every one.
+- **The bottom band is the warning colour, not a faded one.** This is where the grade ramp and
+  the overness ramp part company, and the difference is why there are two. A wrestler with a
+  low reading is an enhancement talent doing the job they are on the card for; a match with a
+  low reading is a mistake the booker made, and the screen should say so.
+
+The glow moved with it. It now belongs to the one band that has earned it, rather than sitting
+behind every rating the game has ever produced. And where the number is shown, the band is
+shown in words beside it, for the same reason the alignment badges carry a word.
+
+**There are two show-report screens.** `ShowScreen` and `BookShowScreen` render the same hero
+and the same per-item scores from their own copies of the markup, and the flow a player
+actually takes — book a card, run it — lands on the second one. The first attempt coloured only
+`ShowScreen`, and browser-verifying it showed a gold 75.3 exactly where the change was supposed
+to be. Both are done, and so are the dashboard and the calendar; the duplication itself is not.
+
+### The rest
+
+**Beat intensity** climbs through four colours. A beat sheet is a shape, and the shape is what
+the intensities do down the page — a valley, a climb, a peak at the finish. In one colour it is
+a list of words the booker has to read four of to see what the eye should have got in one pass.
+
+**Feud heat** had its badge map living privately inside `FeudUpdates.razor` while the match
+builder rendered the same five values with no colour at all: two copies, one step before it
+happens. Nuclear is the warning colour rather than the best one, because doc 20 §6 has a
+nuclear feud as the state with a clock on it — something to be paid off soon, not sat in.
+
+**The reason line** in the picker was `--muted` for every row, so "there is a story here", the
+single most useful thing the list can say, was the same grey as the wrestling style beside it.
+Three of the six bands are painted and three are not, and that is the design rather than an
+omission: a story is the reason to book somebody, a worn-out pairing is the reason not to, and
+a name already in the match is not a candidate. The rest are the ordinary case. This app has
+already learned what happens when the ordinary case gets a colour — twenty-six amber notices
+doing four different jobs, and amber meaning nothing.
+
+One CSS ordering trap, found by probing computed colours in the browser rather than by reading:
+`.band--story` and `.prow__why` are both single-class selectors, so the later one wins, and the
+band rules were above the grey they exist to replace. They lost silently. They sit below it now
+and there is a comment saying why.
+
+### The segment cast is ranked, not sorted by popularity
+
+`SegmentBuilder.FilteredRoster` was `OrderByDescending(Overness)` — the same thing every roster
+list in the app used to do, and the reason `BookingSuggestions` exists. A promo is *about* a
+story, so offering names by popularity on the screen where a story is being told is the worst
+place in the game to do it.
+
+`StandingPartnerOf` and the last card's cast were both private to `RosterPicker`, which is why
+the segment builder could not use the ranking without copying them. They are questions about
+the career rather than about a component, so they moved to `GameState`, where the cache is
+dropped by `Notify` — the one place anything changes.
+
+**One thing that had to be different from the match picker.** The match picker marks names
+already in the match, which sinks them to the bottom of the list, and that is fine there
+because tapping one *swaps* two slots. A segment cast is a toggle list: browser-verifying the
+first version showed the name dropping to the foot of seventy rows the instant it was picked,
+so taking somebody back out meant scrolling to find them. No marker is passed, `is-selected`
+carries the state, and it carries it where the name is.
+
+### Still not built
+
+- **The ranking has nothing to rank on in a fresh career.** With no feuds, the segment cast
+  still comes out in card-position order, which is what it did before. The change shows once a
+  story exists, which is exactly when it matters and exactly when a screenshot cannot see it.
+- **The two show-report screens are still two.** They render the same thing from separate
+  markup, and every change to a rating readout has to be made twice.
+  *(Done — see "The two show reports had stopped being the same report" below.)*
+- **The play-by-play is still one colour.** Each beat prints its intensity, and that is the
+  same shape argument as the beat sheet, one screen further on.
+
+
+## The two show reports had stopped being the same report
+
+`BookShowScreen` reports a career date and `ShowScreen` reports a sandbox show, so each had
+its own copy of the result markup. The copies were not the problem. The drift was: each one
+could report things the other could not, and nobody had noticed, because nobody reads both.
+
+| | Career | Exhibition |
+|---|---|---|
+| Battle royal — eliminations, iron man | **nothing at all** | yes |
+| Why an item scored what it did — position weighting, fatigue penalty | **no** | yes |
+| Injuries | yes | **no** |
+| Championship changes | yes | **no** |
+| Brand report | yes | n/a |
+| Number drawings | yes | **no** |
+| Status and feud panels on a night nothing moved | hidden | **two empty headings** |
+
+The first row is the one that matters. **A battle royal booked in a career reported nothing.**
+The engine ran it, picked a winner, recorded every elimination and the iron man, moved
+everybody's standing — and the screen showed a score and stopped. The eliminations existed
+only on the exhibition screen, where a Rumble is a sandbox toy rather than the thing the
+January show is built around.
+
+That is what duplicated markup costs. Not the second copy: the third thing somebody adds to
+one of them.
+
+### One component, and no mode flag in it
+
+`ShowReport` takes a `ShowResult` and the date, and every section is gated on whether the
+result actually holds it — a brand report exists or it does not, a card item is a rumble or it
+is not. There is deliberately **no parameter saying which screen this is**, because a flag like
+that is the thing the next section forgets to check, and it is how these two got here.
+
+What genuinely differs is the heading above the report and the buttons below it: a career show
+names its date and venue and offers the dashboard and the calendar, a sandbox one names its
+venue and offers "book another show". Those stay on the screens, which is all the screens are
+now. 876 lines across the two became 589 plus one 250-line component.
+
+The card numbering stopped being `IndexOf`. Both copies searched the list for the item to
+number it — correct, since the items are reference-equal instances, but a scan per row to
+learn something the loop already knows.
+
+Browser-verified at 390x844, both paths: an exhibition show reports the card, who moved, the
+feuds and the play-by-play; a twelve-wrestler career Rumble now reports its eleven
+eliminations and its winner, under a card line that says `position ×1.5`, which is also new
+there.
+
+### Still not built
+
+- **Nothing here is testable.** It is a razor component, and the argument for extracting it is
+  exactly the one the repo makes about `BookingSuggestions` — but unlike the ranking, there is
+  no decision in here to move somewhere a test can reach. The verification is a browser and
+  the table above.
+- **The exhibition report shows injuries now, and exhibition has no clock.** "Out 30 weeks" is
+  true about the match and means nothing about a sandbox that ends when you close it. It is
+  shown because the engine rolled it and hiding it would be the same lie the old screen told.
+
+
+## The wrestler nobody booked was the one nobody could forget
+
+`LastAppearance` is written in exactly one place: `ShowSimulator`, when somebody works a show.
+So it is null for every name on the roster on day one, and stays null forever for anybody the
+booker never uses. The absence decay read null as **absent zero days**.
+
+The result is the inverse of doc 17 §3.9. A wrestler you sign and never put on television is
+the one person in the game immune to being forgotten. Measured over six months at 70 overness:
+
+| | Day 30 | Day 180 |
+|---|---|---|
+| Booked once, then dropped | 69.53 | 61.92 |
+| Never booked at all | 70.00 | **70.00** |
+
+Absence is now measured from the last appearance **or from the career's start date**, whichever
+is later, so a signing nobody uses fades at exactly the rate of somebody who worked once and
+was dropped. The two differ only in whether the game happened to write a date down, which is
+bookkeeping rather than a career.
+
+## The rust meter had a threshold nobody could reach
+
+`RestingFloor` ran 30–75 against a roster whose self-maintenance spans 0.30 to 0.77. So the
+median wrestler settled at 62, the rusty warning fires at 55, and **only 21% of the roster
+could ever read rusty however long they sat**. Two years off screen left the top of the card at
+66.5 and climbing down no further.
+
+That is not what the meter is for. Keeping yourself ring-ready with no ring in it is the
+exception; the old band made it the rule. Measured on the shipped roster now:
+
+| | Upkeep | Settles at |
+|---|---|---|
+| Least diligent | 0.30 | 20 |
+| Median | 0.59 | 43 |
+| Most diligent | 0.77 | 57 |
+
+95% of the roster goes rusty sitting still, against 21% before. A rookie reads rusty three
+weeks after his last match; the median wrestler after seven; the single most diligent name on
+the roster never quite does, which is the point of having the stat.
+
+**All seventeen tests in `RingConditionTests` passed with the old band and passed with it
+halved.** Every one of them asked about the shape of the curve — a veteran holds more than a
+rookie, rust stops at the floor, a day off mends one meter and spends the other — and not one
+asked where the curve actually landed. The new test measures the shipped roster and is written
+the same way `MatchEngine.TypicalInvestment` is: a roster change moves it, and the answer is to
+re-measure rather than to widen the bound.
+
+### A rep and a workout, and the rep is the bigger half
+
+What comes back in a ring is timing with another body, and you get that from having had the
+match at all. So `SharpnessGain` is now a rep that saturates at about eight minutes, plus a
+smaller term for the work in it — and `share` scales only the second half, because standing on
+the apron waiting to be tagged is still a night of timing a hot tag.
+
+| One match, median upkeep | Sharpness | Fatigue |
+|---|---|---|
+| 15-min singles, full pace | +8.31 | 3.5 |
+| 15-min tag, full pace | +7.28 (88%) | 2.6 (73%) |
+| 15-min singles, sensible pace | +7.66 (92%) | — |
+| 3-min squash | +2.46 (30%) | — |
+
+That shape is why a rusty wrestler is brought back in a tag rather than thrown into a
+twenty-minute singles match: the reps are almost the same and nothing else about it is. A
+squash stays what it is — an appearance, not a night's work — so a run of them does not get
+anybody ready.
+
+And the maintenance claim, which is a different claim and easy to confuse with the reps one:
+
+| Matches a week | Diligent | Median |
+|---|---|---|
+| 0 | 57 | 43 |
+| 1 | 86 | 77 |
+| 2 | 92 | 89 |
+
+A diligent professional on weekly television stays sharp doing nothing else. Everybody else
+settles short of their best on the same schedule and needs more time in a ring to close it.
+
+### Still not built
+
+- **The live local dates are not in the game.** The engine now says a protected rep is most of
+  a rep and that most of the roster needs more than one a week, and the only way to get a rep
+  is a televised match on a card the player books beat by beat. The reps the model is asking
+  for have nowhere to come from yet.
+- **Fatigue is calibrated for a schedule the game does not run.** A fifteen-minute match costs
+  7.6 and a week off repays about 14, so on one show a week it returns to zero before the next
+  bell, every time. It takes five matches a week to reach the cooked threshold of 70, and a
+  career runs one show. The meter works; the calendar never feeds it. Whatever answers the
+  local dates above is the same thing that answers this.
+
+*(Both done — see "A run of towns" below. It was the same answer to both, as expected.)*
+
+## A run of towns
+
+Booked as a cast and a number of towns rather than as a card, because that is the decision.
+Nobody lays a house show out beat by beat, and a game that asked you to would be asking you to
+spend the evening on the part of the week that does not matter.
+
+**It answers both of the gaps above with one mechanic**, which is the main argument for it.
+The sharpness meter was asking for reps the calendar could not supply, and the fatigue meter
+was calibrated for a workload the calendar could not reach. Six hard nights takes somebody from
+35 fatigue to cooked; three easy ones is a top-up. The road is where both meters finally live.
+
+### What a loop does not do
+
+`ShowType.HouseShow` is already defined as the night the television audience was not at, and
+the engine takes that literally. **No overness, no momentum, no feud heat, no titles, and no
+rating at all** — `LoopSimulator` is the only engine in the game that does not produce a score,
+because there is nothing for one to mean.
+
+The sharpest consequence is that a loop **does not write `LastAppearance`**, so the absence
+clock keeps running on somebody working six towns a week. Being in a ring and being on
+television are different currencies, and the road only pays in the first one: you can tour
+yourself to peak fitness and still be forgotten. Without that rule the road would quietly
+become a second, easier way to get people over, and booking television would stop mattering.
+
+### Three things the browser found that the tests could not
+
+The engine was green and the feature was still wrong three times over, each time in a way only
+visible by playing it:
+
+- **A promotion with television got no house show dates**, so the whole mechanic was
+  unreachable from a normal career unless the player thought to schedule one. The default slate
+  now carries a weekly road date alongside the weekly television one, because a promotion with
+  television still tours.
+- **Every wrestler on a new roster starts at 100 sharpness**, so the first six people sent out
+  on the road came home with **+0.0 sharpness each** and nothing but the fatigue — on the one
+  occasion a new player is most likely to try it. A career now opens the roster where a weekly
+  schedule would have settled them: 72 to 94, median 86. Nobody rusty, nobody finished.
+- **The forecast quoted a typical body** and promised +23 sharpness to six wrestlers who were
+  all at the ceiling. It reads the booked cast now and walks the nights, because a forecast
+  that cannot see the headroom is worse than no forecast.
+
+After all three, a three-town run of six reads +12.4 down to +2.6 — the spread is the point,
+and the people who gain least are the diligent ones who had least to gain.
+
+### The rate
+
+Doc 15 §1 puts 35–55% of a roster missing time in a year, and the match engine was calibrated
+against it. A loop is the other half of the year's workload, so it is sized against the same
+figure rather than guessed:
+
+| Pace | Per night | Across 156 nights |
+|---|---|---|
+| Going through it | 0.06% | 8% |
+| A working pace | 0.14% | 20% |
+| Full tilt | 0.34% | 42% |
+
+The dial is how many beats of risk a night carries, and nothing else in the tests reads it — it
+could have been set six times safer with everything green, which is why it has a test of its
+own.
+
+### Still not built
+
+- **The loop has no gate, no merchandise and no money**, which is what a house show is
+  *for* in a real promotion. It buys condition and costs condition, and that is all. The
+  business side of a touring schedule is a whole other system.
+- **Nobody can be told to stay home.** A wrestler not on the run simply is not on it, and there
+  is no way to say "rest this one" that reads differently from "forgot about this one".
+  *(Still true. The touring assignment below says who goes out, not who is deliberately kept in.)*
+- **A loop cannot be a tag run.** Everybody on it works a singles match a night, so the work
+  share that makes a tag a protected rep never applies — which is a shame, because a tag loop
+  is precisely how a real promotion brings somebody back.
+
+
+## Booking a card, instead of building one match at a time
+
+The booking screen was a mobile column on a 1920 monitor, four buttons deep, and it made you
+finish the first match before you could discover you wanted five. Four changes, in order.
+
+### The desktop
+
+Every screen was capped at 1120px. The cap lifts to 1560 for the screens that are a list beside
+a list — booking, the show report, the roster, the calendar, brands — and stays where it is
+everywhere else, because a form is *harder* to read at 1500px than at 1100: the eye has to
+cross the whole monitor from a label to its field.
+
+The card is two columns from 1100px. The running order is the work and takes the space; the
+roster, the details, the warnings and the button that runs the night are a rail that sticks as
+you scroll.
+
+The date leads, as a tile. A booking game's first question is which night this is and how much
+of it is still empty, and both of those were the smallest text on the page — an eleven-pixel
+amber eyebrow above the show's name. Three stacked fields are read at a glance; a sentence is
+read word by word, which is why a calendar looks like a calendar.
+
+### A battle royal is a match
+
+`RumblePlan.Kind` has returned `CardItemKind.Match` since it was written, and the kind enum
+only holds Match and Segment — a number drawing reports Segment for the same reason. **The
+four-button row was the only place in the codebase that disagreed with its own model**, and it
+asked the booker to choose between four builders before they had decided what they were
+booking. The format is a question inside what you are adding now, which is the order a booker
+thinks in.
+
+### The shape first, the cast after
+
+`MatchSide.Intended` is how many people a side is *waiting for*. Null means "whoever is in it",
+which is every side the engine, the tests and the old builder ever made — a default of one
+would have declared every tag team on every existing card to be half-empty.
+
+That one nullable is what lets a card hold a match nobody has cast. "Add a match" now puts an
+empty slot on the card in one click, the row draws its corners as `— vs —`, and the roster rail
+fills whichever corner is focused. Casting a match is a run of taps: the focus moves itself to
+the next gap in the same match, and then to the next gap on the card.
+
+**What makes it safe is one rule.** `ScheduledShow.IsRunnable` is not `IsBooked`: a show with
+something unfinished on it will not run, whatever the button says. An unfinished card is a card
+being worked on rather than a card that falls over at the bell.
+
+Two things had to be true for it to survive a reload, and the second is the subtle one:
+
+- An empty side must persist its intent, or a reloaded slot has no vacancies to draw and shows
+  as a blank row.
+- `Bind` returns null both for "this side is empty" and for "this side names a wrestler the
+  roster no longer has", and the reader drops an item whose side comes back null. Without
+  separating those two cases, **every planned slot would be silently deleted on reload** as
+  though it named a stranger.
+
+The roster rail re-ranks against whatever corner is focused, which is the whole reason it beats
+an alphabetical list: "this is his tag partner" and "she has a feud with him" are only worth
+pinning when the game knows who you are picking against. With nothing focused it degrades to
+card position, which is the honest answer to a question nobody has asked yet.
+
+### Four chips instead of five steps
+
+The brief already reduces a match to who goes over, what it is about, how long, and how it
+ends — and the grammar writes the beats from those four. So they are four rows of chips on the
+card row, and a match is booked without leaving the page. The five-step builder is still there
+for a booker who wants to lay the beats out by hand; neither is a lesser version of the other,
+they are the same decision at two depths.
+
+### Still not built
+
+- **Drag and drop is desktop-only and untested on touch.** Rows carry `draggable` and corners
+  accept a drop, but HTML5 drag is unreliable under a finger — mobile has tap-a-corner,
+  tap-a-name, which is the same model with a different input and is the path that was actually
+  verified.
+- **A segment is still built in its own screen.** Only matches can be planned as empty slots,
+  because a segment needs a template before it is anything, and there is no obvious `— vs —`
+  for a promo.
+- **The detailed builder cannot open an existing match.** The inline chips finish a planned
+  match and the full builder adds a finished one; editing a planned match beat by beat means
+  removing it and adding it again.
+- **Nothing checks the card as a whole.** `BriefCritique` reads one match, so nothing says
+  "this is your third grudge tonight" or "both your main-eventers are in the opener", which is
+  exactly the judgement a card-first view finally has the information to make.
+
+
+## A card and a run of towns on the same night
+
+The two were built as alternatives and the code chose between them:
+`IsLoop => Loop is { IsBookable: true } && Card.Count == 0`. **A card silently won.** Book a run
+of eight, add one match to the same date, and the run was dropped — it stayed on the show
+object, the button that would have shown it disappeared because it was gated on an empty card,
+and the night ran as a one-match show. Nobody was told.
+
+A real untelevised night is a couple of matches that mean something plus everybody else getting
+work, so they are not alternatives at all: **the card is the night you booked and the run is the
+rest of the roster out in the towns.** `HasRoadRun` replaces `IsLoop`, both engines run on the
+date, and the report carries both — the road as a section under the card rather than a different
+report.
+
+`IsLoopOnly` survives for the screens that genuinely ask "is this night *only* a run of towns",
+which is one button's label and one empty state.
+
+**A televised match costs one town, not the run.**
+
+*(Corrected. The paragraph that stood here said somebody on the card "stays home from the
+towns", and that was wrong — twice over, in opposite directions, and the second version is the
+one that shipped.*
+
+*The first attempt warned and then billed the same body twice, which browser-verifying caught:
+Roman Reigns appeared in the card's main event and in the run's sharpness table on the same
+page, collecting four nights of work out of one date. The fix took anybody on the card out of
+the travelling cast altogether — which is not a week. Somebody wrestles Monday television and
+is in a high school gym on the Friday. Dropping them from the run made television and the road
+**mutually exclusive**, and that closes the one route back to match fitness this whole system
+exists to describe: protected television plus live local reps, which is the model the user
+gave when the sharpness decay was recalibrated. A wrestler on television got no road reps that
+week at all.*
+
+*What the run costs them is the night they were somewhere else. `HouseShowLoop.NightsFor`
+gives anybody on the card `Towns - 1` nights, and the simulator walks that many rather than
+filtering the cast — so the meters, the fatigue curve and the injury roll all see the real
+number. On a one-town run that leaves nothing, and they are not billed at all rather than
+billed for zero towns, because a row reading "worked 0 towns" is the card reported a second
+time in different words. `LoopWorker.OnTelevision` carries the reason, since a short count
+otherwise reads identically to having gone home hurt.)*
+
+The rule still applies when the night is **run** rather than when it is booked, so taking the
+match off puts them back on the full run without the booker having to remember to. And the
+notice is advice rather than a warning: working television and then the towns is an ordinary
+week, so the screen says what it costs — "they work 2 of the 3 towns rather than all of them" —
+instead of sending the booker back to unpick the run.
+
+### The loop builder edits the run instead of replacing it
+
+It built a fresh `HouseShowLoop` every time while the button said "Edit the run", so a booker
+who opened it to add one name and confirmed lost the eight already on it. It opens on what is
+booked now.
+
+## Who is on the road, as a standing instruction
+
+`Wrestler.TouringUntil` is a date, and the loop builder opens on whoever it covers. A promotion
+does not decide every week who tours; it puts people out for a stretch and brings them back, and
+asking the question again every Saturday is asking the booker to repeat themselves.
+
+It is deliberately **not** a booking. The run of towns is still confirmed on its date, and
+taking somebody off that run does not bring them home — one is what you intend and the other is
+what happened, and conflating them would make dropping somebody from one night cancel their
+tour.
+
+**The control went in the wrong place first.** It was added to the roster's card list, which is
+the mobile view — `.rcards` is `display: none` above 640px — so on the desktop the feature did
+not exist. The desktop table has an "On the road" column now. That is the second time in this
+session a feature was built into the half of a two-view screen nobody was looking at, and both
+times a browser found it and the tests could not.
+
+### Still not built
+
+- **Nothing brings people home on its own.** A tour runs out on its date and they are simply at
+  home again; there is no "they have been out three months, bring them in" prompt, which is the
+  thing a booker would actually want telling them.
+- ~~**The road cannot be a tag run.**~~ *(Built — see "A tag run on the road" below.)*
+- ~~**A touring wrestler is not flagged on the card.**~~ *(Built. `BookingSuggestions` puts
+  `out on the road until 2 Feb` on the condition line, below being injured and above the ring
+  condition reading, because where they are is a fact about the week and being unable to work
+  is a fact about the match. It is a reading and not a gate — a card beats the towns at the
+  price of one town, which is an ordinary week.*
+
+  *It had to go in twice. The condition line was already rendered by the picker sheet, but the
+  card-first booking screen's roster rail ranks with `BookingSuggestions` and dropped it — so
+  the surface where booking actually happens on the desktop was the one that never said
+  somebody was hurt, cooked, or two states away. That is the third time in this session a
+  feature landed on the half of a two-surface screen nobody was looking at.)*
+
+## A tag run on the road
+
+`HouseShowLoop.SideSize` is 1 for singles and 2 for a tag run, chosen with a chip in the loop
+builder beside the pace and the minutes.
+
+**This is the protected rep the whole sharpness model has been pointing at.** The answer to
+"how do you get somebody back to match fitness without putting them on television before they
+are ready" is reps at less than full exposure, and a tag is exactly that. Until this the road
+was singles only, so the one setting in wrestling that exists to protect somebody was the one
+the road could not book.
+
+The share of the work it buys is `RingCondition.WorkShare`, which is the card's own number —
+`0.45 + 0.55 / n`, so 0.725 for a tag rather than a half, because standing on the apron is a
+rest but you are still out there taking the double team. A tag on the road and a tag on
+television therefore cost the same body the same thing.
+
+**It keeps more of the benefit than of the cost, and that is the whole reason to book one.**
+`SharpnessGain` scales its *demand* term by the share and leaves its rep term alone: turning up
+and working a match is the rep whatever else happens, and the apron only discounts the bill.
+Measured over three towns on a wrestler with headroom:
+
+| | Sharpness | Fatigue |
+| --- | --- | --- |
+| Singles | +21.75 | +8.47 |
+| Tag | +19.39 | +6.14 |
+| Tag keeps | 89% of the rep | 73% of the bill |
+
+**And it is fewer rolls of the dice, not merely cheaper ones.** You cannot get hurt taking a
+bump you were on the apron for, so the nightly injury roll walks four beats where singles walks
+six. Over 3000 runs of four bodies, six towns, full tilt: 96 hurt in singles against 78 in
+tags, or 81% of the singles rate. The figure is printed by the test rather than pinned by it.
+
+**A tag run needs two full sides.** Three people booked into one is not a tag run with somebody
+sitting out, it is a card that has not been finished, so `IsBookable` asks for `SideSize * 2`.
+The format chip can make an already-booked run unbookable without anybody touching the cast, so
+the builder says which — a disabled button with no reason on it is the game refusing and not
+saying why.
+
+### Still not built here
+
+- ~~**A mixed loop.**~~ *(Built — see below. The paragraph that stood here argued the format
+  should be the run's because a loop is a cast and a number of towns rather than a card, and
+  then admitted in its own last sentence that a real week is some of each. The argument was
+  for the wrong thing: it defends not laying out matches, which is still true, and was used to
+  defend one format for everybody, which was never the same claim.)*
+
+### The mixed loop: who is being protected
+
+`HouseShowLoop.SideSize` is the run's default and `InTags` overrides it for individuals.
+`SideSizeFor(w)` is the one question the simulator asks, and it asks it per wrestler.
+
+**The booker sending eight people out is usually protecting two of them, not eight.** A run
+that can only be all of one thing cannot do the job the tag format was added for, because the
+case it was added for — somebody coming back who needs reps at less than full exposure — is by
+its nature a minority of the cast.
+
+**It is still not a card, and that is the line this has to stay on the right side of.** The
+decision is "who am I protecting": one tap on a name already picked, in a grid that only lists
+the booked cast. Not who faces whom, not who partners whom, not in what order. The engine
+bills bodies and never builds a match out here, so a flag on a body is the whole of what it
+can honestly read.
+
+**Protecting one person makes the whole run need four.** `IsBookable` asks for `LargestSide *
+2` rather than `SideSize * 2`, because somebody out there is working a tag match now and a tag
+match takes four bodies however few of them are the one being looked after. The builder says
+so rather than only grey out the button.
+
+`LargestSide` reads the **cast** and not the marks, so a name marked and then taken off the run
+stops deciding anything. The builder drops the mark on deselection and the save reader
+intersects with the cast, because two paths reach the same bad state and only one of them is
+the player's.
+
+Measured on one run of three towns, four bodies, one of them protected:
+
+| | Sharpness | Fatigue |
+| --- | --- | --- |
+| Singles on that run | +21.75 | +8.47 |
+| Protected on that run | +19.39 | +6.14 |
+
+The report says `1 protected` in the heading and badges the row, because on a mixed run the
+heading alone cannot answer it: two people with different numbers on the same run were doing
+different jobs, and a booker cannot tell which from the numbers.
+#### Still not built
+
+- **Nobody is paired with anybody.** `SideSizeFor` buys the work share and the shorter shift;
+  it does not say who is teaming with whom, so a standing tag team on the run gets no
+  chemistry out of it and the report names no teams.
+- ~~**Trios on the road.**~~ *(Built — see below.)*
+
+### Six-mans on the road
+
+The override was `InTags`: a list of names working tags. It could say **that** somebody was
+being looked after and not **how much**, and out here that is a real distinction —
+`WorkShare` reads 0.63 for a trio against 0.73 for a tag, so "put him in six-mans" and "put
+him in tags" are different instructions about the same wrestler and the old shape could only
+give one of them. It is now `Formats`, a side size per wrestler, and `SideSizeFor` is the one
+question the simulator asks.
+
+Measured on one run of three towns with the three formats side by side, everything else held
+equal:
+
+| A side | Sharpness | Fatigue |
+| --- | --- | --- |
+| 1 | +21.75 | +8.47 |
+| 2 | +19.39 | +6.14 |
+| 3 | +18.60 | +5.37 |
+
+Monotone in both directions. A six-man gives up a little more of the rep than a tag does and
+saves a lot more of the bill, which is what "further down that road" means and why it is where
+somebody who needs more than a tag can give them goes.
+
+**A six-man needs six bodies**, which `LargestSide * 2` already said without being changed —
+the rule was written for the general case when tags went in, and trios only exercised it. The
+builder names the number rather than only greying the button out.
+
+**The run's format and a wrestler's are different kinds of thing, and the second outranks the
+first.** Changing the chip moves everybody who has not been put on a format; the ones who have
+keep theirs. The first version of that rebuilt every override through `SetFormat` afterwards,
+which drops one matching the new default — so switching the run to tags released somebody
+deliberately put on tags, and switching it back to singles left them working a full singles
+match with nothing on screen having changed. A choice made about one wrestler is not the run's
+to take back.
+
+`SetFormat` still drops an override equal to the default, and that is the *cycle's* business
+rather than the chip's: tapping a name goes singles → tags → six-man → singles, and the third
+tap has to read as "back to normal" rather than as a pin that happens to match.
+
+**Saves written before this still load as what they meant.** `InTags` is read as a side size
+of two and never written. Reading past it would have quietly un-protected the person a run was
+booked to protect, with the booking looking unchanged.
+
+#### Still not built here
+
+- **Four or more a side.** `SetFormat` clamps to three and the builder offers three. Eight-man
+  tags happen; `WorkShare` would take them.
+- **The format says nothing about the match.** A six-man books six bodies' worth of exposure
+  and nothing about who the other five are, which is the same honest limit the whole road has:
+  the engine bills bodies out here and never builds a match.
+

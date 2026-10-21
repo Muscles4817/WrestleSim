@@ -56,6 +56,201 @@ namespace WrestlingSim.Tests
             return SaveSerializer.FromJson(json, fresh);
         }
 
+        /// <summary>
+        /// **A booked run of towns survives a reload.**
+        ///
+        /// A loop is booked days before it runs, like any other date, so a save between the
+        /// two has to keep it — and it has to keep the cast by reference, because the engine
+        /// mutates the wrestlers it is handed and a by-value copy would sharpen three
+        /// strangers.
+        /// </summary>
+        [Fact]
+        public void RoundTripKeepsABookedRunOfTowns()
+        {
+            var roster = Roster();
+            // A fourth body, because this run is booked as tag matches and a tag run needs
+            // two full sides.
+            roster.Add(TestRoster.Make("Delta Four", overness: 50));
+            var career = NewCareer(roster);
+
+            var show = career.Schedule("Saturday", career.CurrentDate.AddDays(3), ShowType.HouseShow);
+            // Bound against a fresh roster of the same four, since the default one is three.
+            var fresh = Roster();
+            fresh.Add(TestRoster.Make("Delta Four", overness: 50));
+            fresh[3].Id = roster[3].Id;
+            show.Loop = new HouseShowLoop
+            {
+                Cast            = [roster[0], roster[2], roster[1], roster[3]],
+                Towns           = 4,
+                Pace            = BeatIntensity.High,
+                MinutesPerNight = 16,
+                SideSize        = 1,
+                Formats         = { [roster[2]] = 2 }
+            };
+
+            var loaded = RoundTrip(career, fresh);
+            var back   = loaded.Shows.Single(s => s.Id == show.Id);
+
+            Assert.NotNull(back.Loop);
+            Assert.Equal(4, back.Loop!.Towns);
+            Assert.Equal(BeatIntensity.High, back.Loop.Pace);
+            Assert.Equal(16, back.Loop.MinutesPerNight);
+            Assert.Equal(4, back.Loop.Cast.Count);
+            Assert.True(back.HasRoadRun);
+
+            // The format, or a run reloads as something other than what it was booked as and
+            // quietly stops protecting the person it was booked to protect.
+            Assert.Equal(1, back.Loop.SideSize);
+            Assert.Equal(2, back.Loop.SideSizeFor(back.Loop.Cast.Single(w => w.Id == roster[2].Id)));
+            Assert.Equal(1, back.Loop.SideSizeFor(back.Loop.Cast.Single(w => w.Id == roster[0].Id)));
+
+            // By reference, like the cast — a mark on a copy protects nobody.
+            foreach (var marked in back.Loop.Formats.Keys)
+                Assert.Same(back.Loop.Cast.Single(w => w.Id == marked.Id), marked);
+
+            // The cast has to be the roster's own instances, or running the loop sharpens
+            // copies and the career never sees it.
+            foreach (var w in back.Loop.Cast)
+                Assert.Same(loaded.Roster.Single(r => r.Id == w.Id), w);
+        }
+
+        /// <summary>
+        /// A six-man survives a reload as a six-man. The old field could only say "tags", so
+        /// a side size that reloads one short is the exact failure the new shape exists to
+        /// stop, and it would look like nothing had changed.
+        /// </summary>
+        [Fact]
+        public void RoundTripKeepsASixManOnTheRun()
+        {
+            var roster = SixBodies();
+            var career = NewCareer(roster);
+
+            var show = career.Schedule("Saturday", career.CurrentDate.AddDays(3), ShowType.HouseShow);
+            show.Loop = new HouseShowLoop
+            {
+                Cast     = roster.ToList(),
+                Towns    = 3,
+                SideSize = 1,
+                Formats  = { [roster[4]] = 3 }
+            };
+
+            Assert.True(show.Loop.IsBookable, "six bodies is a six-man");
+
+            var back = RoundTrip(career, Mirror(roster)).Shows.Single(s => s.Id == show.Id);
+
+            Assert.Equal(3, back.Loop!.SideSizeFor(back.Loop.Cast.Single(w => w.Id == roster[4].Id)));
+            Assert.Equal(3, back.Loop.LargestSide);
+            Assert.True(back.Loop.IsBookable);
+        }
+
+        /// <summary>Six named bodies, for the formats that need that many.</summary>
+        private static List<Wrestler> SixBodies() =>
+            Enumerable.Range(1, 6).Select(i => TestRoster.Make($"Body {i}")).ToList();
+
+        /// <summary>
+        /// A fresh roster of the same people, by id — what a load binds against, since the
+        /// app always rebuilds the roster from JSON rather than reusing the live objects.
+        /// </summary>
+        private static List<Wrestler> Mirror(List<Wrestler> roster) =>
+            roster.Select(w =>
+            {
+                var copy = TestRoster.Make(w.RingName!);
+                copy.Id  = w.Id;
+                return copy;
+            }).ToList();
+
+        /// <summary>
+        /// **A save written before six-mans existed still loads as what it meant.**
+        ///
+        /// The override used to be `InTags`: a list of names working tags, with no room to
+        /// say how many a side. Runs booked in that shape are out there, and a build that
+        /// read past the old field would quietly un-protect the person the run was booked to
+        /// protect — the booking would look unchanged and the wrestler would be working a
+        /// full singles match in the towns.
+        /// </summary>
+        [Fact]
+        public void ARunSavedBeforeSixMansStillLoadsItsTags()
+        {
+            var roster = Roster();
+            var career = NewCareer(roster);
+
+            var show = career.Schedule("Saturday", career.CurrentDate.AddDays(3), ShowType.HouseShow);
+            show.Loop = new HouseShowLoop
+            {
+                Cast     = [roster[0], roster[1], roster[2]],
+                Towns    = 3,
+                SideSize = 1,
+                Formats  = { [roster[2]] = 2 }
+            };
+
+            // The save as the old build would have written it: the names, no side sizes.
+            string json = SaveSerializer.ToJson(career)
+                .Replace($"\"Formats\":[{{\"Wrestler\":\"{roster[2].Id}\",\"SideSize\":2}}]",
+                         $"\"InTags\":[\"{roster[2].Id}\"]");
+
+            Assert.DoesNotContain("\"Formats\"", json);
+            Assert.Contains("\"InTags\"", json);
+
+            var back = SaveSerializer.FromJson(json, Roster()).Shows.Single(s => s.Id == show.Id);
+
+            Assert.Equal(2, back.Loop!.SideSizeFor(back.Loop.Cast.Single(w => w.Id == roster[2].Id)));
+            Assert.Equal(1, back.Loop.SideSizeFor(back.Loop.Cast.Single(w => w.Id == roster[0].Id)));
+        }
+
+        /// <summary>
+        /// A protection mark on somebody who is no longer on the roster drops off, like every
+        /// other cast. Left in, it would still be deciding how many bodies the run needs
+        /// through <c>LargestSide</c> — a match nobody is in, blocking a run that is fine.
+        /// </summary>
+        [Fact]
+        public void AProtectionMarkOnSomebodyWhoIsGoneDropsOff()
+        {
+            var roster = Roster();
+            var career = NewCareer(roster);
+
+            var show = career.Schedule("Saturday", career.CurrentDate.AddDays(3), ShowType.HouseShow);
+            show.Loop = new HouseShowLoop
+            {
+                Cast     = [roster[0], roster[1]],
+                Towns    = 3,
+                SideSize = 1,
+                Formats  = { [roster[2]] = 2 }   // marked, then never sent out
+            };
+
+            // It already counts for nothing in memory — `LargestSide` reads the cast, not the
+            // marks — and the point here is that a reload does not resurrect it as a live one.
+            Assert.Equal(1, show.Loop.LargestSide);
+
+            var back = RoundTrip(career).Shows.Single(s => s.Id == show.Id);
+
+            Assert.Empty(back.Loop!.Formats);
+            Assert.Equal(1, back.Loop.LargestSide);
+            Assert.True(back.Loop.IsBookable);
+        }
+
+        /// <summary>
+        /// A touring assignment is a stretch of weeks, so it has to survive the saves that
+        /// happen inside that stretch — otherwise the instruction lasts until the player
+        /// closes the tab.
+        /// </summary>
+        [Fact]
+        public void RoundTripKeepsWhoIsOnTheRoad()
+        {
+            var roster = Roster();
+            var career = NewCareer(roster);
+
+            roster[0].TouringUntil = career.CurrentDate.AddDays(28);
+
+            var loaded = RoundTrip(career);
+
+            var touring = loaded.Roster.Single(w => w.Id == roster[0].Id);
+            var home    = loaded.Roster.Single(w => w.Id == roster[1].Id);
+
+            Assert.Equal(career.CurrentDate.AddDays(28), touring.TouringUntil);
+            Assert.True(touring.IsTouring(career.CurrentDate.AddDays(14)));
+            Assert.Null(home.TouringUntil);
+        }
+
         [Fact]
         public void RoundTripKeepsPromotionAndClock()
         {

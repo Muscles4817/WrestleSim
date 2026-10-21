@@ -8,72 +8,9 @@
         <h1 class="screen__title">@show.Name</h1>
     </div>
 
-    <div class="score-hero">
-        <div>
-            <div class="score-hero__label">Overall</div>
-            <div class="score-hero__main">@result.OverallRating.ToString("F1") <span class="muted">/ 100</span></div>
-        </div>
-        <div>
-            <div class="score-hero__label">Runtime</div>
-            <div class="score-hero__main">@result.BookedMinutes<span class="muted"> / @result.BudgetMinutes min</span></div>
-        </div>
-        <div>
-            <div class="score-hero__label">Final crowd</div>
-            <div class="score-hero__main">@result.FinalCrowdMood.ToString("F1") <span class="muted">/ 10</span></div>
-        </div>
-    </div>
-
-    @if (result.OverrunPenalty > 0)
-    {
-        <div class="notice notice--error mt">
-            <strong>The show ran long.</strong> Overall score cut by
-            @((result.OverrunPenalty * 100).ToString("F0"))%.
-        </div>
-    }
-
-    <div class="panel">
-        <div class="panel__title">Card</div>
-        @foreach (var item in result.Items)
-        {
-            <div class="editor-row @(item.FatiguePenaltyApplied ? "is-flagged" : "")">
-                <div class="editor-row__n">@(result.Items.IndexOf(item) + 1)</div>
-                <div>
-                    <div class="editor-row__name">@item.Label</div>
-                    <div class="editor-row__sub">
-                        @item.Kind · @item.DurationMinutes min · position ×@item.PositionWeight.ToString("0.0")
-                        @if (item.FatiguePenaltyApplied)
-                        {
-                            <text> · fatigue ×0.85</text>
-                        }
-                    </div>
-                    @foreach (var note in item.Notes)
-                    {
-                        <div class="editor-row__sub">@note</div>
-                    }
-                </div>
-                <div class="editor-row__tools">
-                    @if (item.StarRating is { } stars)
-                    {
-                        <Stars Rating="@stars" ShowNumber="false" />
-                    }
-                    <strong class="tabnum gold">@item.Score.ToString("F1")</strong>
-                </div>
-            </div>
-        }
-    </div>
-
-    <StatusChanges Changes="@result.StatusChanges" />
-
-    <FeudUpdates Updates="@result.FeudUpdates" />
-
-    @foreach (var item in result.Items.Where(i => i.MatchResult is not null))
-    {
-        var matchResult = item.MatchResult!;
-        <div class="panel">
-            <div class="panel__title">@item.Label — play by play</div>
-            <PlayByPlay Result="matchResult" />
-        </div>
-    }
+    @* One report, shared with the career screen. What differs between the two is the
+       heading above and the buttons below; everything in between is the same night. *@
+    <ShowReport Result="result" Today="@DateOnly.FromDateTime(show.Date)" />
 
     <div class="wizard-bar">
         <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Exhibition)">← Main menu</button>
@@ -96,6 +33,14 @@ else if (mode == Mode.AddSegment)
         <h1 class="screen__title">Add a Segment</h1>
     </div>
     <SegmentBuilder OnDone="AddSegment" OnCancel="@(() => mode = Mode.Card)" ConfirmLabel="Add to card +" />
+}
+else if (mode == Mode.AddRumble)
+{
+    <div class="screen__head">
+        <div class="screen__eyebrow">Adding to @show.Name</div>
+        <h1 class="screen__title">Add a Battle Royal</h1>
+    </div>
+    <RumbleBuilder OnDone="AddRumble" OnCancel="@(() => mode = Mode.Card)" ConfirmLabel="Add to card +" />
 }
 else
 {
@@ -186,6 +131,7 @@ else
         <div class="row mt">
             <button class="btn" @onclick="() => mode = Mode.AddMatch">+ Add a match</button>
             <button class="btn" @onclick="() => mode = Mode.AddSegment">+ Add a segment</button>
+            <button class="btn" @onclick="() => mode = Mode.AddRumble">+ Add a battle royal</button>
             <span class="spacer"></span>
             <button class="btn btn--primary" disabled="@(show.Card.Count == 0)" @onclick="RunShow">
                 Run the show ★
@@ -215,7 +161,7 @@ else
 }
 
 @code {
-    private enum Mode { Card, AddMatch, AddSegment }
+    private enum Mode { Card, AddMatch, AddSegment, AddRumble }
 
     private Mode mode = Mode.Card;
     private Show show = NewShow();
@@ -236,6 +182,12 @@ else
     private void AddMatch(BookedMatch match)
     {
         show.Card.Add(match);
+        mode = Mode.Card;
+    }
+
+    private void AddRumble(WrestlingSim.Models.Rumble.RumblePlan rumble)
+    {
+        show.Card.Add(rumble);
         mode = Mode.Card;
     }
 

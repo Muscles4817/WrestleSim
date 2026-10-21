@@ -24,6 +24,20 @@ namespace WrestlingSim.Engine
         /// </summary>
         private readonly TitleRegistry? _titles;
 
+        /// <summary>
+        /// When the promotion last ran each gimmick match, or null in exhibition — where
+        /// there is no calendar, nothing has happened before, and every stipulation is
+        /// therefore as fresh as it will ever be.
+        /// </summary>
+        private readonly StipulationBook? _stipulations;
+
+        /// <summary>
+        /// The promotion's tier, which doc 15 §3.1 uses for one thing here: ring quality.
+        /// "A hard or badly-maintained ring is a genuine injury multiplier; indie rings are
+        /// frequently much worse."
+        /// </summary>
+        private readonly PromotionTier _tier;
+
         /// <summary>Most a card can lose for running past its allotted runtime.</summary>
         private const double MaxOverrunPenalty = 0.35;
 
@@ -31,12 +45,16 @@ namespace WrestlingSim.Engine
             FeudBook feudBook,
             int? seed = null,
             TitleRegistry? titles = null,
-            BrandContext? brands = null)
+            BrandContext? brands = null,
+            StipulationBook? stipulations = null,
+            PromotionTier tier = PromotionTier.Established)
         {
-            _feudBook = feudBook;
-            _seed     = seed;
-            _titles   = titles;
-            _brands   = brands;
+            _tier         = tier;
+            _feudBook     = feudBook;
+            _seed         = seed;
+            _titles       = titles;
+            _brands       = brands;
+            _stipulations = stipulations;
         }
 
         public ShowResult Simulate(Show show)
@@ -95,6 +113,13 @@ namespace WrestlingSim.Engine
                     BookedMatch match => RunMatch(
                         match, itemResult, result, i, showDate, show.Name, starMaking),
                     Segment segment   => RunSegment(segment, itemResult, result, showDate),
+                    Models.Rumble.RumblePlan rumble => RunRumble(rumble, itemResult, result, showDate, index: i),
+                    Models.Rumble.RumbleDraw draw => RunDraw(draw, itemResult, result, showDate, index: i),
+
+                    // Deliberately still here, and deliberately still zero. A card item this
+                    // does not know how to run should score nothing rather than something
+                    // plausible — a Rumble fell through here scoring zero until it was given
+                    // an arm, which is exactly the failure the fallthrough is for surfacing.
                     _                 => 0
                 };
 
@@ -166,6 +191,12 @@ namespace WrestlingSim.Engine
             // so this has to happen for every appearance, not just the ones that won.
             foreach (var wrestler in show.Card.SelectMany(i => i.Wrestlers).Distinct())
                 wrestler.LastAppearance = showDate;
+
+            // And everyone who wrestled paid for it, and got sharper for it. Charged per
+            // card item rather than once per night, so a wrestler booked twice pays twice —
+            // which is the only thing stopping a booker working their main eventer three
+            // times on the same show for free.
+            foreach (var item in show.Card) ChargeRingCondition(item);
 
             // ── Running long ─────────────────────────────────────────────────
             double overrun = Math.Min(MaxOverrunPenalty, show.OverrunFraction);
@@ -267,6 +298,179 @@ namespace WrestlingSim.Engine
         private static double ChemistryOf(Models.MatchPlan.MatchPlan plan, IReadOnlyList<Wrestler> members) =>
             members.Count > 0 && plan.SideA.Contains(members[0]) ? plan.SideA.Chemistry : plan.SideB.Chemistry;
 
+        /// <summary>
+        /// Runs a battle royal on a card.
+        ///
+        /// A sibling of <see cref="RunMatch"/> rather than a wrapper around it: the two share
+        /// the shape — run it, note it, move standing — and nothing else, because the thing
+        /// being run is graded on moments and the thing being moved is a whole field's
+        /// standing rather than two men's.
+        ///
+        /// No feud familiarity read, and that is a decision rather than an omission. A
+        /// battle royal is not a pairing, so there is no pairing for the crowd to be sick
+        /// of; running the same thirty people again next month is a different problem and
+        /// not one the staleness rule models.
+        /// </summary>
+        private double RunRumble(
+            Models.Rumble.RumblePlan rumble, CardItemResult itemResult, ShowResult showResult,
+            DateOnly showDate, int index)
+        {
+            var result = new RumbleEngine(_seed.HasValue ? _seed.Value + index : Random.Shared.Next())
+                .Execute(rumble, showDate);
+
+            itemResult.RumbleResult = result;
+            itemResult.Notes.Add($"{result.Winner.RingName} wins the {rumble.Field.Count}-wrestler " +
+                                 $"{(rumble.IsBattleRoyal ? "battle royal" : "rumble")} — {result.StarRating:F2}★");
+
+            if (result.IronMan is { } iron && iron != result.Winner && result.IronManOutlasted > 0)
+                itemResult.Notes.Add($"{iron.RingName} outlasted {result.IronManOutlasted} of them.");
+
+            var outcome = HeatEconomy.ForRumble(
+                result.Winner, rumble.Wrestlers, result.StarRating,
+                result.IronMan, result.IronManShare);
+
+            foreach (var change in outcome.All)
+            {
+                HeatEconomy.Apply(change);
+                if (change.IsMeaningful) showResult.StatusChanges.Add(change);
+            }
+
+            return result.FinalScore;
+        }
+
+        /// <summary>
+        /// Runs a number drawing on a card.
+        ///
+        /// Scored and paced as a segment, because that is what a crowd is sitting through,
+        /// and it deposits heat like one. What it does that no other card item does is
+        /// reach forward: the numbers it draws are written onto a match booked on a *later*
+        /// show, which is the whole reason a drawing is worth a slot.
+        /// </summary>
+        private double RunDraw(
+            Models.Rumble.RumbleDraw draw, CardItemResult itemResult, ShowResult showResult,
+            DateOnly showDate, int index)
+        {
+            // A dangling reference is the one failure mode a booker can create from outside
+            // this card — deleting the show that held the match, say — so it is reported
+            // rather than thrown. Every other way a drawing can be wrong is something the
+            // builder would not let them book in the first place, and those still throw.
+            if (draw.Rumble is null)
+            {
+                itemResult.Notes.Add(
+                    "The match this was drawing for is not booked any more. Nothing to draw.");
+                return 0;
+            }
+
+            var result = new RumbleDrawEngine(_seed.HasValue ? _seed.Value + index : Random.Shared.Next())
+                .Execute(draw, showDate);
+
+            itemResult.DrawResult = result;
+
+            foreach (var pull in result.Pulls)
+                itemResult.Notes.Add(
+                    $"{pull.Wrestler.RingName} — number {pull.Number}" +
+                    (pull.Rigged ? ", handed over." : "."));
+
+            if (result.Credibility < 1.0)
+                itemResult.Notes.Add(
+                    $"The drum was worth {result.Credibility * 100:F0}% of what an honest one is.");
+
+            showResult.FeudUpdates.AddRange(_feudBook.RecordSegment(
+                result.HeatParticipants, result.HeatGenerated, result.HistoryTags, showDate));
+
+            return result.FinalScore;
+        }
+
+        /// <summary>
+        /// What the gimmick did, in a line the booker can act on.
+        ///
+        /// Says *why* rather than only how much: an unearned stipulation and an overused one
+        /// are different mistakes with different fixes — build the feud, or wait — and a
+        /// report that only printed a number would leave the player to guess which.
+        /// </summary>
+        private static string StipulationNote(
+            Stipulation stipulation, double stakes, int? daysSince)
+        {
+            string label = StipulationRules.Label(stipulation);
+
+            if (stakes < 0)
+                return $"{label} — the story had not got there yet. The room knew " +
+                       $"({stakes:F1} crowd energy).";
+
+            double freshness = StipulationRules.Scarcity(daysSince);
+            if (freshness < 0.9 && daysSince is { } days)
+                return $"{label} — last one was {days} days ago, so it was worth " +
+                       $"{freshness * 100:F0}% of a rare one (+{stakes:F1}).";
+
+            return $"{label} — earned, and it has been a while (+{stakes:F1}).";
+        }
+
+        /// <summary>
+        /// Bills one card item to everybody who worked it: fatigue up, sharpness up.
+        ///
+        /// Reads the booking rather than the result, deliberately. What a match takes out
+        /// of somebody is how long they were out there and how fast they went — decided
+        /// when it was laid out — not how well it happened to go on the night.
+        /// </summary>
+        private static void ChargeRingCondition(ICardItem item)
+        {
+            switch (item)
+            {
+                case BookedMatch match:
+                {
+                    double minutes = match.Plan.Beats.Sum(b => b.DurationMinutes);
+                    double pace    = RingCondition.Pace(match.Plan.Beats);
+
+                    foreach (var side in match.Plan.Sides)
+                    {
+                        double share = RingCondition.WorkShare(side.Members.Count);
+                        foreach (var w in side.Members)
+                            Bill(w, minutes, pace, share);
+                    }
+                    break;
+                }
+
+                case Models.Rumble.RumblePlan rumble:
+                {
+                    // No beats to read, so the cost comes from how much of it each of them
+                    // was actually in — a battle royal is cheap for the twelve people
+                    // thrown out early and expensive for whoever went the distance. Pace is
+                    // taken as brisk-but-not-frantic: it is a scramble, not a sprint.
+                    double full = rumble.DurationMinutes;
+                    int field   = Math.Max(1, rumble.Field.Count);
+
+                    foreach (var (entrant, i) in rumble.Field.Select((e, i) => (e, i)))
+                    {
+                        // Without a result to read, entry order is the honest proxy for how
+                        // long somebody was in there: the last man out started last.
+                        double survived = full * (0.35 + 0.65 * (i + 1) / field);
+                        Bill(entrant.Wrestler, survived, pace: 1.2, share: 1.0);
+                    }
+                    break;
+                }
+
+                // A segment is not a match. Standing in the ring talking costs a wrestler
+                // nothing worth modelling and sharpens nothing — and a drawing, a promo or
+                // a beatdown all read the same way here, which is why none of them are
+                // billed at all.
+            }
+        }
+
+        private static void Bill(Wrestler w, double minutes, double pace, double share)
+        {
+            double conditioning = new PerformerProfile(w).BaseConditioning;
+
+            w.Fatigue = Math.Clamp(
+                w.Fatigue + RingCondition.MatchCost(minutes, pace, w.Style, share, conditioning),
+                0, 100);
+
+            double upkeep = RingCondition.SelfMaintenance(
+                w.Mental?.Psychology ?? 70, w.Mental?.RingIQ ?? 70);
+
+            w.Sharpness = Math.Clamp(
+                w.Sharpness + RingCondition.SharpnessGain(minutes, pace, upkeep, share), 0, 100);
+        }
+
         private double RunMatch(
             BookedMatch match, CardItemResult itemResult, ShowResult showResult,
             int index, DateOnly showDate, string showName, double starMaking)
@@ -286,20 +490,59 @@ namespace WrestlingSim.Engine
             var feud = _feudBook.GetOrCreate(sideA, sideB);
             double familiarity = feud.Familiarity(showDate);
 
+            // Read before this match is recorded, so a card running two cages does not let
+            // the first one launder the second — the second is the one a day old.
+            int? sinceStipulation = _stipulations?.DaysSince(match.Plan.Stipulation, showDate);
+
             var engineResult = new MatchEngine(_seed.HasValue ? _seed + index : null)
-                .Execute(match.Plan, familiarity);
+                .Execute(match.Plan, familiarity, sinceStipulation, _tier, showDate);
+
+            _stipulations?.Record(match.Plan.Stipulation, showDate);
 
             itemResult.MatchResult = engineResult;
+
+            // Written down here rather than in the engine — see MatchEngineResult.Injuries.
+            foreach (var roll in engineResult.Injuries)
+            {
+                var injury = new Models.Person.Injury
+                {
+                    Part      = roll.Part,
+                    Sustained = showDate,
+                    ClearedOn = showDate.AddDays(roll.WeeksOut * 7),
+                    WeeksOut  = roll.WeeksOut
+                };
+
+                roll.Wrestler.Injury = injury;
+                roll.Wrestler.InjuryHistory.Add(injury);
+
+                itemResult.Notes.Add(
+                    $"{roll.Wrestler.RingName} is hurt — {Models.Person.Injury.Label(roll.Part).ToLowerInvariant()}, " +
+                    $"out {roll.WeeksOut} week{(roll.WeeksOut == 1 ? "" : "s")}.");
+
+                showResult.Injuries.Add(new InjuryReport
+                {
+                    Wrestler = roll.Wrestler,
+                    Injury   = injury,
+                    Repeat   = roll.Wrestler.InjuryHistory.Count(i => i.Part == roll.Part) > 1
+                });
+            }
             itemResult.Notes.Add($"{engineResult.Winner.RingName} def. {engineResult.Loser.RingName} — {engineResult.StarDisplay}");
             if (engineResult.StalenessNote is { } stale) itemResult.Notes.Add(stale);
+
+            if (match.Plan.Stipulation != Stipulation.None)
+                itemResult.Notes.Add(StipulationNote(
+                    match.Plan.Stipulation, engineResult.StipulationStakes, sinceStipulation));
 
             // ── Status ───────────────────────────────────────────────────────
             // The result is not just a rating. A win moves standing, and how much depends
             // on who was beaten and how decisively — see HeatEconomy.
+            // Weighed under the rules the match was worked under. In a No-DQ match a run-in
+            // is not an excuse, so the loss is a clean one — and, through
+            // TitleEconomy.ChangesHands and without a line of code there, the belt moves.
             var finishBeat = match.Plan.Beats.LastOrDefault(b => b.IsFinish);
             var weight = finishBeat is null
                 ? FinishWeight.Decisive
-                : HeatEconomy.WeightOf(finishBeat.Type);
+                : StipulationRules.Weigh(match.Plan.Stipulation, finishBeat.Type);
 
             // In a tag match the fall is between two men, but the statement is between two
             // teams: the pool is set by each side's standing, and then the man who scored

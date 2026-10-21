@@ -5,7 +5,55 @@ namespace WrestlingSim.Models.MatchPlan
     public class BeatResult
     {
         public BeatType BeatType { get; set; }
+
+        /// <summary>The control the booking asked for. See <see cref="Worker"/> for who that resolved to.</summary>
         public BeatControl Control { get; set; }
+
+        // ── Who this beat was actually about ─────────────────────────────────
+        //
+        // The engine works all three of these out for every beat and used to discard them,
+        // which left the play-by-play as the only place they were visible. That made them
+        // testable only by asserting on a commentary string — and a commentary string is
+        // moved by control resolution, the disposal window, eliminations, repetition decay,
+        // fatigue, attention and the RNG at once, so asserting on one asserts on all of
+        // them. Three tests in a day passed against the deletion of the mechanism they
+        // named, and one review finding was attributed to the wrong rule entirely, because
+        // two rules were both moving the number being measured.
+        //
+        // Recording them is the fix for that, and the cheap one: a rule that can be
+        // asserted on directly does not need a seed sweep, does not need a second match to
+        // compare against, and dies immediately under mutation because there is nothing
+        // else in the assertion for it to hide behind.
+
+        /// <summary>
+        /// The wrestler the engine resolved as working this beat.
+        ///
+        /// Not the same question as <see cref="Control"/>, which is the *booking*: `Even`
+        /// and `Contested` name no side, tags change who is legal, and in a multi-man match
+        /// the fallback skips anybody disposed or eliminated. Null only on beats that have
+        /// no worker at all.
+        /// </summary>
+        public Wrestler? Worker { get; set; }
+
+        /// <summary>
+        /// The wrestler this beat was worked on.
+        ///
+        /// From the beat's <see cref="MatchBeat.Against"/> where the booking names one, and
+        /// otherwise whoever the engine picked — which is the part worth being able to
+        /// check, because "whoever is left upright" has been wrong in four different places.
+        /// </summary>
+        public Wrestler? Target { get; set; }
+
+        /// <summary>
+        /// Everybody a room-wide line would name on this beat: the legal wrestler of every
+        /// side still in the exchange, in side order.
+        ///
+        /// Recorded on every beat rather than only the ones that use it, because the useful
+        /// assertion is usually that somebody is *absent* — the man on the floor, the man
+        /// who has been eliminated — and absence cannot be checked against a line that was
+        /// never emitted.
+        /// </summary>
+        public List<Wrestler> Billed { get; set; } = new();
 
         public List<string> Commentary { get; set; } = new();
 
@@ -51,6 +99,30 @@ namespace WrestlingSim.Models.MatchPlan
         /// </summary>
         public double RepetitionFactor { get; set; } = 1.0;
 
+        /// <summary>
+        /// What a near fall kept because a third party was, or was not, free to break it.
+        /// 1.0 when the count carried real jeopardy; <see cref="Engine.MatchEngine
+        /// .CrowdedOutNearFall"/> when somebody upright could have broken it. Left at 1.0 on
+        /// every other beat type.
+        ///
+        /// Recorded rather than folded silently into the energy, because it could not be
+        /// tested otherwise: a test comparing two matches measures the crowd level the
+        /// eliminations built as much as the rule, which is how the first attempt at this
+        /// passed against a mutation that reverted the mechanism entirely.
+        /// </summary>
+        public double NearFallJeopardy { get; set; } = 1.0;
+
+        /// <summary>
+        /// What being outnumbered cost the side working this beat, as a multiplier on its
+        /// output. 1.0 on every beat of every even match, and on the larger side's beats in
+        /// a handicap match — only the outnumbered side carries it.
+        ///
+        /// See <see cref="Engine.MatchEngine.NumbersFatigue"/>. Recorded for the same reason
+        /// the near-fall jeopardy is: a rule that can only be seen through a score is a rule
+        /// whose test is measuring twenty other things at the same time.
+        /// </summary>
+        public double NumbersFatigue { get; set; } = 1.0;
+
         // ── Display ──────────────────────────────────────────────────────────
 
         public string BeatLabel => BeatType switch
@@ -60,6 +132,7 @@ namespace WrestlingSim.Models.MatchPlan
             BeatType.StandardOpening     => "OPENING",
             BeatType.HeatSegment         => "HEAT SEGMENT",
             BeatType.Comeback            => "COMEBACK",
+            BeatType.HopeSpot            => "HOPE SPOT",
             BeatType.RestHold            => "REST HOLD",
             BeatType.HighSpot            => "HIGH SPOT",
             BeatType.CrowdBrawl          => "CROWD BRAWL",

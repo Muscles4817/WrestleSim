@@ -94,7 +94,7 @@ else if (mode == Mode.Wizard)
             {
                 var current = WizardBrandOf(w);
                 <div class="editor-row">
-                    <div class="editor-row__n">@w.OvernessDisplay</div>
+                    <div class="editor-row__n @w.CardPosition.Tone()">@w.OvernessDisplay</div>
                     <div>
                         <div class="editor-row__name">@w.RingName</div>
                         <div class="editor-row__sub">@w.CardPosition.Label() · @w.Style</div>
@@ -429,7 +429,7 @@ else
                 @foreach (var w in roster)
                 {
                     <div class="editor-row">
-                        <div class="editor-row__n">@w.OvernessDisplay</div>
+                        <div class="editor-row__n @w.CardPosition.Tone()">@w.OvernessDisplay</div>
                         <div>
                             <div class="editor-row__name">@w.RingName</div>
                             <div class="editor-row__sub">@w.CardPosition.Label()</div>
@@ -464,7 +464,7 @@ else
             @foreach (var w in Unassigned(career))
             {
                 <div class="editor-row">
-                    <div class="editor-row__n">@w.OvernessDisplay</div>
+                    <div class="editor-row__n @w.CardPosition.Tone()">@w.OvernessDisplay</div>
                     <div><div class="editor-row__name">@w.RingName</div></div>
                     <div class="editor-row__tools">
                         @foreach (var brand in split.Brands)

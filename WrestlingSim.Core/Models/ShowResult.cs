@@ -11,6 +11,9 @@ namespace WrestlingSim.Models
 
         public List<CardItemResult> Items { get; set; } = new();
 
+        /// <summary>Anybody the night took off the roster.</summary>
+        public List<InjuryReport> Injuries { get; set; } = new();
+
         /// <summary>Every feud that moved as a result of this show.</summary>
         public List<FeudUpdate> FeudUpdates { get; set; } = new();
 
@@ -40,6 +43,13 @@ namespace WrestlingSim.Models
         /// company-wide show and on any show run by a promotion that has not split.
         /// </summary>
         public BrandShowReport? Brand { get; set; }
+
+        /// <summary>
+        /// What the run of towns did, when this date was a loop rather than a card. Null on
+        /// every televised show, which is how the report knows which of the two it is looking
+        /// at without being told.
+        /// </summary>
+        public LoopResult? Loop { get; set; }
 
         /// <summary>Kept for compatibility with the old label-to-score view.</summary>
         public Dictionary<string, double> Breakdown =>
@@ -85,6 +95,16 @@ namespace WrestlingSim.Models
         public bool WasExclusive => Crossovers.Count == 0;
     }
 
+    /// <summary>Somebody the night hurt, for the show report.</summary>
+    public class InjuryReport
+    {
+        public required Wrestler Wrestler { get; init; }
+        public required Person.Injury Injury { get; init; }
+
+        /// <summary>They have done this one before. Doc 15's strongest single predictor.</summary>
+        public bool Repeat { get; init; }
+    }
+
     public class CardItemResult
     {
         public required string Label { get; init; }
@@ -106,8 +126,23 @@ namespace WrestlingSim.Models
         /// <summary>Full engine output when this item was a match.</summary>
         public MatchEngineResult? MatchResult { get; set; }
 
+        /// <summary>
+        /// What a battle royal did, when the item was one. Separate from
+        /// <see cref="MatchResult"/> because the two are graded on different things and
+        /// share no fields worth pretending are the same — a Rumble has no technical score
+        /// and a match has no iron man.
+        /// </summary>
+        public Rumble.RumbleResult? RumbleResult { get; set; }
+
         /// <summary>Full simulator output when this item was a segment.</summary>
         public SegResult? SegmentResult { get; set; }
+
+        /// <summary>
+        /// What a number drawing did, when the item was one. Its own field for the same
+        /// reason a Rumble has one: a drawing has no actions, no botch and no location, and
+        /// the thing it produced is a list of numbers rather than a list of performances.
+        /// </summary>
+        public Rumble.RumbleDrawResult? DrawResult { get; set; }
 
         /// <summary>
         /// The match's star rating. Normally derived from <see cref="MatchResult"/>, but

@@ -55,6 +55,12 @@ namespace WrestlingSim.Models.World
         public BrandSplit Brands { get; set; } = new();
 
         /// <summary>
+        /// When the promotion last ran each gimmick match. Doc 20 §9 asks for stipulation
+        /// scarcity "as a promotion-level counter", and this is that counter.
+        /// </summary>
+        public Engine.StipulationBook Stipulations { get; set; } = new();
+
+        /// <summary>
         /// Standing tag teams. A pair booked together without a team here is two singles
         /// wrestlers on the same side, which is a real and different thing — see
         /// <see cref="TagTeam"/>.
@@ -175,7 +181,18 @@ namespace WrestlingSim.Models.World
             // Nothing stays hot. Momentum bleeds toward zero every day, and someone off
             // screen long enough starts to be forgotten — doc 17 §3 and §4.
             foreach (var wrestler in Roster)
-                HeatEconomy.ApplyDailyDecay(wrestler, CurrentDate);
+                // Measured from the career's start when a wrestler has never worked, so a
+                // signing who is never used fades like anybody else off screen.
+                HeatEconomy.ApplyDailyDecay(wrestler, CurrentDate, StartDate);
+
+            // The two meters, moving in opposite directions on the same day off. A day of
+            // rest pays back fatigue and costs sharpness, which is why there is no amount
+            // of time off that is simply good for somebody — see RingCondition.
+            //
+            // The date goes in because an older body pays fatigue back slower (doc 15 §4),
+            // so the same day off is worth less to a veteran than to a twenty-five-year-old.
+            foreach (var wrestler in Roster)
+                RingCondition.ApplyDayOff(wrestler, CurrentDate);
 
             // A belt nobody is defending is quietly losing value the whole time — doc 21
             // §4. Being ignored is the fastest killer, so it has to happen on the clock

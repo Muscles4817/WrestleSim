@@ -76,6 +76,20 @@ namespace WrestlingSim.Engine
         /// <summary>Raw 0–1 crowd disposition, kept for the beats that reason about it directly.</summary>
         public double Disposition { get; }
 
+        /// <summary>What rust is doing to this wrestler's craft. Kept for <see cref="WorkrateFor"/>.</summary>
+        private readonly double _craft;
+
+        /// <summary>
+        /// The gas tank before fatigue is taken off it.
+        ///
+        /// <see cref="RingCondition"/> has to price a match and a rest day against what a
+        /// wrestler's stamina actually is, not against what today's fatigue has left of it.
+        /// Reading the adjusted figure made fatigue compound on itself twice over — a tired
+        /// wrestler paid more for the same match and recovered slower from it, neither of
+        /// which anybody designed.
+        /// </summary>
+        public double BaseConditioning { get; }
+
         /// <summary>
         /// 0–1: how much the room is *on this person's side*, as opposed to how much it
         /// cares about them at all (<see cref="Connection"/>) or how popular they are
@@ -97,9 +111,31 @@ namespace WrestlingSim.Engine
 
         private readonly Wrestler _wrestler;
 
-        public PerformerProfile(Wrestler w)
+        /// <summary>
+        /// <paramref name="on"/> is the date the match is happening, which is what
+        /// <see cref="AgeCurve"/> needs and nothing else here does.
+        ///
+        /// Optional, and null means no aging — the same shape and the same reasoning as
+        /// <see cref="MatchEngine.Execute"/>'s familiarity and tier: a fact only the world
+        /// knows, defaulted so that the thousand tests which construct a profile to ask
+        /// about one stat do not all have to invent a calendar. Null gives the
+        /// pre-aging-curve reading exactly.
+        /// </summary>
+        public PerformerProfile(Wrestler w, DateOnly? on = null)
         {
             _wrestler = w;
+
+            // ── The aging curve ──────────────────────────────────────────────
+            //
+            // Ratios against the roster baseline, not absolute levels — AgeCurve explains
+            // why at length, but the short version is that Wrestlers.json already has
+            // doc 15 §4 applied by hand and pricing it twice would re-balance a roster
+            // somebody tuned deliberately. Every one of these is 1.000 on day one of a
+            // save that starts in the baseline year.
+            int? year = on?.Year;
+            double ageAthletic = year is { } y1 ? AgeCurve.AthleticismDrift(w.BornIn, y1, w.Style) : 1.0;
+            double agePsych    = year is { } y2 ? AgeCurve.RingPsychologyDrift(w.BornIn, y2) : 1.0;
+            double ageConnect  = year is { } y3 ? AgeCurve.ConnectionDrift(w.DebutedIn, y3) : 1.0;
 
             // EffectiveOverness, not raw Overness: a performer on a hot streak reads to
             // the crowd as bigger than their standing, and a cold one reads smaller.
@@ -140,15 +176,54 @@ namespace WrestlingSim.Engine
             double psychNorm = Math.Clamp((w.Mental.Psychology * 0.6 + w.Mental.RingIQ * 0.4) / 100.0, 0, 1);
 
             Connection   = Centre(connectionRaw, RefConnection,   GainConnection,   0.30, 1.45);
+
+            // Tenure, not age. A wrestler two years in is still earning the relationship
+            // that a twelve-year veteran already has, and doc 15 §4.1 says that is what
+            // drawing power actually is.
+            Connection *= ageConnect;
             Workrate     = Centre(styleNorm,     RefWorkrate,     GainWorkrate,     0.30, 1.55);
             RingPsych    = Centre(psychNorm,     RefRingPsych,    GainRingPsych,    0.50, 1.30);
             Selling      = Centre(w.Mental.Selling   / 100.0, RefSelling,      GainSelling,      0.55, 1.25);
             Resilience   = Centre(w.Mental.Toughness / 100.0, RefResilience,   GainResilience,   0.60, 1.20);
             Conditioning = Centre(w.Physical.Stamina / 100.0, RefConditioning, GainConditioning, 0.55, 1.25);
+            BaseConditioning = Conditioning;
+
+            // ── The two meters ───────────────────────────────────────────────
+            //
+            // Applied here, at the one point every beat handler reads a wrestler through,
+            // so nothing downstream needs to know these exist.
+            //
+            // Fatigue goes on conditioning because conditioning is already wired to the
+            // three places being tired shows up — the late-match fade, the penalty for
+            // asking a long match of somebody who cannot go long, and the extra wear of
+            // being outnumbered. Rust goes on the craft stats, because what goes when you
+            // have been away is timing rather than gas.
+            //
+            // Neither touches Connection, deliberately. Rusty and forgotten are different
+            // things and the game already has one of them.
+            Conditioning *= RingCondition.ConditioningFactor(w.Fatigue);
+
+            _craft = RingCondition.CraftFactor(w.Sharpness);
+            Workrate  *= _craft;
+            RingPsych *= _craft;
+
+            // The half of the career arc that moves the right way. Psychology is the one
+            // competency doc 15 has still climbing at forty, and it is the reason a
+            // wrestler who can no longer go can still carry a match.
+            RingPsych *= agePsych;
 
             double athleticNorm = Math.Clamp(
                 (w.Physical.Agility * 0.6 + w.Physical.Speed * 0.4) / 100.0, 0, 1);
             Athleticism = Centre(athleticNorm, RefAthleticism, GainAthleticism, 0.55, 1.30);
+
+            // A smaller bite than conditioning takes: tired legs are slower, but a wrestler
+            // does not stop being athletic because they worked on Tuesday.
+            Athleticism *= 1.0 - (1.0 - RingCondition.ConditioningFactor(w.Fatigue)) * 0.5;
+
+            // And the half that moves the wrong way, style-adjusted per doc 15 §4.2 — the
+            // high-flyer's offence is the damage, the mat worker's is not, so they do not
+            // fall off at the same rate.
+            Athleticism *= ageAthletic;
 
             // Size is a 1–5 scale; normalise it onto the same 0–1 footing as Strength.
             double powerNorm = Math.Clamp(
@@ -165,7 +240,10 @@ namespace WrestlingSim.Engine
             double norm = Math.Clamp(
                 (_wrestler.RingSkills.GetStyleProficiency(style) * 0.6
                  + _wrestler.RingSkills.GetOverallSkill() * 0.4) / 5.0, 0, 1);
-            return Centre(norm, RefWorkrate, GainWorkrate, 0.30, 1.55);
+            // Rust applies here too. Without it a beat carrying a StyleHint read the raw
+            // skills and quietly routed around the meter — the one path where being ring
+            // rusty would have cost nothing.
+            return Centre(norm, RefWorkrate, GainWorkrate, 0.30, 1.55) * _craft;
         }
 
         /// <summary>

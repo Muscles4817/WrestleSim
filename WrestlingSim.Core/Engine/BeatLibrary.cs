@@ -169,6 +169,40 @@ namespace WrestlingSim.Engine
                 Tags             = ["Slow", "Emotional"]
             },
 
+            // ── Hope spots (doc 18 §2.3) ─────────────────────────────────────
+            //
+            // The stage the singles structures did not have. A comeback releases the
+            // tension; these wind it tighter, and the reference calls them essential
+            // because they are what stops a long heat losing the room.
+            //
+            // Booked for the wrestler *in trouble* — control is theirs, not the heel's.
+            // On a beat sheet that reads correctly: one row in the middle of the heat
+            // where the face is on top, which is what a hope spot looks like.
+
+            new BeatTemplate
+            {
+                Name             = "Hope Spot",
+                Description      = "A flurry from underneath that the heat cuts off again. The crowd rises, then sits back down.",
+                Category         = CatComeback,
+                Type             = BeatType.HopeSpot,
+                DefaultIntensity = BeatIntensity.Medium,
+                DefaultDuration  = BeatDuration.Brief,
+                BookerTip        = "Two is the sweet spot. A third teaches the crowd the flurries mean nothing, and each one flattens the deficit the comeback is paid out of.",
+                Tags             = ["Fast", "Emotional"]
+            },
+
+            new BeatTemplate
+            {
+                Name             = "Desperation Strike",
+                Description      = "One shot out of nowhere that drops the aggressor. Both of them down, and the count starts.",
+                Category         = CatComeback,
+                Type             = BeatType.HopeSpot,
+                DefaultIntensity = BeatIntensity.High,
+                DefaultDuration  = BeatDuration.Brief,
+                BookerTip        = "The loudest hope spot and the one that dents the momentum hardest — which is also what it costs.",
+                Tags             = ["Emotional", "Impact"]
+            },
+
             // ── Rest Holds ───────────────────────────────────────────────────
 
             new BeatTemplate
@@ -456,7 +490,7 @@ namespace WrestlingSim.Engine
             {
                 Name             = "Shine",
                 Description      = "The face side on top early — clean offence, and the opponents cannot get settled. Works in a singles match too.",
-                Category         = CatTag,
+                Category         = CatControl,
                 Type             = BeatType.Shine,
                 DefaultIntensity = BeatIntensity.Medium,
                 DefaultDuration  = BeatDuration.Medium,
@@ -467,7 +501,7 @@ namespace WrestlingSim.Engine
             {
                 Name             = "Cut-Off",
                 Description      = "The heels take over, usually off a distraction. The shine ends here and the heat begins.",
-                Category         = CatTag,
+                Category         = CatControl,
                 Type             = BeatType.Cutoff,
                 DefaultIntensity = BeatIntensity.Medium,
                 DefaultDuration  = BeatDuration.Short,
@@ -616,6 +650,72 @@ namespace WrestlingSim.Engine
                 DefaultDuration  = BeatDuration.Short,
                 BookerTip        = "One beat before the survivor crawls over. Nobody gains an advantage — that is the beat.",
                 Tags             = ["Multi-Man", "Story", "Feud"]
+            },
+            // ── The alliance, and the moment it breaks ───────────────────────
+            //
+            // Doc 18 §2.5 calls this "the format's single best story", and until now the
+            // engine had no beat for either half of it. Every multi-man beat it carried was
+            // about removing somebody from the picture; none could say that two of them were
+            // working together, which is what a three-way opens with and turns on.
+
+            new BeatTemplate
+            {
+                Name             = "Two On One",
+                Description      = "Two of them decide the third is the problem and work them over together.",
+                Category         = CatMultiMan,
+                Type             = BeatType.Alliance,
+                DefaultIntensity = BeatIntensity.High,
+                DefaultDuration  = BeatDuration.Short,
+                BookerTip        = "The answer to the odd one out that is not a disposal — all three are busy.",
+                Tags             = ["Multi-Man", "Story", "Teamwork"]
+            },
+
+            new BeatTemplate
+            {
+                Name             = "Uneasy Truce",
+                Description      = "They work together and neither of them trusts it for a second.",
+                Category         = CatMultiMan,
+                Type             = BeatType.Alliance,
+                DefaultIntensity = BeatIntensity.Medium,
+                DefaultDuration  = BeatDuration.Short,
+                BookerTip        = "The slower version. Buys more from the betrayal when it comes.",
+                Tags             = ["Multi-Man", "Story", "Tension"]
+            },
+
+            new BeatTemplate
+            {
+                Name             = "The Betrayal",
+                Description      = "One of them turns on the other, and whoever moved first has the advantage.",
+                Category         = CatMultiMan,
+                Type             = BeatType.Betrayal,
+                DefaultIntensity = BeatIntensity.High,
+                DefaultDuration  = BeatDuration.Brief,
+                BookerTip        = "Doc 18 §2.5: the moment it breaks is the peak. Needs an alliance in front of it.",
+                Tags             = ["Multi-Man", "Story", "Betrayal"]
+            },
+
+            new BeatTemplate
+            {
+                Name             = "Cheap Shot",
+                Description      = "No speech and no warning — one of them just takes their shot while the other is busy.",
+                Category         = CatMultiMan,
+                Type             = BeatType.Betrayal,
+                DefaultIntensity = BeatIntensity.Medium,
+                DefaultDuration  = BeatDuration.Brief,
+                BookerTip        = "The opportunist's version. Smaller moment, same consequence.",
+                Tags             = ["Multi-Man", "Heel", "Surprise"]
+            },
+
+            new BeatTemplate
+            {
+                Name             = "Elimination",
+                Description      = "A fall that takes somebody out. The match carries on with one fewer.",
+                Category         = CatMultiMan,
+                Type             = BeatType.Elimination,
+                DefaultIntensity = BeatIntensity.High,
+                DefaultDuration  = BeatDuration.Short,
+                BookerTip        = "Say who goes out, and leave work between the falls — three eliminations in a row is a scramble, not a story.",
+                Tags             = ["Multi-Man", "Story", "Finish"]
             },
             new BeatTemplate
             {

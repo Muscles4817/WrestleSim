@@ -2,6 +2,8 @@
   {
     "RealName": "Demi Bennett",
     "Division": "Womens",
+    "BornIn": 1996,
+    "DebutedIn": 2013,
     "Overness": 95,
     "Charisma": 4.5,
     "Style": "Powerhouse",
@@ -95,6 +97,8 @@
   {
     "RealName": "Rebecca Quin",
     "Division": "Womens",
+    "BornIn": 1987,
+    "DebutedIn": 2002,
     "Overness": 95,
     "Charisma": 4.7,
     "Style": "Brawler",
@@ -188,6 +192,8 @@
   {
     "RealName": "Ashley Fliehr",
     "Division": "Womens",
+    "BornIn": 1986,
+    "DebutedIn": 2012,
     "Overness": 92,
     "Charisma": 4.3,
     "Style": "Technical",
@@ -279,6 +285,8 @@
   {
     "RealName": "Bianca Blair",
     "Division": "Womens",
+    "BornIn": 1989,
+    "DebutedIn": 2016,
     "Overness": 90,
     "Charisma": 4.2,
     "Style": "Powerhouse",
@@ -370,6 +378,8 @@
   {
     "RealName": "Kanako Urai",
     "Division": "Womens",
+    "BornIn": 1981,
+    "DebutedIn": 2004,
     "Overness": 85,
     "Charisma": 3.8,
     "Style": "Striker",
@@ -463,6 +473,8 @@
   {
     "RealName": "Pamela Rose Martinez",
     "Division": "Womens",
+    "BornIn": 1989,
+    "DebutedIn": 2008,
     "Overness": 83,
     "Charisma": 4.1,
     "Style": "Technical",
@@ -556,6 +568,8 @@
   {
     "RealName": "Masami Odate",
     "Division": "Womens",
+    "BornIn": 1990,
+    "DebutedIn": 2007,
     "Overness": 80,
     "Charisma": 3.5,
     "Style": "HighFlyer",
@@ -649,6 +663,8 @@
   {
     "RealName": "Gionna Daddio",
     "Division": "Womens",
+    "BornIn": 1994,
+    "DebutedIn": 2014,
     "Overness": 78,
     "Charisma": 4.2,
     "Style": "HighFlyer",
@@ -740,6 +756,8 @@
   {
     "RealName": "Shayna Baszler",
     "Division": "Womens",
+    "BornIn": 1980,
+    "DebutedIn": 2015,
     "Overness": 70,
     "Charisma": 2.5,
     "Style": "Grappler",
@@ -831,6 +849,8 @@
   {
     "RealName": "Victoria Gonzalez",
     "Division": "Womens",
+    "BornIn": 1991,
+    "DebutedIn": 2016,
     "Overness": 66,
     "Charisma": 3.2,
     "Style": "Powerhouse",
@@ -924,6 +944,8 @@
   {
     "RealName": "Thea Trinidad",
     "Division": "Womens",
+    "BornIn": 1990,
+    "DebutedIn": 2010,
     "Overness": 58,
     "Charisma": 4.0,
     "Style": "HighFlyer",
@@ -1017,6 +1039,8 @@
   {
     "RealName": "Kimberly Benson",
     "Division": "Womens",
+    "BornIn": 1990,
+    "DebutedIn": 2008,
     "Overness": 50,
     "Charisma": 3.4,
     "Style": "Powerhouse",
@@ -1111,6 +1135,8 @@
   {
     "RealName": "Steffanie Newell",
     "Division": "Womens",
+    "BornIn": 1994,
+    "DebutedIn": 2013,
     "Overness": 43,
     "Charisma": 2.8,
     "Style": "HighFlyer",
@@ -1202,8 +1228,11 @@
     ]
   },
   {
-    "RealName": "Kiah Dean",
+    "RealName": "Kacy Catanzaro",
+    "Id": "kiah-dean",
     "Division": "Womens",
+    "BornIn": 1990,
+    "DebutedIn": 2018,
     "Overness": 33,
     "Charisma": 2.6,
     "Style": "HighFlyer",
@@ -1388,6 +1417,8 @@
   {
     "RealName": "Joe Anoa'i",
     "Division": "Mens",
+    "BornIn": 1985,
+    "DebutedIn": 2010,
     "Overness": 96,
     "Charisma": 4.6,
     "Style": "Powerhouse",
@@ -1482,6 +1513,8 @@
   {
     "RealName": "Cody Runnels",
     "Division": "Mens",
+    "BornIn": 1985,
+    "DebutedIn": 2006,
     "Overness": 93,
     "Charisma": 4.5,
     "Style": "Technical",
@@ -1575,6 +1608,8 @@
   {
     "RealName": "Colby Lopez",
     "Division": "Mens",
+    "BornIn": 1986,
+    "DebutedIn": 2005,
     "Overness": 90,
     "Charisma": 4.8,
     "Style": "HighFlyer",
@@ -1669,6 +1704,8 @@
   {
     "RealName": "Randal Orton",
     "Division": "Mens",
+    "BornIn": 1980,
+    "DebutedIn": 2000,
     "Overness": 88,
     "Charisma": 4.2,
     "Style": "Technical",
@@ -1763,6 +1800,8 @@
   {
     "RealName": "Walter Hahn",
     "Division": "Mens",
+    "BornIn": 1987,
+    "DebutedIn": 2005,
     "Overness": 86,
     "Charisma": 3.2,
     "Style": "Striker",
@@ -1857,6 +1896,8 @@
   {
     "RealName": "Andrew Galloway",
     "Division": "Mens",
+    "BornIn": 1985,
+    "DebutedIn": 2001,
     "Overness": 83,
     "Charisma": 4.1,
     "Style": "Powerhouse",
@@ -1950,6 +1991,8 @@
   {
     "RealName": "Rami Sebei",
     "Division": "Mens",
+    "BornIn": 1984,
+    "DebutedIn": 2002,
     "Overness": 80,
     "Charisma": 4.4,
     "Style": "Brawler",
@@ -2044,6 +2087,8 @@
   {
     "RealName": "Shaun Ricker",
     "Division": "Mens",
+    "BornIn": 1982,
+    "DebutedIn": 2003,
     "Overness": 77,
     "Charisma": 4.9,
     "Style": "Brawler",
@@ -2139,6 +2184,8 @@
   {
     "RealName": "Kevin Steen",
     "Division": "Mens",
+    "BornIn": 1984,
+    "DebutedIn": 2000,
     "Overness": 74,
     "Charisma": 4.3,
     "Style": "Brawler",
@@ -2233,6 +2280,8 @@
   {
     "RealName": "Bronson Rechsteiner",
     "Division": "Mens",
+    "BornIn": 1997,
+    "DebutedIn": 2020,
     "Overness": 70,
     "Charisma": 3.3,
     "Style": "Powerhouse",
@@ -2325,6 +2374,8 @@
   {
     "RealName": "Trevor Mann",
     "Division": "Mens",
+    "BornIn": 1988,
+    "DebutedIn": 2003,
     "Overness": 64,
     "Charisma": 2.9,
     "Style": "HighFlyer",
@@ -2418,6 +2469,8 @@
   {
     "RealName": "Charles Betts",
     "Division": "Mens",
+    "BornIn": 1986,
+    "DebutedIn": 2013,
     "Overness": 59,
     "Charisma": 3.0,
     "Style": "Grappler",
@@ -2511,6 +2564,8 @@
   {
     "RealName": "Nikola Bogojevic",
     "Division": "Mens",
+    "BornIn": 1991,
+    "DebutedIn": 2016,
     "Overness": 54,
     "Charisma": 3.6,
     "Style": "Powerhouse",
@@ -2605,6 +2660,8 @@
   {
     "RealName": "Akira Tozawa",
     "Division": "Mens",
+    "BornIn": 1985,
+    "DebutedIn": 2005,
     "Overness": 40,
     "Charisma": 2.4,
     "Style": "HighFlyer",
@@ -2696,6 +2753,8 @@
   {
     "RealName": "Cal Bloom",
     "Division": "Mens",
+    "BornIn": 1994,
+    "DebutedIn": 2019,
     "Overness": 23,
     "Charisma": 1.6,
     "Style": "Powerhouse",
@@ -2788,6 +2847,8 @@
   {
     "RealName": "Phillip Brooks",
     "Division": "Mens",
+    "BornIn": 1978,
+    "DebutedIn": 1999,
     "Overness": 89,
     "Charisma": 4.6,
     "Style": "Brawler",
@@ -2884,6 +2945,8 @@
   {
     "RealName": "Luis Martinez",
     "Division": "Mens",
+    "BornIn": 1982,
+    "DebutedIn": 2004,
     "Overness": 82,
     "Charisma": 3.6,
     "Style": "Striker",
@@ -2976,6 +3039,8 @@
   {
     "RealName": "Shinsuke Nakamura",
     "Division": "Mens",
+    "BornIn": 1980,
+    "DebutedIn": 2002,
     "Overness": 78,
     "Charisma": 3.2,
     "Style": "Striker",
@@ -3072,6 +3137,8 @@
   {
     "RealName": "Fergal Devitt",
     "Division": "Mens",
+    "BornIn": 1981,
+    "DebutedIn": 2000,
     "Overness": 76,
     "Charisma": 4.4,
     "Style": "HighFlyer",
@@ -3168,6 +3235,8 @@
   {
     "RealName": "Joshua Fatu",
     "Division": "Mens",
+    "BornIn": 1985,
+    "DebutedIn": 2007,
     "Overness": 69,
     "Charisma": 3.1,
     "Style": "Brawler",
@@ -3260,6 +3329,8 @@
   {
     "RealName": "Stephen Farrelly",
     "Division": "Mens",
+    "BornIn": 1978,
+    "DebutedIn": 2002,
     "Overness": 67,
     "Charisma": 3.4,
     "Style": "Brawler",
@@ -3356,6 +3427,8 @@
   {
     "RealName": "Kenneth Crawford",
     "Division": "Mens",
+    "BornIn": 1990,
+    "DebutedIn": 2015,
     "Overness": 66,
     "Charisma": 4.6,
     "Style": "HighFlyer",
@@ -3452,6 +3525,8 @@
   {
     "RealName": "Jonathan Fatu",
     "Division": "Mens",
+    "BornIn": 1985,
+    "DebutedIn": 2007,
     "Overness": 62,
     "Charisma": 4.3,
     "Style": "Brawler",
@@ -3552,6 +3627,8 @@
   {
     "RealName": "Jermaine Haley",
     "Division": "Mens",
+    "BornIn": 1988,
+    "DebutedIn": 2007,
     "Overness": 64,
     "Charisma": 2.2,
     "Style": "Powerhouse",
@@ -3644,6 +3721,8 @@
   {
     "RealName": "Ilja Rukober",
     "Division": "Mens",
+    "BornIn": 1993,
+    "DebutedIn": 2013,
     "Overness": 60,
     "Charisma": 2.6,
     "Style": "Striker",
@@ -3740,6 +3819,8 @@
   {
     "RealName": "Marcel Barthel",
     "Division": "Mens",
+    "BornIn": 1990,
+    "DebutedIn": 2010,
     "Overness": 63,
     "Charisma": 4.0,
     "Style": "Technical",
@@ -3832,6 +3913,8 @@
   {
     "RealName": "Gary Blair Jr.",
     "Division": "Mens",
+    "BornIn": 1990,
+    "DebutedIn": 2012,
     "Overness": 58,
     "Charisma": 3.5,
     "Style": "Powerhouse",
@@ -3924,6 +4007,8 @@
   {
     "RealName": "Christian Brantley",
     "Division": "Mens",
+    "BornIn": 1994,
+    "DebutedIn": 2015,
     "Overness": 59,
     "Charisma": 3.9,
     "Style": "HighFlyer",
@@ -4020,6 +4105,8 @@
   {
     "RealName": "Thomas Pestock",
     "Division": "Mens",
+    "BornIn": 1984,
+    "DebutedIn": 2012,
     "Overness": 52,
     "Charisma": 2.8,
     "Style": "Brawler",
@@ -4112,6 +4199,8 @@
   {
     "RealName": "Austin Watson",
     "Division": "Mens",
+    "BornIn": 1986,
+    "DebutedIn": 2005,
     "Overness": 48,
     "Charisma": 3.3,
     "Style": "HighFlyer",
@@ -4204,6 +4293,8 @@
   {
     "RealName": "Fabian Aichner",
     "Division": "Mens",
+    "BornIn": 1990,
+    "DebutedIn": 2011,
     "Overness": 45,
     "Charisma": 3.7,
     "Style": "Powerhouse",
@@ -4296,6 +4387,8 @@
   {
     "RealName": "Carlos Ruiz",
     "Division": "Mens",
+    "BornIn": 1997,
+    "DebutedIn": 2012,
     "Overness": 43,
     "Charisma": 3.0,
     "Style": "HighFlyer",
@@ -4390,8 +4483,11 @@
     ]
   },
   {
-    "RealName": "Ben Carter",
+    "RealName": "Benjamin Timms",
+    "Id": "ben-carter",
     "Division": "Mens",
+    "BornIn": 1998,
+    "DebutedIn": 2017,
     "Overness": 41,
     "Charisma": 2.7,
     "Style": "HighFlyer",
@@ -4488,6 +4584,8 @@
   {
     "RealName": "Todd Smith",
     "Division": "Mens",
+    "BornIn": 1984,
+    "DebutedIn": 2001,
     "Overness": 38,
     "Charisma": 3.6,
     "Style": "Powerhouse",
@@ -4588,6 +4686,8 @@
   {
     "RealName": "Kofi Sarkodie-Mensah",
     "Division": "Mens",
+    "BornIn": 1981,
+    "DebutedIn": 2006,
     "Overness": 47,
     "Charisma": 2.9,
     "Style": "HighFlyer",
@@ -4770,8 +4870,11 @@
     ]
   },
   {
-    "RealName": "Tony D'Angelo",
+    "RealName": "Joseph Ariola",
+    "Id": "tony-d-angelo",
     "Division": "Mens",
+    "BornIn": 1995,
+    "DebutedIn": 2019,
     "Overness": 27,
     "Charisma": 2.9,
     "Style": "Grappler",
@@ -4864,6 +4967,8 @@
   {
     "RealName": "Raymond Rowe",
     "Division": "Mens",
+    "BornIn": 1984,
+    "DebutedIn": 2003,
     "Overness": 35,
     "Charisma": 2.0,
     "Style": "Powerhouse",
@@ -4956,6 +5061,8 @@
   {
     "RealName": "Jessica Woynilko",
     "Division": "Womens",
+    "BornIn": 1999,
+    "DebutedIn": 2021,
     "Overness": 89,
     "Charisma": 4.8,
     "Style": "Powerhouse",
@@ -5052,6 +5159,8 @@
   {
     "RealName": "Jade Cargill",
     "Division": "Womens",
+    "BornIn": 1992,
+    "DebutedIn": 2020,
     "Overness": 84,
     "Charisma": 3.0,
     "Style": "Powerhouse",
@@ -5144,6 +5253,8 @@
   {
     "RealName": "Savelina Fanene",
     "Division": "Womens",
+    "BornIn": 1984,
+    "DebutedIn": 2014,
     "Overness": 80,
     "Charisma": 4.6,
     "Style": "Powerhouse",
@@ -5240,6 +5351,8 @@
   {
     "RealName": "Aoife Cusack",
     "Division": "Womens",
+    "BornIn": 1996,
+    "DebutedIn": 2015,
     "Overness": 77,
     "Charisma": 3.3,
     "Style": "Technical",
@@ -5332,6 +5445,8 @@
   {
     "RealName": "Chelsea Green",
     "Division": "Womens",
+    "BornIn": 1991,
+    "DebutedIn": 2014,
     "Overness": 75,
     "Charisma": 3.4,
     "Style": "Grappler",
@@ -5424,6 +5539,8 @@
   {
     "RealName": "Carla Gonzalez",
     "Division": "Womens",
+    "BornIn": 2001,
+    "DebutedIn": 2018,
     "Overness": 71,
     "Charisma": 4.0,
     "Style": "HighFlyer",
@@ -5520,6 +5637,8 @@
   {
     "RealName": "Stephanie Vaquer",
     "Division": "Womens",
+    "BornIn": 1993,
+    "DebutedIn": 2009,
     "Overness": 68,
     "Charisma": 3.7,
     "Style": "Technical",
@@ -5616,6 +5735,8 @@
   {
     "RealName": "Rachel Evans",
     "Division": "Womens",
+    "BornIn": 1992,
+    "DebutedIn": 2009,
     "Overness": 66,
     "Charisma": 3.5,
     "Style": "Striker",
@@ -5712,6 +5833,8 @@
   {
     "RealName": "Stephanie Yim",
     "Division": "Womens",
+    "BornIn": 1989,
+    "DebutedIn": 2009,
     "Overness": 64,
     "Charisma": 3.2,
     "Style": "Striker",
@@ -5804,6 +5927,8 @@
   {
     "RealName": "Kaori Housako",
     "Division": "Womens",
+    "BornIn": 1988,
+    "DebutedIn": 2011,
     "Overness": 63,
     "Charisma": 2.8,
     "Style": "HighFlyer",
@@ -5896,6 +6021,8 @@
   {
     "RealName": "Cheree Crowley",
     "Division": "Womens",
+    "BornIn": 1988,
+    "DebutedIn": 2011,
     "Overness": 61,
     "Charisma": 4.2,
     "Style": "Striker",
@@ -5990,8 +6117,11 @@
     ]
   },
   {
-    "RealName": "Amanda Wilson",
+    "RealName": "Courtney Stewart",
+    "Id": "amanda-wilson",
     "Division": "Womens",
+    "BornIn": 1994,
+    "DebutedIn": 2013,
     "Overness": 59,
     "Charisma": 4.1,
     "Style": "Technical",
@@ -6088,6 +6218,8 @@
   {
     "RealName": "Theresa Serrano",
     "Division": "Womens",
+    "BornIn": 1994,
+    "DebutedIn": 2016,
     "Overness": 57,
     "Charisma": 3.8,
     "Style": "HighFlyer",
@@ -6184,6 +6316,8 @@
   {
     "RealName": "Candice Dawson",
     "Division": "Womens",
+    "BornIn": 1985,
+    "DebutedIn": 2002,
     "Overness": 53,
     "Charisma": 3.1,
     "Style": "HighFlyer",
@@ -6280,6 +6414,8 @@
   {
     "RealName": "Beatrice Priestley",
     "Division": "Womens",
+    "BornIn": 1996,
+    "DebutedIn": 2012,
     "Overness": 50,
     "Charisma": 1.9,
     "Style": "Striker",
@@ -6372,6 +6508,8 @@
   {
     "RealName": "Sydney Zmrzel",
     "Division": "Womens",
+    "BornIn": 1997,
+    "DebutedIn": 2023,
     "Overness": 46,
     "Charisma": 3.4,
     "Style": "Technical",
@@ -6464,6 +6602,8 @@
   {
     "RealName": "Brianna Coda",
     "Division": "Womens",
+    "BornIn": 2001,
+    "DebutedIn": 2019,
     "Overness": 44,
     "Charisma": 3.6,
     "Style": "Brawler",
@@ -6554,8 +6694,11 @@
     ]
   },
   {
-    "RealName": "Jacy Jayne",
+    "RealName": "Taylor Grado",
+    "Id": "jacy-jayne",
     "Division": "Womens",
+    "BornIn": 1996,
+    "DebutedIn": 2018,
     "Overness": 40,
     "Charisma": 2.5,
     "Style": "Grappler",
@@ -6646,8 +6789,11 @@
     ]
   },
   {
-    "RealName": "Sol Ruca",
+    "RealName": "Calyx Hampton",
+    "Id": "sol-ruca",
     "Division": "Womens",
+    "BornIn": 1999,
+    "DebutedIn": 2022,
     "Overness": 37,
     "Charisma": 3.5,
     "Style": "HighFlyer",
@@ -6742,8 +6888,11 @@
     ]
   },
   {
-    "RealName": "Ivy Nile",
+    "RealName": "Emily Andzulis",
+    "Id": "ivy-nile",
     "Division": "Womens",
+    "BornIn": 1992,
+    "DebutedIn": 2020,
     "Overness": 34,
     "Charisma": 2.0,
     "Style": "Grappler",
@@ -6834,8 +6983,11 @@
     ]
   },
   {
-    "RealName": "Thea Hail",
+    "RealName": "Madison Knisley",
+    "Id": "thea-hail",
     "Division": "Womens",
+    "BornIn": 2003,
+    "DebutedIn": 2021,
     "Overness": 32,
     "Charisma": 3.2,
     "Style": "Grappler",
@@ -6926,8 +7078,11 @@
     ]
   },
   {
-    "RealName": "Karmen Petrovic",
+    "RealName": "Monika Klisara",
+    "Id": "karmen-petrovic",
     "Division": "Womens",
+    "BornIn": 1995,
+    "DebutedIn": 2023,
     "Overness": 29,
     "Charisma": 2.4,
     "Style": "Striker",
@@ -7018,8 +7173,11 @@
     ]
   },
   {
-    "RealName": "Wren Sinclair",
+    "RealName": "Madison Dombkowski",
+    "Id": "wren-sinclair",
     "Division": "Womens",
+    "BornIn": 1995,
+    "DebutedIn": 2019,
     "Overness": 26,
     "Charisma": 2.6,
     "Style": "Technical",

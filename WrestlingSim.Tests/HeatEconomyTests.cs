@@ -3,6 +3,7 @@ using WrestlingSim.Enums;
 using WrestlingSim.Models;
 using WrestlingSim.Models.World;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace WrestlingSim.Tests
 {
@@ -11,7 +12,7 @@ namespace WrestlingSim.Tests
     /// These assert the rules as stated, because they are the whole reason a match result
     /// is worth simulating rather than just rating.
     /// </summary>
-    public class HeatEconomyTests
+    public class HeatEconomyTests(ITestOutputHelper output)
     {
         private static Wrestler Star(double overness = 90) => TestRoster.Make("Star", overness: overness);
         private static Wrestler Riser(double overness = 45) => TestRoster.Make("Riser", overness: overness);
@@ -194,17 +195,54 @@ namespace WrestlingSim.Tests
         {
             var w = TestRoster.Make("Cooling", overness: 60);
             w.Momentum = 60;
-            w.LastAppearance = new DateOnly(2026, 1, 5);
+            var start = new DateOnly(2026, 1, 5);
+            w.LastAppearance = start;
 
-            var day = new DateOnly(2026, 1, 5);
+            var day = start;
             for (int i = 0; i < 21; i++)
             {
                 day = day.AddDays(1);
-                HeatEconomy.ApplyDailyDecay(w, day);
+                HeatEconomy.ApplyDailyDecay(w, day, start);
             }
 
             // Roughly a three-week half-life.
             Assert.InRange(w.Momentum, 24, 36);
+        }
+
+        /// <summary>
+        /// **Somebody who has never been on television is not exempt from being forgotten.**
+        ///
+        /// `LastAppearance` is written only when a wrestler works a show, so it is null for
+        /// every name on the roster on day one and stays null forever for anybody the booker
+        /// never uses. The old reading took null to mean "absent zero days", which made the
+        /// never-booked wrestler the one person in the game immune to this rule — the exact
+        /// inverse of what doc 17 §3.9 describes, and invisible because the two wrestlers it
+        /// separates look identical until six months have gone by.
+        /// </summary>
+        [Fact]
+        public void ASigningWhoIsNeverUsedFadesLikeAnybodyElse()
+        {
+            var start = new DateOnly(2026, 1, 5);
+
+            var neverBooked = TestRoster.Make("Never booked", overness: 70);
+            var bookedOnce  = TestRoster.Make("Booked once",  overness: 70);
+            bookedOnce.LastAppearance = start;
+
+            var day = start;
+            for (int i = 0; i < 180; i++)
+            {
+                day = day.AddDays(1);
+                HeatEconomy.ApplyDailyDecay(neverBooked, day, start);
+                HeatEconomy.ApplyDailyDecay(bookedOnce,  day, start);
+            }
+
+            output.WriteLine($"  never booked {neverBooked.Overness:F2} · booked once {bookedOnce.Overness:F2}");
+
+            Assert.True(neverBooked.Overness < 70, "a signing nobody uses has to fade");
+
+            // And at the same rate: the two differ only in whether the game happened to have
+            // written a date down, and that is a bookkeeping detail rather than a career.
+            Assert.Equal(bookedOnce.Overness, neverBooked.Overness, 3);
         }
 
         [Fact]
@@ -222,8 +260,8 @@ namespace WrestlingSim.Tests
             {
                 day = day.AddDays(1);
                 seen.LastAppearance = day;                 // keeps working
-                HeatEconomy.ApplyDailyDecay(seen, day);
-                HeatEconomy.ApplyDailyDecay(gone, day);
+                HeatEconomy.ApplyDailyDecay(seen, day, start);
+                HeatEconomy.ApplyDailyDecay(gone, day, start);
             }
 
             Assert.Equal(60, gone.Overness, 3);            // still inside the grace period
@@ -232,8 +270,8 @@ namespace WrestlingSim.Tests
             {
                 day = day.AddDays(1);
                 seen.LastAppearance = day;
-                HeatEconomy.ApplyDailyDecay(seen, day);
-                HeatEconomy.ApplyDailyDecay(gone, day);
+                HeatEconomy.ApplyDailyDecay(seen, day, start);
+                HeatEconomy.ApplyDailyDecay(gone, day, start);
             }
 
             Assert.Equal(60, seen.Overness, 3);

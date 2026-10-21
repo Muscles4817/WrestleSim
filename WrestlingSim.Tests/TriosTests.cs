@@ -115,8 +115,11 @@ namespace WrestlingSim.Tests
         }
 
         [Fact]
-        public void UnevenSidesAreStillRejected_ThreeAgainstTwoIncluded()
+        public void ThreeAgainstTwo_IsAHandicapMatchAndValidates()
         {
+            // Used to be refused as "sides are uneven". Handicap is not only two-on-one:
+            // three against two is the same format with the same term applied, the
+            // outnumbered side doing 3/2 of the work it would in an even match.
             var plan = new MatchPlanModel
             {
                 SideA = Trio("A1", "A2", "A3"),
@@ -125,7 +128,9 @@ namespace WrestlingSim.Tests
                          B(BeatType.FinishClean, BeatControl.WrestlerA)]
             };
 
-            Assert.Contains(plan.Validate(), e => e.Contains("Sides are uneven"));
+            Assert.Empty(plan.Validate());
+            Assert.True(plan.IsHandicap);
+            Assert.Equal(2, plan.Numbers!.Value.Outnumbered.Size);
         }
 
         // ── The formula is unchanged ─────────────────────────────────────────

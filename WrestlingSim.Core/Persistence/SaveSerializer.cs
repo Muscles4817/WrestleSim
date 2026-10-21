@@ -10,6 +10,8 @@ using WrestlingSim.Models.World;
 // the namespace. Alias them so the code below can read naturally.
 using MatchPlanModel = WrestlingSim.Models.MatchPlan.MatchPlan;
 using SegmentModel = WrestlingSim.Models.Segment.Segment;
+using WrestlingSim.Models.Rumble;
+using RumblePlanModel = WrestlingSim.Models.Rumble.RumblePlan;
 using SegmentActionModel = WrestlingSim.Models.Segment.SegmentAction;
 
 namespace WrestlingSim.Persistence
@@ -82,7 +84,12 @@ namespace WrestlingSim.Persistence
                     Id             = w.Id,
                     Overness       = Math.Round(w.Overness, 3),
                     Momentum       = Math.Round(w.Momentum, 3),
-                    LastAppearance = w.LastAppearance is { } seen ? Iso(seen) : null
+                    LastAppearance = w.LastAppearance is { } seen ? Iso(seen) : null,
+                    TouringUntil   = w.TouringUntil is { } road ? Iso(road) : null,
+                    Fatigue        = w.Fatigue,
+                    Sharpness      = w.Sharpness,
+                    Injury         = ToDto(w.Injury),
+                    InjuryHistory  = w.InjuryHistory.Select(ToDto).OfType<InjuryDto>().ToList()
                 })
                 .ToList(),
 
@@ -101,6 +108,10 @@ namespace WrestlingSim.Persistence
             }).ToList(),
 
             Brands = ToDto(career.Brands),
+            Stipulations = career.Stipulations.LastUsed
+                .Select(kv => new StipulationUseDto { Stipulation = kv.Key, LastUsed = kv.Value })
+                .OrderBy(u => u.Stipulation)
+                .ToList(),
 
             Teams = career.Teams.Select(t => new TagTeamDto
             {
@@ -221,6 +232,20 @@ namespace WrestlingSim.Persistence
             RuntimeMinutes = show.RuntimeMinutes,
             Attendance     = show.Attendance,
             Card           = show.Card.Select(ToDto).Where(c => c != null).Select(c => c!).ToList(),
+            Loop           = show.Loop == null ? null : new LoopDto
+            {
+                Cast            = show.Loop.Cast.Select(w => w.Id).ToList(),
+                Towns           = show.Loop.Towns,
+                Pace            = show.Loop.Pace,
+                MinutesPerNight = show.Loop.MinutesPerNight,
+                SideSize        = show.Loop.SideSize,
+                Formats         = show.Loop.Formats
+                                      .Select(kv => new LoopSpotDto
+                                      {
+                                          Wrestler = kv.Key.Id,
+                                          SideSize = kv.Value
+                                      }).ToList()
+            },
             Result         = show.Result == null ? null : ToDto(show.Result)
         };
 
@@ -238,8 +263,12 @@ namespace WrestlingSim.Persistence
                 TeamBId        = m.Plan.SideB.Team?.Id,
                 StartingIndexA = m.Plan.SideA.StartingIndex,
                 StartingIndexB = m.Plan.SideB.StartingIndex,
+                IntendedA      = m.Plan.SideA.Intended,
+                IntendedB      = m.Plan.SideB.Intended,
                 MatchType      = m.Plan.MatchType,
+                Stipulation    = m.Plan.Stipulation,
                 StructureName  = m.StructureName,
+                Brief          = ToDto(m.Plan.Brief),
                 TitleId        = m.Plan.TitleAtStake?.Id,
                 IsBlowOff      = m.Plan.IsBlowOff,
                 Beats = m.Plan.Beats.Select(b => new BeatDto
@@ -273,6 +302,50 @@ namespace WrestlingSim.Persistence
                     BaseImpact     = a.BaseImpact,
                     Label          = a.Label
                 }).ToList()
+            },
+
+            // A battle royal keeps Kind = Match, because that is what it is to a crowd
+            // sitting through the card and the pacing rules read Kind. The sub-object is
+            // what tells the two apart on the way back in.
+            RumblePlanModel r => new CardItemDto
+            {
+                Kind = CardItemKind.Match,
+                Rumble = new RumbleDto
+                {
+                    Id = r.Id,
+                    Field = r.Field.Select(e => new RumbleEntrantDto
+                    {
+                        WrestlerId      = e.Wrestler.Id,
+                        Number          = e.Number,
+                        IsSurprise      = e.IsSurprise,
+                        NumberAnnounced = e.NumberAnnounced
+                    }).ToList(),
+                    EntryIntervalSeconds = r.EntryIntervalSeconds,
+                    WinnerId = r.Winner?.Id,
+                    Stakes   = r.Stakes,
+                    Moments  = r.Moments.Select(m => new RumbleMomentDto
+                    {
+                        Kind = m.Kind,
+                        Cast = m.Cast.Select(w => w.Id).ToList(),
+                        At   = m.At
+                    }).ToList()
+                }
+            },
+
+            // A drawing keeps Kind = Segment for the same reason a Rumble keeps Match: it is
+            // what a crowd sits through, and the pacing rules read Kind. The match it draws
+            // for lives on another show, so it is held by id and bound in a second pass.
+            RumbleDraw d => new CardItemDto
+            {
+                Kind = CardItemKind.Segment,
+                Draw = new RumbleDrawDto
+                {
+                    RumbleId    = d.Rumble?.Id ?? d.RumbleId,
+                    RumbleLabel = d.RumbleLabel,
+                    Cast        = d.Cast.Select(w => w.Id).ToList(),
+                    HostId      = d.Host?.Id,
+                    Rigged      = d.Rigged.Select(w => w.Id).ToList()
+                }
             },
 
             _ => null
@@ -317,6 +390,19 @@ namespace WrestlingSim.Persistence
                     System.Globalization.DateTimeStyles.None, out var seen)
                         ? seen
                         : null;
+
+                w.TouringUntil = DateOnly.TryParse(
+                    state.TouringUntil, System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.None, out var road)
+                        ? road
+                        : null;
+
+                w.Fatigue   = Math.Clamp(state.Fatigue, 0, 100);
+                w.Sharpness = Math.Clamp(state.Sharpness, 0, 100);
+
+                w.Injury        = FromDto(state.Injury);
+                w.InjuryHistory = state.InjuryHistory
+                    .Select(FromDto).OfType<Models.Person.Injury>().ToList();
             }
 
             var career = new Career
@@ -365,6 +451,9 @@ namespace WrestlingSim.Persistence
             }
 
             if (dto.Brands is { } brands) career.Brands = FromDto(brands, byId);
+
+            foreach (var use in dto.Stipulations)
+                career.Stipulations.Restore(use.Stipulation, use.LastUsed);
 
             foreach (var f in dto.Feuds)
             {
@@ -423,6 +512,8 @@ namespace WrestlingSim.Persistence
 
             foreach (var s in dto.Shows)
                 career.Shows.Add(FromDto(s, byId, career.FeudBook, career.Titles, career.Teams));
+
+            ResolveDraws(career);
 
             return career;
         }
@@ -574,9 +665,164 @@ namespace WrestlingSim.Persistence
                 if (built != null) show.Card.Add(built);
             }
 
+            if (dto.Loop is { } loopDto)
+            {
+                show.Loop = new HouseShowLoop
+                {
+                    // Names that are no longer on the roster drop off the run rather than
+                    // coming back from the dead, which is how every other cast is read.
+                    Cast            = loopDto.Cast.Select(id => byId.GetValueOrDefault(id))
+                                                  .Where(w => w != null).Select(w => w!).ToList(),
+                    Towns           = Math.Max(1, loopDto.Towns),
+                    Pace            = loopDto.Pace,
+                    MinutesPerNight = Math.Max(1, loopDto.MinutesPerNight),
+                    SideSize        = Math.Max(1, loopDto.SideSize),
+
+                    // Read the same way the cast is: names no longer on the roster drop off
+                    // rather than coming back from the dead. A mark on somebody who is not in
+                    // the cast would still be deciding how many bodies the run needs, through
+                    // `LargestSide`, so it is intersected with the cast below.
+                    //
+                    // `InTags` is the shape this was saved in before trios: a list of names
+                    // working tags, with no room to say how many a side. It still loads, as
+                    // the two it could only have meant, so a run booked yesterday is not
+                    // quietly un-protected by today's build.
+                    Formats         = ReadFormats(loopDto, byId)
+                };
+
+                foreach (var gone in show.Loop.Formats.Keys
+                                         .Where(w => !show.Loop.Cast.Contains(w)).ToList())
+                    show.Loop.Formats.Remove(gone);
+            }
+
             if (dto.Result != null) show.Result = FromDto(dto.Result);
 
             return show;
+        }
+
+        /// <summary>
+        /// The per-wrestler formats on a run, from either shape the save can be in. A name in
+        /// both wins on <see cref="LoopDto.Formats"/>, which is the one with a number in it.
+        /// </summary>
+        private static Dictionary<Wrestler, int> ReadFormats(
+            LoopDto dto, Dictionary<string, Wrestler> byId)
+        {
+            var formats = new Dictionary<Wrestler, int>();
+
+            foreach (string id in dto.InTags)
+                if (byId.GetValueOrDefault(id) is { } w) formats[w] = 2;
+
+            foreach (var spot in dto.Formats)
+                if (byId.GetValueOrDefault(spot.Wrestler) is { } w)
+                    formats[w] = Math.Clamp(spot.SideSize, 1, 3);
+
+            return formats;
+        }
+
+        /// <summary>
+        /// Binds every <see cref="RumbleDraw"/> to the match it draws for.
+        ///
+        /// A second pass because the two live on different shows and a card is read one at a
+        /// time: the drawing on the December television is deserialised before the January
+        /// pay-per-view exists. A drawing whose match is gone — the card was deleted, or it
+        /// named a wrestler the roster has lost and was dropped whole — is dropped too,
+        /// rather than left on the sheet pointing at nothing.
+        /// </summary>
+        private static void ResolveDraws(Career career)
+        {
+            var rumbles = career.Shows
+                .SelectMany(s => s.Card)
+                .OfType<RumblePlanModel>()
+                .ToDictionary(r => r.Id, r => r);
+
+            foreach (var show in career.Shows)
+                show.Card.RemoveAll(item =>
+                {
+                    if (item is not RumbleDraw draw) return false;
+                    draw.Rumble = rumbles.GetValueOrDefault(draw.RumbleId);
+                    return draw.Rumble is null;
+                });
+        }
+
+        private static BriefDto? ToDto(Models.MatchPlan.MatchBrief? brief) =>
+            brief is null ? null : new BriefDto
+            {
+                Story       = brief.Story,
+                Length      = brief.Length,
+                Finish      = brief.Finish,
+                WinningSide = brief.WinningSide,
+                Outside     = brief.Outside,
+                Draft       = brief.Draft,
+                Alliance    = brief.Alliance is { } pact ? [pact.First, pact.Second] : null,
+                AllianceBreaks = brief.AllianceBreaks,
+                Bookings    = brief.Bookings.ToDictionary(
+                                  kv => kv.Key.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                                  kv => kv.Value)
+            };
+
+        /// <summary>
+        /// A brief whose side keys cannot be read is dropped rather than half-restored: a
+        /// booking that says the wrong side goes over is worse than one that says nothing.
+        /// </summary>
+        private static Models.MatchPlan.MatchBrief? FromDto(BriefDto? dto)
+        {
+            if (dto is null) return null;
+
+            var brief = new Models.MatchPlan.MatchBrief
+            {
+                Story       = dto.Story,
+                Length      = dto.Length,
+                Finish      = dto.Finish,
+                WinningSide = dto.WinningSide,
+                Outside     = dto.Outside,
+                Draft       = dto.Draft,
+
+                // Two entries or nothing. A malformed pair is dropped rather than half-read:
+                // an alliance missing one of its members would generate a beat aimed at a
+                // side that is not in it.
+                Alliance    = dto.Alliance is { Count: 2 } pair ? (pair[0], pair[1]) : null,
+                AllianceBreaks = dto.AllianceBreaks
+            };
+
+            foreach (var (key, booking) in dto.Bookings)
+                if (int.TryParse(key, System.Globalization.NumberStyles.Integer,
+                                 System.Globalization.CultureInfo.InvariantCulture, out int side))
+                    brief.Bookings[side] = booking;
+
+            return brief;
+        }
+
+        private static InjuryDto? ToDto(Models.Person.Injury? injury) =>
+            injury is null ? null : new InjuryDto
+            {
+                Part      = injury.Part,
+                Sustained = Iso(injury.Sustained),
+                ClearedOn = Iso(injury.ClearedOn),
+                WeeksOut  = injury.WeeksOut
+            };
+
+        /// <summary>
+        /// An injury whose dates cannot be read is dropped rather than restored with a
+        /// guessed one — a wrestler wrongly held out for six months is worse than a
+        /// history entry lost.
+        /// </summary>
+        private static Models.Person.Injury? FromDto(InjuryDto? dto)
+        {
+            if (dto is null) return null;
+
+            var culture = System.Globalization.CultureInfo.InvariantCulture;
+            var style   = System.Globalization.DateTimeStyles.None;
+
+            if (!DateOnly.TryParse(dto.Sustained, culture, style, out var sustained)) return null;
+            if (!DateOnly.TryParse(dto.ClearedOn, culture, style, out var cleared))   return null;
+
+            return new Models.Person.Injury
+            {
+                Part      = dto.Part,
+                Sustained = sustained,
+                ClearedOn = cleared,
+                WeeksOut  = dto.WeeksOut
+            };
         }
 
         /// <summary>
@@ -597,6 +843,74 @@ namespace WrestlingSim.Persistence
             CardItemDto dto, Dictionary<string, Wrestler> byId, FeudBook feudBook,
             TitleRegistry titles, List<TagTeam> teams)
         {
+            // Checked before the match branch, because a rumble is written with
+            // Kind = Match and would otherwise be read back as a match with no sides.
+            if (dto.Rumble is { } rumbleDto)
+            {
+                var field = rumbleDto.Field
+                    .Where(e => byId.ContainsKey(e.WrestlerId))
+                    .Select(e => new RumbleEntrant
+                    {
+                        Wrestler        = byId[e.WrestlerId],
+                        Number          = e.Number,
+                        IsSurprise      = e.IsSurprise,
+                        NumberAnnounced = e.NumberAnnounced
+                    })
+                    .ToList();
+
+                // A card naming somebody the roster has lost is dropped whole rather than
+                // rebuilt a wrestler short — the same rule the match branch follows, and for
+                // the same reason: a thirty-strong Rumble quietly becoming a twenty-nine is
+                // a booking the player never made.
+                if (field.Count != rumbleDto.Field.Count) return null;
+                if (rumbleDto.WinnerId is null || !byId.TryGetValue(rumbleDto.WinnerId, out var champ))
+                    return null;
+
+                return new RumblePlanModel
+                {
+                    Id = string.IsNullOrEmpty(rumbleDto.Id)
+                        ? Guid.NewGuid().ToString("N")
+                        : rumbleDto.Id,
+                    Field = field,
+                    EntryIntervalSeconds = rumbleDto.EntryIntervalSeconds,
+                    Winner = champ,
+                    Stakes = rumbleDto.Stakes,
+                    Moments = rumbleDto.Moments
+                        .Where(m => m.Cast.All(byId.ContainsKey))
+                        .Select(m => new RumbleMoment
+                        {
+                            Kind = m.Kind,
+                            Cast = m.Cast.Select(id => byId[id]).ToList(),
+                            At   = m.At
+                        }).ToList()
+                };
+            }
+
+            // Checked before the segment branch for the same reason the rumble branch is
+            // checked before the match branch: a drawing is written with Kind = Segment and
+            // would otherwise be read back as a promo with no actions.
+            if (dto.Draw is { } drawDto)
+            {
+                var cast = drawDto.Cast.Where(byId.ContainsKey).Select(id => byId[id]).ToList();
+
+                // Same rule as everywhere else on a card: a booking naming somebody the
+                // roster has lost is dropped whole rather than quietly run one short.
+                if (cast.Count != drawDto.Cast.Count || cast.Count == 0) return null;
+                if (drawDto.HostId is { } hostId && !byId.ContainsKey(hostId)) return null;
+
+                // Rumble stays null here. It lives on another show, which this pass has not
+                // necessarily read yet — ResolveDraws binds it once every card is built, and
+                // drops the drawing if the match it draws for is gone.
+                return new RumbleDraw
+                {
+                    RumbleId    = drawDto.RumbleId,
+                    RumbleLabel = drawDto.RumbleLabel,
+                    Cast        = cast,
+                    Host        = drawDto.HostId is null ? null : byId[drawDto.HostId],
+                    Rigged      = drawDto.Rigged.Where(byId.ContainsKey).Select(id => byId[id]).ToList()
+                };
+            }
+
             if (dto.Kind == CardItemKind.Match)
             {
                 // v3 writes SideA/SideB; a v2 save has one wrestler per side instead.
@@ -604,32 +918,43 @@ namespace WrestlingSim.Persistence
                 var sideBIds = dto.SideB ?? (dto.WrestlerB is null ? null : [dto.WrestlerB]);
                 if (sideAIds is null || sideBIds is null) return null;
 
-                var sideA = Bind(sideAIds, byId);
-                var sideB = Bind(sideBIds, byId);
+                // A side with nobody on it is legal now: a match somebody has planned onto the
+                // card and not yet cast. `Bind` returns null for both "empty" and "names a
+                // wrestler who has gone", so an empty list is separated out here before it is
+                // asked — otherwise every planned slot would be dropped on reload as though
+                // it named a stranger.
+                var sideA = sideAIds.Count == 0 ? [] : Bind(sideAIds, byId);
+                var sideB = sideBIds.Count == 0 ? [] : Bind(sideBIds, byId);
 
                 // A card item naming somebody the roster no longer has is dropped whole
                 // rather than rebuilt a man short — a three-quarters tag match is not a
                 // match, and silently running one would be worse than losing the booking.
                 if (sideA is null || sideB is null) return null;
 
-                var a = sideA[Math.Clamp(dto.StartingIndexA, 0, sideA.Count - 1)];
-                var b = sideB[Math.Clamp(dto.StartingIndexB, 0, sideB.Count - 1)];
+                // Clamped against an empty side gives -1, which is not an index. A planned
+                // side has no starter to remember yet.
+                int startA = sideA.Count == 0 ? 0 : Math.Clamp(dto.StartingIndexA, 0, sideA.Count - 1);
+                int startB = sideB.Count == 0 ? 0 : Math.Clamp(dto.StartingIndexB, 0, sideB.Count - 1);
 
                 var plan = new MatchPlanModel
                 {
                     SideA = new MatchSide
                     {
                         Members       = sideA,
-                        StartingIndex = Math.Clamp(dto.StartingIndexA, 0, sideA.Count - 1),
+                        StartingIndex = startA,
+                        Intended      = dto.IntendedA,
                         Team          = teams.FirstOrDefault(t => t.Id == dto.TeamAId)
                     },
                     SideB = new MatchSide
                     {
                         Members       = sideB,
-                        StartingIndex = Math.Clamp(dto.StartingIndexB, 0, sideB.Count - 1),
+                        StartingIndex = startB,
+                        Intended      = dto.IntendedB,
                         Team          = teams.FirstOrDefault(t => t.Id == dto.TeamBId)
                     },
                     MatchType = dto.MatchType,
+                    Brief     = FromDto(dto.Brief),
+                    Stipulation = dto.Stipulation,
                     // Re-bind to the live feud so a reloaded card reads current heat.
                     //
                     // Keyed on the two SIDES. Looking it up by the two starters found

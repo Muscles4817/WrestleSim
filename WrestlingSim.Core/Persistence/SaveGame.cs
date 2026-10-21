@@ -1,5 +1,6 @@
 using WrestlingSim.Enums;
 using WrestlingSim.Models;
+using WrestlingSim.Models.Rumble;
 
 // ImplicitUsings pulls in System.IO, which also defines a MatchType.
 using MatchType = WrestlingSim.Enums.MatchType;
@@ -56,6 +57,13 @@ namespace WrestlingSim.Persistence
 
         /// <summary>The brand split, or null for a promotion that has never divided.</summary>
         public BrandSplitDto? Brands { get; set; }
+
+        /// <summary>
+        /// When the promotion last ran each gimmick match. Absent from every save written
+        /// before stipulations existed, which reads back as "never run" — correct, because
+        /// no save written then could have run one.
+        /// </summary>
+        public List<StipulationUseDto> Stipulations { get; set; } = new();
 
         /// <summary>Standing tag teams. Absent in v2 saves; an empty list is correct there.</summary>
         public List<TagTeamDto> Teams { get; set; } = new();
@@ -179,6 +187,26 @@ namespace WrestlingSim.Persistence
         /// <summary>Last show they worked, ISO yyyy-MM-dd. Null if they have not yet.</summary>
         public string? LastAppearance { get; set; }
 
+        /// <summary>Out on the road until this date, or absent for somebody at home.</summary>
+        public string? TouringUntil { get; set; }
+
+        /// <summary>
+        /// The two ring-condition meters. Absent from saves written before they existed,
+        /// which read back as a fresh, sharp roster — the state a new career starts in, so
+        /// an old save loads as though nobody had worked yet rather than as a roster of
+        /// exhausted rookies.
+        /// </summary>
+        public double Fatigue { get; set; }
+        public double Sharpness { get; set; } = 100;
+
+        /// <summary>
+        /// What is keeping them out, and everything they have ever done to themselves.
+        /// History is permanent — doc 15's sim implications call it "the most important
+        /// detail" — so it is saved in full rather than as a count.
+        /// </summary>
+        public InjuryDto? Injury { get; set; }
+        public List<InjuryDto> InjuryHistory { get; set; } = new();
+
         /// <summary>
         /// What Overness was called before the stock/flow split. Read only as a fallback so
         /// saves written by earlier builds still open; never written.
@@ -268,11 +296,47 @@ namespace WrestlingSim.Persistence
 
         public List<CardItemDto> Card { get; set; } = new();
 
+        /// <summary>A booked run of towns, on an untelevised date. Null on every other show.</summary>
+        public LoopDto? Loop { get; set; }
+
         /// <summary>
         /// Result summary. Full BeatResult play-by-play is deliberately not persisted —
         /// it is large, and a completed show only needs to report what it did.
         /// </summary>
         public ShowResultDto? Result { get; set; }
+    }
+
+    /// <summary>
+    /// A booked run of towns. The cast is written by id like every other roster reference, so
+    /// a wrestler removed between saves drops off the run rather than resurrecting.
+    /// </summary>
+    public class LoopDto
+    {
+        public List<string> Cast { get; set; } = new();
+        public int Towns { get; set; } = 3;
+        public BeatIntensity Pace { get; set; } = BeatIntensity.Medium;
+        public int MinutesPerNight { get; set; } = 12;
+
+        /// <summary>1 for singles, 2 for a tag run. Old saves have no value and read as singles.</summary>
+        public int SideSize { get; set; } = 1;
+
+        /// <summary>
+        /// Who works tags whatever the default is, by id. **Superseded by
+        /// <see cref="Formats"/>**, which says how many a side rather than only that it was
+        /// more than one — still read so saves written before trios went in load as what
+        /// they meant, never written.
+        /// </summary>
+        public List<string> InTags { get; set; } = new();
+
+        /// <summary>Anybody on a format of their own: their id and how many a side.</summary>
+        public List<LoopSpotDto> Formats { get; set; } = new();
+    }
+
+    /// <summary>One wrestler put on a format other than the run's default.</summary>
+    public class LoopSpotDto
+    {
+        public string Wrestler { get; set; } = "";
+        public int SideSize { get; set; } = 2;
     }
 
     public class CardItemDto
@@ -296,17 +360,62 @@ namespace WrestlingSim.Persistence
         public int StartingIndexB { get; set; }
 
         /// <summary>
+        /// How many each side is still waiting for, when the card is being planned. Null on
+        /// every finished match and on every save written before card-first planning, which
+        /// is what "as many as are in it" means — see <c>MatchSide.Intended</c>.
+        /// </summary>
+        public int? IntendedA { get; set; }
+        public int? IntendedB { get; set; }
+
+        /// <summary>
         /// v2 form: one wrestler per side. Still read, never written — a v2 card becomes
         /// two sides of one. Kept nullable so a v3 save can omit them entirely.
         /// </summary>
         public string? WrestlerA { get; set; }
         public string? WrestlerB { get; set; }
         public MatchType MatchType { get; set; }
+
+        /// <summary>The gimmick. Absent on older saves, which read back as None.</summary>
+        public Stipulation Stipulation { get; set; }
+
         public string StructureName { get; set; } = "Custom";
+
+        /// <summary>
+        /// What the booker asked for, when this match was written from a brief.
+        ///
+        /// Saved because the engine grades a match against it: a card booked tonight and run
+        /// next week would otherwise reload with no promise attached and be scored as though
+        /// nobody had said what it was for. Null on a hand-built plan and on every save
+        /// written before briefs existed.
+        /// </summary>
+        public BriefDto? Brief { get; set; }
+
         public List<BeatDto> Beats { get; set; } = new();
 
         /// <summary>The championship on the line, by <see cref="TitleDto.Id"/>. Null if none.</summary>
         public string? TitleId { get; set; }
+
+        /// <summary>
+        /// Present when this card slot is a battle royal rather than an ordinary match.
+        ///
+        /// A sub-object rather than a new <see cref="CardItemKind"/>, deliberately: the Kind
+        /// drives the show's pacing rules — three matches in a row is a slog — and a Rumble
+        /// *is* a match as far as an audience sitting through the card is concerned. It
+        /// needs to be told apart when reading a save, not when pacing a show.
+        ///
+        /// Null on every save written before this existed, so an older file reads back as
+        /// exactly what it was.
+        /// </summary>
+        public RumbleDto? Rumble { get; set; }
+
+        /// <summary>
+        /// Present when this card slot is a number drawing for a battle royal booked on a
+        /// later show. Kind stays <see cref="CardItemKind.Segment"/>, because a drawing is
+        /// a segment to a crowd sitting through it and the pacing rules read Kind.
+        ///
+        /// Null on every save written before this existed.
+        /// </summary>
+        public RumbleDrawDto? Draw { get; set; }
 
         /// <summary>
         /// Whether the booker declared this the blow-off. Absent from pre-A3 saves, which
@@ -370,4 +479,90 @@ namespace WrestlingSim.Persistence
 
         public List<string> Notes { get; set; } = new();
     }
+
+    /// <summary>What a match was booked to be.</summary>
+    public class BriefDto
+    {
+        public MatchStory Story  { get; set; }
+        public MatchScale Length { get; set; }
+        public FinishKind Finish { get; set; }
+        public int WinningSide   { get; set; }
+        public OutsideFactor Outside { get; set; }
+        public int Draft { get; set; }
+
+        /// <summary>
+        /// The two sides who work together, as a two-element list, or null for a match where
+        /// nobody does. A list rather than a tuple because a tuple round-trips through JSON
+        /// as `Item1`/`Item2`, which is a shape nobody wants to read in a save file.
+        /// </summary>
+        public List<int>? Alliance { get; set; }
+
+        public bool AllianceBreaks { get; set; } = true;
+
+        /// <summary>How each side comes out, keyed by side index as a string for JSON.</summary>
+        public Dictionary<string, Booking> Bookings { get; set; } = new();
+    }
+
+    /// <summary>One injury, on a wrestler's sheet or in their history.</summary>
+    public class InjuryDto
+    {
+        public BodyPart Part { get; set; }
+        public string Sustained { get; set; } = "";
+        public string ClearedOn { get; set; } = "";
+        public int WeeksOut { get; set; }
+    }
+
+    /// <summary>One gimmick match type and the last date the promotion ran it.</summary>
+    public class StipulationUseDto
+    {
+        public Stipulation Stipulation { get; set; }
+        public DateOnly LastUsed { get; set; }
+    }
+
+    /// <summary>A battle royal on a card. Ids, so a wrestler is bound once on load.</summary>
+    public class RumbleDto
+    {
+        /// <summary>
+        /// <see cref="Models.Rumble.RumblePlan.Id"/>, so a drawing on another show can find
+        /// this one. Empty on saves written before drawings existed — nothing pointed at a
+        /// Rumble then, so a fresh id on load loses nothing.
+        /// </summary>
+        public string Id { get; set; } = "";
+
+        /// <summary>The field, in entry order.</summary>
+        public List<RumbleEntrantDto> Field { get; set; } = new();
+
+        public int EntryIntervalSeconds { get; set; } = 90;
+        public string? WinnerId { get; set; }
+        public string? Stakes { get; set; }
+        public List<RumbleMomentDto> Moments { get; set; } = new();
+    }
+
+    public class RumbleEntrantDto
+    {
+        public string WrestlerId { get; set; } = "";
+        public int Number { get; set; } = 1;
+        public bool IsSurprise { get; set; }
+
+        /// <summary>The drawing already told the crowd this number. False on older saves.</summary>
+        public bool NumberAnnounced { get; set; }
+    }
+
+    /// <summary>A number drawing on a card, pointing at the match it draws for by id.</summary>
+    public class RumbleDrawDto
+    {
+        public string RumbleId { get; set; } = "";
+        public string RumbleLabel { get; set; } = "the Rumble";
+        public List<string> Cast { get; set; } = new();
+        public string? HostId { get; set; }
+        public List<string> Rigged { get; set; } = new();
+    }
+
+    public class RumbleMomentDto
+    {
+        public RumbleMomentKind Kind { get; set; }
+        public List<string> Cast { get; set; } = new();
+        public double At { get; set; } = 0.5;
+    }
+
 }

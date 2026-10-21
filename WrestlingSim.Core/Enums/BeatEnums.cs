@@ -12,6 +12,29 @@ namespace WrestlingSim.Enums
         Comeback,
         RestHold,
 
+        /// <summary>
+        /// A brief flurry from the wrestler in trouble that the heat cuts off again.
+        ///
+        /// Doc 18 §2.3 draws the face-in-peril structure as seven stages and puts this at
+        /// the middle of it: "HOPE SPOTS — Brief comeback attempts that fail. Each raises
+        /// tension", and then, in the paragraph explaining why the structure works, "the
+        /// hope spots are **essential** — they keep the audience from giving up during the
+        /// heat."
+        ///
+        /// It was missing. The tag formula has <see cref="NearTag"/> doing this job, and the
+        /// singles formula — which doc 18 calls the dominant structure in wrestling — had
+        /// nothing between the cut-off and the comeback at all. Every singles template in
+        /// <see cref="Engine.MatchStructureLibrary"/> therefore ran heat straight into
+        /// comeback, which is the one thing the reference says not to do.
+        ///
+        /// Not a small <see cref="Comeback"/>: a comeback releases the tension and a hope
+        /// spot winds it tighter. The crowd pops for the offence and then watches it get cut
+        /// off, which is why this reads as <see cref="ReactionKind.Tension"/> and takes the
+        /// room *up* rather than down — the opposite of a near tag, where the reach fails
+        /// and the building groans.
+        /// </summary>
+        HopeSpot,
+
         // High-impact spots
         HighSpot,
         CrowdBrawl,
@@ -123,6 +146,47 @@ namespace WrestlingSim.Enums
         /// </summary>
         MutualDestruction,
 
+        /// <summary>
+        /// **Two of them work the third.**
+        ///
+        /// Doc 18 §2.5 calls the temporary alliance and its betrayal "the format's single
+        /// best story", and this is the first half of it. It is also the answer to the
+        /// third-man problem that is not a disposal: nobody is on the floor wondering what
+        /// to do, because all three are accounted for and two of them are busy.
+        ///
+        /// The engine had no way to express this at all. Every multi-man beat it carried was
+        /// about *removing* somebody — disposal, pin break, elimination — and none of them
+        /// could say that two people were working together, which is the thing a three-way
+        /// opens with and turns on.
+        /// </summary>
+        Alliance,
+
+        /// <summary>
+        /// The alliance breaks, and whoever moves first has the advantage.
+        ///
+        /// Doc 18 §2.5: "the moment it breaks is the peak." It pays more than almost
+        /// anything else in a multi-man match and it costs the betrayer nothing mechanically
+        /// — unlike a <see cref="SpiteBreak"/>, this is the *good* decision as well as the
+        /// dramatic one, which is exactly why the audience spends the whole alliance waiting
+        /// for it.
+        /// </summary>
+        Betrayal,
+
+        /// <summary>
+        /// A fall that removes somebody from the match instead of ending it.
+        ///
+        /// Doc 18 §2.5: elimination "solves the third-man problem by construction, which is
+        /// why it scales where a four-way does not" — you cannot ask where the fourth man
+        /// went once he has been pinned and sent to the back. What it costs is the thing a
+        /// three-way's whole tension rests on, that any fall could be the last, and what it
+        /// buys instead is the order: "the drama moves from the fall to the *order* of
+        /// eliminations".
+        ///
+        /// So this beat is not a finish. It is worked, it takes somebody out, and the match
+        /// carries on with fewer people in it.
+        /// </summary>
+        Elimination,
+
         // Finishes
         FinishClean,
         FinishRollup,
@@ -160,6 +224,25 @@ namespace WrestlingSim.Enums
         Medium,
         High,
         Extreme
+    }
+
+    public static class BeatIntensityExtensions
+    {
+        /// <summary>
+        /// The class an intensity is painted with, warming as it climbs.
+        ///
+        /// A beat sheet is a shape, and the shape is what the intensities do down the page —
+        /// a valley, a climb, a peak at the finish. Rendered in one colour it is a list of
+        /// words, and the booker has to read four of them to see what the eye should have got
+        /// in one pass.
+        /// </summary>
+        public static string Tone(this BeatIntensity i) => i switch
+        {
+            BeatIntensity.Extreme => "heat--extreme",
+            BeatIntensity.High    => "heat--high",
+            BeatIntensity.Medium  => "heat--medium",
+            _                     => "heat--low"
+        };
     }
 
     public enum BeatDuration

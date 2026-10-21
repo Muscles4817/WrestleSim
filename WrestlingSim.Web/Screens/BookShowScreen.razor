@@ -1,5 +1,6 @@
 @using WrestlingSim.Models.World
 @using SegmentModel = WrestlingSim.Models.Segment.Segment
+@using MatchPlanModel = WrestlingSim.Models.MatchPlan.MatchPlan
 @inherits StateComponent
 
 @if (State.ActiveShow is not { } show || State.Career is not { } career)
@@ -25,139 +26,87 @@ else if (show.HasRun)
         <h1 class="screen__title">@show.Name</h1>
     </div>
 
-    <div class="score-hero">
-        <div>
-            <div class="score-hero__label">Overall</div>
-            <div class="score-hero__main">@result.OverallRating.ToString("F1") <span class="muted">/ 100</span></div>
-        </div>
-        <div>
-            <div class="score-hero__label">Runtime</div>
-            <div class="score-hero__main">@result.BookedMinutes<span class="muted"> / @result.BudgetMinutes min</span></div>
-        </div>
-        <div>
-            <div class="score-hero__label">Final crowd</div>
-            <div class="score-hero__main">@result.FinalCrowdMood.ToString("F1") <span class="muted">/ 10</span></div>
-        </div>
-    </div>
-
-    @if (result.OverrunPenalty > 0)
-    {
-        <div class="notice notice--error mt">
-            <strong>The show ran long.</strong> Overall score cut by
-            @((result.OverrunPenalty * 100).ToString("F0"))%.
-        </div>
-    }
-
-    @* The bill for the night's crossovers, presented after the rating they bought.
-       docs/wrestling-reference/22-brand-splits.md §4.1. *@
-    @if (result.Brand is { } brandReport)
-    {
-        <div class="panel">
-            <div class="panel__title">
-                @brandReport.BrandName
-                <span class="spacer"></span>
-                <span class="small muted">
-                    Split integrity @brandReport.IntegrityBefore.ToString("F1")
-                    → @brandReport.IntegrityAfter.ToString("F1")
-                </span>
-            </div>
-
-            @if (brandReport.Crossovers.Count == 0)
-            {
-                <div class="notice notice--info">
-                    Kept to its own roster. Worth
-                    +@((brandReport.ExclusivityBonus * 100).ToString("F1"))% on the night, and it
-                    is worth that only for as long as the split means something.
-                </div>
-            }
-            else
-            {
-                <div class="notice notice--warn">
-                    <strong>
-                        @brandReport.Crossovers.Count crossover@(brandReport.Crossovers.Count == 1 ? "" : "s")
-                        — split integrity down
-                        @((brandReport.IntegrityBefore - brandReport.IntegrityAfter).ToString("F1")),
-                        ceiling now @brandReport.Ceiling.ToString("F1").
-                    </strong>
-                    <ul>
-                        @foreach (var crossover in brandReport.Crossovers)
-                        {
-                            <li>
-                                @crossover.Wrestler (@crossover.HomeBrand) —
-                                worth +@((crossover.Attraction * 100).ToString("F0"))% on the items they
-                                worked, cost @crossover.Cost.ToString("F1") integrity, of which
-                                @((crossover.Cost * BrandIntegrity.PermanentShare).ToString("F1")) does not come back.
-                            </li>
-                        }
-                    </ul>
-                </div>
-            }
-
-            @if (brandReport.StarMakingFactor < 0.995)
-            {
-                <div class="notice notice--warn">
-                    Winners on this show kept
-                    @((brandReport.StarMakingFactor * 100).ToString("F0"))% of the standing they earned.
-                    A brand that does not mean anything cannot make anybody.
-                </div>
-            }
-        </div>
-    }
-
-    <div class="panel">
-        <div class="panel__title">Card</div>
-        @foreach (var item in result.Items)
-        {
-            <div class="editor-row">
-                <div class="editor-row__n">@(result.Items.IndexOf(item) + 1)</div>
-                <div>
-                    <div class="editor-row__name">@item.Label</div>
-                    <div class="editor-row__sub">@item.Kind · @item.DurationMinutes min</div>
-                    @foreach (var note in item.Notes)
-                    {
-                        <div class="editor-row__sub">@note</div>
-                    }
-                </div>
-                <div class="editor-row__tools">
-                    @if (item.StarRating is { } stars)
-                    {
-                        <Stars Rating="@stars" ShowNumber="false" />
-                    }
-                    <strong class="tabnum gold">@item.Score.ToString("F1")</strong>
-                </div>
-            </div>
-        }
-    </div>
-
-    @* Status movement, feud movement and play-by-play exist only for a show run this
-       session — a reloaded save keeps the result summary, not the beat-by-beat detail. *@
-    @if (result.TitleUpdates.Count > 0)
-    {
-        <TitleChanges Updates="@result.TitleUpdates" />
-    }
-
-    @if (result.StatusChanges.Count > 0)
-    {
-        <StatusChanges Changes="@result.StatusChanges" />
-    }
-
-    @if (result.FeudUpdates.Count > 0)
-    {
-        <FeudUpdates Updates="@result.FeudUpdates" />
-    }
-
-    @foreach (var item in result.Items.Where(i => i.MatchResult is not null))
-    {
-        <div class="panel">
-            <div class="panel__title">@item.Label — play by play</div>
-            <PlayByPlay Result="item.MatchResult!" />
-        </div>
-    }
+    @* One report, shared with the exhibition screen. See ShowReport for what the two
+       copies had each stopped showing. *@
+    <ShowReport Result="result" Today="@show.Date" />
 
     <div class="wizard-bar">
         <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Dashboard)">← Dashboard</button>
         <span class="wizard-bar__spacer"></span>
         <button class="btn btn--primary" @onclick="() => State.Go(Screen.Calendar)">Calendar →</button>
+    </div>
+}
+@* ── What kind of thing ───────────────────────────────────────────────────────
+   Two buttons on the card, not four. A battle royal is a match — `RumblePlan.Kind`
+   has said so since it was written, and `CardItemKind` only has Match and Segment —
+   and a number drawing is a segment for the same reason. The four-button row was the
+   only place in the codebase that disagreed with the model, and it asked the booker
+   to answer "which of four builders" before they had decided what they were booking.
+
+   The format is a question *inside* what you are adding, which is also the order a
+   booker thinks in: a match, and then what kind of match. *@
+else if (mode == Mode.PickMatch)
+{
+    <div class="screen__head">
+        <div class="screen__eyebrow">Adding to @show.Name</div>
+        <h1 class="screen__title">What kind of match?</h1>
+    </div>
+
+    <div class="picks picks--2">
+        <button class="pick" @onclick="() => mode = Mode.AddMatch">
+            <span class="pick__body">
+                <span class="pick__name">A match</span>
+                <span class="pick__desc">
+                    One side against another, from singles up to a six-man tag, worked beat by
+                    beat. Everything with a winner and a story in it.
+                </span>
+            </span>
+        </button>
+        <button class="pick" @onclick="() => mode = Mode.AddRumble">
+            <span class="pick__body">
+                <span class="pick__name">A battle royal</span>
+                <span class="pick__desc">
+                    Everybody in, over the top rope, last one standing. Graded on eliminations
+                    and moments rather than on the work, because there are no beats to grade.
+                </span>
+            </span>
+        </button>
+    </div>
+
+    <div class="wizard-bar">
+        <button class="btn btn--ghost" @onclick="() => mode = Mode.Card">← Back to the card</button>
+    </div>
+}
+else if (mode == Mode.PickSegment)
+{
+    <div class="screen__head">
+        <div class="screen__eyebrow">Adding to @show.Name</div>
+        <h1 class="screen__title">What kind of segment?</h1>
+    </div>
+
+    <div class="picks picks--2">
+        <button class="pick" @onclick="() => mode = Mode.AddSegment">
+            <span class="pick__body">
+                <span class="pick__name">A promo or an angle</span>
+                <span class="pick__desc">
+                    Somebody talks, somebody interrupts, somebody gets laid out. Everything on
+                    the card that does not have a bell.
+                </span>
+            </span>
+        </button>
+        <button class="pick" @onclick="() => mode = Mode.AddDraw">
+            <span class="pick__body">
+                <span class="pick__name">A number drawing</span>
+                <span class="pick__desc">
+                    The numbers pulled in front of a crowd, for a Rumble booked later. Buys a
+                    building that has had a week to argue about who has to go the distance.
+                </span>
+            </span>
+        </button>
+    </div>
+
+    <div class="wizard-bar">
+        <button class="btn btn--ghost" @onclick="() => mode = Mode.Card">← Back to the card</button>
     </div>
 }
 else if (mode == Mode.AddMatch)
@@ -166,7 +115,7 @@ else if (mode == Mode.AddMatch)
         <div class="screen__eyebrow">Adding to @show.Name</div>
         <h1 class="screen__title">Add a Match</h1>
     </div>
-    <MatchBuilder OnDone="AddMatch" OnCancel="@(() => mode = Mode.Card)" ConfirmLabel="Add to card +" />
+    <MatchBuilder OnDone="AddMatch" OnCancel="@(() => mode = Mode.PickMatch)" ConfirmLabel="Add to card +" />
 }
 else if (mode == Mode.AddSegment)
 {
@@ -176,29 +125,348 @@ else if (mode == Mode.AddSegment)
     </div>
     <SegmentBuilder OnDone="AddSegment" OnCancel="@(() => mode = Mode.Card)" ConfirmLabel="Add to card +" />
 }
+else if (mode == Mode.AddRumble)
+{
+    <div class="screen__head">
+        <div class="eyebrow">OVER THE TOP</div>
+        <h1 class="screen__title">Battle royal</h1>
+    </div>
+
+    <RumbleBuilder OnDone="AddRumble" OnCancel="@(() => mode = Mode.PickMatch)" ConfirmLabel="Add to card +" />
+}
+else if (mode == Mode.AddDraw)
+{
+    <div class="screen__head">
+        <div class="eyebrow">THE DRUM</div>
+        <h1 class="screen__title">The draw</h1>
+        <p class="screen__lede">
+            The numbers, pulled in front of a crowd, for a match booked later. What it buys is
+            a building that has had a week to argue about who has to go the distance.
+        </p>
+    </div>
+
+    <DrawBuilder Show="show" OnDone="AddDraw" OnCancel="@(() => mode = Mode.Card)"
+                 ConfirmLabel="Add to card +" />
+}
+else if (mode == Mode.BookLoop)
+{
+    <div class="screen__head">
+        <div class="eyebrow">ON THE ROAD</div>
+        <h1 class="screen__title">A run of towns</h1>
+        <p class="screen__lede">
+            Untelevised dates, booked as a cast rather than as a card. Nothing on them reaches
+            the television audience, so nobody gets more over and no story moves — what a run
+            buys is ring time, for the people who need it and cannot get it on a weekly show.
+        </p>
+    </div>
+
+    @* Seeded from what is already booked, and from whoever the roster says is on the road.
+       The first version handed you a blank form every time and called it "Edit the run". *@
+    <LoopBuilder Existing="show.Loop" On="show.Date"
+                 OnDone="BookLoop" OnCancel="@(() => mode = Mode.Card)"
+                 ConfirmLabel="Book the run +" />
+}
 else
 {
     @* ── Card sheet ──────────────────────────────────────────────────────── *@
-    <div class="screen__head">
-        <div class="screen__eyebrow">
-            @if (career.Brands.Active)
+    @* The date first and as a tile. The first thing a booker needs to know is which night
+       this is and how much of it is still empty, and both of those used to be an eleven-pixel
+       amber eyebrow above the show's name. *@
+    <div class="showhead">
+        <div class="showhead__when">
+            <div class="showhead__dow">@show.Date.ToString("ddd")</div>
+            <div class="showhead__day">@show.Date.Day</div>
+            <div class="showhead__month">@show.Date.ToString("MMM")</div>
+        </div>
+
+        <div class="showhead__body">
+            <div class="showhead__tags">
+                <span class="badge @TypeBadge(show.Type)">@show.TypeLabel</span>
+                @if (career.Brands.Active)
+                {
+                    <span class="badge @(career.BrandOfShow(show) is null ? "badge--muted" : "badge--cyan")">
+                        @(career.BrandOfShow(show)?.Name ?? "Both brands")
+                    </span>
+                }
+                <span class="badge badge--muted">@Countdown(career, show)</span>
+            </div>
+            <div class="showhead__name">@show.Name</div>
+            <div class="showhead__where">
+                @(string.IsNullOrWhiteSpace(show.Venue) ? "No venue set" : show.Venue)
+                · @show.Date.ToString("dddd d MMMM yyyy")
+            </div>
+        </div>
+
+        <div class="showhead__stats">
+            <div class="showstat">
+                <div class="showstat__key">On the card</div>
+                <div class="showstat__val">@show.Card.Count<span class="muted"> / @career.Promotion.TypicalCardSizeFor(show.Type)</span></div>
+            </div>
+        </div>
+    </div>
+
+    @* Two columns from 1100px: the running order is the work and takes the space, and the
+       details, the warnings and the button that runs the night become a rail that follows you
+       down a long card. Stacked, a desktop booker scrolled past a three-field form every time
+       they wanted the thing they came to edit. *@
+    <div class="booking">
+    <div class="booking__main">
+
+    <div class="panel">
+        <div class="panel__title">
+            Running order
+            <span class="spacer"></span>
+            <span class="small muted">
+                @show.Card.Count of about @career.Promotion.TypicalCardSizeFor(show.Type) expected
+            </span>
+        </div>
+
+        @if (show.Card.Count == 0)
+        {
+            <div class="empty">
+                <div class="empty__mark">▦</div>
+                @if (show.HasRoadRun)
+                {
+                    <text>
+                        A run of @show.Loop!.Towns town@(show.Loop!.Towns == 1 ? "" : "s") for
+                        @show.Loop!.Cast.Count of them. No card, because nobody is filming it.
+                    </text>
+                }
+                else if (show.Type == ShowType.HouseShow)
+                {
+                    <text>Nothing booked yet. Add a match, or send them out on a run of towns.</text>
+                }
+                else
+                {
+                    <text>Nothing booked yet. Add a match or a segment below.</text>
+                }
+            </div>
+        }
+
+        @foreach (var item in show.Card)
+        {
+            var i = show.Card.IndexOf(item);
+            var fatigued = i > 0 && show.Card[i - 1].Kind == item.Kind;
+
+            <div class="editor-row card-row @(fatigued ? "is-flagged" : "") @(item.IsComplete ? "" : "is-draft")"
+                 draggable="true"
+                 @ondragstart="() => dragItem = i"
+                 @ondragover:preventDefault="true"
+                 @ondrop="() => DropItem(show, i)">
+                <div class="editor-row__n">@(i + 1)</div>
+                <div>
+                    @* A match draws its corners, so an uncast one still shows its shape. The
+                       empty ones are buttons: tap a corner, then tap a name in the roster. *@
+                    @if (item is BookedMatch planned)
+                    {
+                        <div class="corners">
+                            @for (int sideIndex = 0; sideIndex < planned.Plan.Sides.Count; sideIndex++)
+                            {
+                                int si = sideIndex;
+                                var side = planned.Plan.Sides[si];
+
+                                if (si > 0) { <span class="corners__vs">vs</span> }
+
+                                @foreach (var member in side.Members)
+                                {
+                                    var who = member;
+                                    <button class="corner is-filled" title="Take them off"
+                                            @onclick="() => Vacate(show, planned, si, who)">@who.RingName</button>
+                                }
+                                @for (int slot = 0; slot < side.Vacancies; slot++)
+                                {
+                                    <button class="corner @(IsFocused(i, si) ? "is-focused" : "")"
+                                            @ondragover:preventDefault="true"
+                                            @ondrop="() => DropWrestler(show, planned, si)"
+                                            @onclick="() => Focus(i, si)">—</button>
+                                }
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="editor-row__name">@item.Name</div>
+                    }
+                    <div class="editor-row__sub">
+                        @item.Kind · @item.DurationMinutes min
+                        @if (item is BookedMatch { Plan.TitleAtStake: { } belt })
+                        {
+                            <text> · @belt.Name</text>
+                        }
+                        @if (i == 0) { <text> · opener ×1.2</text> }
+                        @if (i == show.Card.Count - 1 && show.Card.Count > 1) { <text> · main event ×1.5</text> }
+                        @if (fatigued) { <text> · fatigue ×0.85</text> }
+                    </div>
+                </div>
+                <div class="editor-row__tools">
+                    @* The fast path. Everything a match needs beyond its cast is four
+                       choices, and they are the four the brief already reduces a match to —
+                       so they can be made here rather than behind a five-step wizard. The
+                       wizard is still there for anybody who wants to lay out the beats. *@
+                    @if (item is BookedMatch quick && quick.Plan.Sides.All(x => x.IsComplete))
+                    {
+                        <button class="btn btn--sm @(expanded == i ? "btn--primary" : "")"
+                                @onclick="() => expanded = expanded == i ? null : i">
+                            @(quick.IsComplete ? "Booked" : "Book it")
+                        </button>
+                    }
+                    <button class="btn btn--icon btn--ghost" disabled="@(i == 0)"
+                            title="Move up" @onclick="() => Move(i, -1)">↑</button>
+                    <button class="btn btn--icon btn--ghost" disabled="@(i == show.Card.Count - 1)"
+                            title="Move down" @onclick="() => Move(i, 1)">↓</button>
+                    <button class="btn btn--icon btn--danger" title="Remove"
+                            @onclick="() => Remove(item)">✕</button>
+                </div>
+            </div>
+
+            @if (expanded == i && item is BookedMatch booking && booking.Plan.Sides.All(x => x.IsComplete))
             {
-                <span class="badge @(career.BrandOfShow(show) is null ? "badge--muted" : "badge--face")">
-                    @(career.BrandOfShow(show)?.Name ?? "Both brands")
-                </span>
-                <text>&#32;</text>
+                <div class="quickbook">
+                    <div class="quickbook__row">
+                        <span class="quickbook__key">Who goes over</span>
+                        <div class="chips">
+                            @for (int w = 0; w < booking.Plan.Sides.Count; w++)
+                            {
+                                int winner = w;
+                                <button class="chip @(BriefOf(booking).WinningSide == winner ? "is-active" : "")"
+                                        @onclick="() => SetWinner(booking, winner)">
+                                    @booking.Plan.Sides[winner].Name
+                                </button>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="quickbook__row">
+                        <span class="quickbook__key">What it is about</span>
+                        <div class="chips">
+                            @foreach (var story in Enum.GetValues<MatchStory>())
+                            {
+                                var pick = story;
+                                <button class="chip @(BriefOf(booking).Story == pick ? "is-active" : "")"
+                                        @onclick="() => SetStory(booking, pick)">@StoryLabel(pick)</button>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="quickbook__row">
+                        <span class="quickbook__key">How long</span>
+                        <div class="chips">
+                            @foreach (var scale in Enum.GetValues<MatchScale>())
+                            {
+                                var pick = scale;
+                                <button class="chip @(BriefOf(booking).Length == pick ? "is-active" : "")"
+                                        @onclick="() => SetLength(booking, pick)">@ScaleLabel(pick)</button>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="quickbook__row">
+                        <span class="quickbook__key">How it ends</span>
+                        <div class="chips">
+                            @foreach (var finish in Enum.GetValues<FinishKind>())
+                            {
+                                var pick = finish;
+                                <button class="chip @(BriefOf(booking).Finish == pick ? "is-active" : "")"
+                                        @onclick="() => SetFinish(booking, pick)">@pick</button>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="row mt">
+                        <button class="btn btn--primary" @onclick="() => Write(booking)">
+                            @(booking.IsComplete ? "Re-roll the beats" : "Write the beats ★")
+                        </button>
+                        @if (booking.IsComplete)
+                        {
+                            <span class="small muted">
+                                @booking.Plan.Beats.Count beats · @booking.DurationMinutes min
+                            </span>
+                        }
+                    </div>
+                </div>
             }
-            @show.TypeLabel · @show.Date.ToString("dddd d MMMM yyyy")
-            @if (career.DaysUntil(show) > 0)
+        }
+
+
+        <div class="row mt">
+            @* Adds an empty slot rather than opening a builder. The shape of a night is the
+               decision, and the details come after — before this you had to build a match to
+               completion the moment you added it, so you could not discover you wanted five
+               of them until you had finished the first. *@
+            <button class="btn" @onclick="() => AddSlot(show)">+ Add a match</button>
+            <button class="btn btn--ghost btn--sm" @onclick="() => mode = Mode.PickMatch">
+                …or a battle royal
+            </button>
+            @* Straight into the promo builder unless there is a drawing to offer as well — a
+               chooser with one live option on it is a click that asks nothing. A drawing has
+               to precede the Rumble it draws for, so with nothing booked later there is
+               nothing to choose between. *@
+            <button class="btn"
+                    @onclick="() => mode = HasSomethingToDrawFor(career, show) ? Mode.PickSegment : Mode.AddSegment">
+                + Add a segment
+            </button>
+            @* On any untelevised date, whatever else is booked on it. A card and a run of
+               towns are not alternatives: the card is the night you booked and the run is the
+               rest of the roster out in the towns. The first version made you choose, and
+               chose for you — adding one match silently threw the booked run away. *@
+            @if (show.Type == ShowType.HouseShow)
             {
-                <text> · in @career.DaysUntil(show) day@(career.DaysUntil(show) == 1 ? "" : "s")</text>
+                <button class="btn @(show.HasRoadRun ? "btn--ghost" : "")"
+                        @onclick="() => mode = Mode.BookLoop">
+                    @(show.HasRoadRun
+                        ? $"On the road: {show.Loop!.Cast.Count} for {show.Loop!.Towns} town{(show.Loop!.Towns == 1 ? "" : "s")}"
+                        : "+ Send the rest on the road")
+                </button>
             }
         </div>
-        <h1 class="screen__title">@show.Name</h1>
-        <p class="screen__lede">
-            Position and pacing both count: the opener is weighted ×1.2, the main event ×1.5,
-            and two of the same kind back to back take a fatigue penalty.
-        </p>
+    </div>
+    </div>
+
+    <aside class="booking__rail">
+
+    @* The roster, always there. Every other list in the app is a modal you open, use once and
+       close, which is right for one pick and wrong for casting a whole show — you are going to
+       reach for this fifteen times. It ranks with the same BookingSuggestions the picker uses,
+       and it re-ranks against whichever corner is focused, which is when "this is his tag
+       partner" and "she has a feud with him" are worth pinning to the top. *@
+    <div class="panel roster-rail">
+        <div class="panel__title">
+            The roster
+            <span class="spacer"></span>
+            <span class="small muted">@(focus is null ? "pick a corner" : "tap to book")</span>
+        </div>
+
+        <input class="input" type="search" placeholder="Search…"
+               value="@rosterQuery" @oninput="e => rosterQuery = e.Value?.ToString() ?? string.Empty" />
+
+        <div class="roster-rail__list">
+            @foreach (var row in RailRows(career, show))
+            {
+                var who = row.Wrestler;
+                <button class="railrow @(focus is null ? "is-idle" : "")"
+                        draggable="true"
+                        @ondragstart="() => dragWrestler = who"
+                        @onclick="() => BookFocused(show, who)">
+                    <span class="railrow__name">
+                        @who.RingName
+                        @if (who.Gimmick is { } g)
+                        {
+                            <span class="badge badge--sm @g.NaturalAlignment.Badge()">@g.NaturalAlignment.Label()</span>
+                        }
+                    </span>
+                    <span class="railrow__why @BookingSuggestions.Tone(row.Band)">@row.Reason</span>
+                    @* The same reading the picker sheet carries. The rail ranks with
+                       `BookingSuggestions` but dropped the condition line, so the surface
+                       where booking actually happens on desktop was the one that never said
+                       somebody was hurt, cooked, or two states away. *@
+                    @if (row.Condition is { } condition)
+                    {
+                        <span class="railrow__cond">⚠ @condition</span>
+                    }
+                    <span class="railrow__pop tabnum @who.CardPosition.Tone()">@who.OvernessDisplay</span>
+                </button>
+            }
+        </div>
     </div>
 
     <div class="panel">
@@ -236,62 +504,16 @@ else
                 </div>
             }
         </div>
-    </div>
 
-    <div class="panel">
-        <div class="panel__title">
-            Running order
-            <span class="spacer"></span>
-            <span class="small muted">
-                @show.Card.Count of about @career.Promotion.TypicalCardSizeFor(show.Type) expected
-            </span>
-        </div>
-
-        @if (show.Card.Count == 0)
-        {
-            <div class="empty">
-                <div class="empty__mark">▦</div>
-                Nothing booked yet. Add a match or a segment below.
-            </div>
-        }
-
-        @foreach (var item in show.Card)
-        {
-            var i = show.Card.IndexOf(item);
-            var fatigued = i > 0 && show.Card[i - 1].Kind == item.Kind;
-
-            <div class="editor-row @(fatigued ? "is-flagged" : "")">
-                <div class="editor-row__n">@(i + 1)</div>
-                <div>
-                    <div class="editor-row__name">@item.Name</div>
-                    <div class="editor-row__sub">
-                        @item.Kind · @item.DurationMinutes min
-                        @if (item is BookedMatch { Plan.TitleAtStake: { } belt })
-                        {
-                            <text> · @belt.Name</text>
-                        }
-                        @if (i == 0) { <text> · opener ×1.2</text> }
-                        @if (i == show.Card.Count - 1 && show.Card.Count > 1) { <text> · main event ×1.5</text> }
-                        @if (fatigued) { <text> · fatigue ×0.85</text> }
-                    </div>
-                </div>
-                <div class="editor-row__tools">
-                    <button class="btn btn--icon btn--ghost" disabled="@(i == 0)"
-                            title="Move up" @onclick="() => Move(i, -1)">↑</button>
-                    <button class="btn btn--icon btn--ghost" disabled="@(i == show.Card.Count - 1)"
-                            title="Move down" @onclick="() => Move(i, 1)">↓</button>
-                    <button class="btn btn--icon btn--danger" title="Remove"
-                            @onclick="() => Remove(item)">✕</button>
-                </div>
-            </div>
-        }
-
+@* The bar sits under the budget it reflects, so a booker who changes the number watches it
+   move. It used to be a panel of its own in the rail, printing the same two numbers the
+   header prints — and at this width those two copies are a thousand pixels apart, which
+   reads as two different facts rather than one. *@
         <div class="mt">
             <Meter Label="Runtime" Value="@show.BookedMinutes" Max="@show.RuntimeMinutes"
                    ValueText="@RuntimeText(show)"
                    Variant="@(show.IsOverrunning ? "heel" : "gold")" />
         </div>
-
         @if (show.IsOverrunning)
         {
             <div class="notice notice--warn mt">
@@ -299,6 +521,7 @@ else
                 Running it costs up to 35% of the overall score.
             </div>
         }
+    </div>
 
         @if (Crossovers(career, show) is { Count: > 0 } crossing)
         {
@@ -313,22 +536,63 @@ else
             </div>
         }
 
-        <div class="row mt">
-            <button class="btn" @onclick="() => mode = Mode.AddMatch">+ Add a match</button>
-            <button class="btn" @onclick="() => mode = Mode.AddSegment">+ Add a segment</button>
-            <span class="spacer"></span>
-            <button class="btn btn--primary" disabled="@(show.Card.Count == 0)" @onclick="() => Run(show)">
-                Run the show ★
-            </button>
+    @* The builder refuses to book somebody who is already hurt, but a career books a month
+       ahead: the wrestler on next month's card was fit when you booked him and got hurt on
+       tonight's show. That is the ordinary case, not the edge one, so the card is checked
+       again on the night — and this one stops the show rather than warning about it. *@
+    @if (HurtOnCard(show) is { Count: > 0 } unfit)
+    {
+        <div class="notice notice--error mt">
+            <strong>@unfit.Count on this card cannot work.</strong>
+            @foreach (var (w, injury) in unfit)
+            {
+                <div>@w.RingName — @injury.Reason(show.Date)</div>
+            }
+            Take them off the card before running it.
         </div>
+    }
 
-        @if (show.Card.Count > 0 && career.DaysUntil(show) > 0)
-        {
-            <div class="notice notice--info mt">
-                This show is @career.DaysUntil(show) day@(career.DaysUntil(show) == 1 ? "" : "s") away.
-                Running it now advances the clock to @show.Date.ToString("d MMM").
-            </div>
-        }
+        <div class="panel">
+            <button class="btn btn--primary btn--block"
+                    disabled="@(!show.IsRunnable || HurtOnCard(show).Count > 0)"
+                    @onclick="() => Run(show)">
+                @(show.IsLoopOnly ? "Run the towns ★" : "Run the show ★")
+            </button>
+
+            @* Why the button is off. A card being worked on is the ordinary state now, so the
+               thing to say is what is still missing rather than that something is. *@
+            @if (!show.IsRunnable && show.Card.Count > 0)
+            {
+                <div class="notice notice--advice mt">
+                    <strong>@show.Unfinished.Count() still to finish.</strong>
+                    Fill every side and write the beats, and the show will run.
+                </div>
+            }
+
+            @* A televised match costs one town, not the run. Said rather than enforced,
+               because working television and then the towns is an ordinary week rather than
+               a mistake — the booker needs to know what it costs, not to be sent back to
+               unpick the run. *@
+            @if (show.DoubleBooked.Any())
+            {
+                <div class="notice notice--advice mt">
+                    <strong>@string.Join(", ", show.DoubleBooked.Select(w => w.RingName))</strong>
+                    @(show.DoubleBooked.Count() == 1 ? "is" : "are") on the card as well, so
+                    @(show.DoubleBooked.Count() == 1 ? "they work" : "they work")
+                    @(show.Loop!.NightsEach - 1) of the @show.Loop!.NightsEach
+                    town@(show.Loop!.NightsEach == 1 ? "" : "s") rather than all of them.
+                </div>
+            }
+
+            @if (show.Card.Count > 0 && career.DaysUntil(show) > 0)
+            {
+                <div class="notice notice--info mt">
+                    This show is @career.DaysUntil(show) day@(career.DaysUntil(show) == 1 ? "" : "s") away.
+                    Running it now advances the clock to @show.Date.ToString("d MMM").
+                </div>
+            }
+        </div>
+    </aside>
     </div>
 
     <div class="wizard-bar">
@@ -339,7 +603,219 @@ else
 }
 
 @code {
-    private enum Mode { Card, AddMatch, AddSegment }
+    /// <summary>
+    /// What kind of night this is, in colour. A premium event is the one the year is built
+    /// around, television is the week, and a house show is the one nobody is filming — three
+    /// different jobs that used to be the same grey word.
+    /// </summary>
+    private static string TypeBadge(ShowType type) => type switch
+    {
+        ShowType.PremiumEvent => "badge--gold",
+        ShowType.Television   => "badge--face",
+        _                      => "badge--muted"
+    };
+
+    /// <summary>How far off it is, in the words a booker would use.</summary>
+    private static string Countdown(Career career, ScheduledShow show)
+    {
+        int days = career.DaysUntil(show);
+        return days switch
+        {
+            <= 0 => "Tonight",
+            1    => "Tomorrow",
+            < 7  => $"In {days} days",
+            _    => $"In {days / 7} week{(days / 7 == 1 ? "" : "s")}"
+        };
+    }
+
+    // ── Planning the card ────────────────────────────────────────────────
+    //
+    // The shape first, the details after. A slot is a BookedMatch whose sides know how many
+    // people they are waiting for and have none of them — see MatchSide.Intended.
+
+    /// <summary>Which corner the roster rail is about to fill: the card row, and the side.</summary>
+    private (int Item, int Side)? focus;
+
+    private bool IsFocused(int item, int side) => focus == (item, side);
+
+    private void Focus(int item, int side) =>
+        focus = IsFocused(item, side) ? null : (item, side);
+
+    private string rosterQuery = "";
+
+    /// <summary>The row being dragged, and the name being dragged. Only one is ever live.</summary>
+    private int? dragItem;
+    private Wrestler? dragWrestler;
+
+    /// <summary>Puts an empty singles match on the card. One click, no builder.</summary>
+    private async Task AddSlot(ScheduledShow show)
+    {
+        show.Card.Add(new BookedMatch
+        {
+            Plan = new MatchPlanModel
+            {
+                Sides = [new MatchSide { Intended = 1 }, new MatchSide { Intended = 1 }]
+            }
+        });
+        focus = (show.Card.Count - 1, 0);
+        await Persist();
+    }
+
+    /// <summary>Books whoever was tapped into the focused corner, and moves the focus on.</summary>
+    private async Task BookFocused(ScheduledShow show, Wrestler who)
+    {
+        if (focus is not { } at) return;
+        if (at.Item >= show.Card.Count) { focus = null; return; }
+        if (show.Card[at.Item] is not BookedMatch match) return;
+
+        await Book(show, match, at.Side, who);
+    }
+
+    private async Task DropWrestler(ScheduledShow show, BookedMatch match, int side)
+    {
+        if (dragWrestler is not { } who) return;
+        dragWrestler = null;
+        await Book(show, match, side, who);
+    }
+
+    private async Task Book(ScheduledShow show, BookedMatch match, int side, Wrestler who)
+    {
+        if (side < 0 || side >= match.Plan.Sides.Count) return;
+
+        // Nobody works twice on the same night. Taking them off wherever they were is kinder
+        // than refusing, because a booker moving somebody from one match to another is doing
+        // exactly that on purpose.
+        foreach (var other in show.Card.OfType<BookedMatch>())
+            foreach (var s in other.Plan.Sides)
+                s.Members.Remove(who);
+
+        match.Plan.Sides[side].Members.Add(who);
+
+        // On to the next empty corner in this match, so casting a match is a run of taps
+        // rather than a tap and a hunt for the next gap.
+        focus = NextGap(show, show.Card.IndexOf(match)) ?? NextGap(show);
+        await Persist();
+    }
+
+    /// <summary>Takes somebody off a corner, leaving the gap behind.</summary>
+    private async Task Vacate(ScheduledShow show, BookedMatch match, int side, Wrestler who)
+    {
+        match.Plan.Sides[side].Members.Remove(who);
+        focus = (show.Card.IndexOf(match), side);
+        await Persist();
+    }
+
+    /// <summary>The first corner still waiting, in this match or anywhere on the card.</summary>
+    private (int, int)? NextGap(ScheduledShow show, int? onlyItem = null)
+    {
+        for (int i = 0; i < show.Card.Count; i++)
+        {
+            if (onlyItem is { } only && i != only) continue;
+            if (show.Card[i] is not BookedMatch m) continue;
+
+            for (int side = 0; side < m.Plan.Sides.Count; side++)
+                if (m.Plan.Sides[side].Vacancies > 0) return (i, side);
+        }
+        return null;
+    }
+
+    /// <summary>Reordering by dragging a row onto another. The arrows still work.</summary>
+    private async Task DropItem(ScheduledShow show, int onto)
+    {
+        if (dragItem is not { } from || from == onto) { dragItem = null; return; }
+        dragItem = null;
+
+        if (from < 0 || from >= show.Card.Count || onto < 0 || onto >= show.Card.Count) return;
+
+        var moved = show.Card[from];
+        show.Card.RemoveAt(from);
+        show.Card.Insert(onto, moved);
+        focus = null;
+        await Persist();
+    }
+
+    /// <summary>
+    /// The rail's ranking. Against whoever is already in the focused match, so the names that
+    /// rise are the ones with a story against the people in that corner's match — which is the
+    /// entire value of the rail over an alphabetical list, and it is why the focus matters.
+    /// </summary>
+    private IReadOnlyList<BookingSuggestions.Suggestion> RailRows(Career career, ScheduledShow show)
+    {
+        var against = focus is { } at && at.Item < show.Card.Count
+                      && show.Card[at.Item] is BookedMatch m
+            ? m.Plan.Sides.Where((_, i) => i != at.Side).SelectMany(s => s.Members).ToList()
+            : [];
+
+        var booked = show.Card.SelectMany(i => i.Wrestlers).ToHashSet();
+
+        return BookingSuggestions.Rank(
+            career.Roster.Where(w => string.IsNullOrWhiteSpace(rosterQuery)
+                                  || (w.RingName?.Contains(rosterQuery, StringComparison.OrdinalIgnoreCase) ?? false)
+                                  || (w.RealName?.Contains(rosterQuery, StringComparison.OrdinalIgnoreCase) ?? false)),
+            against, career.FeudBook,
+            w => booked.Contains(w) ? "on this card" : null,
+            State.StandingPartnerOf, State.RecentlyBooked, career.CurrentDate)
+            .Take(40).ToList();
+    }
+
+    // ── Booking a planned match without leaving the card ─────────────────
+    //
+    // The brief already reduces a match to four choices — who goes over, what it is about,
+    // how long, how it ends — and the grammar writes the beats from them. So the fast path is
+    // those four chips on the row, and the five-step builder is for a booker who wants to lay
+    // out the beats by hand. Neither is a lesser version of the other; they are the same
+    // decision at two depths.
+
+    private int? expanded;
+
+    /// <summary>The plan's brief, made on demand so a planned match starts with sensible defaults.</summary>
+    private static MatchBrief BriefOf(BookedMatch match) =>
+        match.Plan.Brief ??= new MatchBrief();
+
+    private async Task SetWinner(BookedMatch m, int side) { BriefOf(m).WinningSide = side; await Rewrite(m); }
+    private async Task SetStory(BookedMatch m, MatchStory s) { BriefOf(m).Story = s; await Rewrite(m); }
+    private async Task SetLength(BookedMatch m, MatchScale l) { BriefOf(m).Length = l; await Rewrite(m); }
+    private async Task SetFinish(BookedMatch m, FinishKind f) { BriefOf(m).Finish = f; await Rewrite(m); }
+
+    /// <summary>Re-writes the beats, but only for a match that already had some.</summary>
+    private async Task Rewrite(BookedMatch m)
+    {
+        if (m.Plan.Beats.Count > 0) await Write(m);
+        else await Persist();
+    }
+
+    /// <summary>Generates the beats from the brief, which is what finishes the match.</summary>
+    private async Task Write(BookedMatch match)
+    {
+        var brief = BriefOf(match);
+        brief.Draft++;
+
+        match.Plan.Beats.Clear();
+        match.Plan.Beats.AddRange(BriefDirector.Write(brief, match.Plan.Sides).Beats);
+        await Persist();
+    }
+
+    private static string StoryLabel(MatchStory story) => story switch
+    {
+        MatchStory.EvenContest         => "An even contest",
+        MatchStory.FaceInPeril         => "Somebody in peril",
+        MatchStory.Grudge              => "A grudge",
+        MatchStory.TechnicalExhibition => "Mat wrestling",
+        MatchStory.DavidAndGoliath     => "David and Goliath",
+        MatchStory.Spectacle           => "Spectacle",
+        _                              => "A showcase"
+    };
+
+    private static string ScaleLabel(MatchScale scale) => scale switch
+    {
+        MatchScale.Opener     => "Short",
+        MatchScale.Television => "TV length",
+        MatchScale.Workhorse  => "Workhorse",
+        MatchScale.BigMatch   => "Big match",
+        _                     => "Epic"
+    };
+
+    private enum Mode { Card, PickMatch, PickSegment, AddMatch, AddSegment, AddRumble, AddDraw, BookLoop }
 
     private Mode mode = Mode.Card;
 
@@ -350,6 +826,17 @@ else
     }
 
     /// <summary>Everyone booked on this card who does not belong on this show.</summary>
+    /// <summary>
+    /// Everybody on this card who is injured on the night it runs, deduplicated — somebody
+    /// booked into two matches is one problem, not two.
+    /// </summary>
+    private static List<(Wrestler W, WrestlingSim.Models.Person.Injury Injury)> HurtOnCard(ScheduledShow show) =>
+        show.Card.SelectMany(item => item.Wrestlers)
+            .Distinct()
+            .Where(w => w.Injury?.KeepsOut(show.Date) == true)
+            .Select(w => (w, w.Injury!))
+            .ToList();
+
     private static List<Crossover> Crossovers(Career career, ScheduledShow show) =>
         BrandIntegrity.Detect(show.Card, career.Brands, career.BrandOfShow(show)).ToList();
 
@@ -367,6 +854,13 @@ else
         await Persist();
     }
 
+    private async Task AddRumble(WrestlingSim.Models.Rumble.RumblePlan rumble)
+    {
+        State.ActiveShow?.Card.Add(rumble);
+        mode = Mode.Card;
+        await Persist();
+    }
+
     private async Task AddSegment(SegmentModel segment)
     {
         State.ActiveShow?.Card.Add(segment);
@@ -374,9 +868,45 @@ else
         await Persist();
     }
 
+    private async Task AddDraw(WrestlingSim.Models.Rumble.RumbleDraw draw)
+    {
+        State.ActiveShow?.Card.Add(draw);
+        mode = Mode.Card;
+        await Persist();
+    }
+
+    private async Task BookLoop(HouseShowLoop loop)
+    {
+        if (State.ActiveShow is { } show) show.Loop = loop;
+        mode = Mode.Card;
+        await Persist();
+    }
+
+    /// <summary>
+    /// Whether any Rumble with timed entries is booked on a later date. The drawing builder
+    /// asks the same question of the calendar; asking it here too is what keeps the button
+    /// from opening onto a dead end.
+    /// </summary>
+    private static bool HasSomethingToDrawFor(Career career, ScheduledShow show) =>
+        career.Shows.Any(s => !s.HasRun && s.Date > show.Date
+                              && s.Card.OfType<WrestlingSim.Models.Rumble.RumblePlan>()
+                                       .Any(r => !r.IsBattleRoyal));
+
+    /// <summary>
+    /// Takes an item off the card — and, when it is a Rumble, any drawing on any show that
+    /// was drawing for it. A drawing pointing at a match that is no longer booked is not a
+    /// segment, and leaving it on a sheet to fail on the night would be worse than removing
+    /// it while the booker is looking at the thing they removed.
+    /// </summary>
     private async Task Remove(ICardItem item)
     {
         State.ActiveShow?.Card.Remove(item);
+
+        if (item is WrestlingSim.Models.Rumble.RumblePlan rumble && State.Career is { } career)
+            foreach (var s in career.Shows.Where(s => !s.HasRun))
+                s.Card.RemoveAll(i => i is WrestlingSim.Models.Rumble.RumbleDraw d
+                                      && d.Rumble == rumble);
+
         await Persist();
     }
 

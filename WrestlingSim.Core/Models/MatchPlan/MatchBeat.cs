@@ -103,6 +103,40 @@ namespace WrestlingSim.Models.MatchPlan
         public bool IsTagChange => Type is BeatType.HotTag or BeatType.Tag or BeatType.BlindTag;
 
         /// <summary>
+        /// Beats that need a third party in the match.
+        ///
+        /// The same shape as <see cref="IsTagBeat"/> and for the same reason: nothing in the
+        /// tag formula works without somebody on the apron, and nothing here works without
+        /// somebody to dispose of or be stolen from. A disposal spot in a singles match
+        /// narrates "Alpha puts Bravo down hard on the outside — for now, this is one on
+        /// one" about a match that was already one on one.
+        /// </summary>
+        public bool IsMultiManBeat => Type is
+            BeatType.DisposalSpot or BeatType.PinBreak or BeatType.SpiteBreak or
+            BeatType.IgnoredOpportunity or BeatType.MutualDestruction;
+
+        /// <summary>
+        /// A fall that takes somebody out without ending the match.
+        ///
+        /// Deliberately not folded into <see cref="IsFinish"/>. A finish is the last beat
+        /// and closes the plan; this one is worked mid-match and the plan continues, so
+        /// every rule keyed off "is this the end" — ordering, the one-finish check, the
+        /// blow-off payoff — has to keep saying no to it.
+        /// </summary>
+        public bool IsElimination => Type == BeatType.Elimination;
+
+        /// <summary>
+        /// Beats that need a third *person* rather than a third *side*.
+        ///
+        /// The distinction the first version of this got wrong. A disposal spot needs
+        /// somebody to dispose of who is not in the pairing, so it needs another side — but
+        /// an elimination only needs somebody left to carry on against, and a Survivor
+        /// Series has that with two sides and four wrestlers each. Gating it on side count
+        /// refused the format the beat exists for.
+        /// </summary>
+        public bool NeedsAThirdPerson => Type == BeatType.Elimination;
+
+        /// <summary>
         /// Independent copy. Structures in MatchStructureLibrary are static singletons,
         /// so a plan built from a preset must clone its beats or editing the plan
         /// writes straight through into the library.

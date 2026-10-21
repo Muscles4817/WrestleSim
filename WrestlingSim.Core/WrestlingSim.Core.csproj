@@ -20,4 +20,16 @@
     <EmbeddedResource Include="JSON\**\*" />
   </ItemGroup>
 
+
+  <!-- The test project can see internals.
+
+       PerformerProfile is internal on purpose — it is the engine's private read of a
+       wrestler and nothing outside should depend on its shape. But that also meant no test
+       could assert on it, so rules that live there could only ever be checked by running a
+       whole match and reading a rating, which is the coupling this repo keeps removing.
+       HotTagCharge sat private and untested for the same reason. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="WrestlingSim.Tests" />
+  </ItemGroup>
+
 </Project>

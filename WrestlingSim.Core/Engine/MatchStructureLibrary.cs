@@ -106,6 +106,161 @@ namespace WrestlingSim.Engine
                 ]
             },
 
+            // ── Elimination (doc 18 §2.5) ────────────────────────────────────
+            //
+            // "Falls remove people; last one standing wins... The drama moves from the fall
+            // to the *order* of eliminations." So both of these are built around the order
+            // rather than the finish, and both leave work between the falls — which the
+            // engine measures, because a scramble of three falls in a row is the way this
+            // format goes wrong.
+
+            new MatchStructure
+            {
+                Name        = "Triple Threat Elimination",
+                Description = "No stolen fall and nobody left unaccounted for — one goes out, " +
+                              "and what is left is the singles match the crowd has been waiting for.",
+                SideCount   = 3,
+                Tags        = ["Multi-Man", "Elimination", "No DQ"],
+                Beats       =
+                [
+                    Beat("Hot Start",       BeatControl.Even),
+                    Against(Beat("Disposal Spot", BeatControl.WrestlerB), BeatControl.SideC),
+                    Beat("Signature Cover", BeatControl.WrestlerB),
+                    Against(Beat("Elimination", BeatControl.WrestlerB), BeatControl.SideC),
+                    Beat("Methodical Grind", BeatControl.WrestlerB),
+                    Beat("Shock Kickout",    BeatControl.WrestlerA),
+                    Beat("Hot Comeback",     BeatControl.WrestlerA),
+                    Against(Beat("Clean Victory", BeatControl.WrestlerA), BeatControl.WrestlerB)
+                ]
+            },
+
+            new MatchStructure
+            {
+                Name        = "Four-Way Elimination",
+                Description = "Three falls, spread out, and the field thins around the two who " +
+                              "were always going to be there at the end.",
+                SideCount   = 4,
+                Tags        = ["Multi-Man", "Elimination", "No DQ"],
+                Beats       =
+                [
+                    Beat("Hot Start",       BeatControl.Even),
+                    Against(Beat("Disposal Spot", BeatControl.WrestlerA), BeatControl.SideD),
+                    Beat("Signature Cover", BeatControl.WrestlerB),
+                    Against(Beat("Elimination", BeatControl.WrestlerB), BeatControl.SideD),
+                    Beat("Methodical Grind", BeatControl.WrestlerB),
+                    Against(Beat("Pin Break", BeatControl.WrestlerA), BeatControl.WrestlerB),
+                    Against(Beat("Elimination", BeatControl.WrestlerA), BeatControl.SideC),
+                    Beat("Shock Kickout",   BeatControl.WrestlerB),
+                    Beat("Hot Comeback",    BeatControl.WrestlerA),
+                    Against(Beat("Clean Victory", BeatControl.WrestlerA), BeatControl.WrestlerB)
+                ]
+            },
+
+            // ── Handicap (doc 18 §2.5) ───────────────────────────────────────
+            //
+            // "Almost never a contest; it is a *statement*, and the statement is usually
+            // about the lone man's toughness rather than the outcome." So neither of these
+            // is built to be won — they are built to give the lone wrestler moments, which
+            // is what the engine grades a handicap match on.
+            //
+            // Both are short on purpose. Being outnumbered compounds, so the longer one of
+            // these runs the less he has left, and a long handicap match is a slaughter
+            // whatever the booking intended.
+
+            new MatchStructure
+            {
+                Name        = "Two on One",
+                Description = "Nobody is winning this from underneath. What the match is for " +
+                              "is whether they make them work for it — two comebacks, and " +
+                              "neither one enough.",
+                SideSize    = 1,
+                SideSizeB   = 2,
+                Tags        = ["Handicap", "Story", "Statement"],
+                Beats       =
+                [
+                    Beat("Standard Collar-and-Elbow", BeatControl.Even),
+                    Beat("Power Beatdown",  BeatControl.WrestlerB),
+                    Beat("Hot Comeback",    BeatControl.WrestlerA),
+                    Beat("Methodical Grind", BeatControl.WrestlerB),
+                    Beat("Hot Comeback",    BeatControl.WrestlerA),
+                    Beat("Signature Cover", BeatControl.WrestlerB),
+                    Beat("Clean Victory",   BeatControl.WrestlerB)
+                ]
+            },
+
+            new MatchStructure
+            {
+                Name        = "Beat the Odds",
+                Description = "The upset, which costs the pair more than it gives the winner — " +
+                              "two people beaten by one is a bill somebody pays later.",
+                SideSize    = 1,
+                SideSizeB   = 2,
+                Tags        = ["Handicap", "Story", "Upset"],
+                Beats       =
+                [
+                    Beat("Standard Collar-and-Elbow", BeatControl.Even),
+                    Beat("Power Beatdown",  BeatControl.WrestlerB),
+                    Beat("Hot Comeback",    BeatControl.WrestlerA),
+                    Beat("Miscommunication", BeatControl.WrestlerB),
+                    Beat("Shock Kickout",   BeatControl.WrestlerA),
+                    Beat("Roll-Up Steal",   BeatControl.WrestlerA)
+                ]
+            },
+
+            new MatchStructure
+            {
+                Name        = "Three on One",
+                Description = "A statement rather than a match. Short, because being " +
+                              "outnumbered compounds and a long one is just a slaughter.",
+                SideSize    = 1,
+                SideSizeB   = 3,
+                Tags        = ["Handicap", "Squash", "Statement"],
+                Beats       =
+                [
+                    Beat("Standard Collar-and-Elbow", BeatControl.Even),
+                    Beat("Power Beatdown", BeatControl.WrestlerB),
+                    Beat("Hot Comeback",   BeatControl.WrestlerA),
+                    Beat("Power Beatdown", BeatControl.WrestlerB),
+                    Beat("Clean Victory",  BeatControl.WrestlerB)
+                ]
+            },
+
+            // ── Survivor Series (doc 18 §2.5, the elimination bullet) ────────
+            //
+            // Four a side, tag rules, falls take out *people*. What makes it its own match
+            // rather than a long tag is that the numbers go lopsided partway through and
+            // stay that way — so the survivors spend the back half working a handicap match
+            // they arrived at rather than one anybody booked.
+            //
+            // Booked to leave two standing, because a clean sweep says the losing team was
+            // worthless and a sole survivor is a bigger card than most nights need.
+
+            new MatchStructure
+            {
+                Name        = "Survivor Series",
+                Description = "Four a side, tag rules, and a fall sends you to the back. The " +
+                              "story is who is left at the end — and whoever is outnumbered " +
+                              "in the meantime feels it.",
+                SideSize    = 4,
+                Tags        = ["Elimination", "Tag", "Survivor"],
+                Beats       =
+                [
+                    Beat("Standard Collar-and-Elbow", BeatControl.Even),
+                    Beat("Shine",           BeatControl.WrestlerA),
+                    Against(Beat("Elimination", BeatControl.WrestlerA), BeatControl.WrestlerB),
+                    Beat("Cut-Off",         BeatControl.WrestlerB),
+                    Against(Beat("Elimination", BeatControl.WrestlerB), BeatControl.WrestlerA),
+                    Beat("Face in Peril",   BeatControl.WrestlerB),
+                    Against(Beat("Elimination", BeatControl.WrestlerB), BeatControl.WrestlerA),
+                    Beat("Hot Tag",         BeatControl.WrestlerA),
+                    Against(Beat("Elimination", BeatControl.WrestlerA), BeatControl.WrestlerB),
+                    Beat("Double Team",     BeatControl.WrestlerA),
+                    Against(Beat("Elimination", BeatControl.WrestlerA), BeatControl.WrestlerB),
+                    Beat("Shock Kickout",   BeatControl.WrestlerB),
+                    Against(Beat("Clean Victory", BeatControl.WrestlerA), BeatControl.WrestlerB)
+                ]
+            },
+
             new MatchStructure
             {
                 Name        = "TV Formula",
@@ -114,10 +269,12 @@ namespace WrestlingSim.Engine
                 Tags        = ["Short", "Simple", "Clean"],
                 Beats       =
                 [
-                    Beat("Standard Collar-and-Elbow", BeatControl.Even),
-                    Beat("Power Beatdown",             BeatControl.WrestlerB),
-                    Beat("Hot Comeback",               BeatControl.WrestlerA),
-                    Beat("Clean Victory",              BeatControl.WrestlerA),
+                    Beat("Standard Collar-and-Elbow", BeatControl.Even, duration: BeatDuration.Brief),
+                    Beat("Shine",                     BeatControl.WrestlerA, duration: BeatDuration.Short),
+                    Beat("Cut-Off",                   BeatControl.WrestlerB, duration: BeatDuration.Brief),
+                    Beat("Power Beatdown",            BeatControl.WrestlerB, duration: BeatDuration.Short),
+                    Beat("Hot Comeback",              BeatControl.WrestlerA),
+                    Beat("Clean Victory",             BeatControl.WrestlerA)
                 ]
             },
 
@@ -131,11 +288,17 @@ namespace WrestlingSim.Engine
                 Tags        = ["Classic", "Babyface", "Crowd"],
                 Beats       =
                 [
-                    Beat("Hot Start",        BeatControl.WrestlerA),
-                    Beat("Power Beatdown",   BeatControl.WrestlerB),
-                    Beat("Methodical Grind", BeatControl.WrestlerB),
-                    Beat("Hot Comeback",     BeatControl.WrestlerA),
-                    Beat("Clean Victory",    BeatControl.WrestlerA),
+                    Beat("Standard Collar-and-Elbow", BeatControl.Even, duration: BeatDuration.Brief),
+                    Beat("Shine",                     BeatControl.WrestlerA, duration: BeatDuration.Short),
+                    Beat("Cut-Off",                   BeatControl.WrestlerB),
+                    Beat("Power Beatdown",            BeatControl.WrestlerB, duration: BeatDuration.Short),
+                    Beat("Hope Spot",                 BeatControl.WrestlerA),
+                    Beat("Wear-Down Hold",            BeatControl.WrestlerB, duration: BeatDuration.Brief),
+                    Beat("Desperation Strike",        BeatControl.WrestlerA),
+                    Beat("Hot Comeback",              BeatControl.WrestlerA),
+                    Beat("Signature Cover",           BeatControl.WrestlerA),
+                    Beat("Shock Kickout",             BeatControl.WrestlerA),
+                    Beat("Clean Victory",             BeatControl.WrestlerA)
                 ]
             },
 
@@ -149,13 +312,17 @@ namespace WrestlingSim.Engine
                 Tags        = ["Technical", "Psychology", "Long"],
                 Beats       =
                 [
-                    Beat("Feeling-Out Process",  BeatControl.Even),
-                    Beat("Technical Dissection", BeatControl.WrestlerB),
+                    Beat("Feeling-Out Process",   BeatControl.Even),
+                    Beat("Shine",                 BeatControl.WrestlerA, duration: BeatDuration.Short),
+                    Beat("Cut-Off",               BeatControl.WrestlerB, duration: BeatDuration.Brief),
+                    Beat("Technical Dissection",  BeatControl.WrestlerB, duration: BeatDuration.Medium),
+                    Beat("Hope Spot",             BeatControl.WrestlerA),
                     Beat("Strategic Ground Work", BeatControl.WrestlerB),
+                    Beat("Desperation Strike",    BeatControl.WrestlerA),
                     Beat("Hot Comeback",          BeatControl.WrestlerA),
                     Beat("Signature Cover",       BeatControl.WrestlerA),
                     Beat("Shock Kickout",         BeatControl.WrestlerA),
-                    Beat("Tap Out",               BeatControl.WrestlerA),
+                    Beat("Tap Out",               BeatControl.WrestlerA)
                 ]
             },
 
@@ -169,13 +336,17 @@ namespace WrestlingSim.Engine
                 Tags        = ["Fast", "Aerial", "Exciting"],
                 Beats       =
                 [
-                    Beat("Hot Start",       BeatControl.Even),
-                    Beat("Aerial Assault",  BeatControl.WrestlerA),
-                    Beat("Power Beatdown",  BeatControl.WrestlerB),
-                    Beat("Jaw-Dropper",     BeatControl.WrestlerA),
-                    Beat("Hot Comeback",    BeatControl.WrestlerA),
-                    Beat("Shock Kickout",   BeatControl.WrestlerA),
-                    Beat("Clean Victory",   BeatControl.WrestlerA),
+                    Beat("Hot Start",        BeatControl.Even),
+                    Beat("Aerial Assault",   BeatControl.WrestlerA),
+                    Beat("Explosive Flurry", BeatControl.WrestlerB),
+                    Beat("Jaw-Dropper",      BeatControl.WrestlerB),
+                    Beat("Power Beatdown",   BeatControl.WrestlerB, duration: BeatDuration.Short),
+                    Beat("Aerial Assault",   BeatControl.WrestlerA),
+                    Beat("Hot Comeback",     BeatControl.WrestlerA),
+                    Beat("Signature Cover",  BeatControl.WrestlerA),
+                    Beat("Shock Kickout",    BeatControl.WrestlerA),
+                    Beat("Jaw-Dropper",      BeatControl.WrestlerA),
+                    Beat("Clean Victory",    BeatControl.WrestlerA)
                 ]
             },
 
@@ -189,12 +360,15 @@ namespace WrestlingSim.Engine
                 Tags        = ["Brawling", "Physical", "Emotional"],
                 Beats       =
                 [
-                    Beat("Hot Start",      BeatControl.Even),
-                    Beat("Ringside Brawl", BeatControl.Even),
-                    Beat("Power Beatdown", BeatControl.WrestlerB),
-                    Beat("Revenge Spot",   BeatControl.WrestlerA),
-                    Beat("Signature Cover", BeatControl.WrestlerA),
-                    Beat("Clean Victory",  BeatControl.WrestlerA),
+                    Beat("Hot Start",         BeatControl.Even),
+                    Beat("Ringside Brawl",    BeatControl.WrestlerB),
+                    Beat("Power Beatdown",    BeatControl.WrestlerB),
+                    Beat("Desperation Strike",BeatControl.WrestlerA),
+                    Beat("Revenge Spot",      BeatControl.WrestlerA),
+                    Beat("Hot Comeback",      BeatControl.WrestlerA),
+                    Beat("Signature Cover",   BeatControl.WrestlerA),
+                    Beat("Shock Kickout",     BeatControl.WrestlerA),
+                    Beat("Clean Victory",     BeatControl.WrestlerA)
                 ]
             },
 
@@ -210,36 +384,85 @@ namespace WrestlingSim.Engine
                 Beats        =
                 [
                     Beat("Hot Start",       BeatControl.Even),
-                    Beat("Full-Crowd War",  BeatControl.Even),
-                    Beat("Feud Erupts",     BeatControl.Even),
+                    Beat("Full-Crowd War",  BeatControl.Even, duration: BeatDuration.Short),
+                    Beat("Feud Erupts",     BeatControl.WrestlerB),
+                    Beat("Cut-Off",         BeatControl.WrestlerB),
                     Beat("Power Beatdown",  BeatControl.WrestlerB),
-                    Beat("Hot Comeback",    BeatControl.WrestlerA),
+                    Beat("Hope Spot",       BeatControl.WrestlerA),
+                    Beat("Revenge Spot",    BeatControl.WrestlerA),
+                    Beat("Fighting Spirit", BeatControl.WrestlerA),
+                    Beat("Signature Cover", BeatControl.WrestlerA),
                     Beat("Shock Kickout",   BeatControl.WrestlerA),
                     Beat("Shock Kickout",   BeatControl.WrestlerA),
-                    Beat("Clean Victory",   BeatControl.WrestlerA),
+                    Beat("Clean Victory",   BeatControl.WrestlerA)
                 ]
             },
 
-            // ── Big Match Epic ───────────────────────────────────────────────
+            // ── Big Match ───────────────────────────────────────────────
 
             new MatchStructure
             {
-                Name        = "Big Match Epic",
-                Description = "The WrestleMania main event structure. A slow build to an enormous peak — " +
-                              "psychological warfare, multiple momentum swings, a defining near-fall sequence, " +
-                              "and a finish that feels earned.",
+                Name        = "Big Match",
+                Description = "Two heat/comeback cycles and a real finishing stretch — doc 18 §3.1's " +
+                              "fifteen-to-twenty-five-minute shape. What a pay-per-view semi-main is.",
                 Tags        = ["Long", "Psychology", "Emotional", "Exciting"],
                 Beats       =
                 [
+                    Beat("Feeling-Out Process", BeatControl.Even),
+                    Beat("Shine",               BeatControl.WrestlerA, duration: BeatDuration.Short),
+                    Beat("Cut-Off",             BeatControl.WrestlerB),
+                    Beat("Power Beatdown",      BeatControl.WrestlerB),
+                    Beat("Hope Spot",           BeatControl.WrestlerA),
+                    Beat("Hot Comeback",        BeatControl.WrestlerA),
+                    Beat("Cut-Off",             BeatControl.WrestlerB),
+                    Beat("Methodical Grind",    BeatControl.WrestlerB, duration: BeatDuration.Short),
+                    Beat("Desperation Strike",  BeatControl.WrestlerA),
+                    Beat("Fighting Spirit",     BeatControl.WrestlerA),
+                    Beat("Signature Cover",     BeatControl.WrestlerA),
+                    Beat("Shock Kickout",       BeatControl.WrestlerA),
+                    Beat("Dominant Statement",  BeatControl.WrestlerA)
+                ]
+            },
+
+            // ── The epic (doc 18 §2.4, §3.1) ─────────────────────────────────
+            //
+            // "25–40 minutes, multiple false finishes. Reserved for the biggest matches;
+            // loses its power if used often." There was nothing in this library that
+            // reached that band — the longest singles template ran sixteen minutes and was
+            // called Big Match, which meant a booker had no way to lay out the main
+            // event of the biggest show of the year.
+            //
+            // Two full heat/comeback cycles, four false finishes, and it is deliberately
+            // punishing: seventeen beats runs the engine's length-versus-conditioning
+            // penalty hard, so asking two wrestlers who cannot go long to work this loses
+            // the room. Doc 18 says exactly that — an epic "requires two performers with
+            // enough over-ness to hold attention and enough conditioning to work it".
+
+            new MatchStructure
+            {
+                Name        = "Epic",
+                Description = "Thirty-plus minutes, two heat sections and four false finishes. " +
+                              "Needs two people the crowd will watch that long, and the gas to do it.",
+                Tags        = ["Epic", "Main Event", "Crowd"],
+                Beats       =
+                [
                     Beat("Feeling-Out Process",  BeatControl.Even),
-                    Beat("Power Beatdown",        BeatControl.WrestlerB),
-                    Beat("Aerial Assault",        BeatControl.WrestlerA),
-                    Beat("Fighting Spirit",       BeatControl.WrestlerA),
-                    Beat("Signature Cover",       BeatControl.WrestlerA),
-                    Beat("Mind Games",            BeatControl.WrestlerA),
-                    Beat("Shock Kickout",         BeatControl.WrestlerA),
-                    Beat("Shock Kickout",         BeatControl.WrestlerB),
-                    Beat("Dominant Statement",    BeatControl.WrestlerA),
+                    Beat("Shine",                BeatControl.WrestlerA),
+                    Beat("Cut-Off",              BeatControl.WrestlerB),
+                    Beat("Power Beatdown",       BeatControl.WrestlerB),
+                    Beat("Hope Spot",            BeatControl.WrestlerA),
+                    Beat("Wear-Down Hold",       BeatControl.WrestlerB, duration: BeatDuration.Short),
+                    Beat("Desperation Strike",   BeatControl.WrestlerA),
+                    Beat("Hot Comeback",         BeatControl.WrestlerA),
+                    Beat("Cut-Off",              BeatControl.WrestlerB),
+                    Beat("Methodical Grind",     BeatControl.WrestlerB, duration: BeatDuration.Medium),
+                    Beat("Hope Spot",            BeatControl.WrestlerA),
+                    Beat("Mind Games",           BeatControl.WrestlerB),
+                    Beat("Fighting Spirit",      BeatControl.WrestlerA),
+                    Beat("Signature Cover",      BeatControl.WrestlerA),
+                    Beat("Shock Kickout",        BeatControl.WrestlerA),
+                    Beat("Shock Kickout",        BeatControl.WrestlerA),
+                    Beat("Dominant Statement",   BeatControl.WrestlerA)
                 ]
             },
 
@@ -432,6 +655,15 @@ namespace WrestlingSim.Engine
         /// finish names a side a two-sided match does not have.
         /// </summary>
         public static IEnumerable<MatchStructure> ForShape(int sideCount, int sideSize) =>
-            All.Where(s => s.SideCount == sideCount && s.SideSize == sideSize);
+            ForShape(sideCount, sideSize, sideSize);
+
+        /// <summary>
+        /// The same, for a shape whose sides are different sizes. A handicap structure is
+        /// written against a specific imbalance — a plan for one against two does not work
+        /// for one against three, because how long the lone wrestler can plausibly hold out
+        /// is the whole of the booking.
+        /// </summary>
+        public static IEnumerable<MatchStructure> ForShape(int sideCount, int sizeA, int sizeB) =>
+            All.Where(s => s.SideCount == sideCount && s.SideSize == sizeA && s.SizeB == sizeB);
     }
 }

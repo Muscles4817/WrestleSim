@@ -40,6 +40,29 @@ namespace WrestlingSim.Models.World
         /// <summary>The booked card, in running order. Empty until the player books it.</summary>
         public List<ICardItem> Card { get; set; } = new();
 
+        /// <summary>
+        /// A run of towns instead of a card, for an untelevised date. Null on every other kind
+        /// of show, and on a house show the player chooses to lay out match by match — the two
+        /// are alternatives rather than a mode flag, so a date is bookable either way and
+        /// whichever one has content is the one that runs.
+        /// </summary>
+        public HouseShowLoop? Loop { get; set; }
+
+        /// <summary>
+        /// Whether anybody is out on the road for this date.
+        ///
+        /// **No longer "instead of a card".** A real untelevised night is a couple of matches
+        /// that mean something plus everybody else getting work, and the first version made
+        /// the booker choose: a card silently won and the booked run was dropped without a
+        /// word. The two are different people doing different things on the same date — the
+        /// card is the night you booked, the run is the rest of the roster out in the towns —
+        /// so both happen, and both are reported.
+        /// </summary>
+        public bool HasRoadRun => Loop is { IsBookable: true };
+
+        /// <summary>Kept for the screens that ask "is this night only a run of towns".</summary>
+        public bool IsLoopOnly => HasRoadRun && Card.Count == 0;
+
         // ── Result ───────────────────────────────────────────────────────────
 
         /// <summary>Set once the show has been run. Null means it is still upcoming.</summary>
@@ -47,7 +70,31 @@ namespace WrestlingSim.Models.World
 
         public bool HasRun => Result != null;
 
-        public bool IsBooked => Card.Count > 0;
+        public bool IsBooked => Card.Count > 0 || HasRoadRun;
+
+        /// <summary>
+        /// Everything on the card is finished. A planned but uncast match keeps the show from
+        /// running, which is the whole safety net under letting a card be planned first: you
+        /// can leave a night half-built for as long as you like and you cannot run it.
+        /// </summary>
+        /// <summary>
+        /// Everything booked for this date is finished. A run of towns is always finished —
+        /// it is a cast and a number — so what this really asks is whether the card is, and a
+        /// date with neither has nothing to run.
+        /// </summary>
+        public bool IsRunnable =>
+            IsBooked && Card.All(i => i.IsComplete);
+
+        /// <summary>
+        /// Anybody booked on the card *and* sent out on the road for the same date. Nobody
+        /// can be in two places, and a booker who has done it by accident should be told
+        /// rather than have one of the two quietly win.
+        /// </summary>
+        public IEnumerable<Wrestler> DoubleBooked =>
+            Loop is null ? [] : Loop.Cast.Where(w => Card.Any(i => i.Wrestlers.Contains(w)));
+
+        /// <summary>The items still waiting to be finished, for the card to say so.</summary>
+        public IEnumerable<ICardItem> Unfinished => Card.Where(i => !i.IsComplete);
 
         // ── Derived ──────────────────────────────────────────────────────────
 

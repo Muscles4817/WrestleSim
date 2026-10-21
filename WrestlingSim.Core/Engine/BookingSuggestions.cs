@@ -23,7 +23,8 @@ namespace WrestlingSim.Engine
     {
         /// <summary>Why a name is being offered where it is, and what to say about it.</summary>
         public readonly record struct Suggestion(
-            Wrestler Wrestler, SuggestionBand Band, string Reason, string? BookedAs);
+            Wrestler Wrestler, SuggestionBand Band, string Reason, string? BookedAs,
+            string? Condition = null);
 
         public enum SuggestionBand
         {
@@ -68,10 +69,42 @@ namespace WrestlingSim.Engine
             Func<Wrestler, Wrestler?> standingPartnerOf,
             IReadOnlySet<Wrestler> recentlyBooked,
             DateOnly? today) =>
-            pool.Select(w => Describe(w, against, feuds, bookedAs, standingPartnerOf, recentlyBooked, today))
+            // The ring-condition reading is bolted on after the fact rather than threaded
+            // through Describe's six return paths, because it is orthogonal to all of them:
+            // being cooked is equally worth saying about somebody in a hot feud and
+            // somebody with no story at all.
+            pool.Select(w => Describe(w, against, feuds, bookedAs, standingPartnerOf, recentlyBooked, today)
+                             with { Condition = ConditionOf(w, today) })
                 .OrderBy(SortKey)
                 .ThenByDescending(x => x.Wrestler.Overness)
                 .ToList();
+
+        /// <summary>
+        /// The one line under a name that says whether they can work at all, and how well.
+        ///
+        /// Injury first and unconditionally: being cooked is advice and being hurt is a
+        /// fact, so a wrestler who is out does not also get told he needs a rest.
+        ///
+        /// Being out on the road comes next, and for the same reason — it is where they are
+        /// rather than how they feel. The picker offered touring wrestlers with no trace of
+        /// it, so a booker could put somebody in a televised main event on a night their own
+        /// standing instruction had them in a gym two states away, and find out from the
+        /// report. It is still an offer and not a gate: a card beats the towns for that
+        /// wrestler, at the price of one town, which is an ordinary week rather than a
+        /// mistake. The row says so; it does not decide.
+        /// </summary>
+        private static string? ConditionOf(Wrestler w, DateOnly? today)
+        {
+            if (today is not { } date) return RingCondition.WarningFor(w);
+
+            if (w.Injury is { } injury && injury.KeepsOut(date))
+                return $"unavailable — {injury.Reason(date)}";
+
+            if (w.IsTouring(date))
+                return $"out on the road until {w.TouringUntil!.Value:d MMM}";
+
+            return RingCondition.WarningFor(w);
+        }
 
         /// <summary>
         /// Where a suggestion sorts. The band, except that <see cref="SuggestionBand.Plain"/>
@@ -161,9 +194,12 @@ namespace WrestlingSim.Engine
         /// <summary>A name with no story attached still has to say something usable.</summary>
         private static string Plain(Wrestler w, DateOnly? today)
         {
+            // Not the alignment. It used to be appended here, in grey, at the end of a line
+            // whose job is "why is this name in front of me" — and it is now a coloured badge
+            // beside the ring name, which is where a booker looks for it. Said in both places
+            // the row read "Powerhouse · heel" under a HEEL badge, and the reason line is the
+            // half that has to fit on a phone.
             var parts = new List<string> { w.Style.ToString() };
-            if (w.Gimmick?.NaturalAlignment is { } alignment)
-                parts.Add(alignment.ToString().ToLowerInvariant());
 
             if (today is { } date && w.LastAppearance is { } seen)
             {
@@ -173,6 +209,27 @@ namespace WrestlingSim.Engine
 
             return string.Join(" · ", parts);
         }
+
+        /// <summary>
+        /// The class a band's heading and reason line are painted with.
+        ///
+        /// The reason line is the row's argument for itself, and it was `--muted` for all of
+        /// them — so "there is a story here", which is the single most useful thing the
+        /// picker can say, was the same grey as the wrestling style beside it.
+        ///
+        /// Only three of the six are coloured, and that is the point rather than an omission.
+        /// A story is the reason to book somebody, a worn-out pairing is the reason not to,
+        /// and a name already in the match is not a candidate at all. The rest are the
+        /// ordinary case, and colouring the ordinary case is how a palette stops meaning
+        /// anything — the app has been here before with twenty-six amber notices.
+        /// </summary>
+        public static string Tone(SuggestionBand band) => band switch
+        {
+            SuggestionBand.Story   => "band--story",
+            SuggestionBand.WornOut => "band--worn",
+            SuggestionBand.Booked  => "band--booked",
+            _                      => ""
+        };
 
         /// <summary>The band's heading, for display.</summary>
         public static string Heading(SuggestionBand band, Wrestler w) => band switch
