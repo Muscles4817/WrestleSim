@@ -1,5 +1,6 @@
 @using WrestlingSim.Models.World
 @inherits StateComponent
+@inject ViewScroll Scroll
 
 <div class="steps">
     @foreach (var (index, label) in StepLabels)
@@ -326,7 +327,7 @@ else
         return dates.Count == 0 ? "—" : string.Join(", ", dates.Select(d => d.ToString("d MMM")));
     }
 
-    private void Next()
+    private async Task Next()
     {
         // Definitions left unnamed take the show type as their name rather than shipping blank.
         if (step == 1)
@@ -334,12 +335,15 @@ else
                 definition.Name = Label(definition.Type);
 
         step++;
+        await Scroll.ToTopAsync();
     }
 
-    private void Back()
+    private async Task Back()
     {
-        if (step == 0) State.Go(Screen.Landing);
-        else step--;
+        if (step == 0) { State.Go(Screen.Landing); return; }
+
+        step--;
+        await Scroll.ToTopAsync();
     }
 
     private Task Start() =>

@@ -1,5 +1,6 @@
 @inject GameState State
 @inject IJSRuntime JS
+@inject ViewScroll Scroll
 @implements IAsyncDisposable
 
 @* Only the steps this booking actually has, numbered by where they sit in that list —
@@ -1939,6 +1940,10 @@
 
         step++;
         while (step < LastStep && !StepApplies(step)) step++;
+
+        // A step is a new view. Without this, step 4 opens at step 3's offset — and the longer
+        // the step you are leaving, the further down the one you are arriving at starts.
+        await Scroll.ToTopAsync();
     }
 
     private async Task Back()
@@ -1954,6 +1959,8 @@
 
         step--;
         while (step > 0 && !StepApplies(step)) step--;
+
+        await Scroll.ToTopAsync();
     }
 
     // PickA / PickB / PickPartner / Release are gone. Four pickers with four subtly

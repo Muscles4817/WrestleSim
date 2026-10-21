@@ -1,4 +1,5 @@
 @inject GameState State
+@inject ViewScroll Scroll
 
 <div class="steps">
     @foreach (var (index, label) in StepLabels)
@@ -460,10 +461,11 @@
 
     // ── Navigation ───────────────────────────────────────────────────────
 
-    private void Next()
+    private async Task Next()
     {
         if (step == 1) BuildSegment();
         step++;
+        await Scroll.ToTopAsync();
     }
 
     private async Task Back()
@@ -474,6 +476,7 @@
             return;
         }
         step--;
+        await Scroll.ToTopAsync();
     }
 
     private void PickTemplate(SegmentTemplate t)

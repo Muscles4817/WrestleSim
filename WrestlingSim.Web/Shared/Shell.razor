@@ -1,5 +1,6 @@
 @implements IDisposable
 @inject GameState State
+@inject ViewScroll Scroll
 
 <div class="shell">
     <header class="topbar">
@@ -152,6 +153,26 @@
     {
         State.Changed += OnChanged;
         await State.InitialiseAsync();
+    }
+
+    /// <summary>
+    /// A new screen starts at the top of itself.
+    ///
+    /// Tracked here rather than in <see cref="GameState.Go"/> because the scroll position is a
+    /// property of the view and not of the game: Go is also called from places that are not a
+    /// navigation, and the state object has no business reaching for the DOM. The first render
+    /// is skipped — the page is already at the top, and scrolling it would fight a browser
+    /// restoring a position on reload.
+    /// </summary>
+    private Screen? shown;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (shown == State.Current) return;
+
+        bool arriving = shown is null;
+        shown = State.Current;
+        if (!arriving) await Scroll.ToTopAsync();
     }
 
     private void OnChanged() => StateHasChanged();

@@ -1,4 +1,4 @@
-// Two things a modal sheet needs that CSS and Blazor cannot do on their own.
+// The things the view needs that CSS and Blazor cannot do on their own.
 window.wrestleSim = window.wrestleSim || {};
 
 // Keep the keyboard cursor visible. The sheet owns the keydown handler, so focus stays on
@@ -16,4 +16,11 @@ window.wrestleSim.revealRow = function (sheet, index) {
 // scrolled the page underneath — 0 to 522px at 390px wide.
 window.wrestleSim.lockScroll = function (locked) {
     document.body.style.overflow = locked ? 'hidden' : '';
+};
+
+// Put a new view at the top. Blazor swaps the component tree without touching the scroll
+// position, so a screen or a wizard step opens wherever the last one was left — see ViewScroll
+// for what that cost on the match result.
+window.wrestleSim.toTop = function () {
+    window.scrollTo(0, 0);
 };

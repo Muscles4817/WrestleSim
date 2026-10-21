@@ -1,4 +1,5 @@
 @inject GameState State
+@inject ViewScroll Scroll
 
 @if (result is null)
 {
@@ -175,13 +176,24 @@ else
     private MatchEngineResult? result;
     private List<FeudUpdate> feudUpdates = new();
 
-    private void Run(BookedMatch match)
+    /// <summary>
+    /// The result replaces the builder inside the same screen, so the shell's screen-change
+    /// reset does not see it. Without this the player presses "Run the match" at the bottom of
+    /// a beat sheet and the result opens at that offset, half way down the scorecard, with the
+    /// winner and the rating off the top of the screen.
+    /// </summary>
+    private async Task Run(BookedMatch match)
     {
         booked = match;
         Execute();
+        await Scroll.ToTopAsync();
     }
 
-    private void RunAgain() => Execute();
+    private async Task RunAgain()
+    {
+        Execute();
+        await Scroll.ToTopAsync();
+    }
 
     private void Execute()
     {
@@ -230,10 +242,11 @@ else
         State.Notify();
     }
 
-    private void Reset()
+    private async Task Reset()
     {
         booked = null;
         result = null;
         feudUpdates = new();
+        await Scroll.ToTopAsync();
     }
 }

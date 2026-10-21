@@ -1,4 +1,5 @@
 @inherits StateComponent
+@inject ViewScroll Scroll
 
 @if (State.Career is not { } career)
 {
@@ -619,16 +620,20 @@ else
         mode = Mode.Wizard;
     }
 
-    private void WizardBack()
+    private async Task WizardBack()
     {
         if (step == 0) { mode = Mode.Overview; return; }
+
         step--;
+        await Scroll.ToTopAsync();
     }
 
-    private void WizardNext()
+    private async Task WizardNext()
     {
         if (step == 0 && wizardAssignment.Count == 0) Balance();
+
         step++;
+        await Scroll.ToTopAsync();
     }
 
     /// <summary>
