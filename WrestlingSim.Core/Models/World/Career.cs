@@ -188,8 +188,11 @@ namespace WrestlingSim.Models.World
             // The two meters, moving in opposite directions on the same day off. A day of
             // rest pays back fatigue and costs sharpness, which is why there is no amount
             // of time off that is simply good for somebody — see RingCondition.
+            //
+            // The date goes in because an older body pays fatigue back slower (doc 15 §4),
+            // so the same day off is worth less to a veteran than to a twenty-five-year-old.
             foreach (var wrestler in Roster)
-                RingCondition.ApplyDayOff(wrestler);
+                RingCondition.ApplyDayOff(wrestler, CurrentDate);
 
             // A belt nobody is defending is quietly losing value the whole time — doc 21
             // §4. Being ignored is the fastest killer, so it has to happen on the clock

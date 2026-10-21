@@ -113,7 +113,7 @@ namespace WrestlingSim.Engine
                     BookedMatch match => RunMatch(
                         match, itemResult, result, i, showDate, show.Name, starMaking),
                     Segment segment   => RunSegment(segment, itemResult, result, showDate),
-                    Models.Rumble.RumblePlan rumble => RunRumble(rumble, itemResult, result, index: i),
+                    Models.Rumble.RumblePlan rumble => RunRumble(rumble, itemResult, result, showDate, index: i),
                     Models.Rumble.RumbleDraw draw => RunDraw(draw, itemResult, result, showDate, index: i),
 
                     // Deliberately still here, and deliberately still zero. A card item this
@@ -313,10 +313,10 @@ namespace WrestlingSim.Engine
         /// </summary>
         private double RunRumble(
             Models.Rumble.RumblePlan rumble, CardItemResult itemResult, ShowResult showResult,
-            int index)
+            DateOnly showDate, int index)
         {
             var result = new RumbleEngine(_seed.HasValue ? _seed.Value + index : Random.Shared.Next())
-                .Execute(rumble);
+                .Execute(rumble, showDate);
 
             itemResult.RumbleResult = result;
             itemResult.Notes.Add($"{result.Winner.RingName} wins the {rumble.Field.Count}-wrestler " +
@@ -362,7 +362,7 @@ namespace WrestlingSim.Engine
             }
 
             var result = new RumbleDrawEngine(_seed.HasValue ? _seed.Value + index : Random.Shared.Next())
-                .Execute(draw);
+                .Execute(draw, showDate);
 
             itemResult.DrawResult = result;
 
@@ -495,7 +495,7 @@ namespace WrestlingSim.Engine
             int? sinceStipulation = _stipulations?.DaysSince(match.Plan.Stipulation, showDate);
 
             var engineResult = new MatchEngine(_seed.HasValue ? _seed + index : null)
-                .Execute(match.Plan, familiarity, sinceStipulation, _tier);
+                .Execute(match.Plan, familiarity, sinceStipulation, _tier, showDate);
 
             _stipulations?.Record(match.Plan.Stipulation, showDate);
 

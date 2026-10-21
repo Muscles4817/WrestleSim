@@ -18,12 +18,14 @@ namespace WrestlingSim.Engine
     /// linear: 200 dates is ~2× the risk of 100" — and the game already carries volume as
     /// a meter. Being cooked is now dangerous rather than merely expensive.
     ///
-    /// **What is not here, and why.** Doc 15 §3.1 also names age over 35 (1.5–2× and
-    /// rising) and ring quality. There is no age on a wrestler and no venue condition, so
-    /// neither is modelled — inventing a proxy for age out of stats that only correlate
-    /// with it would produce a number that looks authoritative and is not. Opponent safety
-    /// is proxied from ring psychology, which is defensible: a wrestler who does not know
-    /// where he is putting people is the one who hurts them.
+    /// **Age arrived later.** This class shipped saying age over 35 (1.5–2× and rising)
+    /// could not be modelled because there was no age on a wrestler, and that inventing a
+    /// proxy out of stats that merely correlate with it would produce a number that looks
+    /// authoritative and is not. That was right at the time and is now out of date:
+    /// <see cref="Models.Wrestler.BornIn"/> exists and <see cref="AgeRisk"/> reads it. Ring
+    /// quality is in as <see cref="RingRisk"/>. Opponent safety is still proxied from ring
+    /// psychology, which is defensible: a wrestler who does not know where he is putting
+    /// people is the one who hurts them.
     /// </summary>
     public static class InjuryRisk
     {
@@ -177,7 +179,7 @@ namespace WrestlingSim.Engine
         public static double PerBeat(
             Wrestler wrestler, BeatIntensity intensity, int beatIndex,
             double conditioning, Wrestler? opponent, PromotionTier tier,
-            BodyPart likeliest)
+            BodyPart likeliest, DateOnly? on = null)
         {
             return BaseBeatRisk
                  * StyleRisk(wrestler.Style)
@@ -186,8 +188,24 @@ namespace WrestlingSim.Engine
                  * SizeRisk(wrestler.Physical?.Size ?? 3)
                  * OpponentRisk(opponent?.Mental?.Psychology ?? 75, opponent?.Mental?.RingIQ ?? 75)
                  * HistoryRisk(wrestler.InjuryHistory, likeliest)
-                 * RingRisk(tier);
+                 * RingRisk(tier)
+                 * AgeRisk(wrestler, on);
         }
+
+        /// <summary>
+        /// The age multiplier, and **the last of doc 15 §3.1's factors to arrive** — every
+        /// other row in that table was implemented when this class shipped and this one
+        /// could not be, because <see cref="Wrestler"/> had no age.
+        ///
+        /// Returns 1.0 when the date or the birth year is unknown, so a roster entry with
+        /// no age is exactly as fragile as it was before. That is a deliberate no-op rather
+        /// than a guess: inventing an age in order to charge somebody for it would be worse
+        /// than not charging them.
+        /// </summary>
+        public static double AgeRisk(Wrestler wrestler, DateOnly? on) =>
+            on is { } date && wrestler.AgeOn(date) is { } age
+                ? AgeCurve.InjuryMultiplier(age)
+                : 1.0;
 
         // ── What gets hurt, and for how long ─────────────────────────────────
 

@@ -189,6 +189,23 @@ namespace WrestlingSim.Engine
         public static double RecoveryPerDay(double fatigue, double conditioning) =>
             (1.6 + Math.Max(0, fatigue) * 0.055) * Math.Clamp(conditioning, 0.55, 1.35);
 
+        /// <summary>
+        /// The same day off, for somebody of a known age.
+        ///
+        /// **Age is charged to recovery and not to the gas tank**, which is the one
+        /// judgement in here worth arguing with. Doc 15 does not say a forty-year-old has
+        /// less stamina than a twenty-five-year-old — plenty of them go longer — it says
+        /// the schedule is what breaks them, and §4's "match style must adapt or the body
+        /// breaks" is about accumulation rather than capacity. So the tank is the same size
+        /// and it refills slower, which is what makes a veteran a scheduling problem rather
+        /// than a worse wrestler.
+        ///
+        /// Null age gives <see cref="RecoveryPerDay"/> unchanged.
+        /// </summary>
+        public static double RecoveryPerDay(double fatigue, double conditioning, int? age) =>
+            RecoveryPerDay(fatigue, conditioning)
+            * (age is { } a ? AgeCurve.RecoveryMultiplier(a) : 1.0);
+
         // ── What rest takes away ─────────────────────────────────────────────
 
         /// <summary>
@@ -369,12 +386,14 @@ namespace WrestlingSim.Engine
         /// meters at once because that is the point: the same day pays back fatigue and
         /// costs sharpness.
         /// </summary>
-        public static void ApplyDayOff(Models.Wrestler wrestler)
+        public static void ApplyDayOff(Models.Wrestler wrestler, DateOnly? on = null)
         {
             double conditioning = new PerformerProfile(wrestler).BaseConditioning;
 
+            int? age = on is { } date ? wrestler.AgeOn(date) : null;
+
             wrestler.Fatigue = Math.Clamp(
-                wrestler.Fatigue - RecoveryPerDay(wrestler.Fatigue, conditioning), 0, 100);
+                wrestler.Fatigue - RecoveryPerDay(wrestler.Fatigue, conditioning, age), 0, 100);
 
             double upkeep = SelfMaintenance(
                 wrestler.Mental?.Psychology ?? 70, wrestler.Mental?.RingIQ ?? 70);

@@ -64,6 +64,15 @@
                     <div class="rcard__stat"><b>@w.Charisma.ToString("F1")</b><span>Cha / 5</span></div>
                     <div class="rcard__stat"><b>@w.RingSkills.GetOverallSkill().ToString("F2")</b><span>Skill / 5</span></div>
                     <div class="rcard__stat"><b class="gold">@w.CardPosition.Label()</b><span>Card</span></div>
+                    @* Age only when the roster knows it. A dash would be a column of
+                       nothing for the seventeen entries with no birth year; leaving the
+                       tile out says the same thing without taking the space. *@
+                    @if (w.AgeOn(Today) is { } age)
+                    {
+                        <div class="rcard__stat" title="@AgeCurve.Reading(age)">
+                            <b>@age</b><span>@AgeCurve.Band(age)</span>
+                        </div>
+                    }
                 </div>
 
                 @* The two meters, on the card rather than behind the expander, because they
@@ -180,6 +189,7 @@
                     @if (State.IsSplit) { <th>Brand</th> }
                     <th>Align</th>
                     <th>Style</th>
+                    <th class="num">Age</th>
                     <th class="num">Pop</th>
                     <th class="num">Skill</th>
                     <th class="num">Cha</th>
@@ -206,6 +216,10 @@
                         }
                         <td><span class="badge @AlignBadge(w)">@(w.Gimmick?.NaturalAlignment.ToString() ?? "—")</span></td>
                         <td class="small muted nowrap">@w.Style</td>
+                        <td class="num small @(w.AgeOn(Today) is { } a && a >= 40 ? "muted" : "")"
+                            title="@(w.AgeOn(Today) is { } at ? AgeCurve.Band(at) : "")">
+                            @(w.AgeOn(Today)?.ToString() ?? "—")
+                        </td>
                         <td class="num @w.CardPosition.Tone()">@w.OvernessDisplay</td>
                         <td class="num">@w.RingSkills.GetOverallSkill().ToString("F2")</td>
                         <td class="num">@w.Charisma.ToString("F1")</td>

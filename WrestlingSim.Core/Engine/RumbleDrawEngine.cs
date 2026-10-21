@@ -27,7 +27,7 @@ namespace WrestlingSim.Engine
         public static double HostFactor(Wrestler? host) =>
             host is null ? 1.0 : Math.Clamp(0.85 + host.Charisma * 0.06, 0.85, 1.15);
 
-        public RumbleDrawResult Execute(RumbleDraw draw)
+        public RumbleDrawResult Execute(RumbleDraw draw, DateOnly? on = null)
         {
             var errors = draw.Validate();
             if (errors.Count > 0)
@@ -41,7 +41,7 @@ namespace WrestlingSim.Engine
             plan.DrawNumbers(seed, draw.Rigged);
 
             var profiles = plan.Field.ToDictionary(
-                e => e.Wrestler, e => new PerformerProfile(e.Wrestler));
+                e => e.Wrestler, e => new PerformerProfile(e.Wrestler, on));
 
             var commentary = new List<string>();
             var pulls      = new List<RumblePull>();

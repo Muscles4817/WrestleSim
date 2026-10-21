@@ -373,6 +373,13 @@ namespace WrestlingSim.Engine
             public double Familiarity { get; init; } = 1.0;
 
             /// <summary>
+            /// The night this is happening, or null when the caller did not say. Read by
+            /// the injury roll for <see cref="AgeCurve"/>; the profiles already had it
+            /// applied when they were built.
+            /// </summary>
+            public DateOnly? Date { get; init; }
+
+            /// <summary>
             /// Crowd energy the gimmick puts in the room — negative when the story did not
             /// earn it. See <see cref="StipulationRules.StakesBonus"/>.
             /// </summary>
@@ -808,10 +815,16 @@ namespace WrestlingSim.Engine
         /// the audience on the night, not of the booking. A card written six weeks out
         /// must be graded against how stale the pairing is when it actually goes on, and
         /// a plan the player never runs should not carry a stale reading around with it.
+        ///
+        /// <paramref name="on"/> is the night it happens, and it exists for the same
+        /// reason: how old everybody is on the night is a fact about the world, not about
+        /// the booking. Null means no aging curve, which is the reading this engine gave
+        /// before one existed.
         /// </summary>
         public MatchEngineResult Execute(MatchPlan plan, double familiarity = 1.0,
                                          int? daysSinceStipulation = null,
-                                         PromotionTier tier = PromotionTier.Established)
+                                         PromotionTier tier = PromotionTier.Established,
+                                         DateOnly? on = null)
         {
             var errors = plan.Validate();
             if (errors.Any())
@@ -826,7 +839,8 @@ namespace WrestlingSim.Engine
             {
                 Plan        = plan,
                 State       = state,
-                Profiles    = plan.AllParticipants.ToDictionary(w => w, w => new PerformerProfile(w)),
+                Profiles    = plan.AllParticipants.ToDictionary(w => w, w => new PerformerProfile(w, on)),
+                Date        = on,
                 Familiarity = Math.Clamp(familiarity, 0.0, 1.5),
 
                 // Computed here rather than passed in as a number, so the whole rule lives
@@ -889,7 +903,7 @@ namespace WrestlingSim.Engine
                 double risk = InjuryRisk.PerBeat(
                     wrestler, beat.Intensity, ctx.State.BeatIndex,
                     ctx.For(wrestler).BaseConditioning,
-                    ctx.Opponent(wrestler), tier, part);
+                    ctx.Opponent(wrestler), tier, part, ctx.Date);
 
                 if (_injuryRand.NextDouble() >= risk) continue;
 
