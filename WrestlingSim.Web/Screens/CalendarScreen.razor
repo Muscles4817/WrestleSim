@@ -4,17 +4,12 @@
 
 @if (State.Career is not { } career)
 {
-    <div class="empty"><div class="empty__mark">★</div>No career loaded.</div>
+    <div class="empty"><div class="empty__mark"><Icon Name="star" /></div>No career loaded.</div>
 }
 else
 {
     <div class="screen__head">
-        <div class="screen__eyebrow">Calendar</div>
         <h1 class="screen__title">@MonthStart.ToString("MMMM yyyy")</h1>
-        <p class="screen__lede">
-            Today is @career.CurrentDate.ToString("d MMMM yyyy"). A show on the calendar is a
-            commitment — the clock will not move past one until it has been run.
-        </p>
     </div>
 
     <div class="row row--between">
@@ -70,7 +65,7 @@ else
             @if (shows.Count == 0)
             {
                 <div class="empty">
-                    <div class="empty__mark">◷</div>
+                    <div class="empty__mark"><Icon Name="clock" /></div>
                     Nothing on this date.
                 </div>
             }
@@ -105,7 +100,7 @@ else
                             @if (!show.HasRun)
                             {
                                 <button class="btn btn--icon btn--danger" title="Take off the calendar"
-                                        @onclick="() => State.CancelShowAsync(show)">✕</button>
+                                        @onclick="() => State.CancelShowAsync(show)"><Icon Name="close" /></button>
                             }
                         </div>
                     </div>

@@ -341,9 +341,10 @@ a { color: var(--gold); }
   .chip:hover:not(:disabled) { background: var(--panel-3); color: var(--ink); }
 }
 .chip.is-active {
-  background: rgba(245, 185, 59, .13);
-  border-color: rgba(245, 185, 59, .4);
+  background: rgba(245, 185, 59, .16);
+  border-color: rgba(245, 185, 59, .65);
   color: var(--gold-2);
+  box-shadow: inset 0 -2px 0 var(--gold);
 }
 .chip:focus-visible { outline: none; box-shadow: var(--ring); }
 
@@ -704,17 +705,37 @@ a { color: var(--gold); }
 }
 .pick:active:not(:disabled) { transform: translateY(1px); }
 .pick:focus-visible { outline: none; box-shadow: var(--ring); }
+/* Gold means six things in this app — selected, important, branded, warning, score,
+   positive result — so on its own it cannot carry selection. The filled edge is the
+   structural signal, and it survives greyscale and every form of colour blindness. */
 .pick.is-selected {
-  border-color: rgba(245, 185, 59, .55);
-  background: rgba(245, 185, 59, .09);
+  border-color: rgba(245, 185, 59, .7);
+  background: rgba(245, 185, 59, .1);
+  box-shadow: inset 3px 0 0 var(--gold);
 }
-.pick:disabled { opacity: .45; cursor: not-allowed; }
+.pick.is-selected .pick__name::after {
+  content: "Selected";
+  font-family: var(--display); font-weight: 800; font-size: 10.5px;
+  letter-spacing: .16em; text-transform: uppercase;
+  color: var(--gold); margin-left: 9px; vertical-align: .08em;
+}
+
+/* Disabled at .45 made the explanation unreadable. Dim the furniture, keep the words:
+   a disabled option still has to say why it is disabled. */
+.pick:disabled { cursor: not-allowed; background: var(--panel); border-color: var(--line-soft); }
+.pick:disabled .pick__name { color: var(--muted); }
+.pick:disabled .pick__desc { color: var(--ink-2); opacity: .8; }
+.pick:disabled .pick__meta { color: var(--faint); }
 
 .pick__body { flex: 1; min-width: 0; }
 .pick__name { font-weight: 700; font-size: 14.5px; }
-.pick__desc { color: var(--muted); font-size: 13px; margin-top: 3px; line-height: 1.45; }
+/* --ink-2, not --muted. This is the text that says what an option does, and on the
+   structure and beat-library lists it is the only thing that does — a review could not
+   read the disabled ones at all, which is the worst case because their text is the bit
+   that tells you how to unlock them. */
+.pick__desc { color: var(--ink-2); font-size: 13.5px; margin-top: 4px; line-height: 1.5; }
 .pick__meta {
-  font-size: 12px; color: var(--faint); font-variant-numeric: tabular-nums;
+  font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums;
   white-space: pre-line;      /* honours the line breaks the callers supply */
   text-align: right; padding-top: 2px; flex: none;
 }
@@ -807,10 +828,14 @@ table.data tr:last-child td { border-bottom: 0; }
 
 .stars { display: inline-flex; align-items: center; gap: 10px; }
 .stars__marks { height: clamp(22px, 3.4vw, 32px); width: auto; display: block; }
-/* currentColor, not --gold: the band colour is set on the <svg> by the grade class,
-   and painting the marks gold regardless is precisely the thing the component comment
-   says was wrong — five stars and two in the same triumphant colour. */
-.stars__on  { fill: currentColor; }
+/* Gold, always — and the reason it is safe now is the empty stars.
+   The old glyph rating drew *only* the stars it had earned, so two stars and five
+   were the same colour and the same shape and differed by width alone, which is
+   what made a uniform gold read as a triumph whatever happened; the band colour was
+   the fix. Drawn marks always show all five, so a two-star match now reads as three
+   hollow stars at a glance and the comparison is in the drawing rather than the hue.
+   The band still has the verdict word beside it, which carries its own colour. */
+.stars__on  { fill: var(--gold); }
 .stars__off { fill: var(--panel-3); }
 /* The glow is the Classic band's alone — see the component comment. */
 .stars__marks.grade--classic .stars__on { filter: drop-shadow(0 0 7px rgba(245, 185, 59, .55)); }
@@ -835,6 +860,13 @@ table.data tr:last-child td { border-bottom: 0; }
   font-size: 11px; letter-spacing: .2em; text-transform: uppercase;
   color: var(--gold); font-weight: 800;
 }
+/* ── Icons ──────────────────────────────────────────────────────────────────
+   Sized from the font size so an icon beside a word is the height of that word,
+   and never needs a magic pixel value per site. */
+.icon { width: 1em; height: 1em; display: inline-block; vertical-align: -.125em; flex: none; }
+.icon--lg { width: 1.5em; height: 1.5em; }
+.btn .icon { vertical-align: -.16em; }
+
 /* ── Broadcast furniture ─────────────────────────────────────────────────────
    The result page was five progress bars and a heading: a form-submission
    summary for the one thing the whole mode builds toward. These are the parts
@@ -1073,10 +1105,13 @@ table.data tr:last-child td { border-bottom: 0; }
 
 /* ── Utility ─────────────────────────────────────────────────────────────── */
 
-.muted { color: var(--muted); }
-.faint { color: var(--faint); }
+/* These two were doing most of the illegibility between them: --muted on anything
+   instructional, --faint on anything secondary. The tokens move rather than every site,
+   so the whole app lifts at once, and --faint stays reserved for genuine furniture. */
+.muted { color: var(--ink-2); }
+.faint { color: var(--muted); }
 .gold  { color: var(--gold); }
-.small { font-size: 12.5px; }
+.small { font-size: 13px; }
 .tabnum { font-variant-numeric: tabular-nums; }
 
 /* ── How good it was ───────────────────────────────────────────────────────
@@ -1521,8 +1556,10 @@ table.data tr:last-child td { border-bottom: 0; }
   padding: 6px 0;
 }
 .beat-row__name { font-weight: 700; font-size: 15px; }
-.beat-row__sub  { font-size: var(--t-sm); color: var(--muted); }
-.beat-row__move { display: flex; gap: 4px; }
+/* The row's only description of the beat. It was --muted at 12.5px, which a review
+   could not read, on the screen where the beats are edited. */
+.beat-row__sub  { font-size: 13px; color: var(--ink-2); }
+.beat-row__move { display: flex; gap: 6px; }
 .beat-row__body:focus-visible { outline: none; box-shadow: var(--ring); }
 .beat-row.is-opening { border-left: 3px solid var(--gold-dim); }
 .beat-row.is-finish  { border-left: 3px solid var(--gold); }

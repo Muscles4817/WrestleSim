@@ -15,7 +15,7 @@
         @foreach (var change in Ordered)
         {
             <div class="editor-row">
-                <div class="editor-row__n">@(change.OvernessDelta >= 0 ? "▲" : "▼")</div>
+                <div class="editor-row__n"><Icon Name="@(change.OvernessDelta >= 0 ? "up" : "down")" /></div>
                 <div>
                     <div class="editor-row__name">@change.Wrestler.RingName</div>
                     <div class="editor-row__sub">@change.Reason</div>

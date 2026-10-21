@@ -29,7 +29,6 @@
 
 <div class="tiles">
     <button class="tile" @onclick="() => State.Go(Screen.NewSave)">
-        <div class="tile__key">01</div>
         <div class="tile__name">New Career</div>
         <div class="tile__desc">
             Name a promotion, pick where it sits in the industry, and start booking against a calendar.
@@ -37,7 +36,6 @@
     </button>
 
     <button class="tile" @onclick="State.EnterExhibition">
-        <div class="tile__key">02</div>
         <div class="tile__name">Exhibition</div>
         <div class="tile__desc">
             Book a one-off match, segment or card with no save and no clock. Nothing persists —
@@ -56,7 +54,7 @@
     @if (State.Slots.Count == 0)
     {
         <div class="empty">
-            <div class="empty__mark">◷</div>
+            <div class="empty__mark"><Icon Name="clock" /></div>
             No careers yet. Start one above, or import a save file.
         </div>
     }
@@ -78,7 +76,7 @@
                         Continue
                     </button>
                     <button class="btn btn--icon btn--danger" title="Delete this career"
-                            @onclick="() => Delete(slot)">✕</button>
+                            @onclick="() => Delete(slot)"><Icon Name="close" /></button>
                 </div>
             </div>
 

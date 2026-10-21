@@ -15,7 +15,7 @@
         @foreach (var update in Updates)
         {
             <div class="editor-row @(update.Event == TitleEvent.Changed ? "is-finish" : "")">
-                <div class="editor-row__n">@Glyph(update.Event)</div>
+                <div class="editor-row__n"><Icon Name="@Mark(update.Event)" /></div>
                 <div>
                     <div class="editor-row__name">
                         @update.Title.Name
@@ -41,14 +41,15 @@
 @code {
     [Parameter, EditorRequired] public List<TitleUpdate> Updates { get; set; } = new();
 
-    private static string Glyph(TitleEvent e) => e switch
+    /// <summary>An icon name, not a glyph — see Icon.razor for why the set exists.</summary>
+    private static string Mark(TitleEvent e) => e switch
     {
-        TitleEvent.Changed                 => "★",
-        TitleEvent.Filled                  => "★",
-        TitleEvent.Vacated                 => "○",
-        TitleEvent.NonTitleLoss            => "▼",
-        TitleEvent.RetainedOnATechnicality => "≈",
-        _                                  => "▲"
+        TitleEvent.Changed                 => "star",
+        TitleEvent.Filled                  => "star",
+        TitleEvent.Vacated                 => "vacant",
+        TitleEvent.NonTitleLoss            => "down",
+        TitleEvent.RetainedOnATechnicality => "steady",
+        _                                  => "up"
     };
 
     /// <summary>

@@ -4,18 +4,13 @@
 
 @if (State.Career is not { } career)
 {
-    <div class="empty"><div class="empty__mark">★</div>No career loaded.</div>
+    <div class="empty"><div class="empty__mark"><Icon Name="star" /></div>No career loaded.</div>
 }
 else
 {
     <div class="screen__head">
         <div class="screen__eyebrow">@career.Promotion.TierLabel</div>
         <h1 class="screen__title">@career.Promotion.Name</h1>
-        <p class="screen__lede">
-            @career.CurrentDate.ToString("dddd d MMMM yyyy")
-            · week @(career.WeeksElapsed + 1)
-            · @career.Completed.Count() show@(career.Completed.Count() == 1 ? "" : "s") run
-        </p>
     </div>
 
     @if (State.SaveMessage is { } message)
@@ -170,7 +165,7 @@ else
         @foreach (var title in career.Titles.ByPrestige)
         {
             <div class="editor-row">
-                <div class="editor-row__n">@(title.IsVacant ? "○" : "★")</div>
+                <div class="editor-row__n"><Icon Name="@(title.IsVacant ? "vacant" : "star")" /></div>
                 <div>
                     <div class="editor-row__name">
                         @(title.CurrentReign?.ChampionName ?? "Vacant")
@@ -216,7 +211,7 @@ else
         @if (State.ActiveFeudCount == 0)
         {
             <div class="empty">
-                <div class="empty__mark">✕</div>
+                <div class="empty__mark"><Icon Name="close" /></div>
                 Nobody has any history yet. Book a segment on your next show — a betrayal or a
                 beatdown generates the most heat — and the rivalry will show up here.
             </div>

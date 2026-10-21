@@ -4,11 +4,6 @@
 <div class="screen__head">
     <div class="screen__eyebrow">@State.Roster.Count under contract</div>
     <h1 class="screen__title">Roster</h1>
-    <p class="screen__lede">
-        Crowd disposition is derived from popularity and per-fan-group appeal rather than
-        alignment, which is why a heel can still read as beloved. Connection and workrate
-        are separate axes — the best worker on the roster is not the biggest draw.
-    </p>
 </div>
 
 <div class="searchbar">
@@ -26,7 +21,7 @@
 @if (!Filtered.Any())
 {
     <div class="empty">
-        <div class="empty__mark">★</div>
+        <div class="empty__mark"><Icon Name="star" /></div>
         Nobody matches “@query”.
     </div>
 }
@@ -90,11 +85,11 @@
                    wrestler in a sling does not also need telling he is tired. *@
                 @if (w.Injury is { } injury && injury.KeepsOut(Today))
                 {
-                    <div class="rcard__out">🩹 @injury.Describe(Today)</div>
+                    <div class="rcard__out"><Icon Name="injury" /> @injury.Describe(Today)</div>
                 }
                 else if (RingCondition.WarningFor(w) is { } condition)
                 {
-                    <div class="rcard__warn">⚠ @condition</div>
+                    <div class="rcard__warn"><Icon Name="warn" /> @condition</div>
                 }
 
                 @if (w.InjuryHistory.Count > 0)
@@ -136,7 +131,8 @@
                 }
 
                 <button class="rcard__toggle" @onclick="() => Toggle(w.RingName)">
-                    @(expanded.Contains(w.RingName) ? "Hide ring skills ▲" : "Ring skills ▼")
+                    @(expanded.Contains(w.RingName) ? "Hide ring skills" : "Ring skills")
+                    <Icon Name="@(expanded.Contains(w.RingName) ? "up" : "down")" />
                 </button>
 
                 @if (expanded.Contains(w.RingName))

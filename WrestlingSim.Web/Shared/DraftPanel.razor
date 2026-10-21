@@ -13,10 +13,6 @@
         Round @Board.Round · @Board.Picks.Count of @(Board.Picks.Count + Board.Available.Count) picked
     </div>
     <h1 class="screen__title">The draft</h1>
-    <p class="screen__lede">
-        Every roster is refreshed at once. Pairings go back to fresh, feuds the draft
-        separates end, and brand membership means something again for a while.
-    </p>
 </div>
 
 <div class="panel">
@@ -100,7 +96,7 @@
     <button class="btn btn--ghost" @onclick="State.CancelDraft">← Abandon the draft</button>
     <span class="wizard-bar__spacer"></span>
     <button class="btn btn--primary" disabled="@(!Board.Complete)" @onclick="State.CompleteDraftAsync">
-        Confirm the draft ◫
+        Confirm the draft
     </button>
 </div>
 

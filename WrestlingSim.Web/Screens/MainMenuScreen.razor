@@ -14,7 +14,6 @@
     @foreach (var tile in Tiles)
     {
         <button class="tile" @onclick="() => State.Go(tile.Screen)">
-            <div class="tile__key">@tile.Key</div>
             <div class="tile__name">@tile.Name</div>
             <div class="tile__desc">@tile.Desc</div>
         </button>
@@ -59,19 +58,19 @@ else
 </div>
 
 @code {
-    private static readonly (Screen Screen, string Key, string Name, string Desc)[] Tiles =
+    private static readonly (Screen Screen, string Name, string Desc)[] Tiles =
     [
-        (Screen.Match, "01", "Book a Match",
+        (Screen.Match, "Book a Match",
             "Pick two wrestlers, say what the match is for, and the game writes the beats. Edit them if you want to."),
-        (Screen.Segment, "02", "Book a Segment",
+        (Screen.Segment, "Book a Segment",
             "Promos, confrontations, beatdowns and turns. This is how feuds actually get built."),
-        (Screen.Show, "03", "Book a Show",
+        (Screen.Show, "Book a Show",
             "Assemble a full card in running order against a runtime budget. Position and pacing both matter."),
-        (Screen.Rumble, "04", "Battle Royal",
+        (Screen.Rumble, "Battle Royal",
             "Over the top rope. A Rumble with timed entries or everybody in at once — judged on moments rather than on work."),
-        (Screen.Roster, "05", "View Roster",
+        (Screen.Roster, "View Roster",
             "Overness, ring skills, charisma and gimmick for everyone on the books."),
-        (Screen.Feuds, "06", "Feud Book",
+        (Screen.Feuds, "Feud Book",
             "Every rivalry you have going, how hot it is, and what it has unlocked."),
     ];
 }

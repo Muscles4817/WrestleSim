@@ -5,7 +5,7 @@
     @foreach (var (index, label) in StepLabels)
     {
         <div class="step @(step == index ? "is-current" : step > index ? "is-done" : "")">
-            <span class="step__n">@(step > index ? "✓" : (index + 1).ToString())</span>
+            <span class="step__n">@if (step > index) { <Icon Name="check" /> } else { @(index + 1) }</span>
             <span>@label</span>
         </div>
     }
@@ -314,11 +314,11 @@
                     }
 
                     <button class="btn btn--icon btn--ghost" disabled="@(i == 0)"
-                            title="Move up" @onclick="() => MoveAction(i, -1)">↑</button>
+                            title="Move up" @onclick="() => MoveAction(i, -1)"><Icon Name="up" /></button>
                     <button class="btn btn--icon btn--ghost" disabled="@(i == segment.Actions.Count - 1)"
-                            title="Move down" @onclick="() => MoveAction(i, 1)">↓</button>
+                            title="Move down" @onclick="() => MoveAction(i, 1)"><Icon Name="down" /></button>
                     <button class="btn btn--icon btn--danger" title="Remove"
-                            @onclick="() => segment.Actions.Remove(action)">✕</button>
+                            @onclick="() => segment.Actions.Remove(action)"><Icon Name="close" /></button>
                 </div>
             </div>
         }

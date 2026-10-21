@@ -4,12 +4,7 @@
 @if (result is null)
 {
     <div class="screen__head">
-        <div class="screen__eyebrow">Beat by beat</div>
         <h1 class="screen__title">Book a Match</h1>
-        <p class="screen__lede">
-            The engine does not decide who wins — you do, with the finish beat. It scores how
-            well the story you booked landed with the crowd.
-        </p>
     </div>
 
     <MatchBuilder OnDone="Run" OnCancel="@(() => State.Go(Screen.Exhibition))" ConfirmLabel="Run the match ★" />

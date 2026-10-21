@@ -6,7 +6,7 @@
     @foreach (var (index, label) in StepLabels)
     {
         <div class="step @(step == index ? "is-current" : step > index ? "is-done" : "")">
-            <span class="step__n">@(step > index ? "✓" : (index + 1).ToString())</span>
+            <span class="step__n">@if (step > index) { <Icon Name="check" /> } else { @(index + 1) }</span>
             @* Wrapped, so the mobile rule that collapses these pills to numerals applies
                here too. Without the span, this screen showed every label while the match
                and segment builders showed one — the same component behaving two ways. *@
@@ -104,7 +104,7 @@ else if (step == 1)
     @if (shows.Count == 0)
     {
         <div class="empty">
-            <div class="empty__mark">◷</div>
+            <div class="empty__mark"><Icon Name="clock" /></div>
             No shows defined. You can start with none and put dates on the calendar by hand,
             but most promotions run something on a rhythm.
         </div>
@@ -134,7 +134,7 @@ else
 
         @if (shows.Count == 0)
         {
-            <div class="empty"><div class="empty__mark">◷</div>Nothing scheduled. The calendar starts empty.</div>
+            <div class="empty"><div class="empty__mark"><Icon Name="clock" /></div>Nothing scheduled. The calendar starts empty.</div>
         }
 
         @foreach (var definition in shows)
@@ -160,7 +160,7 @@ else
         <div class="panel__title">First month</div>
         @if (Preview.Count == 0)
         {
-            <div class="empty"><div class="empty__mark">◷</div>Nothing falls in the first month.</div>
+            <div class="empty"><div class="empty__mark"><Icon Name="clock" /></div>Nothing falls in the first month.</div>
         }
         else
         {

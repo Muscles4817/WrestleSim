@@ -3,7 +3,7 @@
 @if (State.Career is not { } career)
 {
     <div class="empty">
-        <div class="empty__mark">🏆</div>
+        <div class="empty__mark"><Icon Name="trophy" /></div>
         Championships belong to a promotion. Start or open a save.
     </div>
 }
@@ -15,10 +15,6 @@ else
     <div class="screen__head">
         <div class="screen__eyebrow">@career.Promotion.Name</div>
         <h1 class="screen__title">Championships</h1>
-        <p class="screen__lede">
-            A belt is a prop. What a title is worth is what the audience believes about it —
-            who has held it, how hard it was to win, and how it is defended.
-        </p>
     </div>
 
     @* ── The fixed pool ──────────────────────────────────────────────────── *@
