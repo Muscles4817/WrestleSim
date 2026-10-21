@@ -1024,8 +1024,9 @@ namespace WrestlingSim.Engine
 
             var result = new BeatResult
             {
-                BeatType = beat.Type,
-                Control  = beat.Control
+                BeatType        = beat.Type,
+                Control         = beat.Control,
+                DurationMinutes = beat.DurationMinutes
             };
 
             double iMod = beat.IntensityModifier;

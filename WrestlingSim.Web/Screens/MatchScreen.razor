@@ -193,7 +193,13 @@ else
     <div class="wizard-bar">
         <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Exhibition)">← Main menu</button>
         <span class="wizard-bar__spacer"></span>
-        <button class="btn" @onclick="RunAgain">Run the same plan again</button>
+        @* "Run the same plan again" invited the reading that re-rolling is a strategy. The
+           engine has per-beat performance variance, so the same plan genuinely lands
+           differently twice — which is worth saying, because it is the difference between
+           a dice roll and a second take. *@
+        <button class="btn" @onclick="RunAgain" title="The booking is identical; the performances are not">
+            Run again with new variance
+        </button>
         <button class="btn btn--primary" @onclick="Reset">Book another match</button>
     </div>
 }

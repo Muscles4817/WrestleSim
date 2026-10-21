@@ -969,21 +969,101 @@ table.data tr:last-child td { border-bottom: 0; }
 
 /* ── Play by play ────────────────────────────────────────────────────────── */
 
-.pbp { display: grid; gap: 14px; }
-.pbp__beat { border-left: 2px solid var(--line); padding: 2px 0 2px 16px; }
-.pbp__beat.is-finish { border-left-color: var(--gold); }
-.pbp__beat.is-opening { border-left-color: var(--cyan); }
+.pbp { display: grid; gap: 2px; }
+
+/* Each beat arrives. The transform is small on purpose — a beat that slides in from far
+   away reads as a notification rather than as the next thing that happened. The global
+   prefers-reduced-motion block below flattens the duration to nothing, and the component
+   also skips the whole sequence in that case, so this is belt and braces. */
+@keyframes beat-in {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: none; }
+}
+.pbp__beat--in { animation: beat-in .22s ease-out both; }
+
+.pbp__skip { float: right; margin: -4px 0 6px 12px; }
+
+/* The rating lands rather than being simply present. One beat of attention on the one
+   number the whole mode is building toward. */
+@keyframes verdict-in {
+  from { opacity: 0; transform: scale(.94); }
+  to   { opacity: 1; transform: none; }
+}
+.verdict { animation: verdict-in .34s cubic-bezier(.2, .9, .3, 1.2) both .12s; }
+
+/* A clock column and a rail, so the beats read as one continuous match rather than as
+   six separate paragraphs. The rail is drawn on the body and not the row, so it stops
+   at the last beat instead of running into the panel's padding. */
+.pbp__beat { display: grid; grid-template-columns: 58px 1fr; gap: 14px; }
+.pbp__clock {
+  font-family: var(--display); font-weight: 700; font-size: 15px;
+  letter-spacing: .04em; color: var(--muted); text-align: right;
+  padding-top: 2px; font-variant-numeric: tabular-nums;
+}
+.pbp__body {
+  border-left: 2px solid var(--line); padding: 2px 0 20px 16px; position: relative;
+}
+.pbp__beat:last-child .pbp__body { padding-bottom: 2px; }
+.pbp__body::before {
+  content: ""; position: absolute; left: -6px; top: 6px;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--bg-2); border: 2px solid var(--line);
+}
+.pbp__beat.is-finish  .pbp__body,
+.pbp__beat.is-finish  .pbp__body::before { border-color: var(--gold); }
+.pbp__beat.is-opening .pbp__body,
+.pbp__beat.is-opening .pbp__body::before { border-color: var(--cyan); }
+.pbp__beat.is-finish  .pbp__clock { color: var(--gold); }
+
 .pbp__label {
-  font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase;
-  font-weight: 800; color: var(--gold); margin-bottom: 5px;
+  font-family: var(--display); font-size: 13px; letter-spacing: .16em;
+  text-transform: uppercase; font-weight: 800; color: var(--gold);
+  margin-bottom: 5px; display: flex; align-items: center; gap: 10px;
 }
 .pbp__beat.is-opening .pbp__label { color: var(--cyan); }
-.pbp__line { color: var(--ink-2); margin-bottom: 3px; }
-.pbp__stats {
-  font-family: var(--mono); font-size: 11.5px; color: var(--faint);
-  margin-top: 6px; display: flex; gap: 14px; flex-wrap: wrap;
+.pbp__flag {
+  font-size: 11.5px; letter-spacing: .12em; color: var(--gold-2);
+  display: inline-flex; align-items: center; gap: 4px;
 }
-.pbp__stats b { color: var(--ink-2); font-weight: 600; }
+.pbp__line { color: var(--ink); margin-bottom: 3px; }
+
+/* The one number a person in the building would have, as a movement rather than a
+   reading. Everything else is in the disclosure below. */
+.pbp__crowd {
+  font-family: var(--display); font-weight: 600; font-size: 13.5px;
+  letter-spacing: .06em; text-transform: uppercase;
+  margin-top: 7px; display: inline-flex; align-items: center; gap: 6px;
+  color: var(--muted);
+}
+.pbp__crowd b { font-weight: 800; }
+.pbp__crowd.is-up   { color: var(--face); }
+.pbp__crowd.is-down { color: var(--heel); }
+
+.pbp__details { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 12px; }
+.pbp__details > summary {
+  cursor: pointer; font-family: var(--display); font-weight: 700;
+  font-size: 13px; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--muted); list-style: none;
+}
+.pbp__details > summary::-webkit-details-marker { display: none; }
+.pbp__details > summary::before { content: "▸ "; }
+.pbp__details[open] > summary::before { content: "▾ "; }
+.pbp__details > summary:hover { color: var(--ink-2); }
+.pbp__table { margin-top: 12px; font-size: 12.5px; }
+.pbp__trow {
+  display: grid; grid-template-columns: 1.6fr 1fr .8fr .6fr .6fr; gap: 10px;
+  padding: 5px 0; border-bottom: 1px solid var(--line-soft); color: var(--ink-2);
+}
+.pbp__trow--head {
+  color: var(--muted); font-family: var(--display); font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase; font-size: 11.5px;
+}
+
+@media (max-width: 560px) {
+  .pbp__beat { grid-template-columns: 44px 1fr; gap: 10px; }
+  .pbp__trow { grid-template-columns: 1.4fr 1fr .7fr; }
+  .pbp__trow > :nth-child(n+4) { display: none; }
+}
 
 /* ── Wizard steps ────────────────────────────────────────────────────────── */
 
