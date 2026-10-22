@@ -31,8 +31,23 @@ namespace WrestlingSim.Models
         /// it themselves, and the warning left the two minutes off — so a booker could be
         /// told a match fit and then watch the card overrun by exactly the entrances.
         /// </summary>
-        public static int RuntimeOf(IEnumerable<MatchBeat> beats) =>
-            2 + beats.Sum(b => b.DurationMinutes);
+        public static int RuntimeOf(IEnumerable<MatchBeat> beats)
+        {
+            int worked = beats.Sum(b => b.DurationMinutes);
+
+            // Nothing booked costs nothing. This used to return the bare two minutes, so a
+            // brief with no sheet written yet reported "0 beats · 2 min" — an absurdity on
+            // its face, and the thing that made a reviewer go looking for where the two
+            // minutes came from in the first place.
+            return worked == 0 ? 0 : worked + EntranceMinutes;
+        }
+
+        /// <summary>
+        /// The walk to the ring and the bell, which every match pays and no beat accounts
+        /// for. Named rather than a literal 2 because the figure is shown to the player now:
+        /// a total that cannot be reconciled with the rows above it reads as a bug.
+        /// </summary>
+        public const int EntranceMinutes = 2;
 
         /// <summary>
         /// What a planned-but-uncast match is assumed to cost, so the runtime meter is worth
