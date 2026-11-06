@@ -681,5 +681,61 @@ namespace WrestlingSim.Tests
                 Assert.False(string.IsNullOrWhiteSpace(phase.Why));
             }
         }
+
+        /// <summary>
+        /// The reason travels on the beat, not only on the phase beside it.
+        ///
+        /// The beat editor works on clones of the written beats and can reorder, add and
+        /// remove them, so neither reference identity nor position survives to look a phase
+        /// up by afterwards. With the job left on WrittenPhase alone, the brief step showed
+        /// "CUT-OFF · Cut-Off · The turn · Becky Lynch" and the editor one click later
+        /// showed the same beat as four unlabelled values.
+        /// </summary>
+        [Fact]
+        public void EveryWrittenBeatCarriesItsOwnPhaseAndReason()
+        {
+            var brief = new MatchBrief { Story = MatchStory.Grudge, Length = MatchScale.BigMatch };
+            var got   = BriefDirector.Write(brief, Two());
+
+            foreach (var phase in got.Phases)
+            {
+                Assert.Equal(phase.Phase, phase.Beat.Phase);
+                Assert.Equal(phase.Why,   phase.Beat.Why);
+            }
+        }
+
+        /// <summary>
+        /// And survives the clone, which is the step between the written match and the
+        /// editor. A field missing from Clone is a field silently dropped on the way to the
+        /// booking — which has happened before, to <c>Against</c>.
+        /// </summary>
+        [Fact]
+        public void CloningABeatKeepsThePhaseAndTheReason()
+        {
+            var brief = new MatchBrief { Story = MatchStory.FaceInPeril, Length = MatchScale.Workhorse };
+            var got   = BriefDirector.Write(brief, Two());
+
+            foreach (var original in got.Beats)
+            {
+                var copy = original.Clone();
+                Assert.Equal(original.Phase, copy.Phase);
+                Assert.Equal(original.Why,   copy.Why);
+            }
+        }
+
+        /// <summary>
+        /// A beat added by hand has no phase, and the editor says so rather than inventing
+        /// a job for it. Pinned because the obvious "fix" for a blank column is to guess one
+        /// from the beat type, which would tell the booker the grammar placed something it
+        /// did not.
+        /// </summary>
+        [Fact]
+        public void ABeatTakenStraightFromTheLibraryHasNoPhase()
+        {
+            var beat = BeatLibrary.Find("Hope Spot")!.ToMatchBeat(BeatControl.WrestlerA);
+
+            Assert.Null(beat.Phase);
+            Assert.Null(beat.Why);
+        }
     }
 }

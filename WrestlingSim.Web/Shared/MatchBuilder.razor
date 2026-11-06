@@ -22,6 +22,19 @@
     </div>
 </div>
 
+@* ── The booking, as it stands ────────────────────────────────────────────
+   Context used to evaporate at the step that produced it. By the beats step a
+   booker could see the two names and the feud and nothing else — not the belt,
+   not the brief they had just written, not who was going over — so five steps
+   read as five disconnected forms rather than one booking being assembled.
+
+   A rail on desktop, where the review pointed out there is a column of empty
+   space either side of a narrow page doing nothing; a strip above the content
+   on a phone, where there is no such space to spend. Same component, same
+   fields, placed by CSS. *@
+<div class="build">
+<div class="build__main">
+
 @* The second place it is said, and it follows you through the wizard rather than
    waiting at the end.
 
@@ -116,8 +129,6 @@
     <div class="panel">
         <div class="panel__title">
             Who is in it
-            <span class="spacer"></span>
-            <span class="small muted">Side A wins by default in every preset</span>
         </div>
 
         <div class="lineup @(sideCount > 2 ? "lineup--multi" : "")">
@@ -887,6 +898,13 @@
             <span class="small muted">@RuntimeLabel · @beats.Count beats</span>
         </div>
 
+        @* The list says what the beats are; this says what shape they make. *@
+        <BeatCurve Beats="@beats"
+                   Above="@NameOfSide(0)"
+                   Below="@(sideCount > 1 ? NameOfSide(1) : "")"
+                   SideOf="@(b => Models.MatchPlan.MatchPlan.SideIndex(b.Control))"
+                   BeatName="@(b => BeatTypeName(b.Type))" />
+
         @* One row, one tap target.
            Below 640px each row used to become a stacked card carrying three full-width
            native selects plus three icon buttons — about 200px a beat, so a seven-beat
@@ -901,13 +919,31 @@
             @* A place to insert, rather than "add at the end and press ↑ six times". *@
             <button class="beat-gap" title="Insert a beat here" @onclick="() => OpenLibraryAt(i)">+</button>
 
-            <div class="beat-row @(beat.IsFinish ? "is-finish" : beat.IsOpening ? "is-opening" : "")">
+            @* The row the brief step was already drawing, with the controls added.
+               It used to read "Becky Lynch · Medium · Brief · 1 min" — four values, none
+               labelled, one of them ("Brief") saying the same thing as the next ("1 min"),
+               on the screen where beats are actually edited. One click earlier the same
+               beat was "CUT-OFF · Cut-Off · The turn · Becky Lynch". The editor was
+               strictly less informative than the read-only preview of itself. *@
+            <div class="beat-row @(beat.IsFinish ? "is-finish" : beat.IsOpening ? "is-opening" : "") @(beat.Phase is null ? "is-added" : "")">
                 <div class="beat-row__n">@(i + 1)</div>
+                <div class="beat-row__phase">
+                    @(beat.Phase is { } ph ? PhaseLabel(ph) : "ADDED")
+                </div>
                 <button class="beat-row__body" @onclick="() => OpenBeatSheet(beat)">
                     <span class="beat-row__name">@BeatTypeName(beat.Type)</span>
+                    @if (beat.Why is { Length: > 0 } why)
+                    {
+                        <span class="beat-row__why">@why</span>
+                    }
                     <span class="beat-row__sub">
-                        @ControlLabel(beat.Control)@(beat.Against is { } t ? $" → {ControlLabel(t)}" : "") · @beat.Intensity · @beat.Duration · @beat.DurationMinutes min
+                        <span class="beat-row__field">
+                            <b>@ControlLabel(beat.Control)</b>@(beat.Against is { } t ? $" → {ControlLabel(t)}" : "") on top
+                        </span>
+                        <span class="beat-row__field"><b>@beat.Intensity</b> intensity</span>
+                        <span class="beat-row__field"><b>@beat.DurationMinutes min</b></span>
                     </span>
+                    <span class="beat-row__edit">Edit<Icon Name="down" /></span>
                 </button>
                 <div class="beat-row__move">
                     <button class="btn btn--icon btn--ghost" disabled="@(i == 0)"
@@ -978,6 +1014,31 @@
     </div>
 
 }
+
+</div>
+
+<aside class="build__rail">
+    <div class="rail @(railOpen ? "is-open" : "")">
+        @* A heading on desktop and a disclosure on a phone, where seven rows above the
+           controls would be most of the screen. Same element either way; CSS decides
+           whether the arrow and the collapse exist. *@
+        <button class="rail__head" @onclick="() => railOpen = !railOpen"
+                aria-expanded="@railOpen">
+            The booking
+            <Icon Name="@(railOpen ? "up" : "down")" Class="rail__chev" />
+        </button>
+        @foreach (var row in Context())
+        {
+            <button class="rail__row @(row.Set ? "" : "is-unset")"
+                    disabled="@(row.Step is null || row.Step > step)"
+                    @onclick="() => GoToStep(row.Step!.Value)">
+                <span class="rail__key">@row.Key</span>
+                <span class="rail__val">@row.Value</span>
+            </button>
+        }
+    </div>
+</aside>
+</div>
 
 @* ── Wizard controls ──────────────────────────────────────────────────── *@
 @* Sticky on mobile so Next is always reachable without scrolling past a long
@@ -1852,6 +1913,74 @@
     private List<string> errors = new();
 
     /// <summary>What this match will cost the card, read off the same rule the card uses.</summary>
+    /// <summary>One line of the rail: what it is, what it says, and where it was decided.</summary>
+    private readonly record struct ContextRow(string Key, string Value, bool Set, int? Step);
+
+    /// <summary>
+    /// The booking so far, for the rail.
+    ///
+    /// A field nobody has reached yet says so rather than rendering blank: an empty value
+    /// beside a label reads as a thing the game failed to work out, where "not chosen yet"
+    /// reads as a step still to come. Only steps already passed are clickable, because
+    /// jumping forward past a decision is how the wizard's later steps end up reading a
+    /// half-made booking.
+    /// </summary>
+    private IEnumerable<ContextRow> Context()
+    {
+        yield return new("Match", ShapeName(), true, 0);
+
+        yield return SidesComplete
+            ? new("Who", string.Join("  vs  ", Enumerable.Range(0, sideCount)
+                    .Select(i => string.Join(" & ", Members(i).Select(w => w.RingName)))), true, 0)
+            : new("Who", "not picked yet", false, 0);
+
+        if (StepApplies(TitleStep))
+            yield return title is { } belt
+                ? new("Belt", belt.Name, true, TitleStep)
+                : new("Belt", "nothing on the line", false, TitleStep);
+
+        yield return (feud ?? existingFeud) is { } f && f.Intensity > FeudIntensity.None
+            ? new("Feud", $"{f.Intensity.ToString().ToLowerInvariant()} · {f.Heat:F0} heat", true, FeudStep)
+            : new("Feud", step > FeudStep ? "nothing personal" : "not decided yet", step > FeudStep, FeudStep);
+
+        if (step >= BriefStep)
+        {
+            yield return new("Promise", BriefCritique.Name(Promised.Wants), true, BriefStep);
+            yield return SidesComplete
+                ? new("Winner", $"{NameOfSide(brief.WinningSide)} · {BriefCritique.Name(brief.Finish)}", true, BriefStep)
+                : new("Winner", "not decided yet", false, BriefStep);
+            yield return new("Length", BriefCritique.Name(brief.Length), true, BriefStep);
+        }
+
+        if (beats.Count > 0)
+            yield return new("Sheet", $"{beats.Count} beats · {RuntimeMinutes} min", true, BeatsStep);
+    }
+
+    /// <summary>What the shape is called, for the rail's first line.</summary>
+    private string ShapeName() =>
+        Shapes.FirstOrDefault(x => x.Sides == sideCount && x.Size == sideSize).Name ?? "Singles";
+
+    /// <summary>
+    /// Jump back to a step from the rail. Backwards only — see <see cref="Context"/> — and
+    /// through the same sheet-closing path the Back button uses, because a rail click that
+    /// left the roster sheet open would be the leaked-write-path bug all over again.
+    /// </summary>
+    private async Task GoToStep(int target)
+    {
+        if (target >= step) return;
+
+        openSlot = null;
+        await CloseBeatSheet();
+        step = target;
+        await Scroll.ToTopAsync();
+    }
+
+    /// <summary>
+    /// Whether the rail's strip is expanded. Only consulted below 1100px — on desktop the
+    /// rail is a column beside the wizard and is always open.
+    /// </summary>
+    private bool railOpen;
+
     private int RuntimeMinutes => Models.BookedMatch.RuntimeOf(beats);
 
     /// <summary>

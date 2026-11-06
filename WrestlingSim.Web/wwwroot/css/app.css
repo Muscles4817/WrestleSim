@@ -984,6 +984,9 @@ table.data tr:last-child td { border-bottom: 0; }
 .lessons__list li::marker { color: var(--gold); font-family: var(--display); font-weight: 800; }
 
 @media (max-width: 560px) {
+  .beat-row { grid-template-columns: 24px 1fr auto; }
+  .beat-row__phase { grid-column: 2; padding-top: 0; }
+  .beat-row__body { grid-column: 2; }
   .causes { padding-left: 0; }
   .chart__chev { display: none; }
 }
@@ -1704,8 +1707,93 @@ table.data tr:last-child td { border-bottom: 0; }
    stacked into a ~200px card — a seven-beat match was 1,400px of editor
    before you added anything, and each of the three commonest edits opened a
    full-screen wheel picker on iOS. */
+/* ── The builder's two columns ───────────────────────────────────────────────
+   A rail beside the wizard on desktop, where there is a column of empty page
+   either side doing nothing. On a phone there is no such space, so the same
+   markup becomes a collapsed strip above the content — seven rows sitting open
+   above the controls would be most of a 390px screen. */
+
+.build { display: grid; gap: clamp(14px, 2vw, 26px); align-items: start; }
+.build__main { min-width: 0; }
+
+@media (min-width: 1100px) {
+  .build { grid-template-columns: minmax(0, 1fr) 248px; }
+  .build__rail { position: sticky; top: calc(62px + var(--safe-t)); }
+}
+
+.rail {
+  border: 1px solid var(--line); border-radius: var(--r);
+  background: var(--panel); padding: 12px 4px 10px;
+}
+.rail__head {
+  font-family: var(--display); font-weight: 800; font-size: 12px;
+  letter-spacing: .22em; text-transform: uppercase; color: var(--muted);
+  padding: 0 12px 8px; width: 100%; text-align: left;
+  appearance: none; border: 0; background: none; cursor: default;
+  display: flex; align-items: center; gap: 8px;
+}
+.rail__chev { display: none; }
+.rail__row {
+  display: grid; grid-template-columns: 62px 1fr; gap: 10px; width: 100%;
+  align-items: baseline; text-align: left; padding: 7px 12px;
+  appearance: none; border: 0; background: none; color: inherit; font: inherit;
+  border-radius: var(--r-sm); cursor: pointer; transition: background .12s;
+}
+.rail__row:disabled { cursor: default; }
+.rail__row:not(:disabled):hover { background: var(--panel-2); }
+.rail__row:focus-visible { outline: none; box-shadow: var(--ring); }
+.rail__key {
+  font-family: var(--display); font-weight: 700; font-size: 11.5px;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+}
+.rail__val { font-size: 13.5px; color: var(--ink); line-height: 1.35; }
+/* A step nobody has reached says so, in the furniture colour, so it reads as
+   "still to come" rather than as a value the game failed to work out. */
+.rail__row.is-unset .rail__val { color: var(--faint); font-style: italic; }
+
+/* On a phone the rail is a strip, so it must not eat the screen before the
+   controls do. */
+@media (max-width: 1099px) {
+  /* Above the content, not below it: the rail is context for the decisions on the
+     screen, and context that arrives after them is a footnote. */
+  .build__rail { order: -1; }
+
+  .rail { display: flex; flex-wrap: wrap; gap: 2px 0; padding: 8px 4px; }
+  .rail__head { width: 100%; padding-bottom: 4px; cursor: pointer; justify-content: space-between; }
+  .rail__chev { display: inline-block; }
+  .rail__row { width: auto; grid-template-columns: auto auto; gap: 7px; padding: 5px 10px; }
+
+  /* Collapsed by default. The heading alone still says a booking is being assembled. */
+  .rail:not(.is-open) .rail__row { display: none; }
+  .rail:not(.is-open) .rail__head { padding-bottom: 0; }
+}
+
+/* ── The booked shape ────────────────────────────────────────────────────── */
+
+.curve { margin: 4px 0 14px; }
+.curve__key {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 5px;
+  font-family: var(--display); font-weight: 700; font-size: 12px;
+  letter-spacing: .12em; text-transform: uppercase;
+}
+.curve__side--a { color: var(--gold); }
+.curve__side--b { color: var(--cyan); }
+.curve__mins { color: var(--muted); }
+.curve__plot {
+  display: block; width: 100%; height: 76px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-sm);
+}
+.curve__axis { stroke: var(--line); stroke-width: .5; vector-effect: non-scaling-stroke; }
+.curve__bar.is-a      { fill: var(--gold-dim); }
+.curve__bar.is-b      { fill: #2a7d88; }
+.curve__bar.is-even   { fill: var(--panel-3); }
+.curve__bar.is-finish { fill: var(--gold); }
+
 .beat-row {
-  display: grid; grid-template-columns: 28px 1fr auto;
+  /* A phase column, so the sheet reads down the left as the shape of the match —
+     OPENING, SHINE, CUT-OFF, HEAT, COMEBACK, FINISH — rather than as six rows that
+     happen to be in an order. */
+  display: grid; grid-template-columns: 24px 74px 1fr auto;
   align-items: center; gap: 10px; min-height: 64px;
   padding: 8px 12px; border-radius: var(--r);
   border: 1px solid var(--line); background: var(--panel-2);
@@ -1720,10 +1808,41 @@ table.data tr:last-child td { border-bottom: 0; }
   background: none; border: 0; color: inherit; font: inherit; cursor: pointer;
   padding: 6px 0;
 }
+.beat-row__phase {
+  font-family: var(--display); font-weight: 800; font-size: 12px;
+  letter-spacing: .14em; color: var(--gold); align-self: start; padding-top: 8px;
+}
+/* A beat the grammar did not place. Said plainly rather than left blank, and in the
+   furniture colour so it does not read as a phase of its own. */
+.beat-row__phase:has(+ *) { }
+.beat-row.is-added .beat-row__phase { color: var(--faint); }
+
 .beat-row__name { font-weight: 700; font-size: 15px; }
+.beat-row__why  { font-size: 13px; color: var(--muted); line-height: 1.4; }
+
+/* The row is a button and never looked like one. The review read it as static output
+   and never discovered that the whole beat editor is behind it. */
+.beat-row__edit {
+  font-family: var(--display); font-weight: 700; font-size: 11.5px;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+  display: inline-flex; align-items: center; gap: 3px; margin-top: 2px;
+  opacity: 0; transition: opacity .13s;
+}
+.beat-row__edit .icon { transform: rotate(-90deg); }
+.beat-row:hover .beat-row__edit,
+.beat-row__body:focus-visible .beat-row__edit { opacity: 1; }
+@media (hover: none) { .beat-row__edit { opacity: 1; } }
 /* The row's only description of the beat. It was --muted at 12.5px, which a review
    could not read, on the screen where the beats are edited. */
-.beat-row__sub  { font-size: 13px; color: var(--ink-2); }
+/* Labelled. It was four bare values in a row — "Becky Lynch · Medium · Brief · 1 min" —
+   and the player had to remember the field order to read it, with two of the four saying
+   the same thing. */
+.beat-row__sub {
+  font-size: 13px; color: var(--ink-2);
+  display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 3px;
+}
+.beat-row__field { color: var(--muted); }
+.beat-row__field b { color: var(--ink); font-weight: 700; }
 .beat-row__move { display: flex; gap: 6px; }
 .beat-row__body:focus-visible { outline: none; box-shadow: var(--ring); }
 .beat-row.is-opening { border-left: 3px solid var(--gold-dim); }

@@ -278,7 +278,9 @@ namespace WrestlingSim.Persistence
                     Intensity     = b.Intensity,
                     Duration      = b.Duration,
                     StyleHint     = b.StyleHint,
-                    IncomingIndex = b.IncomingIndex
+                    IncomingIndex = b.IncomingIndex,
+                    Phase         = b.Phase,
+                    Why           = b.Why
                 }).ToList()
             },
 
@@ -973,7 +975,9 @@ namespace WrestlingSim.Persistence
                         Intensity = x.Intensity,
                         Duration  = x.Duration,
                         StyleHint = x.StyleHint,
-                        IncomingIndex = x.IncomingIndex
+                        IncomingIndex = x.IncomingIndex,
+                        Phase     = x.Phase,
+                        Why       = x.Why
                     }).ToList()
                 };
 

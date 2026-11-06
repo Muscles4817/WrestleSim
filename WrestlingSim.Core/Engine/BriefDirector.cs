@@ -81,6 +81,11 @@ namespace WrestlingSim.Engine
                 // Which partner comes in, for the beats that rotate a side.
                 if (slot.Incoming is { } partner) beat.IncomingIndex = partner;
 
+                // The grammar's reading of this slot, carried on the beat so the editor can
+                // show it. See MatchBeat.Phase for why it cannot be looked up later.
+                beat.Phase = slot.Phase;
+                beat.Why   = slot.Why;
+
                 phases.Add(new WrittenPhase
                 {
                     Phase = slot.Phase,
