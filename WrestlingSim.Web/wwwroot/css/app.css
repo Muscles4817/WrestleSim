@@ -1707,6 +1707,67 @@ table.data tr:last-child td { border-bottom: 0; }
    stacked into a ~200px card — a seven-beat match was 1,400px of editor
    before you added anything, and each of the three commonest edits opened a
    full-screen wheel picker on iOS. */
+/* ── The builder's two columns ───────────────────────────────────────────────
+   A rail beside the wizard on desktop, where there is a column of empty page
+   either side doing nothing. On a phone there is no such space, so the same
+   markup becomes a collapsed strip above the content — seven rows sitting open
+   above the controls would be most of a 390px screen. */
+
+.build { display: grid; gap: clamp(14px, 2vw, 26px); align-items: start; }
+.build__main { min-width: 0; }
+
+@media (min-width: 1100px) {
+  .build { grid-template-columns: minmax(0, 1fr) 248px; }
+  .build__rail { position: sticky; top: calc(62px + var(--safe-t)); }
+}
+
+.rail {
+  border: 1px solid var(--line); border-radius: var(--r);
+  background: var(--panel); padding: 12px 4px 10px;
+}
+.rail__head {
+  font-family: var(--display); font-weight: 800; font-size: 12px;
+  letter-spacing: .22em; text-transform: uppercase; color: var(--muted);
+  padding: 0 12px 8px; width: 100%; text-align: left;
+  appearance: none; border: 0; background: none; cursor: default;
+  display: flex; align-items: center; gap: 8px;
+}
+.rail__chev { display: none; }
+.rail__row {
+  display: grid; grid-template-columns: 62px 1fr; gap: 10px; width: 100%;
+  align-items: baseline; text-align: left; padding: 7px 12px;
+  appearance: none; border: 0; background: none; color: inherit; font: inherit;
+  border-radius: var(--r-sm); cursor: pointer; transition: background .12s;
+}
+.rail__row:disabled { cursor: default; }
+.rail__row:not(:disabled):hover { background: var(--panel-2); }
+.rail__row:focus-visible { outline: none; box-shadow: var(--ring); }
+.rail__key {
+  font-family: var(--display); font-weight: 700; font-size: 11.5px;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+}
+.rail__val { font-size: 13.5px; color: var(--ink); line-height: 1.35; }
+/* A step nobody has reached says so, in the furniture colour, so it reads as
+   "still to come" rather than as a value the game failed to work out. */
+.rail__row.is-unset .rail__val { color: var(--faint); font-style: italic; }
+
+/* On a phone the rail is a strip, so it must not eat the screen before the
+   controls do. */
+@media (max-width: 1099px) {
+  /* Above the content, not below it: the rail is context for the decisions on the
+     screen, and context that arrives after them is a footnote. */
+  .build__rail { order: -1; }
+
+  .rail { display: flex; flex-wrap: wrap; gap: 2px 0; padding: 8px 4px; }
+  .rail__head { width: 100%; padding-bottom: 4px; cursor: pointer; justify-content: space-between; }
+  .rail__chev { display: inline-block; }
+  .rail__row { width: auto; grid-template-columns: auto auto; gap: 7px; padding: 5px 10px; }
+
+  /* Collapsed by default. The heading alone still says a booking is being assembled. */
+  .rail:not(.is-open) .rail__row { display: none; }
+  .rail:not(.is-open) .rail__head { padding-bottom: 0; }
+}
+
 /* ── The booked shape ────────────────────────────────────────────────────── */
 
 .curve { margin: 4px 0 14px; }
