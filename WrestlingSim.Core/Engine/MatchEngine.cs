@@ -3514,7 +3514,14 @@ namespace WrestlingSim.Engine
         /// mandatory in any plan, so a type whose set omitted them could never reach full
         /// coherence however well it was booked — only Technical had both, which quietly
         /// made it the best-paying declaration on almost any plan.
-        private static bool IsOnType(BeatType t, MatchTypeEnum type) => type switch
+        /// <summary>
+        /// Whether a beat delivers what a declared match type promises.
+        ///
+        /// Public because <see cref="MatchDiagnosis"/> needs to tell the player which beats
+        /// missed, and a second copy of this table in the diagnosis is exactly the drift that
+        /// left a dead set of scoring weights in the builder.
+        /// </summary>
+        public static bool IsOnType(BeatType t, MatchTypeEnum type) => type switch
         {
             // Mat wrestling, limb work and a submission payoff.
             MatchTypeEnum.Technical => t is BeatType.SlowOpening or BeatType.StandardOpening

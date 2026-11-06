@@ -767,7 +767,7 @@
     <div class="panel">
         <div class="panel__title">
             The match
-            <span class="panel__meta">@beats.Count beats · @RuntimeMinutes min</span>
+            <span class="panel__meta">@beats.Count beats · @RuntimeLabel</span>
         </div>
 
         @if (written is null)
@@ -884,7 +884,7 @@
         <div class="panel__title">
             Beat sheet
             <span class="spacer"></span>
-            <span class="small muted">~@RuntimeMinutes min · @beats.Count beats</span>
+            <span class="small muted">@RuntimeLabel · @beats.Count beats</span>
         </div>
 
         @* One row, one tap target.
@@ -1853,6 +1853,22 @@
 
     /// <summary>What this match will cost the card, read off the same rule the card uses.</summary>
     private int RuntimeMinutes => Models.BookedMatch.RuntimeOf(beats);
+
+    /// <summary>
+    /// The runtime, saying where it comes from. The header read "~18 min" over a sheet whose
+    /// rows summed to 16, and a reviewer had to guess at entrances — so the two minutes are
+    /// now on screen rather than implied.
+    /// </summary>
+    private string RuntimeLabel
+    {
+        get
+        {
+            int worked = beats.Sum(b => b.DurationMinutes);
+            return worked == 0
+                ? "nothing booked"
+                : $"{worked} min of beats + {Models.BookedMatch.EntranceMinutes} entrances = {RuntimeMinutes} min";
+        }
+    }
 
     private bool CanAdvance => Blocker() is null;
 
