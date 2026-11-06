@@ -443,6 +443,16 @@ namespace WrestlingSim.Persistence
 
         /// <summary>Which member a tag beat brings in. Null tags to the next man round.</summary>
         public int? IncomingIndex { get; set; }
+
+        /// <summary>
+        /// The job the phase grammar wrote this beat to do, and why. Saved so a card
+        /// reopened from a save still explains itself in the editor; a beat added by hand
+        /// has neither and reads as unplaced, which is what it is.
+        /// </summary>
+        public MatchPhase? Phase { get; set; }
+
+        /// <inheritdoc cref="Phase"/>
+        public string? Why { get; set; }
     }
 
     public class SegmentActionDto

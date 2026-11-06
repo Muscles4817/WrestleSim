@@ -50,6 +50,26 @@ namespace WrestlingSim.Models.MatchPlan
         /// </summary>
         public BeatControl? Against { get; set; }
 
+        /// <summary>
+        /// The job this beat was written to do, and why it is there — the phase grammar's
+        /// own words, carried on the beat.
+        ///
+        /// They live here rather than only on <see cref="Engine.WrittenPhase"/> because the
+        /// beat editor works on clones of the written beats and can reorder, add and remove
+        /// them, so neither reference identity nor position survives to look the phase up
+        /// by. The effect was that the brief step showed "CUT-OFF · Cut-Off · The turn ·
+        /// Becky Lynch" and the editor one click later showed the same beat as "Becky Lynch
+        /// · Medium · Brief · 1 min" — the screen where beats are actually edited being
+        /// strictly less informative than the read-only preview of them.
+        ///
+        /// Null on a beat added by hand from the library, which is honest: the grammar did
+        /// not place it, and the row says so rather than inventing a job for it.
+        /// </summary>
+        public MatchPhase? Phase { get; set; }
+
+        /// <inheritdoc cref="Phase"/>
+        public string? Why { get; set; }
+
         // ── Derived helpers ──────────────────────────────────────────────────
 
         public double IntensityModifier => Intensity switch
@@ -157,7 +177,10 @@ namespace WrestlingSim.Models.MatchPlan
             // one was: a triple-threat preset named who takes the fall, the clone did not
             // carry it, and the plan failed validation with the message telling the player
             // to say the thing the preset had already said.
-            Against         = Against
+            Against         = Against,
+
+            Phase           = Phase,
+            Why             = Why
         };
     }
 }
