@@ -56,7 +56,11 @@ else
         <div class="chart">
             @foreach (var row in ScoreRows())
             {
-                <div class="chart__row">
+                var open = expanded.Contains(row.Label);
+                var causes = Diagnosis.FirstOrDefault(c => c.Category == row.Label)?.Causes ?? [];
+
+                <button class="chart__row chart__row--open" @onclick="() => Toggle(row.Label)"
+                        aria-expanded="@open">
                     <span class="chart__key">@row.Label</span>
                     <span class="chart__track">
                         <i class="chart__fill chart__fill--@row.Tone"
@@ -64,9 +68,39 @@ else
                     </span>
                     <span class="chart__val tabnum">@row.Rating.ToString("F0")</span>
                     <span class="chart__contrib">@row.Contribution</span>
-                </div>
+                    <Icon Name="@(open ? "up" : "down")" Class="chart__chev" />
+                </button>
+
+                @if (open)
+                {
+                    <ul class="causes">
+                        @foreach (var cause in causes)
+                        {
+                            <li class="cause cause--@(cause.Direction == CauseDirection.Helped ? "up" : "down")">
+                                <Icon Name="@(cause.Direction == CauseDirection.Helped ? "up" : "down")" />
+                                <span>@cause.Text</span>
+                            </li>
+                        }
+                    </ul>
+                }
             }
         </div>
+
+        @* What to do about it. Only things the booker could have changed in the booking —
+           a cold feud and a worn-out pairing are reported above as causes, and their lesson
+           is about what to book before the rematch rather than about this sheet. *@
+        @if (Lessons.Count > 0)
+        {
+            <div class="lessons">
+                <div class="lessons__head">To book this better</div>
+                <ol class="lessons__list">
+                    @foreach (var lesson in Lessons)
+                    {
+                        <li>@lesson</li>
+                    }
+                </ol>
+            </div>
+        }
 
         @if (result.StalenessNote is { } stale)
         {
@@ -214,6 +248,28 @@ else
     private record ScoreRow(string Label, double Rating, string Contribution, string Tone);
 
     /// <summary>
+    /// Which scorecard rows are showing their reasons. Reset per run, so a second match does
+    /// not open with the first one's rows expanded.
+    /// </summary>
+    private readonly HashSet<string> expanded = new();
+
+    private void Toggle(string category)
+    {
+        if (!expanded.Remove(category)) expanded.Add(category);
+    }
+
+    /// <summary>
+    /// Why the match scored what it scored. Computed per render rather than cached: it reads
+    /// only the finished result and the plan, both of which are fixed by the time this
+    /// screen exists.
+    /// </summary>
+    private IReadOnlyList<CategoryDiagnosis> Diagnosis =>
+        booked is null || result is null ? [] : MatchDiagnosis.Of(booked.Plan, result);
+
+    private IReadOnlyList<string> Lessons =>
+        booked is null || result is null ? [] : MatchDiagnosis.Lessons(booked.Plan, result);
+
+    /// <summary>
     /// The scorecard. Rating is the 0–100 reading the engine graded on; Contribution is what
     /// that was worth in points of the final score, which is where the match type shows up —
     /// the same 63 on technical is worth half as much in a Storytelling match as in a
@@ -263,6 +319,7 @@ else
     {
         booked = match;
         runId++;
+        expanded.Clear();
         Execute();
         await Scroll.ToTopAsync();
     }
@@ -270,6 +327,7 @@ else
     private async Task RunAgain()
     {
         runId++;
+        expanded.Clear();
         Execute();
         await Scroll.ToTopAsync();
     }
