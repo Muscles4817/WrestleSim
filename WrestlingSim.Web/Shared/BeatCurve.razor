@@ -1,0 +1,94 @@
+@*
+    The shape of the booking, drawn.
+
+    The beat sheet is a list; the thing it describes is a curve. A reviewer's words: this is
+    exactly the kind of relationship where a graph is worth the space.
+
+    **It is the plan, not a forecast.** There is a real trap here, and the issue that asked
+    for this named it: a predicted crowd line that then disagrees with the result makes the
+    legibility problem worse rather than better, because now two screens contradict each
+    other. So nothing here is predicted. Every pixel is a restatement of what the booker
+    booked — who is on top, how hard, and for how long — which is the part they control and
+    the part the list makes hardest to see.
+
+    Read it as a wave: above the line is one side on top, below is the other, height is
+    intensity, width is minutes. A face-in-peril booking dips and climbs. A match with two
+    heat segments in a row sits flat and low for a third of its length, and you can see that
+    without counting rows.
+*@
+@if (Beats.Count > 0)
+{
+    <div class="curve">
+        <div class="curve__key">
+            <span class="curve__side curve__side--a">@Above</span>
+            <span class="spacer"></span>
+            <span class="curve__mins">@Total min</span>
+            <span class="spacer"></span>
+            <span class="curve__side curve__side--b">@Below</span>
+        </div>
+
+        <svg class="curve__plot" viewBox="0 0 @Width @Height" preserveAspectRatio="none"
+             role="img" aria-label="@Description">
+            <line class="curve__axis" x1="0" y1="@(Height / 2)" x2="@Width" y2="@(Height / 2)" />
+            @{ double x = 0; }
+            @foreach (var beat in Beats)
+            {
+                var w = beat.DurationMinutes / (double)Total * Width;
+                var h = Lift(beat);
+                var top = Sign(beat) >= 0 ? Height / 2 - h : Height / 2;
+                var cls = beat.IsFinish ? "is-finish" : Sign(beat) switch { > 0 => "is-a", < 0 => "is-b", _ => "is-even" };
+
+                <rect class="curve__bar @cls" x="@F(x)" y="@F(Sign(beat) == 0 ? Height / 2 - h / 2 : top)"
+                      width="@F(Math.Max(w - 1.5, 1))" height="@F(Sign(beat) == 0 ? h : h)">
+                    <title>@beat.DurationMinutes min · @BeatName(beat) · @beat.Intensity</title>
+                </rect>
+                x += w;
+            }
+        </svg>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<MatchBeat> Beats { get; set; } = [];
+
+    /// <summary>Who is drawn above the line, and who below.</summary>
+    [Parameter] public string Above { get; set; } = "Side A";
+    [Parameter] public string Below { get; set; } = "Side B";
+
+    /// <summary>Maps a beat's control onto a side index, so the curve matches the sheet.</summary>
+    [Parameter] public Func<MatchBeat, int?> SideOf { get; set; } = _ => null;
+
+    [Parameter] public Func<MatchBeat, string> BeatName { get; set; } = b => b.Type.ToString();
+
+    private const double Width = 100;
+    private const double Height = 34;
+
+    private int Total => Math.Max(Beats.Sum(b => b.DurationMinutes), 1);
+
+    /// <summary>+1 above the line, -1 below, 0 for an even beat drawn across it.</summary>
+    private int Sign(MatchBeat beat) => SideOf(beat) switch
+    {
+        0 => 1,
+        null => 0,
+        _ => -1
+    };
+
+    /// <summary>
+    /// How far from the line. Intensity only — this is the booking's shape, and intensity is
+    /// the thing the booker set. Capped well short of the full height so the finish still has
+    /// somewhere to go.
+    /// </summary>
+    private double Lift(MatchBeat beat) => beat.Intensity switch
+    {
+        BeatIntensity.Low    => Height * 0.18,
+        BeatIntensity.Medium => Height * 0.3,
+        _                    => Height * 0.46
+    };
+
+    private static string F(double v) =>
+        v.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+
+    private string Description =>
+        $"The booked shape of the match: {Beats.Count} beats over {Total} minutes, " +
+        $"{Above} above the line and {Below} below.";
+}

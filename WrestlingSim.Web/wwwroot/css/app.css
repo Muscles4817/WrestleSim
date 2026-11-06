@@ -1707,6 +1707,27 @@ table.data tr:last-child td { border-bottom: 0; }
    stacked into a ~200px card — a seven-beat match was 1,400px of editor
    before you added anything, and each of the three commonest edits opened a
    full-screen wheel picker on iOS. */
+/* ── The booked shape ────────────────────────────────────────────────────── */
+
+.curve { margin: 4px 0 14px; }
+.curve__key {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 5px;
+  font-family: var(--display); font-weight: 700; font-size: 12px;
+  letter-spacing: .12em; text-transform: uppercase;
+}
+.curve__side--a { color: var(--gold); }
+.curve__side--b { color: var(--cyan); }
+.curve__mins { color: var(--muted); }
+.curve__plot {
+  display: block; width: 100%; height: 76px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-sm);
+}
+.curve__axis { stroke: var(--line); stroke-width: .5; vector-effect: non-scaling-stroke; }
+.curve__bar.is-a      { fill: var(--gold-dim); }
+.curve__bar.is-b      { fill: #2a7d88; }
+.curve__bar.is-even   { fill: var(--panel-3); }
+.curve__bar.is-finish { fill: var(--gold); }
+
 .beat-row {
   /* A phase column, so the sheet reads down the left as the shape of the match —
      OPENING, SHINE, CUT-OFF, HEAT, COMEBACK, FINISH — rather than as six rows that

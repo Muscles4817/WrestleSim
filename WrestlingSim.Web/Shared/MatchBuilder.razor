@@ -885,6 +885,13 @@
             <span class="small muted">@RuntimeLabel · @beats.Count beats</span>
         </div>
 
+        @* The list says what the beats are; this says what shape they make. *@
+        <BeatCurve Beats="@beats"
+                   Above="@NameOfSide(0)"
+                   Below="@(sideCount > 1 ? NameOfSide(1) : "")"
+                   SideOf="@(b => Models.MatchPlan.MatchPlan.SideIndex(b.Control))"
+                   BeatName="@(b => BeatTypeName(b.Type))" />
+
         @* One row, one tap target.
            Below 640px each row used to become a stacked card carrying three full-width
            native selects plus three icon buttons — about 200px a beat, so a seven-beat
