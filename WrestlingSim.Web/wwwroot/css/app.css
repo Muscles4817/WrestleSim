@@ -1637,15 +1637,55 @@ table.data tr:last-child td { border-bottom: 0; }
 /* One line per person, ~56px, instead of a 107px card. The old pick cards
    carried "Pop 78 / Cha 3.4" — two different scales, adjacent, in grey — and
    the row now carries the consequence instead. */
+/* ── Portraits ───────────────────────────────────────────────────────────── */
+
+.portrait {
+  display: inline-grid; place-content: center; flex: none;
+  width: 34px; height: 34px; border-radius: var(--r-sm);
+  font-family: var(--display); font-weight: 800; font-size: 14px;
+  letter-spacing: .04em; line-height: 1;
+  border: 1px solid transparent;
+}
+.portrait--sm { width: 28px; height: 28px; font-size: 12px; }
+.portrait--lg { width: 46px; height: 46px; font-size: 18px; border-radius: var(--r); }
+
+/* The ground carries the alignment the badge already states in words, so the row can be
+   scanned by shape and colour and still read unambiguously. */
+.portrait--face    { background: rgba(74, 222, 128, .14); border-color: rgba(74, 222, 128, .32); color: #86efac; }
+.portrait--heel    { background: rgba(242, 88, 95, .14);  border-color: rgba(242, 88, 95, .32);  color: #fca5a5; }
+.portrait--tweener { background: var(--panel-3);          border-color: var(--line);             color: var(--ink-2); }
+
 .prow {
   display: grid;
-  grid-template-columns: 1fr auto auto;
-  grid-template-areas: "name pop trend" "why why why" "cond cond cond";
+  grid-template-columns: auto 1fr auto auto;
+  grid-template-areas: "face name pop trend" "face why why why" "face cond cond cond";
   gap: 2px 10px; width: 100%; min-height: 56px;
   padding: 9px var(--pad); text-align: left; cursor: pointer;
   background: none; border: 0; border-bottom: 1px solid var(--line-soft);
   color: inherit; font: inherit;
 }
+/* Lines up with .prow's last two columns. The widths are the natural widths of a
+   three-digit overness and the trend glyph, so the header sits over the values rather
+   than near them. */
+.prow-head {
+  display: flex; justify-content: flex-end; gap: 10px;
+  padding: 7px var(--pad) 3px;
+  position: sticky; top: 0; z-index: 1; background: var(--panel);
+  font-family: var(--display); font-weight: 700; font-size: 10.5px;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--faint);
+}
+.prow-head__pop   { width: 28px; text-align: right; }
+.prow-head__trend { width: 20px; text-align: center; }
+
+.prow__face  { grid-area: face; align-self: center; margin-right: 2px; }
+
+/* The lineup slot is a grid of label / name / meta; the portrait spans it on the left so
+   a filled corner is recognisable at the same glance the picker row is. */
+.slot.is-filled { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; }
+.slot.is-filled .slot__label,
+.slot.is-filled .slot__name,
+.slot.is-filled .slot__meta { grid-column: 2; }
+.slot__face { grid-column: 1; grid-row: 1 / span 3; }
 .prow__name  { grid-area: name; font-weight: 700; font-size: 15px;
                display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .prow__why   { grid-area: why; font-size: var(--t-sm); color: var(--muted); }
@@ -1662,7 +1702,11 @@ table.data tr:last-child td { border-bottom: 0; }
 .band--story  { color: var(--gold-2); }
 .band--worn   { color: #ffb27a; }
 .band--booked { color: var(--faint); }
-.prow__pop   { grid-area: pop; color: var(--ink-2); align-self: center; font-weight: 700; }
+/* Fixed, and the same figure the header uses. Both were `auto`, so the header's
+   natural width and the rows' natural width were two different numbers and the labels
+   sat beside their columns rather than over them. */
+.prow__pop   { grid-area: pop; color: var(--ink-2); align-self: center; font-weight: 700;
+               width: 28px; text-align: right; }
 
 /* ── How over somebody is, in colour ───────────────────────────────────────
    Used by the picker rows and by the filled lineup slots, so the same number
@@ -1672,7 +1716,7 @@ table.data tr:last-child td { border-bottom: 0; }
 .pop--mid   { color: var(--pop-mid); }
 .pop--lower { color: var(--pop-lower); }
 .pop--enh   { color: var(--pop-enh); }
-.prow .trend { grid-area: trend; align-self: center; }
+.prow .trend { grid-area: trend; align-self: center; width: 20px; justify-content: center; }
 /* Its own grid row. Sharing `why` put the ring-condition line on top of the booking
    reason — same grid area, both visible, both unreadable. */
 .prow__cond  { grid-area: cond; font-size: var(--t-sm); color: var(--heel); }

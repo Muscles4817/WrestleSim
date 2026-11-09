@@ -236,6 +236,7 @@
         <span class="label slot__label">@label</span>
         @if (held is { } w)
         {
+            <Portrait Wrestler="@w" Size="lg" Class="slot__face" />
             <span class="slot__name">
                 @w.RingName
                 @if (w.Gimmick is { } g)
