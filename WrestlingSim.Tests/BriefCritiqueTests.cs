@@ -541,5 +541,92 @@ namespace WrestlingSim.Tests
             Assert.Equal(expected, BriefPresets.SuggestedFor(promised));
             Assert.NotNull(BriefPresets.Find(expected));
         }
+
+        // ── What the booking is for, and who it casts ────────────────────────
+
+        private static MatchSide SideOf(string name, Alignment alignment)
+        {
+            var w = W(name);
+            w.Gimmick!.NaturalAlignment = alignment;
+            return new MatchSide { Members = [w] };
+        }
+
+        /// <summary>
+        /// Face-in-peril casts the winner as the one who takes the beating and comes back.
+        /// The sheet has always done that — it gives one side the shine and the comeback and
+        /// the other both heat segments — and never said so, which is what a review caught
+        /// from screenshots alone.
+        /// </summary>
+        [Fact]
+        public void FaceInPerilCastsTheWinnerAsTheFace()
+        {
+            var brief = new MatchBrief { Story = MatchStory.FaceInPeril, WinningSide = 0 };
+            var roles = BriefCritique.Roles(brief, 2);
+
+            Assert.Equal([(0, Alignment.Face), (1, Alignment.Heel)], roles);
+        }
+
+        /// <summary>
+        /// An even contest casts nobody, and saying it did would be inventing a story the
+        /// booking does not have.
+        /// </summary>
+        [Fact]
+        public void AnEvenContestCastsNobody()
+        {
+            var brief = new MatchBrief { Story = MatchStory.EvenContest, WinningSide = 0 };
+            Assert.Empty(BriefCritique.Roles(brief, 2));
+        }
+
+        [Fact]
+        public void CastingAgainstAlignmentIsFlagged_ButNotRefused()
+        {
+            // A heel booked to take the beating and come back sympathetically.
+            var sides = new List<MatchSide> { SideOf("Alpha", Alignment.Heel), SideOf("Bravo", Alignment.Face) };
+            var brief = new MatchBrief { Story = MatchStory.FaceInPeril, WinningSide = 0 };
+
+            var notes = BriefCritique.Casting(brief, sides);
+            foreach (var n in notes) output.WriteLine($"  {n.Weight}: {n.Text}");
+
+            Assert.Equal(2, notes.Count);
+            Assert.All(notes, n => Assert.Equal(NoteWeight.Note, n.Weight));
+            Assert.Contains(notes, n => n.Text.Contains("Alpha") && n.Text.Contains("working face"));
+        }
+
+        [Fact]
+        public void CastingWithTheGrainSaysNothing()
+        {
+            var sides = new List<MatchSide> { SideOf("Alpha", Alignment.Face), SideOf("Bravo", Alignment.Heel) };
+            var brief = new MatchBrief { Story = MatchStory.FaceInPeril, WinningSide = 0 };
+
+            Assert.Empty(BriefCritique.Casting(brief, sides));
+        }
+
+        [Fact]
+        public void TheReadStatesWhatThePlanIsFor()
+        {
+            var brief = new MatchBrief
+            {
+                Story = MatchStory.FaceInPeril, Length = MatchScale.BigMatch,
+                Finish = FinishKind.Clean, WinningSide = 0
+            };
+            var intent = BriefCritique.Intent(brief, Sides());
+            output.WriteLine(intent);
+
+            // Names the length, the shape and who goes over — the three things the brief is.
+            Assert.Contains("big match", intent);
+            Assert.Contains("face-in-peril", intent);
+            Assert.Contains("Alpha", intent);
+        }
+
+        /// <summary>
+        /// Strengths are sparse on purpose. Padding them with everything that is merely not
+        /// wrong would make the real ones worthless, so an empty sheet has none at all.
+        /// </summary>
+        [Fact]
+        public void AnUnwrittenSheetHasNoStrengths()
+        {
+            var brief = new MatchBrief { Story = MatchStory.FaceInPeril };
+            Assert.Empty(BriefCritique.Strengths(brief, [], Sides(), new Expectation(MatchStory.FaceInPeril, 0.8, "")));
+        }
     }
 }

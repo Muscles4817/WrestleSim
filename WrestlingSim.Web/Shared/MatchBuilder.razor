@@ -10,10 +10,15 @@
     @for (int i = 0; i < shown.Count; i++)
     {
         var (index, label) = shown[i];
-        <div class="step @(step == index ? "is-current" : step > index ? "is-done" : "")">
+        @* A done step is a button. The green ticks implied the steps could be revisited
+           and nothing could be clicked, so the only way back was Back, one step at a time.
+           Forward stays shut: jumping past a decision is how the later steps end up reading
+           a half-made booking. *@
+        <button class="step @(step == index ? "is-current" : step > index ? "is-done" : "")"
+                disabled="@(index >= step)" @onclick="() => GoToStep(index)">
             <span class="step__n">@if (step > index) { <Icon Name="check" /> } else { @(i + 1) }</span>
             <span>@label</span>
-        </div>
+        </button>
     }
     @* On a phone the labels collapse to bare numerals, which is a map with no place names.
        This is the one line that says where you are. *@
@@ -379,7 +384,7 @@
 
             <div class="row mt">
                 <button class="btn btn--danger" disabled="@(!CanRemove(edit))"
-                        @onclick="async () => { beats.Remove(edit); await CloseBeatSheet(); }">Remove this beat</button>
+                        @onclick="async () => { beats.Remove(edit); beatsEdited = true; await CloseBeatSheet(); }">Remove this beat</button>
                 <span class="spacer"></span>
                 <button class="btn btn--primary" @onclick="CloseBeatSheet">Done</button>
             </div>
@@ -708,18 +713,31 @@
        every field stays adjustable after one is picked. *@
     <div class="panel">
         <div class="panel__title">Start from</div>
-        <div class="chips">
+        @* These were bare chips with the description in a title attribute — invisible on a
+           phone, slow on a desktop, and in no useful order to a screen reader. They are the
+           most consequential choice on the page and they presented as a row of words. *@
+        <div class="presets">
             @foreach (var preset in BriefPresets.For(sideCount, sideSize))
             {
                 var p = preset;
-                <button class="chip @(BriefPresets.Matching(brief, sideCount, sideSize) == p.Name ? "is-selected" : "")"
-                        title="@p.Description"
+                var suits = p.Name == BriefPresets.SuggestedFor(Promised, sideSize);
+                <button class="preset @(BriefPresets.Matching(brief, sideCount, sideSize) == p.Name ? "is-selected" : "")"
                         @onclick="() => ApplyPreset(p)">
-                    @p.Name
-                    @if (p.Name == BriefPresets.SuggestedFor(Promised, sideSize))
-                    {
-                        <span class="chip__hint">suits them</span>
-                    }
+                    <span class="preset__top">
+                        <span class="preset__name">@p.Name</span>
+                        @if (suits)
+                        {
+                            <span class="preset__fit">suits them</span>
+                        }
+                    </span>
+                    <span class="preset__desc">@p.Description</span>
+                    <span class="preset__meta">
+                        @BriefCritique.Name(p.Brief.Story)
+                        <span class="preset__sep">·</span>
+                        @BriefCritique.Minutes(p.Brief.Length)
+                        <span class="preset__sep">·</span>
+                        @BriefCritique.Name(p.Brief.Finish)
+                    </span>
                 </button>
             }
         </div>
@@ -805,16 +823,83 @@
             </div>
         }
 
+        @if (briefStale)
+        {
+            <div class="notice notice--warn mt">
+                <strong>The brief has changed since this sheet was written.</strong>
+                The sheet below is still the one you edited, so it no longer matches what
+                you have asked for. Rewriting it will use the new brief and discard your
+                edits.
+                <div class="row mt">
+                    <button class="btn btn--primary btn--sm" @onclick="() => WriteTheMatch(reroll: false)">
+                        Rewrite from the brief
+                    </button>
+                    <button class="btn btn--ghost btn--sm" @onclick="() => briefStale = false">
+                        Keep my sheet
+                    </button>
+                </div>
+            </div>
+        }
+
         <div class="row mt">
             <button class="btn" @onclick="WriteTheMatch">
                 @(written is null ? "Write the match ★" : "Re-roll")
             </button>
+            @if (beatsEdited && !briefStale)
+            {
+                <span class="small muted">Re-rolling replaces your edited sheet.</span>
+            }
         </div>
     </div>
 
-    @foreach (var note in Notes)
+    @if (written is not null)
     {
-        <div class="notice @NoteClass(note.Weight) mt">@note.Text</div>
+        <div class="panel">
+            <div class="panel__title">The booking read</div>
+
+            <p class="read__intent">@BriefCritique.Intent(brief, BriefSides)</p>
+
+            @* The parts the story casts, said out loud. A face-in-peril sheet gives one
+               side the shine and the comeback and the other both heat segments — the game
+               casting a face and a heel, and never telling the booker it had. *@
+            @if (Cast().Any())
+            {
+                <p class="read__cast">
+                    @foreach (var (who, part) in Cast())
+                    {
+                        <span class="read__role"><b>@who</b> works @part</span>
+                    }
+                </p>
+            }
+
+            @if (Strengths.Count > 0)
+            {
+                <ul class="read__list read__list--up">
+                    @foreach (var strength in Strengths)
+                    {
+                        <li><Icon Name="up" /><span>@strength</span></li>
+                    }
+                </ul>
+            }
+
+            @if (Notes.Count > 0)
+            {
+                <ul class="read__list read__list--down">
+                    @foreach (var note in Notes)
+                    {
+                        <li class="@NoteClass(note.Weight)">
+                            <Icon Name="@(note.Weight == NoteWeight.Costly ? "warn" : "down")" />
+                            <span>@note.Text</span>
+                        </li>
+                    }
+                </ul>
+            }
+
+            @if (Strengths.Count == 0 && Notes.Count == 0)
+            {
+                <p class="small muted">Nothing to flag either way. A clean, unremarkable booking.</p>
+            }
+        </div>
     }
 }
 
@@ -1471,29 +1556,12 @@
 
     private static string DivisionName(Division d) => d == Division.Womens ? "women's" : "men's";
 
-    private static string TypeBlurb(MatchType t) => t switch
-    {
-        MatchType.Technical    => "Graded mostly on ring work. Wants mat wrestling, holds and a submission payoff.",
-        MatchType.Storytelling => "Graded mostly on story. Wants psychology, callbacks and near-falls.",
-        MatchType.Spotfest     => "Graded mostly on crowd reaction. Wants high spots, brawling and comebacks.",
-        _                      => "Balanced grading with no preference about how you get there."
-    };
-
-    /// <summary>
-    /// Component weights for a type, one per line. .pick__meta honours the breaks on
-    /// desktop and reflows them below the description on a phone.
-    /// </summary>
-    private static string TypeWeights(MatchType t)
-    {
-        var (tech, story, crowd) = t switch
-        {
-            MatchType.Technical    => (46, 24, 30),
-            MatchType.Storytelling => (24, 42, 34),
-            MatchType.Spotfest     => (30, 22, 48),
-            _                      => (35, 30, 35)
-        };
-        return $"Tech {tech}%\nStory {story}%\nCrowd {crowd}%";
-    }
+    // TypeBlurb and TypeWeights lived here until the brief replaced the match-type step.
+    // Both were unreachable afterwards, and TypeWeights held a second copy of the engine's
+    // component weights — the same drift that left MaxTechnical and MaxStorytelling behind
+    // as denominators the scorecard drew bars against and the engine never read. The weights
+    // have one home now, MatchEngine.WeightsFor, and the type itself is derived from the
+    // brief's story rather than declared.
 
     private Feud? existingFeud;
     private Feud? feud;
@@ -1596,9 +1664,18 @@
         apply();
         openField = null;
 
-        // Re-write immediately. A brief whose sheet is one edit stale is a review screen
-        // describing a match that is not the one that would run.
-        if (written is not null) WriteTheMatch(reroll: false);
+        if (written is null) return;
+
+        // Re-write immediately while the sheet is still the game's own work: a brief whose
+        // sheet is one edit stale is a review screen describing a match that is not the one
+        // that would run.
+        //
+        // But once the booker has edited the sheet by hand, rewriting it throws their work
+        // away, and doing that as a side effect of changing the length is not a thing to do
+        // without asking. The sheet is marked stale instead and the brief step offers the
+        // rewrite as a choice.
+        if (beatsEdited) briefStale = true;
+        else WriteTheMatch(reroll: false);
     }
 
     /// <summary>What each fragment offers, in the order a booker would think of them.</summary>
@@ -1770,10 +1847,30 @@
             : Expectation.Nothing;
 
     /// <summary>Everything worth saying about the booking as it currently stands.</summary>
+    /// <summary>What the plan has going for it. See BriefCritique.Strengths.</summary>
+    private IReadOnlyList<string> Strengths =>
+        written is null || !SidesComplete
+            ? []
+            : BriefCritique.Strengths(brief, beats, BriefSides, Promised);
+
     private IReadOnlyList<BookingNote> Notes =>
         written is null || !SidesComplete
             ? []
-            : BriefCritique.Of(brief, beats, BriefSides, Promised, RuntimeLeft);
+            : BriefCritique.Of(brief, beats, BriefSides, Promised, RuntimeLeft)
+                           .Concat(BriefCritique.Casting(brief, BriefSides))
+                           .ToList();
+
+    /// <summary>
+    /// Who is working which part, where the story casts one. Shown beside the brief rather
+    /// than left implicit in which side gets the heat segments.
+    /// </summary>
+    private IEnumerable<(string Who, string Part)> Cast()
+    {
+        if (!SidesComplete) yield break;
+
+        foreach (var (side, part) in BriefCritique.Roles(brief, sideCount))
+            yield return (NameOfSide(side), part.ToString().ToLowerInvariant());
+    }
 
     /// <summary>
     /// Runtime left in the slot, or null in exhibition where there is no card to fit into.
@@ -1826,6 +1923,8 @@
 
         written        = BriefDirector.Write(brief, BriefSides);
         beats          = written.Beats.Select(b => b.Clone()).ToList();
+        beatsEdited    = false;
+        briefStale     = false;
         structureName  = BriefPresets.Matching(brief, sideCount, sideSize) ?? BriefCritique.Name(brief.Story);
     }
 
@@ -1895,10 +1994,24 @@
     /// aim a beat at Bravo, then hand Bravo the control, and the plan says Bravo works it
     /// on Bravo with no chip showing it.
     /// </summary>
+    /// <summary>
+    /// Whether the sheet has been touched by hand since the game wrote it.
+    ///
+    /// It decides whether a brief edit may quietly rewrite the sheet. Before this, changing
+    /// any brief field called WriteTheMatch, which replaces `beats` wholesale — so a booker
+    /// who had spent five minutes on the beats and then went back to change the length lost
+    /// every edit with no warning and no way back.
+    /// </summary>
+    private bool beatsEdited;
+
+    /// <summary>The brief has moved on since the sheet was written, and the sheet has edits.</summary>
+    private bool briefStale;
+
     private void SetControl(MatchBeat beat, BeatControl control)
     {
         beat.Control = control;
         if (beat.Against == control) beat.Against = null;
+        beatsEdited = true;
     }
 
     private string ControlLabel(BeatControl control) => control switch
@@ -2297,7 +2410,10 @@
     // the older path; if a third caller ever appears, use this one.
     private void Remove(MatchBeat beat)
     {
-        if (CanRemove(beat)) beats.Remove(beat);
+        if (!CanRemove(beat)) return;
+
+        beats.Remove(beat);
+        beatsEdited = true;
     }
 
     private void Move(int index, int direction)
@@ -2305,6 +2421,7 @@
         int to = index + direction;
         if (to < 0 || to >= beats.Count) return;
         (beats[index], beats[to]) = (beats[to], beats[index]);
+        beatsEdited = true;
     }
 
     /// <summary>
@@ -2325,6 +2442,7 @@
 
         beats.Insert(at, template.ToMatchBeat(BeatControl.WrestlerA));
         justAdded = template.Name;
+        beatsEdited = true;
 
         // An explicit insertion point is used once and then released, so the next add goes
         // back to the sensible default rather than stacking everything at one spot.

@@ -257,6 +257,17 @@ namespace WrestlingSim.Persistence
             BookedMatch m => new CardItemDto
             {
                 Kind           = CardItemKind.Match,
+
+                // Every side, including the third and fourth of a multi-man match, which
+                // SideA/SideB below cannot express. Those two stay for older readers.
+                Sides          = m.Plan.Sides.Select(side => new MatchSideDto
+                {
+                    Members       = side.Members.Select(w => w.Id).ToList(),
+                    TeamId        = side.Team?.Id,
+                    StartingIndex = side.StartingIndex,
+                    Intended      = side.Intended
+                }).ToList(),
+
                 SideA          = m.Plan.SideA.Members.Select(w => w.Id).ToList(),
                 SideB          = m.Plan.SideB.Members.Select(w => w.Id).ToList(),
                 TeamAId        = m.Plan.SideA.Team?.Id,
@@ -279,6 +290,7 @@ namespace WrestlingSim.Persistence
                     Duration      = b.Duration,
                     StyleHint     = b.StyleHint,
                     IncomingIndex = b.IncomingIndex,
+                    Against       = b.Against,
                     Phase         = b.Phase,
                     Why           = b.Why
                 }).ToList()
@@ -938,22 +950,56 @@ namespace WrestlingSim.Persistence
                 int startA = sideA.Count == 0 ? 0 : Math.Clamp(dto.StartingIndexA, 0, sideA.Count - 1);
                 int startB = sideB.Count == 0 ? 0 : Math.Clamp(dto.StartingIndexB, 0, sideB.Count - 1);
 
+                // v5 writes every side; anything older has only the two. Built here so the
+                // plan below takes one list either way rather than branching around its
+                // whole construction.
+                List<MatchSide>? sides;
+
+                if (dto.Sides is { Count: >= 2 } saved)
+                {
+                    sides = [];
+                    foreach (var side in saved)
+                    {
+                        var members = side.Members.Count == 0 ? [] : Bind(side.Members, byId);
+
+                        // Same rule as the two-sided path: a card item naming somebody the
+                        // roster no longer has is dropped whole rather than rebuilt short.
+                        if (members is null) return null;
+
+                        sides.Add(new MatchSide
+                        {
+                            Members       = members,
+                            StartingIndex = members.Count == 0
+                                ? 0 : Math.Clamp(side.StartingIndex, 0, members.Count - 1),
+                            Intended      = side.Intended,
+                            Team          = teams.FirstOrDefault(t => t.Id == side.TeamId)
+                        });
+                    }
+                }
+                else
+                {
+                    sides =
+                    [
+                        new MatchSide
+                        {
+                            Members       = sideA,
+                            StartingIndex = startA,
+                            Intended      = dto.IntendedA,
+                            Team          = teams.FirstOrDefault(t => t.Id == dto.TeamAId)
+                        },
+                        new MatchSide
+                        {
+                            Members       = sideB,
+                            StartingIndex = startB,
+                            Intended      = dto.IntendedB,
+                            Team          = teams.FirstOrDefault(t => t.Id == dto.TeamBId)
+                        }
+                    ];
+                }
+
                 var plan = new MatchPlanModel
                 {
-                    SideA = new MatchSide
-                    {
-                        Members       = sideA,
-                        StartingIndex = startA,
-                        Intended      = dto.IntendedA,
-                        Team          = teams.FirstOrDefault(t => t.Id == dto.TeamAId)
-                    },
-                    SideB = new MatchSide
-                    {
-                        Members       = sideB,
-                        StartingIndex = startB,
-                        Intended      = dto.IntendedB,
-                        Team          = teams.FirstOrDefault(t => t.Id == dto.TeamBId)
-                    },
+                    Sides = sides,
                     MatchType = dto.MatchType,
                     Brief     = FromDto(dto.Brief),
                     Stipulation = dto.Stipulation,
@@ -976,6 +1022,7 @@ namespace WrestlingSim.Persistence
                         Duration  = x.Duration,
                         StyleHint = x.StyleHint,
                         IncomingIndex = x.IncomingIndex,
+                        Against   = x.Against,
                         Phase     = x.Phase,
                         Why       = x.Why
                     }).ToList()

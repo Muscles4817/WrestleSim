@@ -346,6 +346,22 @@ namespace WrestlingSim.Persistence
         // ── Match ────────────────────────────────────────────────────────────
 
         /// <summary>
+        /// Every side in the match, in booking order. Written from v5 onward.
+        ///
+        /// The save format predated multi-man matches and never caught up: SideA and SideB
+        /// below can only name two, so a saved triple threat or fatal four-way came back as
+        /// a two-sided match with its third and fourth camps gone. Combined with the beat's
+        /// missing <see cref="BeatDto.Against"/> that made such a card unrunnable — the
+        /// finish named a side that was no longer in the plan.
+        ///
+        /// Written alongside SideA/SideB rather than instead of them, for the same reason
+        /// <see cref="FeudDto.Camps"/> is: a save from this build still opens in one that
+        /// predates it, reading the two sides and losing the rest, which is wrong but
+        /// survivable where an unknown field would lose the whole card item.
+        /// </summary>
+        public List<MatchSideDto>? Sides { get; set; }
+
+        /// <summary>
         /// Everyone on each side, in booking order. Written from v3 onward.
         /// </summary>
         public List<string>? SideA { get; set; }
@@ -433,6 +449,23 @@ namespace WrestlingSim.Persistence
         public List<FeudHistoryTag> HistoryTags { get; set; } = new();
     }
 
+    /// <summary>
+    /// One side of a match: who is on it, and the three things the plan remembers about it.
+    /// </summary>
+    public class MatchSideDto
+    {
+        public List<string> Members { get; set; } = new();
+
+        /// <summary>Standing team on this side, by <see cref="TagTeamDto.Id"/>, if any.</summary>
+        public string? TeamId { get; set; }
+
+        /// <summary>Index of the member who takes the opening bell.</summary>
+        public int StartingIndex { get; set; }
+
+        /// <summary>How many this side is still waiting for while the card is planned.</summary>
+        public int? Intended { get; set; }
+    }
+
     public class BeatDto
     {
         public BeatType Type { get; set; }
@@ -443,6 +476,29 @@ namespace WrestlingSim.Persistence
 
         /// <summary>Which member a tag beat brings in. Null tags to the next man round.</summary>
         public int? IncomingIndex { get; set; }
+
+        /// <summary>
+        /// Who the beat is worked on — and on the finish, who takes the fall.
+        ///
+        /// This was missing, and in a multi-man match that made a saved card unrunnable
+        /// rather than merely vaguer: MatchPlan.Validate requires the finish of a three- or
+        /// four-way to name the side being pinned, so a reloaded triple threat failed with
+        /// "a 3-way finish has to say who takes the fall" — telling the player to supply
+        /// something they had already supplied.
+        ///
+        /// Exactly the bug MatchBeat.Clone's own comment records, at a different boundary.
+        /// The lesson there was that a field missing from one of these copies is a field
+        /// silently dropped, and it went unlearned here for as long as the save format has
+        /// existed.
+        /// </summary>
+        public BeatControl? Against { get; set; }
+
+        // FeudalResonance is deliberately absent, and that is worth a sentence because its
+        // absence looks like the same bug. It is not: no production code path has ever set
+        // it. BeatLibrary never passes one, ToMatchBeat's parameter is never supplied, and
+        // the only non-null assignment in the solution is in MatchEngineTests. Persisting a
+        // field nothing writes would be cargo cult. The mechanism it drives is real and
+        // tested but unreachable from the builder — see the issue filed alongside this.
 
         /// <summary>
         /// The job the phase grammar wrote this beat to do, and why. Saved so a card
