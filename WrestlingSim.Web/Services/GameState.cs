@@ -49,6 +49,17 @@ public class GameState
     /// <summary>Belts for exhibition mode. Always empty — sandbox matches carry no stakes.</summary>
     private readonly TitleRegistry _exhibitionTitles = new();
 
+    /// <summary>
+    /// Standing teams formed in exhibition, so sandbox booking never touches a career.
+    ///
+    /// The same shape as <see cref="_exhibitionFeuds"/>, and it should have been there from
+    /// the start: the builder offers "Make them a standing team" in every tag match, reads
+    /// `Career.Teams` to store it, and exhibition has no career — so ticking that box and
+    /// running the match threw a NullReferenceException out of FormTeam and took the whole
+    /// app down with the Blazor error bar. Three clicks from the exhibition menu.
+    /// </summary>
+    private readonly List<TagTeam> _exhibitionTeams = new();
+
     public GameState(SaveStore saves) => _saves = saves;
 
     // ── Roster ───────────────────────────────────────────────────────────────
@@ -105,6 +116,43 @@ public class GameState
 
     public List<Wrestler> Roster => Career?.Roster ?? BaseRoster;
     public FeudBook FeudBook => Career?.FeudBook ?? _exhibitionFeuds;
+
+    /// <summary>Standing teams, from the career if there is one and from the sandbox if not.</summary>
+    public List<TagTeam> Teams => Career?.Teams ?? _exhibitionTeams;
+
+    /// <summary>The standing team these exact members are, if they are one.</summary>
+    public TagTeam? TeamFor(IEnumerable<Wrestler> members)
+    {
+        var set = members.ToList();
+        if (set.Count < 2) return null;
+
+        return Teams.FirstOrDefault(t =>
+            t.IsActive && t.Members.Count == set.Count && set.All(t.Contains));
+    }
+
+    /// <summary>
+    /// Who has worked a match in this sandbox session, most recent first. Exhibition's
+    /// answer to the career's "who was on the last card" — see <see cref="RecentlyBooked"/>.
+    /// </summary>
+    private readonly List<Wrestler> _recentlyBooked = new();
+
+    /// <summary>How many matches back the picker still calls somebody recently booked.</summary>
+    private const int RecentMemory = 12;
+
+    /// <summary>Records that these wrestlers have just worked. Career mode reads the card.</summary>
+    public void NoteBooked(IEnumerable<Wrestler> wrestlers)
+    {
+        if (Career is not null) return;
+
+        foreach (var w in wrestlers)
+        {
+            _recentlyBooked.Remove(w);
+            _recentlyBooked.Insert(0, w);
+        }
+
+        if (_recentlyBooked.Count > RecentMemory)
+            _recentlyBooked.RemoveRange(RecentMemory, _recentlyBooked.Count - RecentMemory);
+    }
     public int ActiveFeudCount => FeudBook.All.Count;
     public IEnumerable<Wrestler> RosterByOverness => Roster.OrderByDescending(w => w.Overness);
 
@@ -117,8 +165,11 @@ public class GameState
 
     /// <summary>Whoever this wrestler has a standing tag team with, or null.</summary>
     public Wrestler? StandingPartnerOf(Wrestler w) =>
-        Career?.Teams.FirstOrDefault(t => t.IsActive && t.Contains(w))
-              ?.Members.FirstOrDefault(m => m != w);
+        // Teams, not Career.Teams: a team formed in the sandbox is still a team, and
+        // reading it off the career meant the picker's "Suggested" band was dead in
+        // exhibition however many teams the player had made there.
+        Teams.FirstOrDefault(t => t.IsActive && t.Contains(w))
+             ?.Members.FirstOrDefault(m => m != w);
 
     private HashSet<Wrestler>? _lastCardCast;
 
@@ -138,7 +189,10 @@ public class GameState
                     .OfType<BookedMatch>()
                     .SelectMany(m => m.Plan.AllParticipants)
                     .ToHashSet()
-            : [];
+            // Outside a career this returned an empty set, so the picker's "Recently booked"
+            // band could never fire in exhibition — and a sandbox session does have this
+            // history, it just has no card to read it off. NoteBooked keeps it.
+            : _recentlyBooked.ToHashSet();
 
     // ── Brands ───────────────────────────────────────────────────────────────
 

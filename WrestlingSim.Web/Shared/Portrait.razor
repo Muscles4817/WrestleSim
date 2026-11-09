@@ -1,0 +1,61 @@
+@*
+    A wrestler, as something you can recognise without reading.
+
+    There is no photography in this game and licensing real likenesses is not a thing a
+    hobby project does, so this is the honest substitute: initials, on a ground coloured by
+    alignment, at a consistent size everywhere a name appears. A review put the problem
+    plainly — seventy-six wrestlers and not one face, so scanning the roster is reading
+    rather than looking, and the rows are told apart only by the alignment badge's colour.
+
+    Two initials, not one, which is not uniqueness and is not meant to be — Roman Reigns and
+    Rhea Ripley are both RR on this roster. It is a shape to scan by, next to the name that
+    actually identifies them: one letter collides constantly enough to be useless for that,
+    and two rarely enough to be worth drawing.
+
+    The colour is alignment rather than per-wrestler, because a random hue per name is
+    decoration and alignment is the thing a booker is actually scanning for — the picker is
+    mostly a search for someone to work against the person already in the match.
+*@
+<span class="portrait portrait--@Tone @(Size is null ? "" : $"portrait--{Size}") @Class"
+      aria-hidden="true" title="@Wrestler.RingName">@Initials</span>
+
+@code {
+    [Parameter, EditorRequired] public Wrestler Wrestler { get; set; } = default!;
+
+    /// <summary>"sm" in dense rows, null at the default size, "lg" for a lineup slot.</summary>
+    [Parameter] public string? Size { get; set; }
+
+    /// <summary>Placement class from the caller, so the grid area lives with the grid.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    private string Tone => Wrestler.Gimmick?.NaturalAlignment switch
+    {
+        Alignment.Face => "face",
+        Alignment.Heel => "heel",
+        _              => "tweener"
+    };
+
+    /// <summary>
+    /// Up to two initials from the ring name. Single-word names keep their first two letters
+    /// — "Asuka" is AS rather than A — because one letter collides constantly and a blank
+    /// second slot looks like a rendering fault.
+    /// </summary>
+    private string Initials
+    {
+        get
+        {
+            var words = Wrestler.RingName
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(w => char.IsLetter(w[0]))
+                .ToList();
+
+            return words.Count switch
+            {
+                0 => "?",
+                1 => words[0].Length > 1 ? words[0][..2].ToUpperInvariant()
+                                         : words[0].ToUpperInvariant(),
+                _ => $"{words[0][0]}{words[^1][0]}".ToUpperInvariant()
+            };
+        }
+    }
+}

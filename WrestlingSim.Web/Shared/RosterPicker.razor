@@ -72,6 +72,18 @@
     </div>
 
     <div class="sheet__body">
+        @* The two value columns, named. They were a bare number and a bare arrow in every
+           row, and a review reading the picker could not tell what either was — it took the
+           steady arrow for missing data. A header rather than a label per row, because
+           seventy-six rows carrying the same two words is furniture.
+
+           It lives in the body and not the filter bar: the filter bar has its own padding,
+           so a header there sat exactly one --pad to the left of the column it labelled. *@
+        <div class="prow-head" aria-hidden="true">
+            <span class="prow-head__pop">Over</span>
+            <span class="prow-head__trend">Trend</span>
+        </div>
+
         @if (bands.Count == 0)
         {
             <div class="empty">Nobody matches that search.</div>
@@ -111,6 +123,7 @@
                     <button class="prow @(index == cursor ? "is-cursor" : "") @(row.BookedAs is null ? "" : "is-used")"
                             @onclick="() => Choose(w)"
                             @onfocus="() => cursor = index">
+                        <Portrait Wrestler="@w" Class="prow__face" />
                         <span class="prow__name">
                             @w.RingName
                             @* Face or heel, on every row, because it is half of what makes a
@@ -345,7 +358,8 @@
                  .Where(w => includeCrossover || !State.IsCrossover(w))
                  .Where(w => division is null || w.Division == division)
                  .Where(w => Matches(w, query)),
-            Against, State.FeudBook, UsedAs, State.StandingPartnerOf, State.RecentlyBooked, Today);
+            Against, State.FeudBook, UsedAs, State.StandingPartnerOf, State.RecentlyBooked, Today,
+            State.InCareer ? "on the last card" : "you booked them this session");
 
     private static bool Matches(Wrestler w, string q) =>
         string.IsNullOrWhiteSpace(q)

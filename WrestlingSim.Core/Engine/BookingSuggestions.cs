@@ -68,12 +68,13 @@ namespace WrestlingSim.Engine
             Func<Wrestler, string?> bookedAs,
             Func<Wrestler, Wrestler?> standingPartnerOf,
             IReadOnlySet<Wrestler> recentlyBooked,
-            DateOnly? today) =>
+            DateOnly? today,
+            string recentLabel = "on the last card") =>
             // The ring-condition reading is bolted on after the fact rather than threaded
             // through Describe's six return paths, because it is orthogonal to all of them:
             // being cooked is equally worth saying about somebody in a hot feud and
             // somebody with no story at all.
-            pool.Select(w => Describe(w, against, feuds, bookedAs, standingPartnerOf, recentlyBooked, today)
+            pool.Select(w => Describe(w, against, feuds, bookedAs, standingPartnerOf, recentlyBooked, today, recentLabel)
                              with { Condition = ConditionOf(w, today) })
                 .OrderBy(SortKey)
                 .ThenByDescending(x => x.Wrestler.Overness)
@@ -139,7 +140,8 @@ namespace WrestlingSim.Engine
             Func<Wrestler, string?> bookedAs,
             Func<Wrestler, Wrestler?> standingPartnerOf,
             IReadOnlySet<Wrestler> recentlyBooked,
-            DateOnly? today)
+            DateOnly? today,
+            string recentLabel)
         {
             string position = w.CardPosition.Label();
 
@@ -185,8 +187,12 @@ namespace WrestlingSim.Engine
                 return new Suggestion(w, SuggestionBand.Partner,
                     $"{position} · {mate.RingName}'s partner", null);
 
+            // The phrase is the caller's, because what "recently" means differs by mode:
+            // a career reads the last completed card, and a sandbox has no card at all —
+            // it has the matches you have run in this sitting. Saying "on the last card"
+            // in exhibition was simply untrue.
             if (recentlyBooked.Contains(w))
-                return new Suggestion(w, SuggestionBand.Recent, $"{position} · on the last card", null);
+                return new Suggestion(w, SuggestionBand.Recent, $"{position} · {recentLabel}", null);
 
             return new Suggestion(w, SuggestionBand.Plain, Plain(w, today), null);
         }

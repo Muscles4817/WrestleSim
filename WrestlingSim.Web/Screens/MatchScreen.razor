@@ -376,6 +376,10 @@ else
         else update.Feud.RecordUnresolved();
         feudUpdates = new List<FeudUpdate> { update };
 
+        // The sandbox's own card memory, so the picker can say "you have just used this
+        // person". In a career the same question is answered off the last completed show.
+        State.NoteBooked(booked.Plan.AllParticipants);
+
         State.Notify();
     }
 
