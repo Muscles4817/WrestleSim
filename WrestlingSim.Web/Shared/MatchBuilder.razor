@@ -2241,13 +2241,13 @@
 
     /// <summary>The standing team these two are, if the career knows them as one.</summary>
     private TagTeam? TeamFor(MatchSide side) =>
-        side.IsTag ? State.Career?.TeamFor(side.Members) : null;
+        side.IsTag ? State.TeamFor(side.Members) : null;
 
     private TagTeam? ExistingTeamA =>
-        SizeOf(0) > 1 && MembersA.Count() == SizeOf(0) ? State.Career?.TeamFor(MembersA) : null;
+        SizeOf(0) > 1 && MembersA.Count() == SizeOf(0) ? State.TeamFor(MembersA) : null;
 
     private TagTeam? ExistingTeamB =>
-        SizeOf(1) > 1 && MembersB.Count() == SizeOf(1) ? State.Career?.TeamFor(MembersB) : null;
+        SizeOf(1) > 1 && MembersB.Count() == SizeOf(1) ? State.TeamFor(MembersB) : null;
 
     private TagTeam FormTeam(MatchSide side, string name)
     {
@@ -2257,7 +2257,7 @@
             Members = side.Members.ToList(),
             Formed  = Today
         };
-        State.Career!.Teams.Add(team);
+        State.Teams.Add(team);
         return team;
     }
 

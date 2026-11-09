@@ -345,7 +345,8 @@
                  .Where(w => includeCrossover || !State.IsCrossover(w))
                  .Where(w => division is null || w.Division == division)
                  .Where(w => Matches(w, query)),
-            Against, State.FeudBook, UsedAs, State.StandingPartnerOf, State.RecentlyBooked, Today);
+            Against, State.FeudBook, UsedAs, State.StandingPartnerOf, State.RecentlyBooked, Today,
+            State.InCareer ? "on the last card" : "you booked them this session");
 
     private static bool Matches(Wrestler w, string q) =>
         string.IsNullOrWhiteSpace(q)
