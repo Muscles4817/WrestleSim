@@ -1037,5 +1037,98 @@ namespace WrestlingSim.Tests
         {
             Assert.Throws<SaveLoadException>(() => SaveSerializer.FromJson("not json at all", Roster()));
         }
+
+        // ── Beat fields across a save ────────────────────────────────────────
+
+        /// <summary>
+        /// A three-way whose finish names who takes the fall, booked onto a card and saved.
+        ///
+        /// This is the one that mattered. `BeatDto` did not carry `Against`, so the reloaded
+        /// finish named nobody, and `MatchPlan.Validate` refuses that — a saved triple threat
+        /// came back unrunnable, reporting "a 3-way finish has to say who takes the fall" to
+        /// a booker who had already said it.
+        /// </summary>
+        [Fact]
+        public void AThreeWayComesBackStillKnowingWhoTakesTheFall()
+        {
+            var roster = Roster();
+            var career = NewCareer(roster);
+            var show   = career.Schedule("Weekly", new DateOnly(2025, 1, 6), ShowType.Television);
+
+            var finish = BeatLibrary.Find("Clean Victory")!.ToMatchBeat(BeatControl.WrestlerA);
+            finish.Against = BeatControl.SideC;
+
+            var plan = new MatchPlanModel
+            {
+                Sides =
+                [
+                    new MatchSide { Members = [roster[0]] },
+                    new MatchSide { Members = [roster[1]] },
+                    new MatchSide { Members = [roster[2]] }
+                ],
+                Beats = [BeatLibrary.Find("Hot Start")!.ToMatchBeat(BeatControl.Even), finish]
+            };
+            show.Card.Add(new BookedMatch { Plan = plan, StructureName = "Triple Threat" });
+
+            var loaded = SaveSerializer.FromJson(SaveSerializer.ToJson(career), Roster());
+            var back   = (BookedMatch)loaded.Shows.Single(x => x.Id == show.Id).Card[0];
+            var backFinish = back.Plan.Beats.Last();
+
+            // The root of it: the save format predated multi-man matches and wrote only
+            // SideA and SideB, so the third camp did not come back at all.
+            Assert.Equal(3, back.Plan.Sides.Count);
+            Assert.Equal(MatchFormat.TripleThreat, back.Plan.Format);
+
+            Assert.Equal(BeatControl.SideC, backFinish.Against);
+
+            // And the side it names is the one the plan reports as losing — the field is
+            // only useful because MatchPlan reads it back out.
+            Assert.Same(back.Plan.Sides[2], back.Plan.BookedLosingSide);
+
+            // The thing the player would actually have hit: the plan still runs.
+            Assert.DoesNotContain(back.Plan.Validate(),
+                e => e.Contains("who takes the fall"));
+        }
+
+        /// <summary>
+        /// And the rest of what a beat carries. Written as a field-by-field check rather than
+        /// one assertion per field so that adding a property to MatchBeat without adding it
+        /// to BeatDto fails here — which is how `Against` survived unnoticed for as long as
+        /// the save format has existed.
+        /// </summary>
+        [Fact]
+        public void EveryBeatFieldTheBuilderCanSetSurvivesARoundTrip()
+        {
+            var roster = Roster();
+            var career = NewCareer(roster);
+            var show   = career.Schedule("Weekly", new DateOnly(2025, 1, 6), ShowType.Television);
+
+            var beat = BeatLibrary.Find("Power Beatdown")!
+                                  .ToMatchBeat(BeatControl.WrestlerB, BeatIntensity.High, BeatDuration.Long);
+            beat.Against       = BeatControl.WrestlerA;
+            beat.IncomingIndex = 1;
+            beat.Phase         = MatchPhase.Heat;
+            beat.Why           = "The control section.";
+
+            var plan = new MatchPlanModel
+            {
+                Sides = [new MatchSide { Members = [roster[0]] }, new MatchSide { Members = [roster[1]] }],
+                Beats = [beat, BeatLibrary.Find("Clean Victory")!.ToMatchBeat(BeatControl.WrestlerA)]
+            };
+            show.Card.Add(new BookedMatch { Plan = plan, StructureName = "Test" });
+
+            var loaded = SaveSerializer.FromJson(SaveSerializer.ToJson(career), Roster());
+            var back   = ((BookedMatch)loaded.Shows.Single(x => x.Id == show.Id).Card[0]).Plan.Beats[0];
+
+            Assert.Equal(beat.Type,          back.Type);
+            Assert.Equal(beat.Control,       back.Control);
+            Assert.Equal(beat.Intensity,     back.Intensity);
+            Assert.Equal(beat.Duration,      back.Duration);
+            Assert.Equal(beat.StyleHint,     back.StyleHint);
+            Assert.Equal(beat.IncomingIndex, back.IncomingIndex);
+            Assert.Equal(beat.Against,       back.Against);
+            Assert.Equal(beat.Phase,         back.Phase);
+            Assert.Equal(beat.Why,           back.Why);
+        }
     }
 }
