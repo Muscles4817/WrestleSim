@@ -31,6 +31,14 @@ public static class Money
     /// <summary>With an explicit plus, for a figure that is a change rather than a balance.</summary>
     public static string Signed(decimal amount) => amount > 0 ? "+" + Format(amount) : Format(amount);
 
+    /// <summary>An audience as a booker reads one: 2.1M, 812k, 4,300.</summary>
+    public static string Audience(int viewers) => viewers switch
+    {
+        >= 1_000_000 => (viewers / 1_000_000.0).ToString("0.00", En) + "M",
+        >= 10_000    => (viewers / 1_000.0).ToString("0", En) + "k",
+        _            => viewers.ToString("N0", En)
+    };
+
     /// <summary>"93%", not the invariant culture's "93 %".</summary>
     public static string Percent(double fraction) => $"{fraction * 100:F0}%";
 

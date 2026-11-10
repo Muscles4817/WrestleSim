@@ -273,15 +273,20 @@ namespace WrestlingSim.Engine
         /// <summary>
         /// Rights money for the night. Only a promotion with television has any, and only a
         /// televised night or a premium event earns it — the premium event is in the deal,
-        /// which is the streaming-era arrangement in doc 09 §3.2.
+        /// which is the streaming-era arrangement in doc 09 §3.2. The fee is the deal's when
+        /// there is one, and the tier's going rate when there is not.
         /// </summary>
-        public static decimal RightsFor(Promotion p, ShowType type) =>
-            !p.HasTelevision ? 0m : type switch
+        public static decimal RightsFor(Promotion p, ShowType type, TvDeal? deal = null)
+        {
+            if (!p.HasTelevision) return 0m;
+            decimal perEpisode = deal?.FeePerEpisode ?? For(p.Tier).RightsPerEpisode;
+            return type switch
             {
-                ShowType.Television   => For(p.Tier).RightsPerEpisode,
-                ShowType.PremiumEvent => For(p.Tier).RightsPerEpisode * 2m,
+                ShowType.Television   => perEpisode,
+                ShowType.PremiumEvent => perEpisode * 2m,
                 _                     => 0m
             };
+        }
 
         public static decimal ProductionFor(Promotion p, ShowType type) =>
             !p.HasTelevision ? 0m : type switch
@@ -310,7 +315,8 @@ namespace WrestlingSim.Engine
         /// when a match is run, and the house was sold on what they were beforehand.
         /// </summary>
         public static ShowFinances Night(
-            ScheduledShow show, Promotion promotion, double reputation, FeudBook? feuds)
+            ScheduledShow show, Promotion promotion, double reputation, FeudBook? feuds,
+            TvDeal? deal = null)
         {
             var e = For(promotion.Tier);
             var draws = Draw(show.Card, feuds, show.Date);
@@ -333,7 +339,10 @@ namespace WrestlingSim.Engine
                 TicketPrice      = price,
                 Gate             = attendance * price,
                 Merchandise      = Merch(e, attendance, onCard),
-                MediaRights      = hasCard ? RightsFor(promotion, show.Type) : 0m,
+                MediaRights      = hasCard ? RightsFor(promotion, show.Type, deal) : 0m,
+                TuneIn           = hasCard && promotion.HasTelevision && show.Type == ShowType.Television
+                                       ? Television.TuneIn(promotion.Tier, pull, reputation)
+                                       : 0,
                 Talent           = onCard.Sum(w => AppearanceFee(w, promotion.Tier)),
                 Operations       = hasCard ? OperationsFor(e, show.Type) : 0m,
                 Production       = hasCard ? ProductionFor(promotion, show.Type) : 0m,

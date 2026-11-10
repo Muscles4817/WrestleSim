@@ -79,6 +79,20 @@ namespace WrestlingSim.Models
         public decimal Production { get; init; }
 
         /// <summary>
+        /// How many chose to watch a televised episode, on the card as advertised. Zero on
+        /// anything that was not a televised episode.
+        /// </summary>
+        public int TuneIn { get; init; }
+
+        /// <summary>
+        /// The average audience once the show's quality had kept or lost them. Set after the
+        /// bell; this, not the tune-in, is what the renewal counts.
+        /// </summary>
+        public int Viewers { get; set; }
+
+        public bool WasTelevised => TuneIn > 0;
+
+        /// <summary>
         /// The run of towns the rest of the roster worked, when there was one. Settable so a
         /// settled run can replace the projected one without copying the rest of the night.
         /// </summary>

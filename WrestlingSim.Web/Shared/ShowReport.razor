@@ -89,7 +89,7 @@ else
    promotion to bank anything, and on a career show run before the books were kept. *@
 @if (Result.Finances is { } books)
 {
-    <Takings Finances="books" Verdict="@Result.BusinessVerdict" DailyOverhead="DailyOverhead" />
+    <Takings Finances="books" Verdict="@Result.BusinessVerdict" DailyOverhead="DailyOverhead" Deal="Deal" />
 }
 
 @if (Result.OverrunPenalty > 0)
@@ -428,4 +428,6 @@ else
 
     /// <summary>The promotion's daily running cost, for the books to mention. Zero in exhibition.</summary>
     [Parameter] public decimal DailyOverhead { get; set; }
+
+    [Parameter] public TvDeal? Deal { get; set; }
 }

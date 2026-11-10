@@ -145,11 +145,58 @@ above 4× while the rating ratio stays under 1.3×.
 calibrated across a large part of the existing suite, and re-weighting it is its own piece of
 work with its own review. Logged as a follow-up.
 
+## Slice 2: the television deal and its renewal
+
+*Doc 08. Built after the first slice; it replaces the flat fee.*
+
+At Established and above the rights fee is most of the money, and in the first slice it was
+flat: booking moved the gate and the merch and nothing else. Doc 08 §3 calls the renewal the
+most important 18 months in a promotion's life, and that is what was missing.
+
+- **`TvDeal`** on the career: a fee per episode fixed for a term — three years at Established,
+  four at National, five at Global (doc 08 §2.1's three to five). Opened with the books.
+- **Viewers per televised episode**, with the same two halves as the gate:
+  - *Tune-in* from the card as advertised, before the bell, scaled by reputation. Less
+    elastic than tickets (exponent 0.8 against 1.5): a television audience is a habit.
+  - *Retention* from the show's rating: 0.92 at 50, 1.04 at 80, 0.80 at 20. A bad episode
+    loses its audience across the night — doc 08 §4.2's quarter-hours, reduced to one figure.
+  
+  So at a television tier **quality reaches money directly** for the first time, not only
+  through reputation.
+- **Baselines** are the typical card's average audience: 2.0M Global (doc 29 §8: Raw 1.3–1.8M,
+  SmackDown 2.0–2.5M), 800k National (Dynamite 600–900k), 250k Established (no reference row).
+- **Renewal on the clock at expiry.** The next fee is this one ×
+  `1.10 × audienceIndex^1.2 × consistency`, clamped to 0.5–2.0, rounded to the thousand:
+  - *audience index* — the term's viewers against the baseline, **final year weighted double**
+    (doc 08 §3's T−12 months);
+  - *consistency* — up to a fifth off for a swinging audience, by its coefficient of variation
+    (doc 08 §2.2: the network buys a number it can sell against);
+  - *1.10* — the market's drift; doc 08 §1.1's rights fees rising while ratings fell.
+  
+  Holding the baseline renews at ×1.10; 1.4× the baseline at ×1.65; 0.7× at ×0.72.
+- **On screen:** the booking screen shows tune-in; the report shows how many watched and what
+  share the show kept; a dashboard tile shows the fee, days left, a *final year — counts
+  double* badge, and **what the deal would renew at today** — the number the booking is
+  actually moving.
+
+Found while building it: `Math.Round(decimal, -3)` throws — decimal rounding takes no negative
+digits — so the first version crashed at the first renewal of every career. The clock test
+caught it; the fee now rounds by dividing.
+
+### Not built in slice 2
+
+- **The network walking away.** The floor is half the fee; a promotion is never dropped.
+- **Negotiation.** Renewal is automatic. Doc 08 §3's stunts — signings, returns — have nothing
+  to bid against, and there is no rival network.
+- **The network's other wants** (doc 08 §2.2): demographics, brand safety, specific stars.
+- **Inventory obligations.** Nothing makes a promotion produce the episodes it signed for; a
+  term with none renews at the floor, which is the only cost.
+- **Quarter-hour ratings per segment.** Retention is one figure per episode.
+- **Premium events in the ratings.** They are paid for at 2× an episode and rated by nobody.
+
 ## Not built, and written down
 
-- **TV renewal and viewership.** The rights fee is flat, so at Established and above booking
-  moves only the gate and merch. A viewership output that matters at renewal is what makes
-  booking matter there.
+- ~~**TV renewal and viewership.**~~ Built in slice 2, above.
 - **Contracts and signings.** Per-appearance pay undercounts a TV promotion's payroll; the
   daily overhead stands in for the guarantees. The oversized-roster trap (doc 09 §2.2) needs a
   roster the player chooses.

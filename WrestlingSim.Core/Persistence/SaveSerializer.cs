@@ -108,6 +108,22 @@ namespace WrestlingSim.Persistence
             }).ToList(),
 
             Brands = ToDto(career.Brands),
+            Television = career.Television is { } tv ? new TvDealDto
+            {
+                FeePerEpisode = tv.FeePerEpisode,
+                Start         = Iso(tv.Start),
+                End           = Iso(tv.End),
+                Episodes      = tv.Episodes.Select(e => new EpisodeDto { Date = Iso(e.Date), Viewers = e.Viewers }).ToList(),
+                History       = tv.History.Select(t => new TvTermDto
+                {
+                    Start          = Iso(t.Start),
+                    End            = Iso(t.End),
+                    FeePerEpisode  = t.FeePerEpisode,
+                    Episodes       = t.Episodes,
+                    AverageViewers = t.AverageViewers,
+                    RenewedAt      = Math.Round(t.RenewedAt, 4)
+                }).ToList()
+            } : null,
             Books = new BooksDto
             {
                 Cash        = career.Books.Cash,
@@ -413,6 +429,8 @@ namespace WrestlingSim.Persistence
             Talent           = f.Talent,
             Operations       = f.Operations,
             Production       = f.Production,
+            TuneIn           = f.TuneIn,
+            Viewers          = f.Viewers,
             Road = f.Road is { } r ? new RoadTakingsDto
             {
                 Towns              = r.Towns,
@@ -450,6 +468,8 @@ namespace WrestlingSim.Persistence
             Talent           = d.Talent,
             Operations       = d.Operations,
             Production       = d.Production,
+            TuneIn           = d.TuneIn,
+            Viewers          = d.Viewers,
             Road = d.Road is { } r ? new RoadTakings
             {
                 Towns              = r.Towns,
@@ -525,6 +545,28 @@ namespace WrestlingSim.Persistence
                 };
             else
                 career.OpenBooks(career.CurrentDate);
+
+            if (dto.Television is { } tv)
+                career.Television = new TvDeal
+                {
+                    FeePerEpisode = tv.FeePerEpisode,
+                    Start         = ParseDate(tv.Start),
+                    End           = ParseDate(tv.End),
+                    Episodes      = tv.Episodes.Select(e => new EpisodeRating { Date = ParseDate(e.Date), Viewers = e.Viewers }).ToList(),
+                    History       = tv.History.Select(t => new TvTerm
+                    {
+                        Start          = ParseDate(t.Start),
+                        End            = ParseDate(t.End),
+                        FeePerEpisode  = t.FeePerEpisode,
+                        Episodes       = t.Episodes,
+                        AverageViewers = t.AverageViewers,
+                        RenewedAt      = t.RenewedAt
+                    }).ToList()
+                };
+            else if (career.Promotion.HasTelevision)
+                // A televised promotion saved before deals had terms. Its term starts today:
+                // backdating it would renew on episodes nobody counted.
+                career.Television ??= Television.Open(career.Promotion.Tier, career.CurrentDate);
 
             career.ShowDefinitions.AddRange(dto.ShowDefinitions.Select(d => new ShowDefinition
             {
