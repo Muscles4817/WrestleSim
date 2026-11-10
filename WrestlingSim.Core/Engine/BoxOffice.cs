@@ -62,7 +62,7 @@ namespace WrestlingSim.Engine
         /// <see cref="MatchEngine.TypicalInvestment"/>. <c>ATypicalCardFillsTypically</c>
         /// measures the corpus and fails when the two part company; re-measure, do not widen.
         /// </summary>
-        public const double TypicalCardPull = 0.7624;
+        public const double TypicalCardPull = 0.7561;
 
         /// <summary>
         /// How full a building a typical card fills at an opening reputation. Doc 29 §7 puts

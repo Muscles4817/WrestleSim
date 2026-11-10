@@ -50,11 +50,12 @@ what the card will draw (`TheHouseIsSoldOnTheCardAsAdvertised_NotOnHowItWent`).
 demand = capacity × TypicalFill × (cardPull / TypicalCardPull)^1.5 × reputationFactor
 ```
 
-- **`TypicalCardPull` = 0.7624 is measured**, not chosen: the median card pull of 2,000 cards
+- **`TypicalCardPull` = 0.7561 is measured**, not chosen: the median card pull of 2,000 cards
   of five same-division singles matches drawn at random from the shipped roster with
   `StableSeed`. It moves when the roster does, and
   `ATypicalCardFillsTypically_AndThatIsMeasuredNotAsserted` fails when it has — the same
-  contract as `MatchEngine.TypicalInvestment`.
+  contract as `MatchEngine.TypicalInvestment`. It shipped measured at 0.7624; the fourteen
+  champions added in #90 moved it to 0.7561, and the test caught it on rebase.
 - **`TypicalFill` = 0.70.** Doc 29 §7 puts break-even at a 50–60% house; a booker who books
   whoever is free should clear it, not by much.
 - **Elasticity 1.5**, because draw is top-heavy: a card twice as strong as typical sells out.
@@ -98,17 +99,18 @@ Quality sells the next ticket, not this one."*
 
 ## Measurements
 
-Typical card at the tier's usual cadence, overhead included, 400 cards, opening reputation
+Typical card at the tier's usual cadence, overhead included, 400 cards, opening reputation,
+re-measured on the roster after #90
 (`ATypicalCardLandsWhereTheReferencePutsTheTier`):
 
 | Tier | Doc 09 §4 | Median margin | 10th–90th |
 |---|---|---|---|
-| Local | thin, often subsidised | 11.9% | −0.3% to 21.5% |
-| Independent | thin | 20.9% | 9.9% to 27.3% |
-| SuperIndie | real but small profit | 17.9% | 3.5% to 27.1% |
-| Established | near break-even or modest | 10.5% | 8.3% to 12.2% |
-| National | costs that can exceed revenue | 6.3% | 4.9% to 7.3% |
-| Global | 30–40% in strong years | 35.1% | 34.4% to 35.6% |
+| Local | thin, often subsidised | 11.7% | −0.2% to 22.4% |
+| Independent | thin | 20.8% | 8.3% to 28.6% |
+| SuperIndie | real but small profit | 17.2% | 1.2% to 27.5% |
+| Established | near break-even or modest | 10.5% | 8.1% to 12.6% |
+| National | costs that can exceed revenue | 6.3% | 4.7% to 7.6% |
+| Global | 30–40% in strong years | 35.1% | 34.4% to 35.7% |
 
 The TV tiers' bands are narrow because the flat rights fee dominates their revenue. That is
 the honest consequence of decision 3 and the reason renewal is next.
