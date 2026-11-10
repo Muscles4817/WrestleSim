@@ -274,18 +274,15 @@ namespace WrestlingSim.Tests
         }
 
         [Fact]
-        public void MostOfTheRosterHasAnAge()
+        public void TheWholeRosterHasAnAge()
         {
-            // Not all of it. Two entries are deliberately blank: one performer has no
-            // published birth year at all, and one has two reports a month apart giving
-            // different ages. Guessing either would put a false claim about a real person
-            // into the repo to move a curve by a fraction of a percent.
-            //
-            // This pins the coverage so a roster edit that drops ages wholesale is noticed.
+            // All of it, since the data pass: every entry's birth and debut year was read
+            // off that performer's Wikipedia infobox rather than recalled, including the
+            // two this test used to allow to be blank.
             var roster = DataLoaders.LoadEmbeddedWrestlers();
             int withAge = roster.Count(w => w.BornIn is not null);
 
-            Assert.True(withAge >= 74,
+            Assert.True(withAge == roster.Count,
                 $"Only {withAge} of {roster.Count} wrestlers have a birth year.");
         }
 

@@ -26,7 +26,12 @@ namespace WrestlingSim.Tests
             "ivy-nile",         // now Emily Andzulis
             "thea-hail",        // now Madison Knisley
             "karmen-petrovic",  // now Monika Klisara
-            "wren-sinclair"     // now Madison Dombkowski
+            "wren-sinclair",    // now Madison Dombkowski
+            "gary-blair-jr",    // now Gary Gordon (Angelo Dawkins)
+            "christian-brantley", // now Christian Brigham (Carmelo Hayes)
+            "stephanie-yim",    // now Stephanie Hym Bell (Michin)
+            "rachel-evans",     // now Kayleigh Rae (Alba Fyre)
+            "cynthia-lopez"     // now Karissa Rivera (Elektra Lopez)
         ];
 
         [Fact]
@@ -51,6 +56,46 @@ namespace WrestlingSim.Tests
                                 .ToList();
 
             Assert.True(clashes.Count == 0, "Ids must be unique:\n  " + string.Join("\n  ", clashes));
+        }
+
+        [Fact]
+        public void EveryShippedTagTeamResolvesAgainstTheRoster()
+        {
+            // TagTeamSeed matches members by RealName, NOT by Id, and Bind returns null
+            // for a team with a member it cannot find — so the team simply never seeds and
+            // nothing reports it. Correcting a performer's real name therefore breaks any
+            // team that names them, silently.
+            //
+            // That is not hypothetical: correcting Isla Dawn's real name stopped the
+            // Alba Fyre & Isla Dawn team seeding into new careers, and nothing caught it
+            // until the next data pass read the file by hand. Hence this test.
+            var roster = DataLoaders.LoadEmbeddedWrestlers();
+            var teams  = DataLoaders.LoadEmbeddedTagTeams();
+
+            Assert.NotEmpty(teams);
+
+            var names = roster.Select(w => w.RealName).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var broken = teams
+                .Select(t => (t.Name, Missing: t.Members.Where(m => !names.Contains(m)).ToList()))
+                .Where(x => x.Missing.Count > 0)
+                .Select(x => $"{x.Name}: {string.Join(", ", x.Missing)}")
+                .ToList();
+
+            Assert.True(broken.Count == 0,
+                "These teams name somebody the roster does not have, so they will not seed:\n  "
+                + string.Join("\n  ", broken));
+        }
+
+        [Fact]
+        public void EveryShippedTagTeamActuallySeeds()
+        {
+            // The stronger version of the above: not just that the names resolve, but that
+            // SeedDefaults really produces every team, which is what a new career gets.
+            var roster = DataLoaders.LoadEmbeddedWrestlers();
+            var seeded = Models.World.TagTeamSeed.SeedDefaults(roster, new DateOnly(2026, 1, 5));
+
+            Assert.Equal(DataLoaders.LoadEmbeddedTagTeams().Count, seeded.Count);
         }
 
         [Fact]

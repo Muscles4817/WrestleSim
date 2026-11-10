@@ -6,9 +6,9 @@
       "Jonathan Fatu"
     ],
     "FormedDaysAgo": 1520,
-    "LastTeamedDaysAgo": 6,
+    "LastTeamedDaysAgo": 55,
     "MatchesTogether": 214,
-    "Chemistry": 0.93
+    "Chemistry": 0.74
   },
   {
     "Name": "The New Day",
@@ -17,7 +17,7 @@
       "Austin Watson"
     ],
     "FormedDaysAgo": 1105,
-    "LastTeamedDaysAgo": 13,
+    "LastTeamedDaysAgo": 24,
     "MatchesTogether": 138,
     "Chemistry": 0.89
   },
@@ -28,31 +28,31 @@
       "Nikola Bogojevic"
     ],
     "FormedDaysAgo": 540,
-    "LastTeamedDaysAgo": 9,
+    "LastTeamedDaysAgo": 45,
     "MatchesTogether": 71,
-    "Chemistry": 0.84
+    "Chemistry": 0.7
   },
   {
     "Name": "The Street Profits",
     "Members": [
       "Kenneth Crawford",
-      "Gary Blair Jr."
+      "Gary Gordon"
     ],
     "FormedDaysAgo": 300,
-    "LastTeamedDaysAgo": 4,
+    "LastTeamedDaysAgo": 30,
     "MatchesTogether": 34,
     "Chemistry": 0.68
   },
   {
-    "Name": "The Viking Raiders",
+    "Name": "The War Raiders",
     "Members": [
       "Raymond Rowe",
       "Todd Smith"
     ],
     "FormedDaysAgo": 210,
-    "LastTeamedDaysAgo": 11,
+    "LastTeamedDaysAgo": 52,
     "MatchesTogether": 26,
-    "Chemistry": 0.61
+    "Chemistry": 0.63
   },
   {
     "Name": "Imperium",
@@ -61,9 +61,9 @@
       "Fabian Aichner"
     ],
     "FormedDaysAgo": 1180,
-    "LastTeamedDaysAgo": 10,
+    "LastTeamedDaysAgo": 58,
     "MatchesTogether": 127,
-    "Chemistry": 0.87
+    "Chemistry": 0.26
   },
   {
     "Name": "The Kabuki Warriors",
@@ -72,9 +72,9 @@
       "Kaori Housako"
     ],
     "FormedDaysAgo": 760,
-    "LastTeamedDaysAgo": 5,
+    "LastTeamedDaysAgo": 58,
     "MatchesTogether": 96,
-    "Chemistry": 0.9
+    "Chemistry": 0.46
   },
   {
     "Name": "Damage CTRL",
@@ -83,19 +83,19 @@
       "Cheree Crowley"
     ],
     "FormedDaysAgo": 430,
-    "LastTeamedDaysAgo": 8,
+    "LastTeamedDaysAgo": 58,
     "MatchesTogether": 52,
-    "Chemistry": 0.79
+    "Chemistry": 0.3
   },
   {
     "Name": "Alba Fyre & Isla Dawn",
     "Members": [
-      "Rachel Evans",
-      "Amanda Wilson"
+      "Kayleigh Rae",
+      "Courtney Stewart"
     ],
     "FormedDaysAgo": 250,
-    "LastTeamedDaysAgo": 17,
+    "LastTeamedDaysAgo": 58,
     "MatchesTogether": 21,
-    "Chemistry": 0.55
+    "Chemistry": 0.22
   }
 ]
