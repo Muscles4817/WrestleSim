@@ -60,7 +60,11 @@
                         <div class="pick__meta">
                             @(promo.HasTelevision ? "Weekly television" : "No television")
                             · runs about every @promo.TypicalShowIntervalDays day@(promo.TypicalShowIntervalDays == 1 ? "" : "s")
-                            · @promo.TypicalAttendanceFor(ShowType.PremiumEvent).ToString("N0") for a big night
+                            · @promo.TypicalAttendanceFor(ShowType.PremiumEvent).ToString("N0") seats on a big night
+                        </div>
+                        <div class="pick__meta">
+                            Opens with @Money.Format(BoxOffice.For(option).OpeningCash)
+                            · the office costs @Money.Format(BoxOffice.For(option).DailyOverhead) a day
                         </div>
                     </div>
                 </button>

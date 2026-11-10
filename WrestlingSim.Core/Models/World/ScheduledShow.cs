@@ -34,7 +34,11 @@ namespace WrestlingSim.Models.World
         /// <summary>Runtime budget in minutes. Seeded from the promotion's tier.</summary>
         public int RuntimeMinutes { get; set; } = 120;
 
-        /// <summary>Expected attendance, seeded from tier and show type.</summary>
+        /// <summary>
+        /// The building's capacity, seeded from tier and show type. How many of those seats
+        /// sell is the card's doing — see <see cref="Engine.BoxOffice"/>. Named for what it
+        /// held before the box office existed; the save field keeps the name.
+        /// </summary>
         public int Attendance { get; set; }
 
         /// <summary>The booked card, in running order. Empty until the player books it.</summary>

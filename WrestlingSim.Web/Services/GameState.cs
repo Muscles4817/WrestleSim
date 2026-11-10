@@ -281,6 +281,8 @@ public class GameState
             wrestler.Sharpness = RingCondition.OpeningSharpness(RingCondition.SelfMaintenance(
                 wrestler.Mental?.Psychology ?? 70, wrestler.Mental?.RingIQ ?? 70));
 
+        career.OpenBooks(startDate);
+
         career.ShowDefinitions.AddRange(shows ?? DefaultSlate(promotion));
         career.MaterialiseSchedule();
 
@@ -556,54 +558,10 @@ public class GameState
     {
         if (Career == null || show.HasRun) return;
 
-        // Not just "is there anything on it". A card can hold a match nobody has cast, and
-        // running one would take a side with nobody on it to the bell.
-        if (!show.IsRunnable) return;
-
-
-
-        // The brand context is what charges the night's crossovers to the split. A
-        // company-wide date passes a null home brand, which is how the inter-brand
-        // supercard stays free — docs/wrestling-reference/22-brand-splits.md §3.4.
-        var brands = Career.Brands.Active
-            ? new BrandContext(Career.Brands, Career.BrandOfShow(show))
-            : null;
-
-        // The card, when there is one. A date can be a run of towns and nothing else, which is
-        // the ordinary untelevised week.
-        var result = show.Card.Count > 0
-            ? new ShowSimulator(Career.FeudBook, titles: Career.Titles, brands: brands,
-                                stipulations: Career.Stipulations,
-                                tier: Career.Promotion.Tier)
-                .Simulate(show.ToShow())
-            : new ShowResult { BudgetMinutes = show.RuntimeMinutes };
-
-        // And the road, when anybody is on it. Both, on the same date, because they are
-        // different people doing different things: the card is the night you booked and the
-        // run is the rest of the roster out in the towns.
-        //
-        // Anybody on the card works the run a town short. Nobody is in two places on the
-        // same night, but a week is not one night — the card is the Monday and the towns are
-        // the rest of it. Running them for the whole card *and* the whole run billed one
-        // body twice, which is what the first version did; taking them off the run entirely,
-        // which is what the second did, made television and the road mutually exclusive and
-        // closed the one route back to match fitness the sharpness meter describes.
-        if (show.Loop is { IsBookable: true } loop)
-        {
-            var onTheCard = show.Card.SelectMany(i => i.Wrestlers).ToHashSet();
-            var road = new LoopSimulator(tier: Career.Promotion.Tier)
-                .Run(loop, show.Date, onTheCard);
-
-            if (road.Workers.Count > 0)
-            {
-                result.Loop = road;
-                result.Injuries.AddRange(road.Injuries);
-            }
-        }
-
-        show.Result = result;
-
-        if (Career.CurrentDate < show.Date) Career.CurrentDate = show.Date;
+        // Sells the house, runs the card and the road, banks the takings. Lives in Core so
+        // the order between them — the house sold before the bell, reputation moved after
+        // it — is tested rather than trusted. Refuses a card with a match nobody has cast.
+        if (Career.RunShow(show) is null) return;
 
         ActiveShow = show;
         await SaveAsync();

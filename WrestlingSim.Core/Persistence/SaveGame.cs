@@ -67,6 +67,65 @@ namespace WrestlingSim.Persistence
 
         /// <summary>Standing tag teams. Absent in v2 saves; an empty list is correct there.</summary>
         public List<TagTeamDto> Teams { get; set; } = new();
+
+        /// <summary>
+        /// Cash and reputation. Absent from every save written before money existed; such a
+        /// career opens its books on the day it is loaded, at the tier's starting cash, and
+        /// its shows already run have no takings — they were run before the books were kept.
+        /// Additive, so no version bump, the same as <see cref="Stipulations"/>.
+        /// </summary>
+        public BooksDto? Books { get; set; }
+    }
+
+    public class BooksDto
+    {
+        public decimal Cash { get; set; }
+        public decimal OpeningCash { get; set; }
+        public decimal Overheads { get; set; }
+        public double Reputation { get; set; }
+        public string OpenedOn { get; set; } = "";
+    }
+
+    /// <summary>A night's books. Mirrors <see cref="ShowFinances"/>, which is plain data.</summary>
+    public class ShowFinancesDto
+    {
+        public List<ItemDrawDto> Draws { get; set; } = new();
+        public double CardPull { get; set; }
+        public int Capacity { get; set; }
+        public int Demand { get; set; }
+        public decimal TicketPrice { get; set; }
+        public decimal Gate { get; set; }
+        public decimal Merchandise { get; set; }
+        public decimal MediaRights { get; set; }
+        public decimal Talent { get; set; }
+        public decimal Operations { get; set; }
+        public decimal Production { get; set; }
+        public RoadTakingsDto? Road { get; set; }
+        public double ReputationBefore { get; set; }
+        public double ReputationAfter { get; set; }
+        public decimal CashAfter { get; set; }
+    }
+
+    public class ItemDrawDto
+    {
+        public string Label { get; set; } = "";
+        public List<string> Headliners { get; set; } = new();
+        public double StarPower { get; set; }
+        public double Build { get; set; } = 1;
+        public double Freshness { get; set; } = 1;
+        public double Stakes { get; set; } = 1;
+    }
+
+    public class RoadTakingsDto
+    {
+        public int Towns { get; set; }
+        public int CapacityPerNight { get; set; }
+        public int AttendancePerNight { get; set; }
+        public List<string> Headliners { get; set; } = new();
+        public decimal Gate { get; set; }
+        public decimal Merchandise { get; set; }
+        public decimal Talent { get; set; }
+        public decimal Operations { get; set; }
     }
 
     /// <summary>
@@ -531,6 +590,9 @@ namespace WrestlingSim.Persistence
         public int BookedMinutes { get; set; }
         public int BudgetMinutes { get; set; }
         public List<CardItemResultDto> Items { get; set; } = new();
+
+        /// <summary>Null for a show run before the books were kept.</summary>
+        public ShowFinancesDto? Finances { get; set; }
     }
 
     public class CardItemResultDto

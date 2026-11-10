@@ -51,6 +51,16 @@ namespace WrestlingSim.Models
         /// </summary>
         public LoopResult? Loop { get; set; }
 
+        /// <summary>
+        /// What the night sold and what it cost. Null for an exhibition show, which has no
+        /// promotion to bank anything, and for a career show run before the books were kept.
+        /// </summary>
+        public ShowFinances? Finances { get; set; }
+
+        /// <summary>Whether it sold and whether it delivered, in one line. Null when neither is notable.</summary>
+        public string? BusinessVerdict =>
+            Finances is { } f ? Engine.BoxOffice.Verdict(f, OverallRating) : null;
+
         /// <summary>Kept for compatibility with the old label-to-score view.</summary>
         public Dictionary<string, double> Breakdown =>
             Items.ToDictionary(i => i.Label, i => i.Score);

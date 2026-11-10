@@ -98,6 +98,46 @@ else
             </div>
         </div>
 
+        @* The books. Cash is what the cards sold; reputation is what the shows were worth, and
+           it is what the next card sells on. Cash can go negative — nothing stops a career in
+           the red yet, so the tile says so instead. *@
+        <div class="tile tile--static">
+            <div class="tile__key">BOOKS</div>
+            <div class="tile__name tabnum @(career.Books.InTheRed ? "grade--poor" : "")">
+                @Money.Format(career.Books.Cash)
+            </div>
+            <div class="tile__desc">
+                @if (career.Books.InTheRed)
+                {
+                    <strong class="grade--poor">In the red.</strong>
+                    <text> Nothing stops a promotion that cannot pay yet — but the cards have to start selling.</text>
+                    <br />
+                }
+                @Money.Signed(career.Books.Cash - career.Books.OpeningCash) since the books opened ·
+                the office costs @Money.Format(career.DailyOverhead) a day.
+                <br />
+                Reputation @career.Books.Reputation.ToString("F1") — what the next card sells on.
+            </div>
+            @if (RecentNights(career).ToList() is { Count: > 0 } nights)
+            {
+                <div class="mt small">
+                    @foreach (var (night, books) in nights)
+                    {
+                        <div class="row" style="padding:2px 0">
+                            <span>@night.Name <span class="muted">· @night.Date.ToString("d MMM")</span></span>
+                            <span class="spacer"></span>
+                            @if (books.HadCard)
+                            {
+                                <span class="tabnum muted">@Money.Percent(books.Fill)</span>
+                                <span>&nbsp;</span>
+                            }
+                            <span class="tabnum @Money.Tone(books.Net)">@Money.Signed(books.Net)</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
         @* The split *@
         @if (career.Brands.Active)
         {
@@ -277,6 +317,14 @@ else
 }
 
 @code {
+    /// <summary>The last few nights that kept books, newest first.</summary>
+    private static IEnumerable<(ScheduledShow Night, ShowFinances Books)> RecentNights(Career career) =>
+        career.Completed
+            .Where(s => s.Result?.Finances is not null)
+            .OrderByDescending(s => s.Date)
+            .Take(4)
+            .Select(s => (s, s.Result!.Finances!));
+
     /// <summary>
     /// The people whose trend has actually moved, hottest and coldest first. Momentum is
     /// invisible unless it is surfaced, and this is the readout a booker acts on.

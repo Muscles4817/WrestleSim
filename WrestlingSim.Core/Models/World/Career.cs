@@ -28,6 +28,12 @@ namespace WrestlingSim.Models.World
         /// <summary>The roster this promotion can book. Mutated by results and persisted.</summary>
         public List<Wrestler> Roster { get; set; } = new();
 
+        /// <summary>
+        /// Cash and reputation. Opened by <see cref="OpenBooks"/> when a career starts, or
+        /// when a career saved before money existed is loaded.
+        /// </summary>
+        public CareerBooks Books { get; set; } = new();
+
         /// <summary>Every feud the booker has going.</summary>
         public FeudBook FeudBook { get; set; } = new();
 
@@ -178,6 +184,9 @@ namespace WrestlingSim.Models.World
 
             CurrentDate = CurrentDate.AddDays(1);
 
+            // The office is open whether or not there is a show tonight.
+            ChargeOverhead(1);
+
             // Nothing stays hot. Momentum bleeds toward zero every day, and someone off
             // screen long enough starts to be forgotten — doc 17 §3 and §4.
             foreach (var wrestler in Roster)
@@ -224,6 +233,134 @@ namespace WrestlingSim.Models.World
             MaterialiseSchedule();
             return true;
         }
+
+        // ── The books ────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Opens the books with the tier's starting cash and a middling reputation. Called
+        /// once when a career begins, and for a career saved before money existed.
+        /// </summary>
+        public void OpenBooks(DateOnly on)
+        {
+            var opening = BoxOffice.For(Promotion.Tier).OpeningCash;
+            Books = new CareerBooks
+            {
+                Cash        = opening,
+                OpeningCash = opening,
+                Reputation  = CareerBooks.OpeningReputation,
+                OpenedOn    = on
+            };
+        }
+
+        /// <summary>What the promotion costs to keep open for a day, show or no show.</summary>
+        public decimal DailyOverhead => BoxOffice.For(Promotion.Tier).DailyOverhead;
+
+        private void ChargeOverhead(int days)
+        {
+            if (days <= 0) return;
+            var cost = DailyOverhead * days;
+            Books.Cash -= cost;
+            Books.Overheads += cost;
+        }
+
+        /// <summary>
+        /// What the night would take if it ran as booked now. Exact, not an estimate, for the
+        /// card — the house is sold on the card as advertised, so what the booking screen shows
+        /// is what the night will sell — and a projection for the road, which loses a night to
+        /// anybody who gets hurt on it.
+        /// </summary>
+        public ShowFinances Projection(ScheduledShow show) =>
+            BoxOffice.Night(show, Promotion, Books.Reputation, FeudBook);
+
+        /// <summary>
+        /// Runs a booked show: sells the house, runs the card and the road, banks the takings
+        /// and lets the show's quality move reputation. Returns null and does nothing for a
+        /// show already run or not runnable.
+        ///
+        /// The order is the design. The house is sold **before** the card is simulated,
+        /// because running a match moves the overness, heat and familiarity the ticket was
+        /// bought on. Reputation moves **after**, because it is the show's quality, and that
+        /// is only known at the final bell.
+        /// </summary>
+        public ShowResult? RunShow(ScheduledShow show)
+        {
+            if (show.HasRun || !show.IsRunnable) return null;
+
+            // Sold on the card as advertised, before anyone has wrestled.
+            var house = Projection(show);
+
+            // The brand context is what charges the night's crossovers to the split. A
+            // company-wide date passes a null home brand, which is how the inter-brand
+            // supercard stays free — docs/wrestling-reference/22-brand-splits.md §3.4.
+            var brands = Brands.Active ? new BrandContext(Brands, BrandOfShow(show)) : null;
+
+            // The card, when there is one. A date can be a run of towns and nothing else,
+            // which is the ordinary untelevised week.
+            var result = show.Card.Count > 0
+                ? new ShowSimulator(FeudBook, titles: Titles, brands: brands,
+                                    stipulations: Stipulations, tier: Promotion.Tier)
+                    .Simulate(show.ToShow())
+                : new ShowResult { BudgetMinutes = show.RuntimeMinutes };
+
+            // And the road, when anybody is on it. Anybody on the card works the run a town
+            // short: the card is the Monday and the towns are the rest of the week.
+            LoopResult? road = null;
+            if (show.Loop is { IsBookable: true } loop)
+            {
+                var onTheCard = show.Card.SelectMany(i => i.Wrestlers).ToHashSet();
+                road = new LoopSimulator(tier: Promotion.Tier).Run(loop, show.Date, onTheCard);
+
+                if (road.Workers.Count > 0)
+                {
+                    result.Loop = road;
+                    result.Injuries.AddRange(road.Injuries);
+                }
+            }
+
+            // The road is settled on the nights actually worked, so somebody sent home hurt
+            // is not paid for the towns they missed. Everything else about the night was
+            // fixed when the house was sold.
+            var finances = road is { Workers.Count: > 0 } && house.Road is { } projected
+                ? WithRoad(house, BoxOffice.Worked(projected, road, Promotion.Tier))
+                : house;
+
+            if (finances.HadCard)
+                Books.Reputation = BoxOffice.ReputationAfter(
+                    Books.Reputation, result.OverallRating, show.Type);
+
+            Books.Cash += finances.Net;
+            finances.ReputationAfter = Books.Reputation;
+            finances.CashAfter = Books.Cash;
+            result.Finances = finances;
+
+            show.Result = result;
+            if (CurrentDate < show.Date)
+            {
+                // Running a date early jumps the clock; the days it jumps still cost money.
+                ChargeOverhead(show.Date.DayNumber - CurrentDate.DayNumber);
+                CurrentDate = show.Date;
+            }
+            return result;
+        }
+
+        /// <summary>The pre-bell night with its road replaced by the one actually worked.</summary>
+        private static ShowFinances WithRoad(ShowFinances house, RoadTakings road) => new()
+        {
+            Draws            = house.Draws,
+            CardPull         = house.CardPull,
+            Capacity         = house.Capacity,
+            Demand           = house.Demand,
+            TicketPrice      = house.TicketPrice,
+            Gate             = house.Gate,
+            Merchandise      = house.Merchandise,
+            MediaRights      = house.MediaRights,
+            Talent           = house.Talent,
+            Operations       = house.Operations,
+            Production       = house.Production,
+            Road             = road,
+            ReputationBefore = house.ReputationBefore,
+            ReputationAfter  = house.ReputationAfter
+        };
 
         /// <summary>
         /// Advances to the next show's date, or by the given cap if that is sooner.

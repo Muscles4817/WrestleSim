@@ -42,7 +42,7 @@ cd WrestlingSim
 
 dotnet run --project WrestlingSim.Web   # browser UI on http://localhost:5080
 dotnet run --project WrestlingSim       # terminal UI
-dotnet test                             # 180 tests
+dotnet test                             # the xUnit suite
 ```
 
 ---
@@ -176,6 +176,30 @@ further.
 Overness is continuous rather than a whole number: a single result often moves standing by
 a fraction of a point, and rounding each one would discard every small change instead of
 letting them accumulate.
+
+### Money: what the card sells, and what the show was worth
+
+Every career show has books, and they are kept separately from the star rating, because they
+answer a different question. Doc 18 §7: **story sells the ticket; quality sells the next
+ticket.**
+
+- **The house is sold on the card as advertised.** Each match pulls on how over the people in
+  it are, how hot the feud behind it is, how many times the crowd has already seen it, and
+  what is on the line. A card is sold on its top three items. The booking screen shows what the
+  card will draw while you can still change it — exactly, because nobody buying a ticket has
+  seen the match.
+- **Quality sells the next ticket.** Each show's rating moves the promotion's **reputation**,
+  and reputation multiplies what the next card draws. A great show for an empty room is an
+  investment; a sold-out bad one is a loan.
+- **Real dollars, scaled by tier.** Gate, merchandise and — at Established and above — a flat
+  television rights fee per episode, against appearance fees, the building, TV production, and
+  an office that costs money every day whether or not you run a show. A Local room cannot pay
+  for a card of main eventers; at the TV tiers the rights fee carries the night.
+- **Cash can go negative.** Nothing stops a career in the red yet; the dashboard says so.
+
+The figures come from docs/wrestling-reference/09 and 29; how they were calibrated, and what
+is not built yet (TV renewal, contracts, going broke), is in
+[docs/business-design-record.md](docs/business-design-record.md).
 
 ### Time
 
