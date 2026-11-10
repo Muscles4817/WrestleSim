@@ -97,5 +97,49 @@
     "LastTeamedDaysAgo": 58,
     "MatchesTogether": 21,
     "Chemistry": 0.22
+  },
+  {
+    "Name": "Penta & Je'Von Evans",
+    "Members": [
+      "Penta",
+      "Malachi Jeffers"
+    ],
+    "FormedDaysAgo": 310,
+    "LastTeamedDaysAgo": 3,
+    "MatchesTogether": 41,
+    "Chemistry": 0.72
+  },
+  {
+    "Name": "The MFTs",
+    "Members": [
+      "Alipate Leone",
+      "Taula Fifita"
+    ],
+    "FormedDaysAgo": 520,
+    "LastTeamedDaysAgo": 5,
+    "MatchesTogether": 78,
+    "Chemistry": 0.86
+  },
+  {
+    "Name": "The Vanity Project",
+    "Members": [
+      "Brad Baylor",
+      "Ricky Smokes"
+    ],
+    "FormedDaysAgo": 400,
+    "LastTeamedDaysAgo": 4,
+    "MatchesTogether": 59,
+    "Chemistry": 0.81
+  },
+  {
+    "Name": "Michin & B-Fab",
+    "Members": [
+      "Stephanie Hym Bell",
+      "Briana Brandy"
+    ],
+    "FormedDaysAgo": 235,
+    "LastTeamedDaysAgo": 6,
+    "MatchesTogether": 28,
+    "Chemistry": 0.64
   }
 ]

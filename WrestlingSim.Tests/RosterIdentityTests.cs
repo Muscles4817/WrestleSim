@@ -108,7 +108,16 @@ namespace WrestlingSim.Tests
             string[] worksUnderTheirOwnName =
             [
                 "Shayna Baszler", "Akira Tozawa", "Shinsuke Nakamura",
-                "Jade Cargill", "Chelsea Green", "Stephanie Vaquer"
+                "Jade Cargill", "Chelsea Green", "Stephanie Vaquer",
+
+                // Masked luchadors. Both have wrestled their whole careers under the
+                // hood and neither legal name is public record, which is the point of
+                // the hood — so the ring name is the only name there is.
+                "Penta", "Rey Fenix",
+
+                // Wikipedia's infobox gives these three no name but the one they wrestle
+                // under. Looked up and found to be the same, rather than not looked up.
+                "Jackson Drake", "Brad Baylor", "Ricky Smokes"
             ];
 
             var unresolved = DataLoaders.LoadEmbeddedWrestlers()

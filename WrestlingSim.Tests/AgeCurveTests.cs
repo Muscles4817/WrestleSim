@@ -274,16 +274,37 @@ namespace WrestlingSim.Tests
         }
 
         [Fact]
-        public void TheWholeRosterHasAnAge()
+        public void EveryWrestlerWithoutAnAgeHasAReason()
         {
-            // All of it, since the data pass: every entry's birth and debut year was read
-            // off that performer's Wikipedia infobox rather than recalled, including the
-            // two this test used to allow to be blank.
-            var roster = DataLoaders.LoadEmbeddedWrestlers();
-            int withAge = roster.Count(w => w.BornIn is not null);
+            // Every entry's birth and debut year was read off that performer's Wikipedia
+            // infobox rather than recalled. One is genuinely unpublished, and naming the
+            // exception is stricter than a threshold: a new blank gets caught, and the one
+            // that is blank for a reason stays documented.
+            string[] noPublishedBirthYear =
+            [
+                // Her article gives a legal name and no date at all, and carries
+                // Wikipedia's own "year of birth missing (living people)" category.
+                "Zaria"
+            ];
 
-            Assert.True(withAge == roster.Count,
-                $"Only {withAge} of {roster.Count} wrestlers have a birth year.");
+            var roster = DataLoaders.LoadEmbeddedWrestlers();
+
+            var unexpected = roster
+                .Where(w => w.BornIn is null)
+                .Select(w => w.RingName)
+                .Where(n => !noPublishedBirthYear.Contains(n))
+                .ToList();
+
+            Assert.True(unexpected.Count == 0,
+                "These wrestlers have no birth year and no reason on record:\n  "
+                + string.Join("\n  ", unexpected));
+
+            // And the exception list does not get to rot either: anybody on it who has
+            // since been given an age should come off it.
+            foreach (string name in noPublishedBirthYear)
+                Assert.True(roster.Any(w => w.RingName == name && w.BornIn is null),
+                    $"{name} is listed as having no published birth year but now has one, " +
+                     "or has left the roster. Remove them from the list.");
         }
 
         [Fact]

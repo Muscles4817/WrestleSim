@@ -7275,5 +7275,1357 @@
         "TagExclusive": false
       }
     ]
+  },
+  {
+    "RealName": "Matrick Belton",
+    "Division": "Mens",
+    "BornIn": 1994,
+    "DebutedIn": 2020,
+    "Overness": 72,
+    "Charisma": 4.4,
+    "Style": "Striker",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Trick Williams",
+      "Type": "Superstar",
+      "PersonaDescriptor": "Whoop That Trick",
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 9,
+      "Durability": "LongTerm",
+      "Freshness": 0.84,
+      "GimmickTraits": [
+        "Charismatic",
+        "Athletic",
+        "Confident"
+      ],
+      "AppealRatings": [
+        {
+          "Group": "Casual",
+          "AppealScore": 0.88
+        },
+        {
+          "Group": "Hardcore",
+          "AppealScore": 0.72
+        }
+      ],
+      "PreviousNames": [
+        "Sweet Daddy Trick"
+      ]
+    },
+    "RingSkills": {
+      "HighFlyer": 2.6,
+      "Grappler": 2.9,
+      "Powerhouse": 3.6,
+      "Technical": 2.8,
+      "Brawler": 3.8,
+      "Striker": 4.4
+    },
+    "Physical": {
+      "Strength": 84,
+      "Speed": 86,
+      "Agility": 78,
+      "Stamina": 82,
+      "Size": 4
+    },
+    "Mental": {
+      "Psychology": 74,
+      "Selling": 76,
+      "RingIQ": 76,
+      "Toughness": 82
+    },
+    "Moveset": [
+      {
+        "Name": "Flying Forearm",
+        "Types": [
+          "Strike"
+        ],
+        "Risk": "Easy",
+        "Impact": "Medium",
+        "RequiresWeapons": false
+      },
+      {
+        "Name": "Rolling Elbow",
+        "Types": [
+          "Strike"
+        ],
+        "Risk": "Easy",
+        "Impact": "Hard",
+        "RequiresWeapons": false
+      }
+    ],
+    "Signature": [
+      {
+        "Name": "Trick Shot",
+        "Move": {
+          "Name": "Trick Shot",
+          "Types": [
+            "Strike"
+          ],
+          "Risk": "Medium",
+          "Impact": "VeryHard"
+        },
+        "IsFinisher": true,
+        "ImpactModifier": "VeryHard",
+        "Overness": 76,
+        "TagExclusive": false
+      }
+    ]
+  },
+  {
+    "RealName": "Penta",
+    "Division": "Mens",
+    "BornIn": 1985,
+    "DebutedIn": 2007,
+    "Overness": 70,
+    "Charisma": 4.3,
+    "Style": "Striker",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Penta",
+      "Type": "DarkPersona",
+      "PersonaDescriptor": "Cero Miedo",
+      "Tone": "Violent",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 10,
+      "Durability": "LongTerm",
+      "Freshness": 0.82,
+      "GimmickTraits": [
+        "Masked",
+        "Feared",
+        "Intense"
+      ],
+      "AppealRatings": [
+        {
+          "Group": "Hardcore",
+          "AppealScore": 0.93
+        },
+        {
+          "Group": "International",
+          "AppealScore": 0.9
+        },
+        {
+          "Group": "Casual",
+          "AppealScore": 0.7
+        }
+      ],
+      "PreviousNames": [
+        "Pentagon Jr.",
+        "Penta El Zero M"
+      ]
+    },
+    "RingSkills": {
+      "HighFlyer": 3.9,
+      "Grappler": 3.1,
+      "Powerhouse": 2.8,
+      "Technical": 3.4,
+      "Brawler": 3.8,
+      "Striker": 4.5
+    },
+    "Physical": {
+      "Strength": 76,
+      "Speed": 82,
+      "Agility": 84,
+      "Stamina": 80,
+      "Size": 3
+    },
+    "Mental": {
+      "Psychology": 84,
+      "Selling": 78,
+      "RingIQ": 84,
+      "Toughness": 86
+    },
+    "Moveset": [
+      {
+        "Name": "Slingblade",
+        "Types": [
+          "Strike"
+        ],
+        "Risk": "Easy",
+        "Impact": "Medium",
+        "RequiresWeapons": false
+      },
+      {
+        "Name": "Backstabber",
+        "Types": [
+          "Takedown"
+        ],
+        "Risk": "Medium",
+        "Impact": "Hard",
+        "RequiresWeapons": false
+      }
+    ],
+    "Signature": [
+      {
+        "Name": "Package Piledriver",
+        "Move": {
+          "Name": "Package Piledriver",
+          "Types": [
+            "Slam"
+          ],
+          "Risk": "Hard",
+          "Impact": "VeryHard"
+        },
+        "IsFinisher": true,
+        "ImpactModifier": "VeryHard",
+        "Overness": 74,
+        "TagExclusive": false
+      }
+    ]
+  },
+  {
+    "RealName": "Julian Micevski",
+    "Division": "Mens",
+    "BornIn": 1989,
+    "DebutedIn": 2006,
+    "Overness": 64,
+    "Charisma": 3.9,
+    "Style": "Powerhouse",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Ethan Page",
+      "Type": "Egotist",
+      "PersonaDescriptor": "All Ego",
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 6,
+      "Durability": "MediumTerm",
+      "Freshness": 0.76,
+      "GimmickTraits": [
+        "Entitled",
+        "Veteran",
+        "Loud"
+      ],
+      "AppealRatings": [
+        {
+          "Group": "Casual",
+          "AppealScore": 0.68
+        },
+        {
+          "Group": "Hardcore",
+          "AppealScore": 0.74
+        }
+      ],
+      "PreviousNames": [
+        "Julian Logan"
+      ]
+    },
+    "RingSkills": {
+      "HighFlyer": 2.2,
+      "Grappler": 3.2,
+      "Powerhouse": 4.2,
+      "Technical": 3.4,
+      "Brawler": 3.8,
+      "Striker": 3.4
+    },
+    "Physical": {
+      "Strength": 86,
+      "Speed": 68,
+      "Agility": 64,
+      "Stamina": 78,
+      "Size": 4
+    },
+    "Mental": {
+      "Psychology": 82,
+      "Selling": 76,
+      "RingIQ": 80,
+      "Toughness": 80
+    },
+    "Moveset": [
+      {
+        "Name": "Spinning Sitout Powerbomb",
+        "Types": [
+          "Slam"
+        ],
+        "Risk": "Medium",
+        "Impact": "Hard",
+        "RequiresWeapons": false
+      },
+      {
+        "Name": "Twisting Neckbreaker",
+        "Types": [
+          "Takedown"
+        ],
+        "Risk": "Easy",
+        "Impact": "Medium",
+        "RequiresWeapons": false
+      }
+    ],
+    "Signature": [
+      {
+        "Name": "Ego's Edge",
+        "Move": {
+          "Name": "Ego's Edge",
+          "Types": [
+            "Slam"
+          ],
+          "Risk": "Hard",
+          "Impact": "VeryHard"
+        },
+        "IsFinisher": true,
+        "ImpactModifier": "VeryHard",
+        "Overness": 66,
+        "TagExclusive": false
+      }
+    ]
+  },
+  {
+    "RealName": "Malachi Jeffers",
+    "Division": "Mens",
+    "BornIn": 2004,
+    "DebutedIn": 2018,
+    "Overness": 60,
+    "Charisma": 4.0,
+    "Style": "HighFlyer",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Je'Von Evans",
+      "Type": "Underdog",
+      "PersonaDescriptor": "The Young OG",
+      "Tone": "Inspirational",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 11,
+      "Durability": "MediumTerm",
+      "Freshness": 0.94,
+      "GimmickTraits": [
+        "Youthful",
+        "Fearless",
+        "Explosive"
+      ],
+      "AppealRatings": [
+        {
+          "Group": "Casual",
+          "AppealScore": 0.82
+        },
+        {
+          "Group": "Hardcore",
+          "AppealScore": 0.86
+        },
+        {
+          "Group": "Kids",
+          "AppealScore": 0.88
+        }
+      ],
+      "PreviousNames": [
+        "Kid Blacka Merica"
+      ]
+    },
+    "RingSkills": {
+      "HighFlyer": 4.7,
+      "Grappler": 2.4,
+      "Powerhouse": 1.9,
+      "Technical": 3.0,
+      "Brawler": 2.8,
+      "Striker": 3.2
+    },
+    "Physical": {
+      "Strength": 58,
+      "Speed": 92,
+      "Agility": 95,
+      "Stamina": 80,
+      "Size": 2
+    },
+    "Mental": {
+      "Psychology": 58,
+      "Selling": 80,
+      "RingIQ": 62,
+      "Toughness": 70
+    },
+    "Moveset": [
+      {
+        "Name": "Springboard Crossbody",
+        "Types": [
+          "Aerial"
+        ],
+        "Risk": "Medium",
+        "Impact": "Medium",
+        "RequiresWeapons": false
+      },
+      {
+        "Name": "Corkscrew Senton",
+        "Types": [
+          "Aerial"
+        ],
+        "Risk": "Hard",
+        "Impact": "Hard",
+        "RequiresWeapons": false
+      }
+    ],
+    "Signature": [
+      {
+        "Name": "OG Cutter",
+        "Move": {
+          "Name": "OG Cutter",
+          "Types": [
+            "Aerial"
+          ],
+          "Risk": "Hard",
+          "Impact": "VeryHard"
+        },
+        "IsFinisher": true,
+        "ImpactModifier": "VeryHard",
+        "Overness": 62,
+        "TagExclusive": false
+      }
+    ]
+  },
+  {
+    "RealName": "Alipate Leone",
+    "Division": "Mens",
+    "BornIn": 1982,
+    "DebutedIn": 2008,
+    "Overness": 58,
+    "Charisma": 3.4,
+    "Style": "Brawler",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Tama Tonga",
+      "Type": "Loner",
+      "PersonaDescriptor": "Guerrilla of Destiny",
+      "Tone": "Violent",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 4,
+      "Durability": "LongTerm",
+      "Freshness": 0.68,
+      "GimmickTraits": [
+        "Ruthless",
+        "Veteran",
+        "Legacy"
+      ],
+      "AppealRatings": [
+        {
+          "Group": "Hardcore",
+          "AppealScore": 0.78
+        },
+        {
+          "Group": "International",
+          "AppealScore": 0.74
+        }
+      ],
+      "PreviousNames": [
+        "Sons of Tonga"
+      ]
+    },
+    "RingSkills": {
+      "HighFlyer": 2.8,
+      "Grappler": 3.4,
+      "Powerhouse": 3.4,
+      "Technical": 3.2,
+      "Brawler": 4.4,
+      "Striker": 3.8
+    },
+    "Physical": {
+      "Strength": 78,
+      "Speed": 74,
+      "Agility": 72,
+      "Stamina": 78,
+      "Size": 3
+    },
+    "Mental": {
+      "Psychology": 86,
+      "Selling": 72,
+      "RingIQ": 84,
+      "Toughness": 84
+    },
+    "Moveset": [
+      {
+        "Name": "Tongan Twist",
+        "Types": [
+          "Takedown"
+        ],
+        "Risk": "Easy",
+        "Impact": "Medium",
+        "RequiresWeapons": false
+      },
+      {
+        "Name": "Headshrinker Lariat",
+        "Types": [
+          "Strike"
+        ],
+        "Risk": "Easy",
+        "Impact": "Hard",
+        "RequiresWeapons": false
+      }
+    ],
+    "Signature": [
+      {
+        "Name": "Gun Stun",
+        "Move": {
+          "Name": "Gun Stun",
+          "Types": [
+            "Takedown"
+          ],
+          "Risk": "Medium",
+          "Impact": "VeryHard"
+        },
+        "IsFinisher": true,
+        "ImpactModifier": "VeryHard",
+        "Overness": 60,
+        "TagExclusive": false
+      }
+    ]
+  },
+  {
+    "RealName": "Taula Fifita",
+    "Division": "Mens",
+    "BornIn": 1991,
+    "DebutedIn": 2016,
+    "Overness": 48,
+    "Charisma": 2.8,
+    "Style": "Powerhouse",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Talla Tonga",
+      "Type": "Monster",
+      "PersonaDescriptor": "The Tongan Giant",
+      "Tone": "Serious",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 3,
+      "Durability": "MediumTerm",
+      "Freshness": 0.7,
+      "GimmickTraits": [
+        "Enormous",
+        "Silent",
+        "Feared"
+      ],
+      "AppealRatings": [
+        {
+          "Group": "Casual",
+          "AppealScore": 0.56
+        },
+        {
+          "Group": "Hardcore",
+          "AppealScore": 0.6
+        }
+      ],
+      "PreviousNames": [
+        "Hikuleo",
+        "Tala Tonga"
+      ]
+    },
+    "RingSkills": {
+      "HighFlyer": 1.4,
+      "Grappler": 2.6,
+      "Powerhouse": 4.8,
+      "Technical": 2.2,
+      "Brawler": 3.6,
+      "Striker": 3.0
+    },
+    "Physical": {
+      "Strength": 95,
+      "Speed": 50,
+      "Agility": 44,
+      "Stamina": 72,
+      "Size": 5
+    },
+    "Mental": {
+      "Psychology": 62,
+      "Selling": 58,
+      "RingIQ": 64,
+      "Toughness": 90
+    },
+    "Moveset": [
+      {
+        "Name": "Running Big Boot",
+        "Types": [
+          "Strike"
+        ],
+        "Risk": "VeryEasy",
+        "Impact": "Hard",
+        "RequiresWeapons": false
+      },
+      {
+        "Name": "Fallaway Slam",
+        "Types": [
+          "Throw"
+        ],
+        "Risk": "Easy",
+        "Impact": "Hard",
+        "RequiresWeapons": false
+      }
+    ],
+    "Signature": [
+      {
+        "Name": "Chokeslam",
+        "Move": {
+          "Name": "Chokeslam",
+          "Types": [
+            "Slam"
+          ],
+          "Risk": "Medium",
+          "Impact": "VeryHard"
+        },
+        "IsFinisher": true,
+        "ImpactModifier": "VeryHard",
+        "Overness": 50,
+        "TagExclusive": false
+      }
+    ]
+  },
+  {
+    "RealName": "Briana Brandy",
+    "Division": "Womens",
+    "BornIn": 1990,
+    "DebutedIn": 2019,
+    "Overness": 44,
+    "Charisma": 3.6,
+    "Style": "Striker",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "B-Fab",
+      "Type": "Rebel",
+      "PersonaDescriptor": "The Fabulous One",
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 4,
+      "Durability": "MediumTerm",
+      "Freshness": 0.72,
+      "GimmickTraits": [
+        "Stylish",
+        "Spiteful",
+        "Loyal"
+      ],
+      "AppealRatings": [
+        {
+          "Group": "Casual",
+          "AppealScore": 0.64
+        },
+        {
+          "Group": "Hardcore",
+          "AppealScore": 0.56
+        }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": {
+      "HighFlyer": 2.6,
+      "Grappler": 2.4,
+      "Powerhouse": 2.2,
+      "Technical": 2.6,
+      "Brawler": 3.2,
+      "Striker": 3.6
+    },
+    "Physical": {
+      "Strength": 62,
+      "Speed": 78,
+      "Agility": 76,
+      "Stamina": 72,
+      "Size": 2
+    },
+    "Mental": {
+      "Psychology": 62,
+      "Selling": 70,
+      "RingIQ": 64,
+      "Toughness": 68
+    },
+    "Moveset": [
+      {
+        "Name": "Spinning Heel Kick",
+        "Types": [
+          "Strike"
+        ],
+        "Risk": "Easy",
+        "Impact": "Medium",
+        "RequiresWeapons": false
+      },
+      {
+        "Name": "Rolling Elbow",
+        "Types": [
+          "Strike"
+        ],
+        "Risk": "Easy",
+        "Impact": "Medium",
+        "RequiresWeapons": false
+      }
+    ],
+    "Signature": [
+      {
+        "Name": "Fab Drop",
+        "Move": {
+          "Name": "Fab Drop",
+          "Types": [
+            "Takedown"
+          ],
+          "Risk": "Medium",
+          "Impact": "Hard"
+        },
+        "IsFinisher": true,
+        "ImpactModifier": "Hard",
+        "Overness": 46,
+        "TagExclusive": false
+      }
+    ]
+  },
+  {
+    "RealName": "Rey Fenix",
+    "Division": "Mens",
+    "BornIn": 1990,
+    "DebutedIn": 2005,
+    "Overness": 66,
+    "Charisma": 3.8,
+    "Style": "HighFlyer",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Rey Fenix",
+      "Type": "Daredevil",
+      "PersonaDescriptor": "The King of Flight",
+      "Tone": "Chaotic",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 9,
+      "Durability": "LongTerm",
+      "Freshness": 0.86,
+      "GimmickTraits": [
+        "Masked",
+        "Reckless",
+        "Spectacular"
+      ],
+      "AppealRatings": [
+        {
+          "Group": "Hardcore",
+          "AppealScore": 0.95
+        },
+        {
+          "Group": "International",
+          "AppealScore": 0.9
+        },
+        {
+          "Group": "Casual",
+          "AppealScore": 0.68
+        }
+      ],
+      "PreviousNames": [
+        "Fenix",
+        "King Fenix"
+      ]
+    },
+    "RingSkills": {
+      "HighFlyer": 4.9,
+      "Grappler": 2.8,
+      "Powerhouse": 1.8,
+      "Technical": 3.4,
+      "Brawler": 2.6,
+      "Striker": 3.6
+    },
+    "Physical": {
+      "Strength": 56,
+      "Speed": 94,
+      "Agility": 96,
+      "Stamina": 78,
+      "Size": 2
+    },
+    "Mental": {
+      "Psychology": 78,
+      "Selling": 74,
+      "RingIQ": 82,
+      "Toughness": 72
+    },
+    "Moveset": [
+      {
+        "Name": "Rope-Walk Hurricanrana",
+        "Types": [
+          "Aerial"
+        ],
+        "Risk": "Hard",
+        "Impact": "Medium",
+        "RequiresWeapons": false
+      },
+      {
+        "Name": "Tornado DDT",
+        "Types": [
+          "Takedown"
+        ],
+        "Risk": "Medium",
+        "Impact": "Hard",
+        "RequiresWeapons": false
+      }
+    ],
+    "Signature": [
+      {
+        "Name": "Fire Thunder Driver",
+        "Move": {
+          "Name": "Fire Thunder Driver",
+          "Types": [
+            "Slam"
+          ],
+          "Risk": "Hard",
+          "Impact": "VeryHard"
+        },
+        "IsFinisher": true,
+        "ImpactModifier": "VeryHard",
+        "Overness": 68,
+        "TagExclusive": false
+      }
+    ]
+  },
+  {
+    "RealName": "Matthew Farrelly",
+    "Division": "Mens",
+    "BornIn": 1990,
+    "DebutedIn": 2017,
+    "Overness": 55,
+    "Charisma": 4.2,
+    "Style": "Brawler",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Grayson Waller",
+      "Type": "Egotist",
+      "PersonaDescriptor": "The Aussie Icon",
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 7,
+      "Durability": "MediumTerm",
+      "Freshness": 0.8,
+      "GimmickTraits": [
+        "Smug",
+        "Provocative",
+        "Showy"
+      ],
+      "AppealRatings": [
+        {
+          "Group": "Casual",
+          "AppealScore": 0.7
+        },
+        {
+          "Group": "International",
+          "AppealScore": 0.72
+        }
+      ],
+      "PreviousNames": [
+        "Matty Wahlberg"
+      ]
+    },
+    "RingSkills": {
+      "HighFlyer": 2.8,
+      "Grappler": 2.6,
+      "Powerhouse": 2.8,
+      "Technical": 3.0,
+      "Brawler": 3.8,
+      "Striker": 3.4
+    },
+    "Physical": {
+      "Strength": 70,
+      "Speed": 76,
+      "Agility": 76,
+      "Stamina": 76,
+      "Size": 3
+    },
+    "Mental": {
+      "Psychology": 76,
+      "Selling": 72,
+      "RingIQ": 74,
+      "Toughness": 68
+    },
+    "Moveset": [
+      {
+        "Name": "Rolling Elbow",
+        "Types": [
+          "Strike"
+        ],
+        "Risk": "Easy",
+        "Impact": "Medium",
+        "RequiresWeapons": false
+      },
+      {
+        "Name": "Flying Clothesline",
+        "Types": [
+          "Strike"
+        ],
+        "Risk": "Easy",
+        "Impact": "Medium",
+        "RequiresWeapons": false
+      }
+    ],
+    "Signature": [
+      {
+        "Name": "Rolling Stunner",
+        "Move": {
+          "Name": "Rolling Stunner",
+          "Types": [
+            "Takedown"
+          ],
+          "Risk": "Medium",
+          "Impact": "Hard"
+        },
+        "IsFinisher": true,
+        "ImpactModifier": "Hard",
+        "Overness": 56,
+        "TagExclusive": false
+      }
+    ]
+  },
+  {
+    "RealName": "Lea Mitchell",
+    "Division": "Womens",
+    "BornIn": 1998,
+    "DebutedIn": 2022,
+    "Overness": 46,
+    "Charisma": 3.4,
+    "Style": "HighFlyer",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Kelani Jordan",
+      "Type": "Rebel",
+      "PersonaDescriptor": "One of a Kind",
+      "Tone": "Serious",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 5,
+      "Durability": "MediumTerm",
+      "Freshness": 0.84,
+      "GimmickTraits": [
+        "Acrobatic",
+        "Driven",
+        "Cold"
+      ],
+      "AppealRatings": [
+        {
+          "Group": "Hardcore",
+          "AppealScore": 0.78
+        },
+        {
+          "Group": "Casual",
+          "AppealScore": 0.62
+        }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": {
+      "HighFlyer": 4.5,
+      "Grappler": 2.6,
+      "Powerhouse": 1.8,
+      "Technical": 3.2,
+      "Brawler": 2.4,
+      "Striker": 2.8
+    },
+    "Physical": {
+      "Strength": 56,
+      "Speed": 88,
+      "Agility": 94,
+      "Stamina": 78,
+      "Size": 2
+    },
+    "Mental": {
+      "Psychology": 64,
+      "Selling": 74,
+      "RingIQ": 68,
+      "Toughness": 66
+    },
+    "Moveset": [
+      {
+        "Name": "Handspring Elbow",
+        "Types": [
+          "Strike"
+        ],
+        "Risk": "Medium",
+        "Impact": "Medium",
+        "RequiresWeapons": false
+      },
+      {
+        "Name": "Corkscrew Splash",
+        "Types": [
+          "Aerial"
+        ],
+        "Risk": "Hard",
+        "Impact": "Hard",
+        "RequiresWeapons": false
+      }
+    ],
+    "Signature": [
+      {
+        "Name": "Split-Legged Moonsault",
+        "Move": {
+          "Name": "Split-Legged Moonsault",
+          "Types": [
+            "Aerial"
+          ],
+          "Risk": "Hard",
+          "Impact": "Hard"
+        },
+        "IsFinisher": true,
+        "ImpactModifier": "Hard",
+        "Overness": 48,
+        "TagExclusive": false
+      }
+    ]
+  },
+  {
+    "RealName": "Daria Hodder",
+    "Division": "Womens",
+    "Overness": 38,
+    "Charisma": 3.0,
+    "Style": "Powerhouse",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Zaria",
+      "Type": "Monster",
+      "PersonaDescriptor": "The Australian Powerhouse",
+      "Tone": "Violent",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 4,
+      "Durability": "MediumTerm",
+      "Freshness": 0.82,
+      "GimmickTraits": [
+        "Powerful",
+        "Direct",
+        "Unsmiling"
+      ],
+      "AppealRatings": [
+        {
+          "Group": "Hardcore",
+          "AppealScore": 0.7
+        },
+        {
+          "Group": "International",
+          "AppealScore": 0.68
+        }
+      ],
+      "PreviousNames": [
+        "Delta",
+        "Delta Brady"
+      ]
+    },
+    "RingSkills": {
+      "HighFlyer": 1.8,
+      "Grappler": 3.4,
+      "Powerhouse": 4.4,
+      "Technical": 2.8,
+      "Brawler": 3.4,
+      "Striker": 3.0
+    },
+    "Physical": {
+      "Strength": 90,
+      "Speed": 62,
+      "Agility": 58,
+      "Stamina": 76,
+      "Size": 4
+    },
+    "Mental": {
+      "Psychology": 60,
+      "Selling": 62,
+      "RingIQ": 62,
+      "Toughness": 82
+    },
+    "Moveset": [
+      {
+        "Name": "Gutwrench Suplex",
+        "Types": [
+          "Throw"
+        ],
+        "Risk": "Easy",
+        "Impact": "Hard",
+        "RequiresWeapons": false
+      },
+      {
+        "Name": "Running Shoulder Block",
+        "Types": [
+          "Strike"
+        ],
+        "Risk": "VeryEasy",
+        "Impact": "Medium",
+        "RequiresWeapons": false
+      }
+    ],
+    "Signature": [
+      {
+        "Name": "Spinning Sitout Slam",
+        "Move": {
+          "Name": "Spinning Sitout Slam",
+          "Types": [
+            "Slam"
+          ],
+          "Risk": "Medium",
+          "Impact": "Hard"
+        },
+        "IsFinisher": true,
+        "ImpactModifier": "Hard",
+        "Overness": 40,
+        "TagExclusive": false
+      }
+    ]
+  },
+  {
+    "RealName": "Jackson Drake",
+    "Division": "Mens",
+    "BornIn": 2003,
+    "DebutedIn": 2017,
+    "Overness": 36,
+    "Charisma": 3.2,
+    "Style": "Technical",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Jackson Drake",
+      "Type": "Rebel",
+      "PersonaDescriptor": "The Prodigy",
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 4,
+      "Durability": "MediumTerm",
+      "Freshness": 0.9,
+      "GimmickTraits": [
+        "Youthful",
+        "Precocious",
+        "Smug"
+      ],
+      "AppealRatings": [
+        {
+          "Group": "Hardcore",
+          "AppealScore": 0.72
+        },
+        {
+          "Group": "Casual",
+          "AppealScore": 0.58
+        }
+      ],
+      "PreviousNames": [
+        "Drake Thompson"
+      ]
+    },
+    "RingSkills": {
+      "HighFlyer": 3.4,
+      "Grappler": 3.6,
+      "Powerhouse": 2.2,
+      "Technical": 4.1,
+      "Brawler": 2.8,
+      "Striker": 3.0
+    },
+    "Physical": {
+      "Strength": 64,
+      "Speed": 80,
+      "Agility": 82,
+      "Stamina": 78,
+      "Size": 3
+    },
+    "Mental": {
+      "Psychology": 66,
+      "Selling": 70,
+      "RingIQ": 72,
+      "Toughness": 64
+    },
+    "Moveset": [
+      {
+        "Name": "Snap Suplex",
+        "Types": [
+          "Throw"
+        ],
+        "Risk": "Easy",
+        "Impact": "Medium",
+        "RequiresWeapons": false
+      },
+      {
+        "Name": "Basement Dropkick",
+        "Types": [
+          "Strike"
+        ],
+        "Risk": "VeryEasy",
+        "Impact": "Easy",
+        "RequiresWeapons": false
+      }
+    ],
+    "Signature": [
+      {
+        "Name": "Bridging Fisherman Suplex",
+        "Move": {
+          "Name": "Bridging Fisherman Suplex",
+          "Types": [
+            "Throw"
+          ],
+          "Risk": "Medium",
+          "Impact": "Hard"
+        },
+        "IsFinisher": true,
+        "ImpactModifier": "Hard",
+        "Overness": 38,
+        "TagExclusive": false
+      }
+    ]
+  },
+  {
+    "RealName": "Brad Baylor",
+    "Division": "Mens",
+    "BornIn": 2004,
+    "DebutedIn": 2021,
+    "Overness": 32,
+    "Charisma": 3.0,
+    "Style": "Grappler",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Brad Baylor",
+      "Type": "Showman",
+      "PersonaDescriptor": "Swipe Right",
+      "Tone": "Humorous",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 3,
+      "Durability": "ShortTerm",
+      "Freshness": 0.88,
+      "GimmickTraits": [
+        "Vain",
+        "Youthful",
+        "Preening"
+      ],
+      "AppealRatings": [
+        {
+          "Group": "Casual",
+          "AppealScore": 0.6
+        },
+        {
+          "Group": "Hardcore",
+          "AppealScore": 0.54
+        }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": {
+      "HighFlyer": 2.4,
+      "Grappler": 4.0,
+      "Powerhouse": 2.8,
+      "Technical": 3.4,
+      "Brawler": 2.8,
+      "Striker": 2.6
+    },
+    "Physical": {
+      "Strength": 72,
+      "Speed": 74,
+      "Agility": 72,
+      "Stamina": 76,
+      "Size": 3
+    },
+    "Mental": {
+      "Psychology": 58,
+      "Selling": 66,
+      "RingIQ": 62,
+      "Toughness": 62
+    },
+    "Moveset": [
+      {
+        "Name": "Belly-to-Belly Suplex",
+        "Types": [
+          "Throw"
+        ],
+        "Risk": "Easy",
+        "Impact": "Medium",
+        "RequiresWeapons": false
+      },
+      {
+        "Name": "Arm Drag",
+        "Types": [
+          "Technical"
+        ],
+        "Risk": "VeryEasy",
+        "Impact": "Easy",
+        "RequiresWeapons": false
+      }
+    ],
+    "Signature": [
+      {
+        "Name": "Spinebuster",
+        "Move": {
+          "Name": "Spinebuster",
+          "Types": [
+            "Slam"
+          ],
+          "Risk": "Medium",
+          "Impact": "Hard"
+        },
+        "IsFinisher": true,
+        "ImpactModifier": "Hard",
+        "Overness": 34,
+        "TagExclusive": false
+      }
+    ]
+  },
+  {
+    "RealName": "Ricky Smokes",
+    "Division": "Mens",
+    "BornIn": 2000,
+    "DebutedIn": 2019,
+    "Overness": 31,
+    "Charisma": 3.1,
+    "Style": "Brawler",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Ricky Smokes",
+      "Type": "Showman",
+      "PersonaDescriptor": "Swipe Right",
+      "Tone": "Humorous",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 3,
+      "Durability": "ShortTerm",
+      "Freshness": 0.86,
+      "GimmickTraits": [
+        "Vain",
+        "Brash",
+        "Preening"
+      ],
+      "AppealRatings": [
+        {
+          "Group": "Casual",
+          "AppealScore": 0.6
+        },
+        {
+          "Group": "Hardcore",
+          "AppealScore": 0.52
+        }
+      ],
+      "PreviousNames": [
+        "Ricky Archer"
+      ]
+    },
+    "RingSkills": {
+      "HighFlyer": 2.6,
+      "Grappler": 2.8,
+      "Powerhouse": 2.6,
+      "Technical": 2.8,
+      "Brawler": 3.8,
+      "Striker": 3.2
+    },
+    "Physical": {
+      "Strength": 70,
+      "Speed": 74,
+      "Agility": 70,
+      "Stamina": 74,
+      "Size": 3
+    },
+    "Mental": {
+      "Psychology": 60,
+      "Selling": 64,
+      "RingIQ": 62,
+      "Toughness": 66
+    },
+    "Moveset": [
+      {
+        "Name": "Running Forearm",
+        "Types": [
+          "Strike"
+        ],
+        "Risk": "VeryEasy",
+        "Impact": "Medium",
+        "RequiresWeapons": false
+      },
+      {
+        "Name": "Neckbreaker",
+        "Types": [
+          "Takedown"
+        ],
+        "Risk": "Easy",
+        "Impact": "Medium",
+        "RequiresWeapons": false
+      }
+    ],
+    "Signature": [
+      {
+        "Name": "Cutter",
+        "Move": {
+          "Name": "Cutter",
+          "Types": [
+            "Takedown"
+          ],
+          "Risk": "Medium",
+          "Impact": "Hard"
+        },
+        "IsFinisher": true,
+        "ImpactModifier": "Hard",
+        "Overness": 33,
+        "TagExclusive": false
+      }
+    ]
   }
 ]
