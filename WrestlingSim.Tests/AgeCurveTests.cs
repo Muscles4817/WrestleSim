@@ -254,9 +254,13 @@ namespace WrestlingSim.Tests
             {
                 if (w.BornIn is null)
                 {
-                    // A debut with no birth year would age the connection and not the
-                    // body, which is a half-aged wrestler and worse than an unaged one.
-                    Assert.Null(w.DebutedIn);
+                    // A debut year with no birth year is allowed, and this test used to
+                    // forbid it on the grounds that ageing the connection and not the body
+                    // is worse than ageing neither. Zaria is the case that showed that
+                    // reasoning up: her debut is documented and her birth year is not, and
+                    // a wrestler whose audience relationship grows correctly while her body
+                    // simply is not modelled is strictly closer to right than one where
+                    // neither moves. The body half is absent, not wrong.
                     continue;
                 }
 

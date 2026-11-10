@@ -8250,7 +8250,8 @@
   {
     "RealName": "Daria Hodder",
     "Division": "Womens",
-    "Overness": 38,
+    "DebutedIn": 2020,
+    "Overness": 44,
     "Charisma": 3.0,
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
@@ -8284,19 +8285,19 @@
       ]
     },
     "RingSkills": {
-      "HighFlyer": 1.8,
-      "Grappler": 3.4,
-      "Powerhouse": 4.4,
-      "Technical": 2.8,
-      "Brawler": 3.4,
-      "Striker": 3.0
+      "HighFlyer": 1.6,
+      "Grappler": 3.8,
+      "Powerhouse": 4.3,
+      "Technical": 3.0,
+      "Brawler": 3.2,
+      "Striker": 2.8
     },
     "Physical": {
       "Strength": 90,
       "Speed": 62,
       "Agility": 58,
       "Stamina": 76,
-      "Size": 4
+      "Size": 3
     },
     "Mental": {
       "Psychology": 60,
@@ -8306,7 +8307,7 @@
     },
     "Moveset": [
       {
-        "Name": "Gutwrench Suplex",
+        "Name": "German Suplex",
         "Types": [
           "Throw"
         ],
@@ -8315,29 +8316,29 @@
         "RequiresWeapons": false
       },
       {
-        "Name": "Running Shoulder Block",
+        "Name": "Spear",
         "Types": [
-          "Strike"
+          "Takedown"
         ],
-        "Risk": "VeryEasy",
-        "Impact": "Medium",
+        "Risk": "Medium",
+        "Impact": "Hard",
         "RequiresWeapons": false
       }
     ],
     "Signature": [
       {
-        "Name": "Spinning Sitout Slam",
+        "Name": "F6",
         "Move": {
-          "Name": "Spinning Sitout Slam",
+          "Name": "F6",
           "Types": [
             "Slam"
           ],
           "Risk": "Medium",
-          "Impact": "Hard"
+          "Impact": "VeryHard"
         },
         "IsFinisher": true,
-        "ImpactModifier": "Hard",
-        "Overness": 40,
+        "ImpactModifier": "VeryHard",
+        "Overness": 46,
         "TagExclusive": false
       }
     ]
@@ -8347,14 +8348,14 @@
     "Division": "Mens",
     "BornIn": 2003,
     "DebutedIn": 2017,
-    "Overness": 36,
+    "Overness": 42,
     "Charisma": 3.2,
-    "Style": "Technical",
+    "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Jackson Drake",
-      "Type": "Rebel",
-      "PersonaDescriptor": "The Prodigy",
+      "Type": "Egotist",
+      "PersonaDescriptor": "The Vanity Project",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
       "PopularityModifier": 4,
@@ -8363,7 +8364,7 @@
       "GimmickTraits": [
         "Youthful",
         "Precocious",
-        "Smug"
+        "Vain"
       ],
       "AppealRatings": [
         {
@@ -8380,60 +8381,60 @@
       ]
     },
     "RingSkills": {
-      "HighFlyer": 3.4,
-      "Grappler": 3.6,
-      "Powerhouse": 2.2,
-      "Technical": 4.1,
-      "Brawler": 2.8,
-      "Striker": 3.0
+      "HighFlyer": 4.4,
+      "Grappler": 2.6,
+      "Powerhouse": 1.8,
+      "Technical": 3.2,
+      "Brawler": 2.6,
+      "Striker": 3.8
     },
     "Physical": {
-      "Strength": 64,
-      "Speed": 80,
-      "Agility": 82,
-      "Stamina": 78,
+      "Strength": 58,
+      "Speed": 86,
+      "Agility": 90,
+      "Stamina": 80,
       "Size": 3
     },
     "Mental": {
-      "Psychology": 66,
-      "Selling": 70,
-      "RingIQ": 72,
-      "Toughness": 64
+      "Psychology": 70,
+      "Selling": 72,
+      "RingIQ": 74,
+      "Toughness": 62
     },
     "Moveset": [
       {
-        "Name": "Snap Suplex",
+        "Name": "Enzuigiri",
         "Types": [
-          "Throw"
+          "Strike"
         ],
         "Risk": "Easy",
         "Impact": "Medium",
         "RequiresWeapons": false
       },
       {
-        "Name": "Basement Dropkick",
+        "Name": "Suicide Dive",
         "Types": [
-          "Strike"
+          "Aerial"
         ],
-        "Risk": "VeryEasy",
-        "Impact": "Easy",
+        "Risk": "Hard",
+        "Impact": "Medium",
         "RequiresWeapons": false
       }
     ],
     "Signature": [
       {
-        "Name": "Bridging Fisherman Suplex",
+        "Name": "450 Splash",
         "Move": {
-          "Name": "Bridging Fisherman Suplex",
+          "Name": "450 Splash",
           "Types": [
-            "Throw"
+            "Aerial"
           ],
-          "Risk": "Medium",
-          "Impact": "Hard"
+          "Risk": "VeryHard",
+          "Impact": "VeryHard"
         },
         "IsFinisher": true,
-        "ImpactModifier": "Hard",
-        "Overness": 38,
+        "ImpactModifier": "VeryHard",
+        "Overness": 44,
         "TagExclusive": false
       }
     ]
@@ -8445,7 +8446,7 @@
     "DebutedIn": 2021,
     "Overness": 32,
     "Charisma": 3.0,
-    "Style": "Grappler",
+    "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Brad Baylor",
@@ -8458,7 +8459,7 @@
       "Freshness": 0.88,
       "GimmickTraits": [
         "Vain",
-        "Youthful",
+        "Cheating",
         "Preening"
       ],
       "AppealRatings": [
@@ -8474,40 +8475,40 @@
       "PreviousNames": []
     },
     "RingSkills": {
-      "HighFlyer": 2.4,
-      "Grappler": 4.0,
-      "Powerhouse": 2.8,
-      "Technical": 3.4,
-      "Brawler": 2.8,
-      "Striker": 2.6
+      "HighFlyer": 3.4,
+      "Grappler": 3.2,
+      "Powerhouse": 2.2,
+      "Technical": 4.0,
+      "Brawler": 2.6,
+      "Striker": 3.0
     },
     "Physical": {
-      "Strength": 72,
-      "Speed": 74,
-      "Agility": 72,
+      "Strength": 66,
+      "Speed": 80,
+      "Agility": 82,
       "Stamina": 76,
       "Size": 3
     },
     "Mental": {
-      "Psychology": 58,
-      "Selling": 66,
-      "RingIQ": 62,
-      "Toughness": 62
+      "Psychology": 62,
+      "Selling": 68,
+      "RingIQ": 68,
+      "Toughness": 60
     },
     "Moveset": [
       {
-        "Name": "Belly-to-Belly Suplex",
+        "Name": "Single Leg Codebreaker",
         "Types": [
-          "Throw"
+          "Strike"
         ],
-        "Risk": "Easy",
+        "Risk": "Medium",
         "Impact": "Medium",
         "RequiresWeapons": false
       },
       {
-        "Name": "Arm Drag",
+        "Name": "Arm Wringer",
         "Types": [
-          "Technical"
+          "Submission"
         ],
         "Risk": "VeryEasy",
         "Impact": "Easy",
@@ -8516,11 +8517,11 @@
     ],
     "Signature": [
       {
-        "Name": "Spinebuster",
+        "Name": "Reverse DDT",
         "Move": {
-          "Name": "Spinebuster",
+          "Name": "Reverse DDT",
           "Types": [
-            "Slam"
+            "Takedown"
           ],
           "Risk": "Medium",
           "Impact": "Hard"
@@ -8539,7 +8540,7 @@
     "DebutedIn": 2019,
     "Overness": 31,
     "Charisma": 3.1,
-    "Style": "Brawler",
+    "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Ricky Smokes",
@@ -8552,8 +8553,8 @@
       "Freshness": 0.86,
       "GimmickTraits": [
         "Vain",
-        "Brash",
-        "Preening"
+        "Cheating",
+        "Brash"
       ],
       "AppealRatings": [
         {
@@ -8570,55 +8571,55 @@
       ]
     },
     "RingSkills": {
-      "HighFlyer": 2.6,
-      "Grappler": 2.8,
-      "Powerhouse": 2.6,
+      "HighFlyer": 3.9,
+      "Grappler": 2.4,
+      "Powerhouse": 2.0,
       "Technical": 2.8,
-      "Brawler": 3.8,
-      "Striker": 3.2
+      "Brawler": 3.2,
+      "Striker": 3.0
     },
     "Physical": {
-      "Strength": 70,
-      "Speed": 74,
-      "Agility": 70,
+      "Strength": 62,
+      "Speed": 84,
+      "Agility": 86,
       "Stamina": 74,
-      "Size": 3
+      "Size": 2
     },
     "Mental": {
-      "Psychology": 60,
-      "Selling": 64,
-      "RingIQ": 62,
-      "Toughness": 66
+      "Psychology": 58,
+      "Selling": 66,
+      "RingIQ": 64,
+      "Toughness": 64
     },
     "Moveset": [
       {
-        "Name": "Running Forearm",
+        "Name": "Double Stomp",
         "Types": [
-          "Strike"
+          "Aerial"
         ],
-        "Risk": "VeryEasy",
+        "Risk": "Medium",
         "Impact": "Medium",
         "RequiresWeapons": false
       },
       {
-        "Name": "Neckbreaker",
+        "Name": "Springboard Dropkick",
         "Types": [
-          "Takedown"
+          "Aerial"
         ],
-        "Risk": "Easy",
+        "Risk": "Medium",
         "Impact": "Medium",
         "RequiresWeapons": false
       }
     ],
     "Signature": [
       {
-        "Name": "Cutter",
+        "Name": "Diving Double Stomp",
         "Move": {
-          "Name": "Cutter",
+          "Name": "Diving Double Stomp",
           "Types": [
-            "Takedown"
+            "Aerial"
           ],
-          "Risk": "Medium",
+          "Risk": "Hard",
           "Impact": "Hard"
         },
         "IsFinisher": true,
