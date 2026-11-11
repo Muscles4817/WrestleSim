@@ -26,11 +26,5 @@ namespace WrestlingSim.Models
             Overness = overness;
             TagExclusive = tagExclusive;            // TagExclusive shows if the move can only be competed as a tag team move
         }
-
-        public void functionname()
-        {
-            // This is an example of an empty function which throws a not implemented exception
-            throw new NotImplementedException();
-        }
     }
 }

@@ -4292,6 +4292,21 @@
         "ImpactModifier": "Medium",
         "Overness": 48,
         "TagExclusive": false
+      },
+      {
+        "Name": "Midnight Hour",
+        "Move": {
+          "Name": "Midnight Hour",
+          "Types": [
+            "Slam"
+          ],
+          "Risk": "Hard",
+          "Impact": "VeryHard"
+        },
+        "IsFinisher": true,
+        "ImpactModifier": "VeryHard",
+        "Overness": 72,
+        "TagExclusive": true
       }
     ]
   },
@@ -4779,6 +4794,21 @@
         "ImpactModifier": "Hard",
         "Overness": 47,
         "TagExclusive": false
+      },
+      {
+        "Name": "Midnight Hour",
+        "Move": {
+          "Name": "Midnight Hour",
+          "Types": [
+            "Slam"
+          ],
+          "Risk": "Hard",
+          "Impact": "VeryHard"
+        },
+        "IsFinisher": true,
+        "ImpactModifier": "VeryHard",
+        "Overness": 72,
+        "TagExclusive": true
       }
     ]
   },
@@ -8530,6 +8560,21 @@
         "ImpactModifier": "Hard",
         "Overness": 34,
         "TagExclusive": false
+      },
+      {
+        "Name": "Double Stomp Reverse DDT",
+        "Move": {
+          "Name": "Double Stomp Reverse DDT",
+          "Types": [
+            "Aerial"
+          ],
+          "Risk": "Hard",
+          "Impact": "VeryHard"
+        },
+        "IsFinisher": true,
+        "ImpactModifier": "VeryHard",
+        "Overness": 40,
+        "TagExclusive": true
       }
     ]
   },
@@ -8626,6 +8671,21 @@
         "ImpactModifier": "Hard",
         "Overness": 33,
         "TagExclusive": false
+      },
+      {
+        "Name": "Double Stomp Reverse DDT",
+        "Move": {
+          "Name": "Double Stomp Reverse DDT",
+          "Types": [
+            "Aerial"
+          ],
+          "Risk": "Hard",
+          "Impact": "VeryHard"
+        },
+        "IsFinisher": true,
+        "ImpactModifier": "VeryHard",
+        "Overness": 40,
+        "TagExclusive": true
       }
     ]
   }

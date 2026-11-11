@@ -377,6 +377,18 @@ namespace WrestlingSim.Engine
             public DateOnly? Date { get; init; }
 
             /// <summary>
+            /// The move each participant finishes with tonight, resolved once at the bell
+            /// because it is a property of the match rather than of the beat: whether a
+            /// team's double-team finish is on the table depends on who is in the match,
+            /// which does not change once it has started. See <see cref="FinisherBook"/>.
+            /// </summary>
+            public required IReadOnlyDictionary<Wrestler, Signature?> Finishers { get; init; }
+
+            /// <summary>The finisher this wrestler goes to, or null if the roster gives none.</summary>
+            public Signature? FinisherFor(Wrestler w) =>
+                Finishers.TryGetValue(w, out var sig) ? sig : null;
+
+            /// <summary>
             /// Crowd energy the gimmick puts in the room — negative when the story did not
             /// earn it. See <see cref="StipulationRules.StakesBonus"/>.
             /// </summary>
@@ -837,6 +849,8 @@ namespace WrestlingSim.Engine
                 Plan        = plan,
                 State       = state,
                 Profiles    = plan.AllParticipants.ToDictionary(w => w, w => new PerformerProfile(w, on)),
+                Finishers   = plan.AllParticipants.ToDictionary(
+                                  w => w, w => FinisherBook.For(w, plan.SideOf(w))),
                 Date        = on,
                 Familiarity = Math.Clamp(familiarity, 0.0, 1.5),
 
@@ -3182,6 +3196,13 @@ namespace WrestlingSim.Engine
             double payoff = PerformerProfile.Blend(pControl.Connection, 0.65)
                             * PerformerProfile.Blend(pOther.Selling, 0.40);
 
+            // What they finish with, and what that move is worth. A tag team's own
+            // double-team finish is already resolved into this if the side could use one.
+            var finisher = ctx.FinisherFor(control);
+            string finishName = FinisherBook.Describe(finisher);
+            double credibility = FinisherBook.Credibility(finisher);
+            payoff *= credibility;
+
             switch (beat.Type)
             {
                 case BeatType.FinishSuperFinisher:
@@ -3191,10 +3212,10 @@ namespace WrestlingSim.Engine
                     r.CrowdEnergyDelta = Rng(16, 26) * iMod * feudMult * payoff * overkill;
                     r.StorytellingContribution = 12.0 * iMod * feudMult * earnedMultiplier * payoff * overkill;
                     r.Commentary.Add(Pick(
-                        $"{control.RingName} hits a SECOND finisher! This has to be it!",
-                        $"The super finisher! {other.RingName} has nowhere to go!",
+                        $"{control.RingName} hits a SECOND {finishName}! This has to be it!",
+                        $"{other.RingName} has nowhere to go — {finishName} again!",
                         $"{control.RingName} going deep into their arsenal — there is no coming back from this!",
-                        $"A SECOND finishing manoeuvre! {control.RingName} is absolutely ruthless tonight!",
+                        $"{control.RingName} goes to {finishName} a second time — absolutely ruthless tonight!",
                         $"{control.RingName} is not taking any chances — they hit it again! Cover — count — that's it!"
                     ));
                     break;
@@ -3263,11 +3284,11 @@ namespace WrestlingSim.Engine
                     r.CrowdEnergyDelta = Rng(10, 18) * iMod * feudMult * earnedMultiplier * payoff;
                     r.StorytellingContribution = 8.0 * iMod * feudMult * earnedMultiplier * payoff;
                     r.Commentary.Add(Pick(
-                        $"{control.RingName} hits the finisher and covers! One... Two... Three! It's over!",
-                        $"The finishing blow lands! {control.RingName} gets the three count!",
+                        $"{control.RingName} hits {finishName} and covers! One... Two... Three! It's over!",
+                        $"It connects — {finishName} lands flush! {control.RingName} gets the three count!",
                         $"{other.RingName} goes down — and this time they're not getting up! {control.RingName} wins!",
-                        $"{control.RingName} with the definitive exclamation point — the cover, the count, and it's done!",
-                        $"Clean as a whistle — {control.RingName} with a beautiful finish to seal a hard-fought victory!"
+                        $"{control.RingName} with the definitive exclamation point — {finishName}, the cover, the count, and it's done!",
+                        $"Clean as a whistle — {control.RingName} ends it with {finishName}!"
                     ));
                     break;
             }
@@ -3281,9 +3302,11 @@ namespace WrestlingSim.Engine
             // Final momentum swing in winner's direction
             r.AdvantageDelta = ControlSign(ctx, control) * 30;
 
-            // Record finish quality (used in final rating)
+            // Record finish quality (used in final rating). The move's own standing is in
+            // here too: a finish the audience has been taught to believe ends matches reads
+            // as more conclusive than one they have no feeling about.
             state.FinishQuality = Math.Clamp(
-                (earnedMultiplier * 80) + (state.CrowdEnergy * 0.2),
+                ((earnedMultiplier * 80) + (state.CrowdEnergy * 0.2)) * credibility,
                 0, 100);
 
             r.Commentary.Add(advantageFavours
