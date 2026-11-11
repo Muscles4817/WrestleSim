@@ -111,16 +111,21 @@ namespace WrestlingSim.Engine
 
         /// <summary>
         /// Doc 08 §2.2: the network wants predictability — a stable number it can sell
-        /// against. A swinging audience costs up to a fifth of the renewal, by its coefficient
-        /// of variation.
+        /// against. A swinging audience costs up to a fifth of the renewal.
+        ///
+        /// Measured **week to week** — the mean change between consecutive episodes, against
+        /// the mean audience — not as spread around the term's average. The first version used
+        /// the coefficient of variation, which read a steadily *growing* audience as a swinging
+        /// one: building from 0.8× to 1.4× the baseline cost about 9% and raised the warning.
         /// </summary>
         public static double Consistency(TvDeal deal)
         {
             if (deal.Episodes.Count < 2) return 1.0;
-            double mean = deal.Episodes.Average(e => (double)e.Viewers);
+            var ordered = deal.Episodes.OrderBy(e => e.Date).ToList();
+            double mean = ordered.Average(e => (double)e.Viewers);
             if (mean <= 0) return 1.0;
-            double sd = Math.Sqrt(deal.Episodes.Average(e => Math.Pow(e.Viewers - mean, 2)));
-            return Math.Clamp(1.0 - 0.5 * sd / mean, 0.8, 1.0);
+            double swing = ordered.Zip(ordered.Skip(1), (a, b) => Math.Abs(b.Viewers - a.Viewers)).Average();
+            return Math.Clamp(1.0 - 0.5 * swing / mean, 0.8, 1.0);
         }
 
         /// <summary>What the next term's fee would be, as a multiple of this one's, if it ended today.</summary>

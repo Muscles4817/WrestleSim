@@ -105,8 +105,13 @@ namespace WrestlingSim.Tests
             Assert.Equal(f.Viewers, career.Television!.Episodes.Single().Viewers);
         }
 
+        /// <summary>
+        /// A premium event is in the deal at twice an episode, and it is watched like one. When
+        /// it went unrated, a promotion running only premium events renewed at the floor every
+        /// term and its fee halved each time.
+        /// </summary>
         [Fact]
-        public void AnOnlyPremiumEventIsPaidForButNotRated()
+        public void APremiumEventIsPaidForAndRated()
         {
             var a = TestRoster.Make("A");
             var b = TestRoster.Make("B");
@@ -117,7 +122,64 @@ namespace WrestlingSim.Tests
             var f = career.RunShow(show)!.Finances!;
 
             Assert.Equal(2 * career.Television!.FeePerEpisode, f.MediaRights);
-            Assert.Empty(career.Television.Episodes);
+            Assert.Equal(f.Viewers, career.Television.Episodes.Single().Viewers);
+        }
+
+        /// <summary>
+        /// A night with a road run replaces the projected road with the one worked. The tune-in
+        /// has to survive that, or every televised night with a loop rates zero.
+        /// </summary>
+        [Fact]
+        public void ATelevisedNightWithARoadRunStillCountsItsViewers()
+        {
+            var cast = Enumerable.Range(0, 6).Select(i => TestRoster.Make($"R{i}")).ToArray();
+            var a = TestRoster.Make("A");
+            var b = TestRoster.Make("B");
+            var career = NewCareer(PromotionTier.National, [a, b, .. cast]);
+            var show = career.Schedule("Weekly", Day, ShowType.Television);
+            show.Card.Add(Match(a, b));
+            show.Loop = new HouseShowLoop { Cast = cast.ToList(), Towns = 3 };
+
+            var f = career.RunShow(show)!.Finances!;
+
+            Assert.NotNull(f.Road);
+            Assert.True(f.Viewers > 0);
+            Assert.Equal(f.Viewers, career.Television!.Episodes.Single().Viewers);
+        }
+
+        /// <summary>A show run early past the term's end renews the deal first, and counts in the new term.</summary>
+        [Fact]
+        public void AnEpisodeAfterExpiryCountsInTheNextTerm()
+        {
+            var a = TestRoster.Make("A");
+            var b = TestRoster.Make("B");
+            var career = NewCareer(PromotionTier.Established, a, b);
+            var end = career.Television!.End;
+            var show = career.Schedule("After", end.AddDays(2), ShowType.Television);
+            show.Card.Add(Match(a, b));
+
+            career.RunShow(show);
+
+            Assert.Single(career.Television.History);
+            Assert.Equal(0, career.Television.History[0].Episodes);
+            Assert.Single(career.Television.Episodes);
+        }
+
+        /// <summary>
+        /// Building an audience is not instability. The network buys a number it can sell
+        /// against week to week; a steady climb is that, and should not be charged as a swing.
+        /// </summary>
+        [Fact]
+        public void AGrowingAudienceIsNotASwingingOne()
+        {
+            const PromotionTier tier = PromotionTier.National;
+            int baseline = Television.BaselineViewers(tier);
+            var deal = Television.Open(tier, Day);
+            int weeks = (deal.End.DayNumber - Day.DayNumber) / 7;
+            for (int w = 0; w < weeks; w++)
+                deal.Episodes.Add(new EpisodeRating { Date = Day.AddDays(7 * w), Viewers = (int)(baseline * (0.8 + 0.6 * w / weeks)) });
+
+            Assert.True(Television.Consistency(deal) > 0.99, $"got {Television.Consistency(deal):F3}");
         }
 
         /// <summary>

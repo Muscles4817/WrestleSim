@@ -155,7 +155,7 @@ most important 18 months in a promotion's life, and that is what was missing.
 
 - **`TvDeal`** on the career: a fee per episode fixed for a term — three years at Established,
   four at National, five at Global (doc 08 §2.1's three to five). Opened with the books.
-- **Viewers per televised episode**, with the same two halves as the gate:
+- **Viewers per televised episode and premium event**, with the same two halves as the gate:
   - *Tune-in* from the card as advertised, before the bell, scaled by reputation. Less
     elastic than tickets (exponent 0.8 against 1.5): a television audience is a habit.
   - *Retention* from the show's rating: 0.92 at 50, 1.04 at 80, 0.80 at 20. A bad episode
@@ -169,8 +169,10 @@ most important 18 months in a promotion's life, and that is what was missing.
   `1.10 × audienceIndex^1.2 × consistency`, clamped to 0.5–2.0, rounded to the thousand:
   - *audience index* — the term's viewers against the baseline, **final year weighted double**
     (doc 08 §3's T−12 months);
-  - *consistency* — up to a fifth off for a swinging audience, by its coefficient of variation
-    (doc 08 §2.2: the network buys a number it can sell against);
+  - *consistency* — up to a fifth off for a swinging audience, measured as the mean
+    week-to-week change against the mean audience (doc 08 §2.2: the network buys a number it
+    can sell against). Review corrected the first version, which used the coefficient of
+    variation and so charged a steadily *growing* audience as a swinging one;
   - *1.10* — the market's drift; doc 08 §1.1's rights fees rising while ratings fell.
   
   Holding the baseline renews at ×1.10; 1.4× the baseline at ×1.65; 0.7× at ×0.72.
@@ -192,7 +194,9 @@ caught it; the fee now rounds by dividing.
 - **Inventory obligations.** Nothing makes a promotion produce the episodes it signed for; a
   term with none renews at the floor, which is the only cost.
 - **Quarter-hour ratings per segment.** Retention is one figure per episode.
-- **Premium events in the ratings.** They are paid for at 2× an episode and rated by nobody.
+- ~~**Premium events in the ratings.**~~ *Corrected in review:* premium events are rated
+  like episodes. Unrated, a promotion running only premium events renewed at the floor every
+  term and its fee halved each time.
 
 ## Not built, and written down
 

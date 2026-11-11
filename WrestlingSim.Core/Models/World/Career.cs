@@ -353,6 +353,16 @@ namespace WrestlingSim.Models.World
                 Books.Reputation = BoxOffice.ReputationAfter(
                     Books.Reputation, result.OverallRating, show.Type);
 
+            // Running a date early jumps the clock; the days it jumps still cost money. Before the
+            // episode is counted, so a show dated after the term's end renews the deal first and
+            // counts toward the term it aired in.
+            if (CurrentDate < show.Date)
+            {
+                ChargeOverhead(show.Date.DayNumber - CurrentDate.DayNumber);
+                CurrentDate = show.Date;
+                RenewIfDue();
+            }
+
             // Who watched. Tuned in on the card, kept or lost by the show — and that average
             // audience is what the network counts at renewal.
             if (finances.WasTelevised)
@@ -368,13 +378,6 @@ namespace WrestlingSim.Models.World
             result.Finances = finances;
 
             show.Result = result;
-            if (CurrentDate < show.Date)
-            {
-                // Running a date early jumps the clock; the days it jumps still cost money.
-                ChargeOverhead(show.Date.DayNumber - CurrentDate.DayNumber);
-                CurrentDate = show.Date;
-                RenewIfDue();
-            }
             return result;
         }
 

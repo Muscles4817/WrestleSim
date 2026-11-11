@@ -70,7 +70,14 @@
                     {
                         var kept = Finances.TuneIn == 0 ? 0 : Finances.Viewers / (double)Finances.TuneIn;
                         <span class="@(kept >= 1 ? "grade--great" : kept < 0.85 ? "grade--poor" : "")">
-                            @(kept >= 1 ? "grew" : "kept") @Money.Percent(kept) of @Money.Audience(Finances.TuneIn)
+                            @if (kept >= 1)
+                            {
+                                <text>grew from @Money.Audience(Finances.TuneIn) across the night</text>
+                            }
+                            else
+                            {
+                                <text>kept @Money.Percent(kept) of @Money.Audience(Finances.TuneIn)</text>
+                            }
                         </span>
                         <text> — this is what the renewal counts</text>
                     }

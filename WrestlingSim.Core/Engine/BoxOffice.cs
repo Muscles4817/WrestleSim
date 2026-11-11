@@ -340,7 +340,10 @@ namespace WrestlingSim.Engine
                 Gate             = attendance * price,
                 Merchandise      = Merch(e, attendance, onCard),
                 MediaRights      = hasCard ? RightsFor(promotion, show.Type, deal) : 0m,
-                TuneIn           = hasCard && promotion.HasTelevision && show.Type == ShowType.Television
+                // A premium event is in the deal and watched like an episode. Leaving it unrated
+                // meant a promotion running only premium events renewed at the floor every term.
+                TuneIn           = hasCard && promotion.HasTelevision
+                                   && show.Type is ShowType.Television or ShowType.PremiumEvent
                                        ? Television.TuneIn(promotion.Tier, pull, reputation)
                                        : 0,
                 Talent           = onCard.Sum(w => AppearanceFee(w, promotion.Tier)),
