@@ -108,6 +108,14 @@ namespace WrestlingSim.Persistence
             }).ToList(),
 
             Brands = ToDto(career.Brands),
+            Books = new BooksDto
+            {
+                Cash        = career.Books.Cash,
+                OpeningCash = career.Books.OpeningCash,
+                Overheads   = career.Books.Overheads,
+                Reputation  = Math.Round(career.Books.Reputation, 4),
+                OpenedOn    = Iso(career.Books.OpenedOn)
+            },
             Stipulations = career.Stipulations.LastUsed
                 .Select(kv => new StipulationUseDto { Stipulation = kv.Key, LastUsed = kv.Value })
                 .OrderBy(u => u.Stipulation)
@@ -380,7 +388,82 @@ namespace WrestlingSim.Persistence
                 Score           = i.Score,
                 StarRating      = i.StarRating,
                 Notes           = new List<string>(i.Notes)
-            }).ToList()
+            }).ToList(),
+            Finances = result.Finances is { } f ? ToDto(f) : null
+        };
+
+        private static ShowFinancesDto ToDto(ShowFinances f) => new()
+        {
+            Draws = f.Draws.Select(d => new ItemDrawDto
+            {
+                Label      = d.Label,
+                Headliners = new List<string>(d.Headliners),
+                StarPower  = Math.Round(d.StarPower, 4),
+                Build      = Math.Round(d.Build, 4),
+                Freshness  = Math.Round(d.Freshness, 4),
+                Stakes     = Math.Round(d.Stakes, 4)
+            }).ToList(),
+            CardPull         = Math.Round(f.CardPull, 4),
+            Capacity         = f.Capacity,
+            Demand           = f.Demand,
+            TicketPrice      = f.TicketPrice,
+            Gate             = f.Gate,
+            Merchandise      = f.Merchandise,
+            MediaRights      = f.MediaRights,
+            Talent           = f.Talent,
+            Operations       = f.Operations,
+            Production       = f.Production,
+            Road = f.Road is { } r ? new RoadTakingsDto
+            {
+                Towns              = r.Towns,
+                CapacityPerNight   = r.CapacityPerNight,
+                AttendancePerNight = r.AttendancePerNight,
+                Headliners         = new List<string>(r.Headliners),
+                Gate               = r.Gate,
+                Merchandise        = r.Merchandise,
+                Talent             = r.Talent,
+                Operations         = r.Operations
+            } : null,
+            ReputationBefore = Math.Round(f.ReputationBefore, 4),
+            ReputationAfter  = Math.Round(f.ReputationAfter, 4),
+            CashAfter        = f.CashAfter
+        };
+
+        private static ShowFinances FromDto(ShowFinancesDto d) => new()
+        {
+            Draws = d.Draws.Select(x => new ItemDraw
+            {
+                Label      = x.Label,
+                Headliners = new List<string>(x.Headliners),
+                StarPower  = x.StarPower,
+                Build      = x.Build,
+                Freshness  = x.Freshness,
+                Stakes     = x.Stakes
+            }).ToList(),
+            CardPull         = d.CardPull,
+            Capacity         = d.Capacity,
+            Demand           = d.Demand,
+            TicketPrice      = d.TicketPrice,
+            Gate             = d.Gate,
+            Merchandise      = d.Merchandise,
+            MediaRights      = d.MediaRights,
+            Talent           = d.Talent,
+            Operations       = d.Operations,
+            Production       = d.Production,
+            Road = d.Road is { } r ? new RoadTakings
+            {
+                Towns              = r.Towns,
+                CapacityPerNight   = r.CapacityPerNight,
+                AttendancePerNight = r.AttendancePerNight,
+                Headliners         = new List<string>(r.Headliners),
+                Gate               = r.Gate,
+                Merchandise        = r.Merchandise,
+                Talent             = r.Talent,
+                Operations         = r.Operations
+            } : null,
+            ReputationBefore = d.ReputationBefore,
+            ReputationAfter  = d.ReputationAfter,
+            CashAfter        = d.CashAfter
         };
 
         // ── DTO → Career ─────────────────────────────────────────────────────
@@ -428,6 +511,20 @@ namespace WrestlingSim.Persistence
                 Roster      = roster.ToList(),
                 LastPlayedUtc = dto.LastPlayedUtc
             };
+
+            // A career saved before money existed opens its books today. Opening them at the
+            // start date instead would claim takings for shows nobody kept the books on.
+            if (dto.Books is { } books)
+                career.Books = new CareerBooks
+                {
+                    Cash        = books.Cash,
+                    OpeningCash = books.OpeningCash,
+                    Overheads   = books.Overheads,
+                    Reputation  = books.Reputation,
+                    OpenedOn    = ParseDate(books.OpenedOn)
+                };
+            else
+                career.OpenBooks(career.CurrentDate);
 
             career.ShowDefinitions.AddRange(dto.ShowDefinitions.Select(d => new ShowDefinition
             {
@@ -1078,7 +1175,8 @@ namespace WrestlingSim.Persistence
                 Score           = i.Score,
                 StarRating      = i.StarRating,
                 Notes           = new List<string>(i.Notes)
-            }).ToList()
+            }).ToList(),
+            Finances = dto.Finances is { } f ? FromDto(f) : null
         };
 
         // ── Dates ────────────────────────────────────────────────────────────

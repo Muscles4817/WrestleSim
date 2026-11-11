@@ -373,6 +373,9 @@ calendar is real — `ShowDefinition` with recurrence, a rolling materialised sc
 `Career.AdvanceOneDay` as the clock that every decay in the game is charged to.
 
 Not shipped: **revenue lines** and **the TV contract**. There is no money in the model at all.
+*Corrected since:* revenue lines shipped with C5's first slice — gate, merchandise, a flat TV
+rights fee, appearance fees, operations, production, the road, and a daily office cost. The
+TV contract is still missing: the fee is flat, with no term and no renewal.
 The closest thing is `Promotion.TypicalAttendanceFor(ShowType)`, which returns a plausible
 number for flavour and is read by nothing that could be called a business. So the half of this
 entry that "converts a match simulator into a management game" is the half still missing, and
@@ -528,7 +531,7 @@ A parameter set per era — revenue mix, schedule, contract type, content rating
 length, medical policy, title reign norms — turns history into configuration rather than
 special-case code.
 
-#### C5. Rate well vs draw well as separate outputs
+#### C5. Rate well vs draw well as separate outputs — **first slice implemented**
 **Reference:** [18](18-match-craft.md) §7
 The sim reports a star rating. It should also report a **business result**, and the two
 should be able to diverge sharply. That divergence *is* professional wrestling.
@@ -542,6 +545,21 @@ while the warning signs accumulate. `MatchEngineResult` carries `TechnicalScore`
 
 Four entries are each individually blocked on this, which probably makes it the wrong thing to
 have left in Tier C.
+
+**Update — first slice shipped.** `BoxOffice` reads the card as advertised — star power, feud
+build, rematch freshness, stakes — and sells it into the building *before* the card is
+simulated; `CareerBooks` holds cash and a reputation stock that each show's quality moves, and
+that the next card's demand is multiplied by. Story sells the ticket, quality sells the next
+one, and the two are separate numbers on every show report. Per-appearance talent pay, a flat
+TV rights fee, a daily office cost, and no consequence for going broke yet. Full record, with
+the per-tier margins measured against doc 09 §4: [docs/business-design-record.md](../business-design-record.md).
+
+**Correction to this entry's premise, found while building it:** the star rating is not a pure
+quality axis. Its crowd component reads investment, which reads overness, and measured over
+forty seeds overness moves the rating about as far as ring skill does (≈1.2★ against ≈1.0★).
+So the doc's "five-star match between nobodies" is unreachable — the best unknown workers rate
+below two barely competent stars. The outputs still diverge, but from the box-office side: the
+draw gap is several times the rating gap. Re-weighting the crowd component is open.
 
 ---
 
@@ -560,7 +578,7 @@ Attributes the reference says matter. Status as of `ece8cd9`.
 | **Adaptability** | [03](03-roles-and-competence.md) §5.1 | Missing. Mitigates style clash; the Flair attribute |
 | **Promo (scripted) / Promo (improv)** | [19](19-characters-and-promos.md) §3.5 | Missing as a split. `SegmentSimulator` has an improv *risk* keyed off `Psychology`, which is the consequence without the two skills behind it |
 | **Locker-room standing** | [14](14-locker-room.md) §2 | Missing. Invisible to fans, decisive to careers |
-| **Merch draw** | [09](09-revenue-and-costs.md) §3.4 | Missing, and blocked behind C5 — there is no revenue for it to be a line of |
+| **Merch draw** | [09](09-revenue-and-costs.md) §3.4 | Missing. No longer blocked: merchandise is a revenue line since C5's first slice, but it follows the most over name on the card as a total rather than per performer |
 
 Two attributes now on `Wrestler` that this table never asked for, both from the attrition
 work: **`Fatigue`** and **`Sharpness`** (0–100, moving together on work and together on rest),
@@ -598,10 +616,12 @@ them. What was behind it and is still open is **retirement**: nobody ever leaves
 stipulations that write somebody off remain excluded. That is now its own entry's worth of
 work rather than a missing field.
 
-**One output, which four entries are each separately blocked on:**
-- **C5 rate well vs draw well.** A3's blow-off payout, B3's revenue lines, B4's P&L and C1's
-  whole premise all need a business result to exist. Leaving this in Tier C has turned out to
-  be the single most consequential ordering mistake on this board.
+**~~One output, which four entries are each separately blocked on~~** — first slice done.
+C5's box office and books exist, so A3, B3, B4 and C1 now have a business result to read.
+What C5 itself still owes: **TV renewal and viewership** (booking barely moves TV-tier money
+while the fee is flat), **contracts**, **a consequence for going broke**, and **the star
+rating's dependence on overness**, which caps the divergence from the rating side. See
+[docs/business-design-record.md](../business-design-record.md).
 
 **Then, roughly in order of value per unit of work:**
 1. **The narrative half of injuries** — `Feud.Interrupt`, slower injury-absence decay, the

@@ -48,6 +48,11 @@
         </div>
     </div>
 
+    @if (Result.Finances is { } roadBooks)
+    {
+        <Takings Finances="roadBooks" DailyOverhead="DailyOverhead" />
+    }
+
     @if (Result.Injuries.Count > 0)
     {
         <div class="notice notice--error mt">
@@ -79,6 +84,13 @@ else
         <div class="score-hero__main">@Result.FinalCrowdMood.ToString("F1") <span class="muted">/ 10</span></div>
     </div>
 </div>
+
+@* The business, beside the rating and not folded into it. Null in exhibition, which has no
+   promotion to bank anything, and on a career show run before the books were kept. *@
+@if (Result.Finances is { } books)
+{
+    <Takings Finances="books" Verdict="@Result.BusinessVerdict" DailyOverhead="DailyOverhead" />
+}
 
 @if (Result.OverrunPenalty > 0)
 {
@@ -413,4 +425,7 @@ else
     /// than read off a career, because the exhibition sandbox has a show and no career.
     /// </summary>
     [Parameter, EditorRequired] public DateOnly Today { get; set; }
+
+    /// <summary>The promotion's daily running cost, for the books to mention. Zero in exhibition.</summary>
+    [Parameter] public decimal DailyOverhead { get; set; }
 }

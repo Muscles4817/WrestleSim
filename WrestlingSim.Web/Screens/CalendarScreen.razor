@@ -136,7 +136,7 @@ else
                         <span class="small muted">
                             @career.Promotion.DefaultRuntimeFor(newType) min budget ·
                             about @career.Promotion.TypicalCardSizeFor(newType) items ·
-                            @career.Promotion.TypicalAttendanceFor(newType).ToString("N0") expected
+                            @career.Promotion.TypicalAttendanceFor(newType).ToString("N0") seats — the card decides how many sell
                         </span>
                         <span class="spacer"></span>
                         <button class="btn btn--primary" @onclick="() => Schedule(career, day2)">

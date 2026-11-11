@@ -1,0 +1,185 @@
+@*
+    A night's books. Used twice, and the two uses are the design:
+
+      • On the booking screen, as booked (`Projected`). This is not an estimate. The house is
+        sold on the card as advertised, so what this says the card draws is what it will draw.
+        That is the point at which the number is useful — while the card can still change.
+      • In the show report, once it has run, with the reputation the show's quality earned and
+        the one-line verdict on whether it sold and whether it delivered.
+
+    Story sells the ticket; quality sells the next ticket. The first is above the line, the
+    second is the reputation figure, and nothing here pretends one is the other.
+*@
+
+<div class="panel takings">
+    <div class="panel__title">
+        @(Projected ? "Box office — as booked" : "The box office")
+        <span class="spacer"></span>
+        @if (Finances.HadCard)
+        {
+            <span class="small muted tabnum">
+                @Finances.Attendance.ToString("N0") / @Finances.Capacity.ToString("N0")
+            </span>
+            @if (Finances.SoldOut)
+            {
+                <span class="badge badge--gold badge--sm">sold out</span>
+            }
+        }
+    </div>
+
+    <div class="takings__hero">
+        @if (Finances.HadCard)
+        {
+            <div>
+                <div class="score-hero__label">House</div>
+                <div class="takings__big tabnum @FillTone">@Money.Percent(Finances.Fill)</div>
+                <div class="small muted">
+                    @if (Finances.TurnedAway > 0)
+                    {
+                        <text>@Finances.TurnedAway.ToString("N0") turned away</text>
+                    }
+                    else if (Finances.Fill < 0.55)
+                    {
+                        <text>below break-even</text>
+                    }
+                    else
+                    {
+                        <text>@Money.Format(Finances.TicketPrice) a head</text>
+                    }
+                </div>
+            </div>
+        }
+        <div>
+            <div class="score-hero__label">@(Projected ? "Night, as booked" : "Night")</div>
+            <div class="takings__big tabnum @Money.Tone(Finances.Net)">@Money.Signed(Finances.Net)</div>
+            <div class="small muted">@Money.Format(Finances.Revenue) in · @Money.Format(Finances.Costs) out</div>
+        </div>
+        @if (!Projected && Finances.HadCard)
+        {
+            var moved = Finances.ReputationAfter - Finances.ReputationBefore;
+            <div>
+                <div class="score-hero__label">Reputation</div>
+                <div class="takings__big tabnum">@Finances.ReputationAfter.ToString("F1")</div>
+                <div class="small @(moved >= 0 ? "grade--great" : "grade--poor")">
+                    @(moved >= 0 ? "+" : "")@moved.ToString("F1") — what the next card sells on
+                </div>
+            </div>
+        }
+        else if (Projected && Finances.HadCard)
+        {
+            <div>
+                <div class="score-hero__label">Reputation</div>
+                <div class="takings__big tabnum">@Finances.ReputationBefore.ToString("F1")</div>
+                <div class="small muted">@ReputationReading(Finances.ReputationBefore)</div>
+            </div>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(Verdict))
+    {
+        <div class="notice notice--advice mt">@Verdict</div>
+    }
+
+    @if (Finances.Draws.Count > 0)
+    {
+        <div class="takings__sub">What is selling it</div>
+        @for (int i = 0; i < Math.Min(3, Finances.Draws.Count); i++)
+        {
+            var draw = Finances.Draws[i];
+            var share = Finances.CardPull <= 0 ? 0 : draw.Pull * BoxOffice.BillingWeights[i] / Finances.CardPull;
+            <div class="takings__draw">
+                <div>
+                    <div class="editor-row__name">@draw.Label</div>
+                    <div class="editor-row__sub">@Reasons(draw)</div>
+                </div>
+                <div class="tabnum takings__share">@Money.Percent(share)</div>
+            </div>
+        }
+        @if (Finances.Draws.Count > 3)
+        {
+            <div class="small muted mt">
+                The other @(Finances.Draws.Count - 3) sell@(Finances.Draws.Count - 3 == 1 ? "s" : "") nobody a ticket —
+                a card is sold on its top three.
+            </div>
+        }
+    }
+
+    <div class="takings__sub">The books</div>
+    <div class="ledger">
+        @if (Finances.HadCard)
+        {
+            @Line("Gate", Finances.Gate, $"{Finances.Attendance:N0} × {Money.Format(Finances.TicketPrice)}")
+            @Line("Merchandise", Finances.Merchandise, "after the venue's cut and the shirt")
+            @if (Finances.MediaRights > 0)
+            {
+                @Line("Television rights", Finances.MediaRights, "flat per episode, whatever is on the card")
+            }
+            @Line("Talent", -Finances.Talent, "appearance fees for the people who worked")
+            @Line("Building and crew", -Finances.Operations, null)
+            @if (Finances.Production > 0)
+            {
+                @Line("Production", -Finances.Production, "trucks, crew and set")
+            }
+        }
+        @if (Finances.Road is { } road)
+        {
+            @Line($"The road — {road.Towns} town{(road.Towns == 1 ? "" : "s")}", road.Net,
+                  $"{road.AttendancePerNight:N0} a night of {road.CapacityPerNight:N0}" +
+                  (road.Headliners.Count > 0 ? $" · on the poster: {string.Join("; ", road.Headliners)}" : "") +
+                  $" · {Money.Format(road.Revenue)} in, {Money.Format(road.Costs)} out")
+        }
+    </div>
+
+    <div class="small muted mt">
+        The office costs @Money.Format(DailyOverhead) a day on top of this, show or no show.
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public ShowFinances Finances { get; set; } = default!;
+
+    /// <summary>True on the booking screen, before the show has run.</summary>
+    [Parameter] public bool Projected { get; set; }
+
+    /// <summary>Whether it sold and whether it delivered. Report only.</summary>
+    [Parameter] public string? Verdict { get; set; }
+
+    [Parameter] public decimal DailyOverhead { get; set; }
+
+    private string FillTone => Finances.Fill switch
+    {
+        >= 0.90 => "grade--great",
+        < 0.55  => "grade--poor",
+        _       => ""
+    };
+
+    private static string ReputationReading(double r) => r switch
+    {
+        >= 70 => "the shows have earned a following",
+        >= 55 => "a name for good shows",
+        >= 45 => "nobody's opinion yet",
+        >= 30 => "a name for bad shows",
+        _     => "the crowd expects to be let down"
+    };
+
+    /// <summary>The draw's reasons in words, leaving out any factor that is not moving it.</summary>
+    private static string Reasons(ItemDraw d)
+    {
+        var parts = new List<string>();
+        if (d.Headliners.Count > 0) parts.Add($"star power {d.StarPower * 100:F0}");
+        if (d.Build > 1.005) parts.Add($"the feud ×{d.Build:F2}");
+        if (d.Freshness < 0.995) parts.Add($"seen before ×{d.Freshness:F2}");
+        else if (d.Freshness > 1.005) parts.Add($"the blow-off ×{d.Freshness:F2}");
+        if (d.Stakes > 1.005) parts.Add($"stakes ×{d.Stakes:F2}");
+        return string.Join(" · ", parts);
+    }
+
+    private RenderFragment Line(string label, decimal amount, string? why) =>
+        @<div class="ledger__row">
+            <div>
+                <div>@label</div>
+                @if (why is not null) { <div class="small muted">@why</div> }
+            </div>
+            <div class="tabnum @(amount < 0 ? "grade--poor" : "")">@Money.Signed(amount)</div>
+        </div>;
+}

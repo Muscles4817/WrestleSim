@@ -2064,3 +2064,24 @@ button.step:focus-visible { outline: none; box-shadow: var(--ring); }
   .written__phase { letter-spacing: .06em; }
   .written__meta { grid-column: 2; text-align: left; font-size: var(--t-xs); }
 }
+
+/* ── Box office ─────────────────────────────────────────────────────────────
+   The business, beside the rating and never folded into it. */
+.takings__hero {
+  display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: flex-start;
+}
+.takings__big { font-size: 26px; font-weight: 800; line-height: 1.15; margin-top: 2px; }
+.takings__sub {
+  margin: 16px 0 6px; font-size: 11px; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--muted); font-weight: 800;
+}
+.takings__draw {
+  display: flex; justify-content: space-between; gap: 12px; align-items: center;
+  padding: 8px 0; border-top: 1px solid var(--line);
+}
+.takings__share { font-weight: 800; color: var(--gold); }
+.ledger__row {
+  display: flex; justify-content: space-between; gap: 12px; align-items: baseline;
+  padding: 7px 0; border-top: 1px solid var(--line);
+}
+.ledger__row > :last-child { white-space: nowrap; font-weight: 700; }
