@@ -160,6 +160,61 @@ namespace WrestlingSim.Tests
             Assert.Equal(career.Books.Cash, result.Finances.CashAfter);
         }
 
+        /// <summary>Running a date early jumps the clock, and the days it jumps still cost money.</summary>
+        [Fact]
+        public void RunningAShowEarly_StillPaysForTheDaysItSkips()
+        {
+            var a = TestRoster.Make("A");
+            var b = TestRoster.Make("B");
+            var career = NewCareer(PromotionTier.SuperIndie, a, b);
+            var show = career.Schedule("Later", Day.AddDays(10), ShowType.PremiumEvent);
+            show.Card.Add(Match(a, b));
+
+            var net = career.Projection(show).Net;
+            career.RunShow(show);
+
+            Assert.Equal(Day.AddDays(10), career.CurrentDate);
+            Assert.Equal(10 * career.DailyOverhead, career.Books.Overheads);
+            Assert.Equal(career.Books.OpeningCash + net - 10 * career.DailyOverhead, career.Books.Cash);
+        }
+
+        /// <summary>
+        /// Two partners feuding with each other are not what their tag match is selling. Only
+        /// a story across the ring builds the draw.
+        /// </summary>
+        [Fact]
+        public void AFeudBetweenTagPartnersDoesNotSellTheirMatch()
+        {
+            var a = TestRoster.Make("A"); var b = TestRoster.Make("B");
+            var c = TestRoster.Make("C"); var d = TestRoster.Make("D");
+            var book = new FeudBook();
+            HotFeud(book, a, b);
+
+            var tag = new BookedMatch
+            {
+                Plan = new MatchPlan
+                {
+                    Sides = [new MatchSide { Members = [a, b] }, new MatchSide { Members = [c, d] }],
+                    Beats = MatchStructureLibrary.Find("TV Formula")!.Beats.Select(x => x.Clone()).ToList()
+                }
+            };
+            Assert.Equal(1.0, BoxOffice.DrawOf(tag, book, Day).Build, 10);
+
+            HotFeud(book, a, c);
+            Assert.True(BoxOffice.DrawOf(tag, book, Day).Build > 1.3);
+        }
+
+        [Fact]
+        public void TicketPricesAreWholeDollars_SoTheGateLineAddsUp()
+        {
+            foreach (var tier in Enum.GetValues<PromotionTier>())
+            foreach (var type in Enum.GetValues<ShowType>())
+            {
+                var price = BoxOffice.PriceFor(BoxOffice.For(tier), type);
+                Assert.Equal(Math.Round(price), price);
+            }
+        }
+
         // ── What sells a ticket ──────────────────────────────────────────────
 
         [Fact]

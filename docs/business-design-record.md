@@ -68,7 +68,7 @@ size and is now treated as that. Demand above capacity is reported as *turned aw
 
 | Line | Source |
 |---|---|
-| Gate | attendance × the tier's net ticket price (×1.6 premium event, ×0.8 house show) |
+| Gate | attendance × the tier's net ticket price (×1.6 premium event, ×0.8 house show), in whole dollars so the report's "attendance × price" adds up |
 | Merchandise | attendance × per-head spend × (0.5 + top overness) × 0.55 net — doc 09 §3.4's concentration in the most over name |
 | Television rights | flat per episode at Established and above; a premium event is in the deal at 2× |
 | Talent | per appearance: the tier's base × 1 / 1.5 / 3 / 8 / 20 by card position |
@@ -105,8 +105,8 @@ re-measured on the roster after #90
 
 | Tier | Doc 09 §4 | Median margin | 10th–90th |
 |---|---|---|---|
-| Local | thin, often subsidised | 11.7% | −0.2% to 22.4% |
-| Independent | thin | 20.8% | 8.3% to 28.6% |
+| Local | thin, often subsidised | 11.1% | −0.9% to 21.9% |
+| Independent | thin | 21.2% | 8.8% to 29.0% |
 | SuperIndie | real but small profit | 17.2% | 1.2% to 27.5% |
 | Established | near break-even or modest | 10.5% | 8.1% to 12.6% |
 | National | costs that can exceed revenue | 6.3% | 4.7% to 7.6% |

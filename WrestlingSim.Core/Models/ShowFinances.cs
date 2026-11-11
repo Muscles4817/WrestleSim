@@ -78,8 +78,11 @@ namespace WrestlingSim.Models
         /// <summary>Trucks, crew and set for a televised night. Zero off television.</summary>
         public decimal Production { get; init; }
 
-        /// <summary>The run of towns the rest of the roster worked, when there was one.</summary>
-        public RoadTakings? Road { get; init; }
+        /// <summary>
+        /// The run of towns the rest of the roster worked, when there was one. Settable so a
+        /// settled run can replace the projected one without copying the rest of the night.
+        /// </summary>
+        public RoadTakings? Road { get; set; }
 
         public decimal CardRevenue => Gate + Merchandise + MediaRights;
         public decimal CardCosts => Talent + Operations + Production;
@@ -100,9 +103,11 @@ namespace WrestlingSim.Models
 
         /// <summary>
         /// Whether the card was booked at all, as opposed to a date that was only a run of
-        /// towns. A night with no card sells no tickets and moves no reputation.
+        /// towns. A night with no card sells no tickets and moves no reputation. Read off the
+        /// draws, not the capacity: a card run in a building with no seats recorded is still a
+        /// card, with a TV fee, costs and a rating.
         /// </summary>
-        public bool HadCard => Capacity > 0;
+        public bool HadCard => Draws.Count > 0;
     }
 
     /// <summary>A run of towns, as money: the same house show sold night after night.</summary>

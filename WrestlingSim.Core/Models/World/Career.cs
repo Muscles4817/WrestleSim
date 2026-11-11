@@ -320,9 +320,9 @@ namespace WrestlingSim.Models.World
             // The road is settled on the nights actually worked, so somebody sent home hurt
             // is not paid for the towns they missed. Everything else about the night was
             // fixed when the house was sold.
-            var finances = road is { Workers.Count: > 0 } && house.Road is { } projected
-                ? WithRoad(house, BoxOffice.Worked(projected, road, Promotion.Tier))
-                : house;
+            var finances = house;
+            if (road is { Workers.Count: > 0 } && house.Road is { } projected)
+                finances.Road = BoxOffice.Worked(projected, road, Promotion.Tier);
 
             if (finances.HadCard)
                 Books.Reputation = BoxOffice.ReputationAfter(
@@ -342,25 +342,6 @@ namespace WrestlingSim.Models.World
             }
             return result;
         }
-
-        /// <summary>The pre-bell night with its road replaced by the one actually worked.</summary>
-        private static ShowFinances WithRoad(ShowFinances house, RoadTakings road) => new()
-        {
-            Draws            = house.Draws,
-            CardPull         = house.CardPull,
-            Capacity         = house.Capacity,
-            Demand           = house.Demand,
-            TicketPrice      = house.TicketPrice,
-            Gate             = house.Gate,
-            Merchandise      = house.Merchandise,
-            MediaRights      = house.MediaRights,
-            Talent           = house.Talent,
-            Operations       = house.Operations,
-            Production       = house.Production,
-            Road             = road,
-            ReputationBefore = house.ReputationBefore,
-            ReputationAfter  = house.ReputationAfter
-        };
 
         /// <summary>
         /// Advances to the next show's date, or by the given cap if that is sooner.

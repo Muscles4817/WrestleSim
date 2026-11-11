@@ -155,8 +155,7 @@ namespace WrestlingSim.Engine
 
             // The plan's own feud when the builder attached one; otherwise whatever the book
             // holds between these people, because the poster sells the story either way.
-            var feud = plan.Feud
-                    ?? feuds?.Among(plan.AllParticipants.ToList()).MaxBy(f => f.Heat);
+            var feud = plan.Feud ?? AcrossTheRing(plan, feuds);
             double stakes = 1.0 + (plan.TitleAtStake?.Prestige ?? 0) / 100.0 * 0.35;
             if (plan.Stipulation != Stipulation.None) stakes *= 1.10;
 
@@ -169,6 +168,21 @@ namespace WrestlingSim.Engine
                 Freshness  = feud?.Familiarity(on) ?? 1.0,
                 Stakes     = stakes
             };
+        }
+
+        /// <summary>
+        /// The hottest live feud between people on *opposite* sides. Not
+        /// <see cref="FeudBook.Among"/> over everyone in the ring: two tag partners who are
+        /// feuding with each other are not what a match against somebody else is selling.
+        /// </summary>
+        private static Models.MatchPlan.Feud? AcrossTheRing(Models.MatchPlan.MatchPlan plan, FeudBook? feuds)
+        {
+            if (feuds is null) return null;
+            var sides = plan.Sides.Where(s => s.Members.Count > 0).ToList();
+            return feuds.Among(plan.AllParticipants.ToList())
+                .Where(f => sides.Any(s => sides.Any(o => !ReferenceEquals(s, o) &&
+                    s.Members.Any(a => o.Members.Any(b => f.Opposes(a, b))))))
+                .MaxBy(f => f.Heat);
         }
 
         /// <summary>A promo or an angle: it sells a ticket at half the rate a match does.</summary>
@@ -237,12 +251,17 @@ namespace WrestlingSim.Engine
             return (int)Math.Round(capacity * ratio);
         }
 
-        public static decimal PriceFor(TierEconomics e, ShowType type) => type switch
+        /// <summary>
+        /// Net per head, in whole dollars. Rounded because the report prints the gate as
+        /// "attendance × price", and a $19.20 price printed as $19 made that multiplication
+        /// visibly wrong.
+        /// </summary>
+        public static decimal PriceFor(TierEconomics e, ShowType type) => Math.Round(type switch
         {
             ShowType.PremiumEvent => e.TicketPrice * 1.6m,
             ShowType.HouseShow    => e.TicketPrice * 0.8m,
             _                     => e.TicketPrice
-        };
+        });
 
         public static decimal OperationsFor(TierEconomics e, ShowType type) => type switch
         {
