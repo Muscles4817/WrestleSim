@@ -34,6 +34,15 @@ namespace WrestlingSim.Models.World
         /// </summary>
         public CareerBooks Books { get; set; } = new();
 
+        /// <summary>
+        /// The television contract, at a tier that has television; null below it. Opened with
+        /// the books, and renewed by the clock when its term runs out.
+        /// </summary>
+        public TvDeal? Television { get; set; }
+
+        /// <summary>Every renewal so far, for the dashboard to report the one that just happened.</summary>
+        public TvTerm? LastRenewal => Television?.History.LastOrDefault();
+
         /// <summary>Every feud the booker has going.</summary>
         public FeudBook FeudBook { get; set; } = new();
 
@@ -187,6 +196,10 @@ namespace WrestlingSim.Models.World
             // The office is open whether or not there is a show tonight.
             ChargeOverhead(1);
 
+            // The term runs out on the clock, and the network pays next term for what this
+            // one drew.
+            RenewIfDue();
+
             // Nothing stays hot. Momentum bleeds toward zero every day, and someone off
             // screen long enough starts to be forgotten — doc 17 §3 and §4.
             foreach (var wrestler in Roster)
@@ -250,10 +263,22 @@ namespace WrestlingSim.Models.World
                 Reputation  = CareerBooks.OpeningReputation,
                 OpenedOn    = on
             };
+
+            if (Promotion.HasTelevision) Television ??= Engine.Television.Open(Promotion.Tier, on);
         }
 
         /// <summary>What the promotion costs to keep open for a day, show or no show.</summary>
         public decimal DailyOverhead => BoxOffice.For(Promotion.Tier).DailyOverhead;
+
+        /// <summary>
+        /// Renews the television deal if its term has run out. A loop rather than a check, so
+        /// a clock that jumps a whole term still renews once per term.
+        /// </summary>
+        private void RenewIfDue()
+        {
+            while (Television is { } deal && CurrentDate >= deal.End)
+                Engine.Television.Renew(deal, Promotion.Tier);
+        }
 
         private void ChargeOverhead(int days)
         {
@@ -270,7 +295,7 @@ namespace WrestlingSim.Models.World
         /// anybody who gets hurt on it.
         /// </summary>
         public ShowFinances Projection(ScheduledShow show) =>
-            BoxOffice.Night(show, Promotion, Books.Reputation, FeudBook);
+            BoxOffice.Night(show, Promotion, Books.Reputation, FeudBook, Television);
 
         /// <summary>
         /// Runs a booked show: sells the house, runs the card and the road, banks the takings
@@ -328,18 +353,31 @@ namespace WrestlingSim.Models.World
                 Books.Reputation = BoxOffice.ReputationAfter(
                     Books.Reputation, result.OverallRating, show.Type);
 
+            // Running a date early jumps the clock; the days it jumps still cost money. Before the
+            // episode is counted, so a show dated after the term's end renews the deal first and
+            // counts toward the term it aired in.
+            if (CurrentDate < show.Date)
+            {
+                ChargeOverhead(show.Date.DayNumber - CurrentDate.DayNumber);
+                CurrentDate = show.Date;
+                RenewIfDue();
+            }
+
+            // Who watched. Tuned in on the card, kept or lost by the show — and that average
+            // audience is what the network counts at renewal.
+            if (finances.WasTelevised)
+            {
+                finances.Viewers = (int)Math.Round(
+                    finances.TuneIn * Engine.Television.Retention(result.OverallRating));
+                Television?.Episodes.Add(new EpisodeRating { Date = show.Date, Viewers = finances.Viewers });
+            }
+
             Books.Cash += finances.Net;
             finances.ReputationAfter = Books.Reputation;
             finances.CashAfter = Books.Cash;
             result.Finances = finances;
 
             show.Result = result;
-            if (CurrentDate < show.Date)
-            {
-                // Running a date early jumps the clock; the days it jumps still cost money.
-                ChargeOverhead(show.Date.DayNumber - CurrentDate.DayNumber);
-                CurrentDate = show.Date;
-            }
             return result;
         }
 

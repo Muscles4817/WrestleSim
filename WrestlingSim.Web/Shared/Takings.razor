@@ -54,6 +54,36 @@
             <div class="takings__big tabnum @Money.Tone(Finances.Net)">@Money.Signed(Finances.Net)</div>
             <div class="small muted">@Money.Format(Finances.Revenue) in · @Money.Format(Finances.Costs) out</div>
         </div>
+        @* Who watched, on a televised episode. Tune-in is the card's, like the gate; what the
+           show kept of it is its quality, and that kept audience is what the renewal counts. *@
+        @if (Finances.WasTelevised)
+        {
+            <div>
+                <div class="score-hero__label">@(Projected ? "Tuning in" : "Watched")</div>
+                <div class="takings__big tabnum">@Money.Audience(Projected ? Finances.TuneIn : Finances.Viewers)</div>
+                <div class="small muted">
+                    @if (Projected)
+                    {
+                        <text>how many the card gets to the set — the show decides how many stay</text>
+                    }
+                    else
+                    {
+                        var kept = Finances.TuneIn == 0 ? 0 : Finances.Viewers / (double)Finances.TuneIn;
+                        <span class="@(kept >= 1 ? "grade--great" : kept < 0.85 ? "grade--poor" : "")">
+                            @if (kept >= 1)
+                            {
+                                <text>grew from @Money.Audience(Finances.TuneIn) across the night</text>
+                            }
+                            else
+                            {
+                                <text>kept @Money.Percent(kept) of @Money.Audience(Finances.TuneIn)</text>
+                            }
+                        </span>
+                        <text> — this is what the renewal counts</text>
+                    }
+                </div>
+            </div>
+        }
         @if (!Projected && Finances.HadCard)
         {
             var moved = Finances.ReputationAfter - Finances.ReputationBefore;
@@ -112,7 +142,10 @@
             @Line("Merchandise", Finances.Merchandise, "after the venue's cut and the shirt")
             @if (Finances.MediaRights > 0)
             {
-                @Line("Television rights", Finances.MediaRights, "flat per episode, whatever is on the card")
+                @Line("Television rights", Finances.MediaRights,
+                      Deal is { } deal
+                          ? $"this term's fee, fixed until {deal.End:d MMM yyyy} — the audience sets the next one"
+                          : "fixed for the term, whatever is on the card")
             }
             @Line("Talent", -Finances.Talent, "appearance fees for the people who worked")
             @Line("Building and crew", -Finances.Operations, null)
@@ -145,6 +178,9 @@
     [Parameter] public string? Verdict { get; set; }
 
     [Parameter] public decimal DailyOverhead { get; set; }
+
+    /// <summary>The television deal, for the rights line to say when the fee can next move.</summary>
+    [Parameter] public TvDeal? Deal { get; set; }
 
     private string FillTone => Finances.Fill switch
     {

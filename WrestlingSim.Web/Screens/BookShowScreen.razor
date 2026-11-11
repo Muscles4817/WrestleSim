@@ -28,7 +28,7 @@ else if (show.HasRun)
 
     @* One report, shared with the exhibition screen. See ShowReport for what the two
        copies had each stopped showing. *@
-    <ShowReport Result="result" Today="@show.Date" DailyOverhead="career.DailyOverhead" />
+    <ShowReport Result="result" Today="@show.Date" DailyOverhead="career.DailyOverhead" Deal="career.Television" />
 
     <div class="wizard-bar">
         <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Dashboard)">← Dashboard</button>
@@ -547,7 +547,7 @@ else
            for the card: the house is sold on the card as advertised, before anybody wrestles. *@
         @if (show.IsBooked)
         {
-            <Takings Finances="career.Projection(show)" Projected="true" DailyOverhead="career.DailyOverhead" />
+            <Takings Finances="career.Projection(show)" Projected="true" DailyOverhead="career.DailyOverhead" Deal="career.Television" />
         }
 
         <div class="panel">

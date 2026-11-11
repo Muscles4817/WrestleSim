@@ -167,6 +167,63 @@ else
             </div>
         }
 
+        @* The television deal. The fee is fixed for the term; what the episodes draw decides
+           the next one, so the tile leads with what the deal would renew at today — the
+           number the booking is actually moving. Doc 08 §3. *@
+        @if (career.Television is { } deal)
+        {
+            var tier = career.Promotion.Tier;
+            var multiple = Television.RenewalMultiple(deal, tier);
+            var index = Television.AudienceIndex(deal, tier);
+            <div class="tile tile--static">
+                <div class="tile__key">
+                    TV DEAL
+                    @if (deal.InRenewalWindow(career.CurrentDate))
+                    {
+                        <span class="badge badge--gold badge--sm">final year — counts double</span>
+                    }
+                </div>
+                <div class="tile__name tabnum">@Money.Format(deal.FeePerEpisode) <span class="muted small">an episode</span></div>
+                <div class="tile__desc">
+                    Fixed until @deal.End.ToString("d MMM yyyy") · @deal.DaysLeft(career.CurrentDate) days left.
+                    <br />
+                    @if (deal.Episodes.Count == 0)
+                    {
+                        <text>No episodes this term yet. The network is paying for television nobody has made.</text>
+                    }
+                    else
+                    {
+                        <text>
+                            Averaging @Money.Audience((int)deal.Episodes.Average(e => e.Viewers))
+                            over @deal.Episodes.Count episode@(deal.Episodes.Count == 1 ? "" : "s"),
+                            against @Money.Audience(Television.BaselineViewers(tier)) for a typical card
+                            (@Money.Percent(index) weighted).
+                        </text>
+                    }
+                </div>
+                <div class="mt small">
+                    If it renewed today:
+                    <strong class="tabnum @(multiple >= 1 ? "grade--great" : "grade--poor")">
+                        ×@multiple.ToString("0.00") → @Money.Format(Television.RenewedFee(deal.FeePerEpisode, multiple))
+                    </strong>
+                    @* Only a real swing. A ±10% week-to-week wobble is what television does and
+                       costs about 3%; flagging it told the booker something was wrong when
+                       nothing was. *@
+                    @if (Television.Consistency(deal) < 0.93)
+                    {
+                        <div class="muted">The audience is swinging — the network pays less for a number it cannot sell against.</div>
+                    }
+                </div>
+                @if (career.LastRenewal is { } last)
+                {
+                    <div class="mt small muted">
+                        Last renewed @last.End.ToString("MMM yyyy") at ×@last.RenewedAt.ToString("0.00"),
+                        on @Money.Audience(last.AverageViewers) a week.
+                    </div>
+                }
+            </div>
+        }
+
         @* Roster *@
         <div class="tile tile--static">
             <div class="tile__key">ROSTER</div>

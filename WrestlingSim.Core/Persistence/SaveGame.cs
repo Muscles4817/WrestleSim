@@ -75,6 +75,40 @@ namespace WrestlingSim.Persistence
         /// Additive, so no version bump, the same as <see cref="Stipulations"/>.
         /// </summary>
         public BooksDto? Books { get; set; }
+
+        /// <summary>
+        /// The television contract. Absent from saves written before renewal existed and from
+        /// any promotion below Established; a televised promotion without one opens a fresh
+        /// term on the day it is loaded. Additive, like <see cref="Books"/>.
+        /// </summary>
+        public TvDealDto? Television { get; set; }
+    }
+
+    public class TvDealDto
+    {
+        public decimal FeePerEpisode { get; set; }
+        public string Start { get; set; } = "";
+        public string End { get; set; } = "";
+
+        /// <summary>Each episode as [date, viewers], to keep a five-year term readable.</summary>
+        public List<EpisodeDto> Episodes { get; set; } = new();
+        public List<TvTermDto> History { get; set; } = new();
+    }
+
+    public class EpisodeDto
+    {
+        public string Date { get; set; } = "";
+        public int Viewers { get; set; }
+    }
+
+    public class TvTermDto
+    {
+        public string Start { get; set; } = "";
+        public string End { get; set; } = "";
+        public decimal FeePerEpisode { get; set; }
+        public int Episodes { get; set; }
+        public int AverageViewers { get; set; }
+        public double RenewedAt { get; set; }
     }
 
     public class BooksDto
@@ -101,6 +135,8 @@ namespace WrestlingSim.Persistence
         public decimal Operations { get; set; }
         public decimal Production { get; set; }
         public RoadTakingsDto? Road { get; set; }
+        public int TuneIn { get; set; }
+        public int Viewers { get; set; }
         public double ReputationBefore { get; set; }
         public double ReputationAfter { get; set; }
         public decimal CashAfter { get; set; }

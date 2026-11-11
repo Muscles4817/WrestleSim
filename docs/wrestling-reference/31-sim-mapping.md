@@ -376,6 +376,9 @@ Not shipped: **revenue lines** and **the TV contract**. There is no money in the
 *Corrected since:* revenue lines shipped with C5's first slice — gate, merchandise, a flat TV
 rights fee, appearance fees, operations, production, the road, and a daily office cost. The
 TV contract is still missing: the fee is flat, with no term and no renewal.
+*Corrected again:* the TV contract shipped in C5's second slice — a fee fixed for a three-to-five
+year term, viewers per episode, and a renewal priced on the term's audience. Negotiation and the
+network walking away are still missing.
 The closest thing is `Promotion.TypicalAttendanceFor(ShowType)`, which returns a plausible
 number for flavour and is read by nothing that could be called a business. So the half of this
 entry that "converts a match simulator into a management game" is the half still missing, and
@@ -618,8 +621,8 @@ work rather than a missing field.
 
 **~~One output, which four entries are each separately blocked on~~** — first slice done.
 C5's box office and books exist, so A3, B3, B4 and C1 now have a business result to read.
-What C5 itself still owes: **TV renewal and viewership** (booking barely moves TV-tier money
-while the fee is flat), **contracts**, **a consequence for going broke**, and **the star
+What C5 itself still owes: ~~TV renewal and viewership~~ (shipped as slice 2 — a termed
+deal, viewers per episode, renewal on the audience), **contracts**, **a consequence for going broke**, and **the star
 rating's dependence on overness**, which caps the divergence from the rating side. See
 [docs/business-design-record.md](../business-design-record.md).
 

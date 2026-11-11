@@ -195,10 +195,14 @@ ticket.**
   television rights fee per episode, against appearance fees, the building, TV production, and
   an office that costs money every day whether or not you run a show. A Local room cannot pay
   for a card of main eventers; at the TV tiers the rights fee carries the night.
+- **The television deal has a term.** The fee is fixed for three to five years. Every televised
+  episode reports how many watched — the card gets them to the set, the show decides how many
+  stay — and when the term runs out the network pays the next one on that audience, with the
+  final year counting double. The dashboard shows what the deal would renew at today.
 - **Cash can go negative.** Nothing stops a career in the red yet; the dashboard says so.
 
 The figures come from docs/wrestling-reference/09 and 29; how they were calibrated, and what
-is not built yet (TV renewal, contracts, going broke), is in
+is not built yet (negotiation, contracts, going broke), is in
 [docs/business-design-record.md](docs/business-design-record.md).
 
 ### Time
