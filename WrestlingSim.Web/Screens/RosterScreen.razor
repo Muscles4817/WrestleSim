@@ -2,8 +2,21 @@
 @inject GameState State
 
 <div class="screen__head">
-    <div class="screen__eyebrow">@State.Roster.Count under contract</div>
+    <div class="screen__eyebrow">
+        @if (State.Career is { } career)
+        {
+            <text>@career.Contracts.Count yours · @(State.Roster.Count - career.Contracts.Count) on the market</text>
+        }
+        else
+        {
+            <text>@State.Roster.Count in the world</text>
+        }
+    </div>
     <h1 class="screen__title">Roster</h1>
+    @if (State.InCareer)
+    {
+        <button class="btn btn--sm mt" @onclick="() => State.Go(Screen.Contracts)">Contracts and the market →</button>
+    }
 </div>
 
 <div class="searchbar">

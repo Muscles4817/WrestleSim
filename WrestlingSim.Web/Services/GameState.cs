@@ -15,6 +15,7 @@ public enum Screen
     Dashboard,
     Calendar,
     Roster,
+    Contracts,
     Feuds,
     Titles,
     Shows,
@@ -282,6 +283,10 @@ public class GameState
                 wrestler.Mental?.Psychology ?? 70, wrestler.Mental?.RingIQ ?? 70));
 
         career.OpenBooks(startDate);
+
+        // Who the promotion opens with. The tier's default for now; a custom database is
+        // another IOpeningRoster.
+        career.OpenRoster();
 
         career.ShowDefinitions.AddRange(shows ?? DefaultSlate(promotion));
         career.MaterialiseSchedule();
@@ -564,6 +569,35 @@ public class GameState
         if (Career.RunShow(show) is null) return;
 
         ActiveShow = show;
+        await SaveAsync();
+        Notify();
+    }
+
+    // ── Contracts ────────────────────────────────────────────────────────────
+
+    /// <summary>Offers a guarantee. Returns why it was refused, or null when it was signed.</summary>
+    public async Task<string?> SignAsync(Wrestler w, decimal annual, int years)
+    {
+        if (Career == null) return "No career open.";
+        var result = Career.Sign(w, annual, years);
+        if (result.Accepted) { await SaveAsync(); Notify(); }
+        return result.Reason;
+    }
+
+    /// <summary>Lets somebody go. Returns what it cost.</summary>
+    public async Task<decimal> ReleaseAsync(Wrestler w)
+    {
+        if (Career == null) return 0m;
+        var paid = Career.Release(w);
+        await SaveAsync();
+        Notify();
+        return paid;
+    }
+
+    public async Task MakeRegularAsync(Wrestler w)
+    {
+        if (Career == null) return;
+        Career.MakeRegular(w);
         await SaveAsync();
         Notify();
     }

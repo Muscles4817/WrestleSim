@@ -147,7 +147,7 @@
                           ? $"this term's fee, fixed until {deal.End:d MMM yyyy} — the audience sets the next one"
                           : "fixed for the term, whatever is on the card")
             }
-            @Line("Talent", -Finances.Talent, "appearance fees for the people who worked")
+            @Line("Talent", -Finances.Talent, "the night's fee for everybody not on a guarantee — the guarantees are paid by the day")
             @Line("Building and crew", -Finances.Operations, null)
             @if (Finances.Production > 0)
             {

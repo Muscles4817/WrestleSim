@@ -30,6 +30,9 @@ namespace WrestlingSim.Models.World
         /// </summary>
         public DateOnly OpenedOn { get; set; }
 
+        /// <summary>Every guarantee and release payout since the books opened.</summary>
+        public decimal Payroll { get; set; }
+
         /// <summary>Every day's running costs charged since the books opened.</summary>
         public decimal Overheads { get; set; }
 

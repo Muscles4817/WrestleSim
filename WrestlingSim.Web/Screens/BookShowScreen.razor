@@ -444,6 +444,14 @@ else
                         {
                             <span class="badge badge--sm @g.NaturalAlignment.Badge()">@g.NaturalAlignment.Label()</span>
                         }
+                        @if (career.IsGuaranteed(who))
+                        {
+                            <span class="badge badge--sm badge--muted">signed</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge--sm badge--cost">@Money.Format(TalentMarket.PerDateAsk(who))</span>
+                        }
                     </span>
                     <span class="railrow__why @BookingSuggestions.Tone(row.Band)">@row.Reason</span>
                     @* The same reading the picker sheet carries. The rail ranks with

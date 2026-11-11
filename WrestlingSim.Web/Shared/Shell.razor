@@ -62,6 +62,7 @@
 
                 // Shared between career and exhibition
                 case Screen.Roster:     <RosterScreen />;    break;
+                case Screen.Contracts:  <ContractsScreen />; break;
                 case Screen.Feuds:      <FeudsScreen />;     break;
 
                 // Exhibition only
@@ -106,7 +107,7 @@
     /// month of dates. Those were the ones cramming two columns of information into one.
     /// </summary>
     private static readonly HashSet<Screen> WideScreens =
-        [Screen.BookShow, Screen.Show, Screen.Roster, Screen.Calendar, Screen.Brands];
+        [Screen.BookShow, Screen.Show, Screen.Roster, Screen.Contracts, Screen.Calendar, Screen.Brands];
 
     private bool Wide => WideScreens.Contains(State.Current);
 

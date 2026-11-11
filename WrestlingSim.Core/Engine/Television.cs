@@ -68,7 +68,7 @@ namespace WrestlingSim.Engine
         {
             if (cardPull <= 0) return 0;
             double viewers = BaselineViewers(tier) / TypicalRetention
-                           * Math.Pow(cardPull / BoxOffice.TypicalCardPull, TuneInElasticity)
+                           * Math.Pow(cardPull / BoxOffice.TypicalCardPullFor(tier), TuneInElasticity)
                            * BoxOffice.ReputationFactor(reputation);
             return (int)Math.Round(viewers);
         }

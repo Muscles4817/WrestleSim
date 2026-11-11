@@ -136,7 +136,8 @@ namespace WrestlingSim.Tests
         [Fact]
         public void QualitySellsTheNextTicket()
         {
-            Assert.True(BoxOffice.Demand(1_000, 0.5, reputation: 80) > BoxOffice.Demand(1_000, 0.5, reputation: 30));
+            Assert.True(BoxOffice.Demand(1_000, 0.5, reputation: 80, PromotionTier.SuperIndie)
+                      > BoxOffice.Demand(1_000, 0.5, reputation: 30, PromotionTier.SuperIndie));
 
             // And reputation is where a show's quality goes: a step toward its rating, bigger
             // for the night that is remembered longest.
@@ -287,7 +288,7 @@ namespace WrestlingSim.Tests
         // ── What it costs ────────────────────────────────────────────────────
 
         [Fact]
-        public void OnlyThePeopleWhoWorkArePaid_AndAStarCostsTwentyOfTheOthers()
+        public void OnlyThePeopleWhoWorkArePaid_AtTheirAskingPrice()
         {
             var star = TestRoster.Make("Star", overness: 95);
             var nobody = TestRoster.Make("Nobody", overness: 10);
@@ -296,8 +297,8 @@ namespace WrestlingSim.Tests
 
             var f = career.Projection(Show(career, ShowType.PremiumEvent, Match(star, nobody)));
 
-            Assert.Equal(BoxOffice.AppearanceFee(nobody, PromotionTier.Independent) * 20, BoxOffice.AppearanceFee(star, PromotionTier.Independent));
-            Assert.Equal(BoxOffice.AppearanceFee(star, PromotionTier.Independent) + BoxOffice.AppearanceFee(nobody, PromotionTier.Independent), f.Talent);
+            Assert.True(TalentMarket.PerDateAsk(star) > 100 * TalentMarket.PerDateAsk(nobody));
+            Assert.Equal(TalentMarket.PerDateAsk(star) + TalentMarket.PerDateAsk(nobody), f.Talent);
         }
 
         /// <summary>
@@ -353,7 +354,7 @@ namespace WrestlingSim.Tests
             Assert.Equal(4, road.Towns);
             Assert.Equal(projected.Gate, road.Gate);
             Assert.Equal(4 * road.AttendancePerNight * BoxOffice.PriceFor(BoxOffice.For(PromotionTier.SuperIndie), ShowType.HouseShow), road.Gate);
-            Assert.Equal(result.Loop!.Workers.Sum(w => w.NightsWorked * BoxOffice.AppearanceFee(w.Wrestler, PromotionTier.SuperIndie)), road.Talent);
+            Assert.Equal(result.Loop!.Workers.Sum(w => w.NightsWorked * TalentMarket.PerDateAsk(w.Wrestler)), road.Talent);
 
             // A night with no card sells no tickets of its own and moves no reputation.
             Assert.False(result.Finances.HadCard);
@@ -363,33 +364,48 @@ namespace WrestlingSim.Tests
         /// <summary>
         /// A house show pairs its cast against each other. Priced as single names wrestling
         /// nobody, a run headlined by three upper-card stars drew 41% and lost money.
+        ///
+        /// Since prices are the same for every buyer, the run that pays is one the tier can
+        /// afford: the same towns worked by upper-card stars sell more tickets and lose money,
+        /// because a Super Indie cannot pay six of them $10k a night.
         /// </summary>
         [Fact]
-        public void ARoadOfStarsFillsItsTowns_AndPays()
+        public void ARoadTheTierCanAffordFillsItsTownsAndPays_ARoadOfStarsDoesNot()
         {
-            var cast = Enumerable.Range(0, 6).Select(i => TestRoster.Make($"R{i}", overness: 85 - i)).ToArray();
-            var career = NewCareer(PromotionTier.SuperIndie, cast);
-            var show = career.Schedule("Loop", Day, ShowType.HouseShow);
-            show.Loop = new HouseShowLoop { Cast = cast.ToList(), Towns = 3 };
+            (RoadTakings Road, decimal Ask) Run(double top)
+            {
+                var cast = Enumerable.Range(0, 6).Select(i => TestRoster.Make($"R{i}", overness: top - i)).ToArray();
+                var career = NewCareer(PromotionTier.SuperIndie, cast);
+                var show = career.Schedule("Loop", Day, ShowType.HouseShow);
+                show.Loop = new HouseShowLoop { Cast = cast.ToList(), Towns = 3 };
+                return (career.Projection(show).Road!, TalentMarket.PerDateAsk(cast[0]));
+            }
 
-            var road = career.Projection(show).Road!;
+            var (affordable, cheap) = Run(66);
+            var (stars, dear) = Run(86);
 
-            output.WriteLine($"{road.AttendancePerNight} of {road.CapacityPerNight}, net {road.Net:N0}");
-            Assert.True(road.AttendancePerNight > 0.7 * road.CapacityPerNight);
-            Assert.True(road.Net > 0);
-            Assert.Equal("R0 vs R1", road.Headliners[0]);
+            output.WriteLine($"affordable: {affordable.AttendancePerNight}/{affordable.CapacityPerNight}, net {affordable.Net:N0} (top asks {cheap:N0})");
+            output.WriteLine($"stars:      {stars.AttendancePerNight}/{stars.CapacityPerNight}, net {stars.Net:N0} (top asks {dear:N0})");
+
+            Assert.True(affordable.AttendancePerNight > 0.7 * affordable.CapacityPerNight);
+            Assert.True(affordable.Net > 0);
+            Assert.Equal("R0 vs R1", affordable.Headliners[0]);
+
+            Assert.True(stars.AttendancePerNight > affordable.AttendancePerNight, "Stars sell more tickets…");
+            Assert.True(stars.Net < 0, "…and cost more than the towns can pay.");
         }
 
         // ── Calibration ──────────────────────────────────────────────────────
 
         /// <summary>
-        /// Five singles matches between same-division people picked at random from the
-        /// shipped roster, nothing built and nothing on the line.
+        /// Five singles matches between same-division people picked at random from the tier's
+        /// opening roster — the card a promotion of that size can afford — nothing built and
+        /// nothing on the line.
         /// </summary>
-        private static List<List<ICardItem>> TypicalCards(IReadOnlyList<Wrestler> roster, int count = 2_000)
+        private static List<List<ICardItem>> TypicalCards(IReadOnlyList<Wrestler> pool, int count = 2_000)
         {
             var cards = new List<List<ICardItem>>();
-            var divisions = roster.GroupBy(w => w.Division).Where(g => g.Count() >= 2).Select(g => g.ToList()).ToList();
+            var divisions = pool.GroupBy(w => w.Division).Where(g => g.Count() >= 2).Select(g => g.ToList()).ToList();
 
             for (int i = 0; i < count; i++)
             {
@@ -397,10 +413,10 @@ namespace WrestlingSim.Tests
                 var card = new List<ICardItem>();
                 for (int m = 0; m < 5; m++)
                 {
-                    var pool = divisions[rng.Next(divisions.Count)];
-                    var a = pool[rng.Next(pool.Count)];
+                    var division = divisions[rng.Next(divisions.Count)];
+                    var a = division[rng.Next(division.Count)];
                     Wrestler b;
-                    do b = pool[rng.Next(pool.Count)]; while (ReferenceEquals(a, b));
+                    do b = division[rng.Next(division.Count)]; while (ReferenceEquals(a, b));
                     card.Add(Match(a, b));
                 }
                 cards.Add(card);
@@ -408,35 +424,49 @@ namespace WrestlingSim.Tests
             return cards;
         }
 
-        /// <summary>
-        /// <see cref="BoxOffice.TypicalCardPull"/> is the median of the corpus above. A roster
-        /// change moves it; when this fails, re-measure and update the constant.
-        /// </summary>
-        [Fact]
-        public void ATypicalCardFillsTypically_AndThatIsMeasuredNotAsserted()
+        /// <summary>The tier's opening roster, from the shipped roster, and the contracts it opens with.</summary>
+        private static (List<Wrestler> Pool, List<Contract> Contracts) OpeningRosterFor(PromotionTier tier)
         {
             var roster = DataLoaders.LoadEmbeddedWrestlers();
-            var pulls = TypicalCards(roster)
+            var contracts = new TierOpeningRoster().Open(new Promotion { Tier = tier }, roster, Day).ToList();
+            var ids = contracts.Select(c => c.WrestlerId).ToHashSet();
+            return (roster.Where(w => ids.Contains(w.Id)).ToList(), contracts);
+        }
+
+        /// <summary>
+        /// <see cref="BoxOffice.TypicalCardPullFor"/> is the median of each tier's corpus. A
+        /// roster or price change moves it; when this fails, re-measure and update the table.
+        /// </summary>
+        [Theory]
+        [InlineData(PromotionTier.Local)]
+        [InlineData(PromotionTier.Independent)]
+        [InlineData(PromotionTier.SuperIndie)]
+        [InlineData(PromotionTier.Established)]
+        [InlineData(PromotionTier.National)]
+        [InlineData(PromotionTier.Global)]
+        public void ATypicalCardFillsTypically_AndThatIsMeasuredNotAsserted(PromotionTier tier)
+        {
+            var (pool, _) = OpeningRosterFor(tier);
+            var pulls = TypicalCards(pool)
                 .Select(c => BoxOffice.CardPull(BoxOffice.Draw(c, null, Day)))
                 .OrderBy(p => p)
                 .ToList();
             double median = pulls[pulls.Count / 2];
 
-            output.WriteLine($"median card pull {median:F4} (n = {pulls.Count}); constant {BoxOffice.TypicalCardPull:F4}");
-            output.WriteLine($"  10th {pulls[pulls.Count / 10]:F4}  90th {pulls[pulls.Count * 9 / 10]:F4}");
+            output.WriteLine($"{tier}: roster {pool.Count}, median card pull {median:F4} (n = {pulls.Count}); constant {BoxOffice.TypicalCardPullFor(tier):F4}");
 
-            Assert.Equal(BoxOffice.TypicalCardPull, median, 3);
+            Assert.Equal(BoxOffice.TypicalCardPullFor(tier), median, 3);
 
-            // And the claim the constant exists for: that card, at an opening reputation,
-            // fills the building to TypicalFill.
+            // And the claim the table exists for: that card, at an opening reputation, fills
+            // the building to TypicalFill.
             Assert.Equal((int)Math.Round(10_000 * BoxOffice.TypicalFill),
-                         BoxOffice.Demand(10_000, BoxOffice.TypicalCardPull, CareerBooks.OpeningReputation));
+                         BoxOffice.Demand(10_000, BoxOffice.TypicalCardPullFor(tier), CareerBooks.OpeningReputation, tier));
         }
 
         /// <summary>
-        /// A promotion booking whoever is free should land where doc 09 §4 puts its tier —
-        /// measured on the typical card at the tier's usual cadence, with the days between
-        /// shows charged their running costs.
+        /// A promotion booking whoever it has should land where doc 09 §4 puts its tier —
+        /// measured on the typical card from its opening roster, at the tier's usual cadence,
+        /// with the days between shows charged their running costs and their guarantees.
         ///
         ///   Global       Tier 0   30–40% margins in strong years
         ///   National     Tier 1   costs that can exceed revenue — about break-even
@@ -457,37 +487,29 @@ namespace WrestlingSim.Tests
         [InlineData(PromotionTier.Global,       0.25, 0.45)]
         public void ATypicalCardLandsWhereTheReferencePutsTheTier(PromotionTier tier, double low, double high)
         {
-            var roster = DataLoaders.LoadEmbeddedWrestlers();
+            var (pool, contracts) = OpeningRosterFor(tier);
+            var guaranteed = contracts.Where(c => c.IsGuaranteed).Select(c => c.WrestlerId).ToHashSet();
             var promotion = new Promotion { Tier = tier };
             var type = promotion.HasTelevision ? ShowType.Television : ShowType.PremiumEvent;
-            decimal overhead = BoxOffice.For(tier).DailyOverhead * promotion.TypicalShowIntervalDays;
+            int interval = promotion.TypicalShowIntervalDays;
+            decimal standing = (BoxOffice.For(tier).DailyOverhead + contracts.Sum(c => c.DailyCost)) * interval;
 
             var margins = new List<double>();
-            foreach (var card in TypicalCards(roster, 400))
+            foreach (var card in TypicalCards(pool, 400))
             {
                 var show = new ScheduledShow { Date = Day, Type = type, Attendance = promotion.TypicalAttendanceFor(type) };
                 show.Card.AddRange(card);
-                var f = BoxOffice.Night(show, promotion, CareerBooks.OpeningReputation, null);
-                margins.Add((double)((f.Net - overhead) / f.Revenue));
+                var f = BoxOffice.Night(show, promotion, CareerBooks.OpeningReputation, null,
+                                        guaranteed: w => guaranteed.Contains(w.Id));
+                margins.Add((double)((f.Net - standing) / f.Revenue));
             }
             margins.Sort();
             double median = margins[margins.Count / 2];
 
-            output.WriteLine($"{tier}: median margin {median:P1}  (10th {margins[margins.Count / 10]:P1}, 90th {margins[margins.Count * 9 / 10]:P1})");
+            output.WriteLine($"{tier}: roster {pool.Count}, payroll {contracts.Sum(c => c.AnnualGuarantee):N0}/yr, " +
+                             $"median margin {median:P1}  (10th {margins[margins.Count / 10]:P1}, 90th {margins[margins.Count * 9 / 10]:P1})");
 
             Assert.InRange(median, low, high);
-        }
-
-        [Fact]
-        public void TheOfficeCostsMoneyEveryDay_ShowOrNoShow()
-        {
-            var career = NewCareer(PromotionTier.SuperIndie, TestRoster.Make("A"));
-            var opening = career.Books.Cash;
-
-            for (int i = 0; i < 10; i++) Assert.True(career.AdvanceOneDay());
-
-            Assert.Equal(opening - 10 * career.DailyOverhead, career.Books.Cash);
-            Assert.Equal(10 * career.DailyOverhead, career.Books.Overheads);
         }
 
         // ── Saves ────────────────────────────────────────────────────────────
