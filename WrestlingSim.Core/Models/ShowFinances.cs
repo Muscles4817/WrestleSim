@@ -15,6 +15,13 @@ namespace WrestlingSim.Models
         /// <summary>How over the people in it are, 0–1. "Both performers are over."</summary>
         public double StarPower { get; init; }
 
+        /// <summary>
+        /// How much of the headliners' pull the audience still feels, already inside
+        /// <see cref="StarPower"/>. Below 1.0 when their act has gone stale with the people
+        /// watching. Kept so the report can say so.
+        /// </summary>
+        public double Acts { get; init; } = 1.0;
+
         /// <summary>What the feud adds: 1.0 with no story, up to 1.5 for a hot one the crowd trusts.</summary>
         public double Build { get; init; } = 1.0;
 
@@ -42,6 +49,12 @@ namespace WrestlingSim.Models
 
         /// <summary>The card's pull: 60% the top item, 25% the next, 15% the third.</summary>
         public double CardPull { get; init; }
+
+        /// <summary>
+        /// What the length of the card did to the house, 0.5–1.0. Below 1.0 when the card
+        /// leaves the slot under-filled — see <see cref="Engine.AudienceModel.CardDepth"/>.
+        /// </summary>
+        public double CardDepth { get; init; } = 1.0;
 
         public int Capacity { get; init; }
 

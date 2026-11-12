@@ -135,6 +135,7 @@ namespace WrestlingSim.Persistence
                 WrestlerId = b.WrestlerId, Bidder = b.Bidder, Annual = b.Annual, Years = b.Years, Made = Iso(b.Made)
             }).ToList(),
             News = career.News.Select(n => new NewsDto { Date = Iso(n.Date), Text = n.Text, AboutYou = n.AboutYou }).ToList(),
+            Audience = ToDto(career.Audience),
             ContractLog = career.ContractLog.Select(e => new ContractEventDto
             {
                 Date = Iso(e.Date), WrestlerId = e.WrestlerId, What = e.What
@@ -421,7 +422,16 @@ namespace WrestlingSim.Persistence
                 StarRating      = i.StarRating,
                 Notes           = new List<string>(i.Notes)
             }).ToList(),
-            Finances = result.Finances is { } f ? ToDto(f) : null
+            Finances = result.Finances is { } f ? ToDto(f) : null,
+            Audience = result.Audience is { } a ? new AudienceReportDto
+            {
+                ShowSamenessBefore = Math.Round(a.ShowSamenessBefore, 2),
+                ShowSamenessAfter  = Math.Round(a.ShowSamenessAfter, 2),
+                SamenessPenalty    = Math.Round(a.SamenessPenalty, 4),
+                Filled             = Math.Round(a.Filled, 4),
+                UnderrunPenalty    = Math.Round(a.UnderrunPenalty, 4),
+                Notes              = new List<string>(a.Notes)
+            } : null
         };
 
         private static ShowFinancesDto ToDto(ShowFinances f) => new()
@@ -431,11 +441,13 @@ namespace WrestlingSim.Persistence
                 Label      = d.Label,
                 Headliners = new List<string>(d.Headliners),
                 StarPower  = Math.Round(d.StarPower, 4),
+                Acts       = Math.Round(d.Acts, 4),
                 Build      = Math.Round(d.Build, 4),
                 Freshness  = Math.Round(d.Freshness, 4),
                 Stakes     = Math.Round(d.Stakes, 4)
             }).ToList(),
             CardPull         = Math.Round(f.CardPull, 4),
+            CardDepth        = Math.Round(f.CardDepth, 4),
             Capacity         = f.Capacity,
             Demand           = f.Demand,
             TicketPrice      = f.TicketPrice,
@@ -470,11 +482,13 @@ namespace WrestlingSim.Persistence
                 Label      = x.Label,
                 Headliners = new List<string>(x.Headliners),
                 StarPower  = x.StarPower,
+                Acts       = x.Acts,
                 Build      = x.Build,
                 Freshness  = x.Freshness,
                 Stakes     = x.Stakes
             }).ToList(),
             CardPull         = d.CardPull,
+            CardDepth        = d.CardDepth,
             Capacity         = d.Capacity,
             Demand           = d.Demand,
             TicketPrice      = d.TicketPrice,
@@ -569,6 +583,8 @@ namespace WrestlingSim.Persistence
                 // A televised promotion saved before deals had terms. Its term starts today:
                 // backdating it would renew on episodes nobody counted.
                 career.Television ??= Television.Open(career.Promotion.Tier, career.CurrentDate);
+
+            if (dto.Audience is { } audience) career.Audience = FromDto(audience, byId);
 
             // Contracts bind by id, and only to people still in the shipped roster.
             if (dto.Contracts is { } contracts)
@@ -1271,8 +1287,49 @@ namespace WrestlingSim.Persistence
                 StarRating      = i.StarRating,
                 Notes           = new List<string>(i.Notes)
             }).ToList(),
-            Finances = dto.Finances is { } f ? FromDto(f) : null
+            Finances = dto.Finances is { } f ? FromDto(f) : null,
+            Audience = dto.Audience is { } a ? new AudienceReport
+            {
+                ShowSamenessBefore = a.ShowSamenessBefore,
+                ShowSamenessAfter  = a.ShowSamenessAfter,
+                SamenessPenalty    = a.SamenessPenalty,
+                Filled             = a.Filled,
+                UnderrunPenalty    = a.UnderrunPenalty,
+                Notes              = new List<string>(a.Notes)
+            } : null
         };
+
+        private static AudienceDto ToDto(Audience a) => new()
+        {
+            ShowSameness = Math.Round(a.ShowSameness, 3),
+            Acts = a.Acts.Select(kv => new ActDto
+            {
+                Id = kv.Key, Sameness = Math.Round(kv.Value.Sameness, 3), Streak = kv.Value.Streak,
+                LastKind = kv.Value.LastKind, LastGimmick = kv.Value.LastGimmick,
+                LastSeen = kv.Value.LastSeen is { } seen ? Iso(seen) : null
+            }).OrderBy(x => x.Id, StringComparer.Ordinal).ToList(),
+            Recent = a.Recent.Select(s => new ShowShapeDto
+            {
+                Date = Iso(s.Date), Cast = new List<string>(s.Cast), Formats = new List<string>(s.Formats)
+            }).ToList()
+        };
+
+        private static Audience FromDto(AudienceDto dto, Dictionary<string, Wrestler> byId)
+        {
+            var audience = new Audience { ShowSameness = dto.ShowSameness };
+            foreach (var act in dto.Acts.Where(x => byId.ContainsKey(x.Id)))
+                audience.Acts[byId[act.Id].Id] = new Act
+                {
+                    Sameness = act.Sameness, Streak = act.Streak, LastKind = act.LastKind,
+                    LastGimmick = act.LastGimmick,
+                    LastSeen = string.IsNullOrEmpty(act.LastSeen) ? null : ParseDate(act.LastSeen)
+                };
+            audience.Recent.AddRange(dto.Recent.Select(s => new ShowShape
+            {
+                Date = ParseDate(s.Date), Cast = new List<string>(s.Cast), Formats = new List<string>(s.Formats)
+            }));
+            return audience;
+        }
 
         private static TvDealDto ToDto(TvDeal tv) => new()
         {

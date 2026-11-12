@@ -206,6 +206,13 @@ ticket.**
   fixed for the term, injuries extending it. A career opens with a roster sized and budgeted for
   its tier; the rest of the world is the market. The Contracts screen shows what each deal costs
   against what the wrestler would ask today.
+- **The audience gets bored — of sameness, not of screen time.** A wrestler on every show with
+  a story that keeps moving stays hot; one in the same match week after week does not, and how
+  fast depends on their charisma and how long-lived their gimmick is. The weekly viewer tires
+  first, the casual fan barely, the hardcore fan soonest and of winning streaks too — so one
+  act can be hot with one crowd and stale with another. The show itself goes stale if it is the
+  same faces in the same kinds of match, and a card that leaves its slot half empty sells fewer
+  tickets. A national promotion cannot run on six wrestlers; nothing in the code says so.
 - **Rivals.** You are not alone: a global major, a national challenger and two indies run on
   the same clock, sign from the same ninety wrestlers, sell their houses through the same box
   office and can go broke. Their signed wrestlers cannot work for you; a rival may bid for your

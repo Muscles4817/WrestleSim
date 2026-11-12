@@ -398,11 +398,13 @@ namespace WrestlingSim.Tests
         // ── Calibration ──────────────────────────────────────────────────────
 
         /// <summary>
-        /// Five singles matches between same-division people picked at random from the tier's
-        /// opening roster — the card a promotion of that size can afford — nothing built and
-        /// nothing on the line.
+        /// Singles matches between same-division people picked at random from the tier's opening
+        /// roster — the card a promotion of that size can afford — nothing built and nothing on
+        /// the line. As many matches as the tier's audience expects (`TypicalCardSizeFor`), in
+        /// the slot the tier runs: since a thin card costs the house, a typical card has to be a
+        /// full one.
         /// </summary>
-        private static List<List<ICardItem>> TypicalCards(IReadOnlyList<Wrestler> pool, int count = 2_000)
+        private static List<List<ICardItem>> TypicalCards(IReadOnlyList<Wrestler> pool, int count = 2_000, int matches = 5)
         {
             var cards = new List<List<ICardItem>>();
             var divisions = pool.GroupBy(w => w.Division).Where(g => g.Count() >= 2).Select(g => g.ToList()).ToList();
@@ -411,7 +413,7 @@ namespace WrestlingSim.Tests
             {
                 var rng = new Random(StableSeed.From("typical-card", i));
                 var card = new List<ICardItem>();
-                for (int m = 0; m < 5; m++)
+                for (int m = 0; m < matches; m++)
                 {
                     var division = divisions[rng.Next(divisions.Count)];
                     var a = division[rng.Next(division.Count)];
@@ -456,7 +458,9 @@ namespace WrestlingSim.Tests
         public void ATypicalCardFillsTypically_AndThatIsMeasuredNotAsserted(PromotionTier tier)
         {
             var (pool, _) = OpeningRosterFor(tier);
-            var pulls = TypicalCards(pool)
+            var typical = new Promotion { Tier = tier };
+            var typicalType = typical.HasTelevision ? ShowType.Television : ShowType.PremiumEvent;
+            var pulls = TypicalCards(pool, matches: typical.TypicalCardSizeFor(typicalType))
                 .Select(c => BoxOffice.CardPull(BoxOffice.Draw(c, null, Day)))
                 .OrderBy(p => p)
                 .ToList();
@@ -504,9 +508,13 @@ namespace WrestlingSim.Tests
             decimal standing = (BoxOffice.For(tier).DailyOverhead + contracts.Sum(c => c.DailyCost)) * interval;
 
             var margins = new List<double>();
-            foreach (var card in TypicalCards(pool, 400))
+            foreach (var card in TypicalCards(pool, 400, promotion.TypicalCardSizeFor(type)))
             {
-                var show = new ScheduledShow { Date = Day, Type = type, Attendance = promotion.TypicalAttendanceFor(type) };
+                var show = new ScheduledShow
+                {
+                    Date = Day, Type = type, Attendance = promotion.TypicalAttendanceFor(type),
+                    RuntimeMinutes = promotion.DefaultRuntimeFor(type)
+                };
                 show.Card.AddRange(card);
                 var f = BoxOffice.Night(show, promotion, CareerBooks.OpeningReputation, null,
                                         fee: w => guaranteed.Contains(w.Id) ? 0m : TalentMarket.PerDateAsk(w));

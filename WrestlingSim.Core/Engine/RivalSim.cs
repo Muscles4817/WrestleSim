@@ -66,17 +66,20 @@ namespace WrestlingSim.Engine
                          && (career.SignedTo(w) is null || career.SignedTo(w) == rival))
                 .ToList();
 
-            var card = PairUp(available, 5);
-            if (card.Count == 0) return;
-
             var type = rival.Promotion.HasTelevision
                 ? (rival.Nights.Count % 4 == 3 ? ShowType.PremiumEvent : ShowType.Television)
                 : ShowType.PremiumEvent;
+
+            // A card the size its audience expects, in the slot its tier runs. A thin card now
+            // costs the house (AudienceModel.CardDepth), for rivals as for the player.
+            var card = PairUp(available, rival.Promotion.TypicalCardSizeFor(type));
+            if (card.Count == 0) return;
 
             var show = new ScheduledShow
             {
                 Date = today, Type = type,
                 Attendance = rival.Promotion.TypicalAttendanceFor(type),
+                RuntimeMinutes = rival.Promotion.DefaultRuntimeFor(type),
                 Name = rival.Name
             };
             show.Card.AddRange(card);

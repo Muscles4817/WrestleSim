@@ -106,7 +106,14 @@ promotion and what it wants). `RivalPromotion` gets optional overrides for both.
 
 ---
 
-## 2A. PR 0 — the audience values the whole show (proposed; needs the owner's yes)
+## 2A. PR 0 — the audience values the whole show
+
+> **Status.** The owner approved this section. **The first half is built** — the shared model and
+> the player's shows: §2A.1 (a), (b) and (d), §2A.2, and the player-side tests of §2A.5. See
+> `docs/business-design-record.md`, "Slice 5", for what was built, measured and corrected.
+> **Still to build from this section:** §2A.2a (rival cards as real cards), §2A.3 (rival
+> titles), a rival's own `Audience`, the rival-side tests of §2A.5, and §2A.4 if those are not
+> enough. §2A.1 (c), rejection, is its own slice.
 
 **This comes before everything else, and it changes the player's game as well as the rivals'.**
 
