@@ -21,6 +21,14 @@ already exists: it is the game's own economics (`BoxOffice`, `Television`, `Tale
 
 > **If the planner does something stupid, fix the model or the objective. Never add a rule.**
 
+**And its corollary, from the owner: whatever stops something in real life is what must stop
+it in the game.** A national promotion cannot run on six wrestlers because the audience would be
+bored in a fortnight and the titles would mean nothing — so the game must have an audience that
+gets bored and titles that need divisions. "The model allows it" is never a reason to accept a
+behaviour; it is a bug report against the model. **Nothing already built is off limits**: if the
+audience model, the box office or the title system has to change to make this true, propose the
+change (§2A does) — do not work around it.
+
 A rule ("never go below 20 wrestlers", "always bid on champions") is exactly what this rebuild
 removes. When a simulated run shows degenerate behaviour, the cause is one of two things: the
 abstract world is missing a cost real promotions pay (fix the model, §3), or the objective values
@@ -98,9 +106,114 @@ promotion and what it wants). `RivalPromotion` gets optional overrides for both.
 
 ---
 
+## 2A. PR 0 — the audience values the whole show (proposed; needs the owner's yes)
+
+**This comes before everything else, and it changes the player's game as well as the rivals'.**
+
+The owner's test case: *a roster of six.* In real life it fails at anything above the most
+local level, within weeks. The reference says why:
+
+| Why it fails in real life | Source | In the game today |
+|---|---|---|
+| Overexposure — "on television every week, doing the same thing… the reactions just get smaller" | doc 17 §3.2, doc 16 §4.10 | Missing. A *pairing* goes stale (`Feud.Familiarity`) and a body gets tired (`Fatigue`), but the audience never tires of a *person*. |
+| A show is 4–6 matches and 4–7 segments; the crowd has an energy budget across the night | doc 29 §6, doc 16 §5 | Half there. `BoxOffice.CardPull` reads the top three items only; nothing penalises a show that under-fills its runtime. |
+| A division needs 6–10 performers; a champion needs 6–12 credible defences a year | doc 29 §12–13, doc 21 | The player has titles and prestige. **Rivals have no titles at all.** |
+| Status comes from beating credible people — "protecting everyone destroys the graph" | doc 12 §6 | The player's results move standing (`HeatEconomy`). Nothing moves from a rival's show. |
+| One injury and there is no show | doc 15 | Rival shows cause no fatigue and no injuries. |
+
+So the hole is not in the rival AI. A *player* could run a thin roster today and pay for it only
+in fatigue. The fix is one audience model for everybody.
+
+### 2A.1 Overexposure, per wrestler, per promotion's audience
+
+- `Wrestler.Exposure` (0–100, persisted): rises with each appearance in front of a promotion's
+  audience — more for a televised main event than a house-show opener — and decays by the day.
+  Starting values: +12 a televised appearance, +6 untelevised, decay with a ~3-week half-life
+  (the same scale as momentum's). Tune by the test below, not by taste.
+- Above a comfort level (start: 35 — roughly two weeks in three on television) a wrestler's
+  **star power in the draw** and **crowd response in the match** shrink, smoothly, to a floor
+  (start: 55% at full exposure). Momentum cools with it (doc 17: overexposure is how people
+  cool).
+- **Nothing is tier-specific.** A promotion running every 45 days never accumulates exposure on
+  anybody; a weekly television show does within a month. "Only the most local promotion could
+  get away with six" falls out of the cadence — and must, without a special case.
+- Applies to the player's shows and the rivals' identically. One wrestler, one audience per
+  promotion: a wrestler who moves promotions arrives fresh (which is doc 10 §2.7's "the return
+  is a free asset", and the released-star arc of doc 13 §6.1, for free).
+- Player-visible: an exposure reading on the roster card and in the booking picker
+  ("on every show for five weeks — the reactions are getting smaller"), and a line in the box
+  office's reasons ("overexposed ×0.82").
+
+### 2A.2 The whole card counts
+
+- Demand (tickets, tune-in) stays led by the top of the card — story sells the ticket. Keep
+  `BillingWeights`.
+- **Retention and reputation read the whole show**: every item's rating, weighted by its
+  minutes, not the top three. For rivals this is `ExpectedRating` over every match booked.
+- **Under-filling the runtime is penalised** like overrunning it already is: a television show
+  that fills 60% of its slot is a worse show. Applies to the player (`ShowSimulator`) and to
+  rivals (the short card of §3.2).
+- **The same person twice in a night** counts as two appearances for exposure and is flagged in
+  the booking read.
+
+### 2A.3 Rivals have titles
+
+- Each rival gets a `TitleRegistry`, seeded with the same default slate as the player's
+  (`SeedDefaults`). Reuse `TitleEconomy` — do not write a second prestige model.
+- A rival's premium event books a title match per belt: the champion against the most credible
+  available challenger *by the ledger's freshness* — a thin division runs out of fresh
+  challengers, repeats, and the belt's prestige falls through the existing daily drift and
+  defence rules.
+- Title stakes feed a rival's draw exactly as they feed the player's (`ItemDraw.Stakes`).
+- A wrestler who leaves vacates, as the player's already do (`Career.VacateTitles` — generalise
+  it to take a registry).
+- Player-visible: champions and prestige on the Rivals screen.
+
+### 2A.4 Results and wear on rival shows (second step — build only if 2A.1–3 are not enough)
+
+- Abstract results: each match has a winner chosen by the booker (§8 makes that a decision);
+  `HeatEconomy` moves overness and momentum as it does for the player. Enhancement talent and
+  depth become worth paying for, and rivals can make — or bury — stars.
+- `RingCondition` work cost and `InjuryRisk` on abstract matches, so a thin roster is one bad
+  night from a short card.
+
+This is the largest piece and touches the most. Do 2A.1–3, run the test, and only then decide.
+
+### 2A.5 The acceptance test is the owner's claim
+
+New file `AudienceTests.cs`, corpus tests, `StableSeed`:
+
+- `SixWrestlersCannotCarryANationalPromotion` — build a National promotion with the six most
+  over wrestlers and nobody else; run its weekly television with the best card those six can
+  make. **Within eight weeks** its average fill and viewers are below 60% of week one's, and
+  its reputation is falling. No line of code may mention roster size.
+- `SixWrestlersCanCarryALocalOne` — the same six at Local cadence hold their houses for a year.
+- `ADeepRosterHoldsItsAudience` — the same National promotion with a tier-sized roster holds
+  within 10% of week one over the same eight weeks.
+- `AChampionWithNoDivisionDevaluesTheBelt` — a rival with a two-person division loses prestige
+  on that belt over a year; one with eight does not.
+- `ThePlayerPaysForOverexposureToo` — a player show's projection for a wrestler on six
+  consecutive weekly cards draws less than the same wrestler fresh.
+
+### 2A.6 What this costs
+
+- **It re-calibrates the player's economy.** `BoxOffice.TypicalCardPullFor` is measured on a
+  fresh opening roster, so it should not move — but every multi-week measurement (tier margins
+  at cadence, rival fold timing) will. Re-measure; re-solve the running costs if a tier leaves
+  doc 09 §4's band; record before and after in the design record.
+- **Saves**: `Exposure` per wrestler per promotion, rival titles. Additive; an old save opens
+  with everybody fresh and rivals' belts vacant-then-filled on the first premium event.
+- **Scope.** This is a slice of its own — the size of the box-office slice — and it is worth
+  doing whether or not the planner is ever built, because it closes a hole in the player's
+  game.
+
+---
+
 ## 3. PR A — make the abstract world honest enough to optimise against
 
-**Do this first, and do not skip it.** An optimiser exploits every gap in its model. Today's
+**Do this straight after PR 0, and do not skip it.** PR 0 gives the world an audience; this PR
+gives rivals the remaining pieces of an honest abstract show and the forecast built on it.
+An optimiser exploits every gap in its model. Today's
 abstract show has gaps a planner would walk straight through:
 
 - `BoxOffice.CardPull` reads only the top three items, and a show is five matches. A planner
@@ -635,7 +748,7 @@ predicts. None asserts a specific move.
 |---|---|---|
 | `TheWealthyFansPromotionBurnsOut_TheMajorDoesNot` (exists — must still pass, same band) | Ironclad folds in 18–40 months; Vantage does not and ends richer | doc 01 §7 |
 | `AMediaCompanySpendsIntoItsRenewal` | Vantage's payroll (or card pull) averaged over the last 12 months of a TV term exceeds its average over the 12 before | doc 08 §3 |
-| `NobodyHollowsOutTheirRoster` | at every half-year checkpoint, every active television rival can fill its card and holds at least `2 × card size` wrestlers | §3 — this is the test that the model is honest |
+| `NobodyHollowsOutTheirRoster` | at every half-year checkpoint, every active television rival can fill its card and holds a roster a real promotion of its tier would (doc 29 §12: 20–35 trackable characters on weekly TV, 6–10 a division) — **emerging from §2A, with no rule about size** | doc 29 §12; the owner's test case |
 | `NobodyChurns` | no rival releases and re-signs the same wrestler within 180 days; each rival makes fewer than ~40 moves a year | the bug slice 4 caught by hand |
 | `TheIndiesSurvive` | both non-television rivals are still running after three years | slice 4's measurement |
 | `TheSameWorldMakesTheSameHistory` | two runs produce identical decision logs | determinism |
@@ -680,10 +793,7 @@ player's lodged bids.
   bid against another rival, or counter-programme a night.
 - **Imperfect information.** Every promotion sees every wrestler's true numbers. Doc 10 §3 says
   charisma should be hidden until somebody is in front of a crowd.
-- **Fatigue and injury from rival shows.** Working for a rival costs a wrestler nothing, so
-  roster depth is bought only by staleness and card size. If `NobodyHollowsOutTheirRoster`
-  fails, this is the next cost to add — apply `RingCondition`'s work cost on abstract shows and
-  let `ExpectedRating` read fatigue.
+- **Results and wear on rival shows** if §2A.4 was not needed to pass §2A.5 — say so, and why.
 - **Other levers** a real promotion has: ticket prices, how often it runs, house-show loops,
   mid-contract buyouts, acquisitions.
 - **Objectives the player can edit.** The data shape allows it; no screen does.
@@ -692,8 +802,9 @@ player's lodged bids.
 
 ## 13. Order of work, and how to ship it
 
-Three pull requests, each mergeable on its own and each leaving the game playable:
+Four pull requests, each mergeable on its own and each leaving the game playable:
 
+0. **PR 0 — the audience** (§2A). Changes the player's game too. Needs the owner's yes first.
 1. **PR A — the honest model** (§3, §4). No decision logic changes.
 2. **PR B — the planner** (§5, §6, §7, §9). The rules are deleted.
 3. **PR C — booking and regulars as decisions** (§8).
@@ -726,8 +837,10 @@ These are defaults in this plan; each is the owner's to change.
 1. **The weights and dispositions in §5.2.** They are the game's statement of what each kind of
    promotion wants. Read the table and change anything that does not match how you see them.
 2. **How fast rivals may act:** `MaxMovesPerWeek = 3`. Higher is livelier and noisier.
-3. **Whether rivals should be allowed to gut a roster if the model says so.** This plan answers
-   "make the model honest and accept what it then chooses" (§0). The alternative — a floor on
-   roster size — is a rule, and is what this rebuild exists to avoid.
+3. **The audience proposals in §2A** — overexposure, the whole card counting, rival titles, and
+   (as a second step) results and wear on rival shows. The owner has ruled that a gutted roster
+   is never acceptable and that the reason it fails in real life is what must stop it in the
+   game; §2A is the proposal for how. It changes the player's shows as well. Confirm the four
+   mechanisms, or change them, before PR 0 starts.
 4. **Whether to take on planner-built openings** (§10) after PR C, with the re-calibration it
    costs.
