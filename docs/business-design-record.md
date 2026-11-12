@@ -531,12 +531,18 @@ the owner ruled out. Now:
   trait should be solved to hit this band: under the planner the burn-out is supposed to come
   from the objective.
 
+  **Withdrawn — the owner ruled this out, and was right.** Solving a constant until a promotion
+  folds on schedule is scripting its fate indirectly; a breach of the reference's range is a
+  thing to look at, not to tune away. The trait is back at 1.2×, the test no longer asserts any
+  fate (`WhatBecomesOfTheWealthyFansPromotion_IsMeasuredNotForced`), and looking at it found the
+  real story — see "The schedule, and what the fold really was" below.
+
 **Measured** (`RivalShowTests`): a national rival cut to its six most over loses its house —
 75% to 19% in twelve weeks, rating 53 to 31. A rival with two wrestlers a division draws 8% on
 its big nights after a year, against 64% with a full roster.
 
 **The finding worth the owner's attention: the top tiers are under-rostered for their
-schedule.** A national rival with its *full* roster of 25 also slides, 79% to 60% in twelve
+schedule.** *(Corrected below: the schedule was the bug.)* A national rival with its *full* roster of 25 also slides, 79% to 60% in twelve
 weeks, and the global major with 40 runs at about two-thirds of a house. They run a show every
 four and every three days, so each star works every other show. That is the six-wrestler
 argument at scale, and it is honest: ninety wrestlers shared between five promotions cannot
@@ -544,6 +550,42 @@ staff a major's calendar. The remedies are real ones — a bigger database, a br
 the player has and rivals do not), or a slower schedule — not a tweak to the rates.
 The calibration constants (`TypicalCardPullFor`) describe a *fresh* typical card; steady-state
 houses now sit below `TypicalFill` at the television tiers for this reason.
+
+### The schedule, and what the fold really was
+
+`Promotion.TypicalShowIntervalDays` had National at a show every four days and Global at every
+three. The owner's correction: one brand runs one television show a week at every level; a show
+every three days is what a company with a brand split does, across two rosters. Both are now
+weekly. The daily running cost of those two tiers was re-solved for a weekly calendar against
+the same doc 09 §4 margins — National $289,200 → $161,000 a day (3.0%), Global $497,700 →
+$124,800 (35.0%). That is calibrating the economy to the reference, not steering an outcome.
+
+What weekly did:
+
+- A national rival's *full* roster now holds its house — 79% to 72% over twelve weeks, where it
+  slid to 60% — and its big nights draw 81% after a year. The under-rostering was mostly the
+  schedule. Six still cannot carry it: 75% to 22%.
+- **The wealthy fan's promotion does not fold.** Five years, measured: cash 25M → 33M → 36.5M
+  → 38.6M → 39.9M, then down to 12.6M in the fifth year.
+
+Looking at why, as the ruling asks:
+
+1. *It was never overspending.* Its "wealthy fan" budget is 1.5× the tier's, but the global
+   major signs first and holds every star; Ironclad opens with the 41st–65th most over
+   wrestlers on $3.6M a year against a $45M budget, and the rule-based AI can only sign free
+   agents, of whom none are stars. A wealthy fan with nobody to overpay is a cheaply-run
+   promotion.
+2. *So the earlier folds were not the motive at all.* At 29 months, and at 22, it was the
+   running cost — set for a show every four days — against a thin house. The burn-out that
+   was celebrated as emergent in slice 4 was an artefact of the schedule and a dial.
+3. *The fifth-year drop is the one emergent thing here:* its television deal comes up after
+   four years of a slowly declining audience (reputation 48.6 → 43.5), renews lower, and the
+   books turn. Nothing scripts that.
+
+What this says about the design: doc 01 §7's burn-out is about a promotion that *can* buy
+names and does. To see it, the wealthy fan needs stars it can reach — poaching, a deeper
+database — and a planner that values them (plan §5). Until then the reference's 18–36 months
+is simply not reproduced, and that is recorded rather than forced.
 
 ### Not built in this slice
 

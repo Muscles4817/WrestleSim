@@ -223,7 +223,7 @@ namespace WrestlingSim.Tests
 
             for (int i = 0; i < 30; i++) career.AdvanceOneDay();
 
-            Assert.InRange(global.Nights.Count, 8, 12);
+            Assert.InRange(global.Nights.Count, 3, 5);     // weekly: one brand, one show a week
             Assert.NotEqual(cash, global.Books.Cash);
             Assert.NotEmpty(global.Television!.Episodes);
             Assert.All(global.Nights, n => Assert.InRange(n.Rating, 5, 95));
@@ -234,27 +234,42 @@ namespace WrestlingSim.Tests
         }
 
         /// <summary>
-        /// Doc 01 §7: a wealthy fan's promotion overspends and typically burns out in 18–36
-        /// months. Nobody scripts the fold — it is the motive's spending against the tier's
-        /// income — so this measures that the shape comes out, and that the global major, run
-        /// as a media company's content, does not go the same way.
+        /// What becomes of the wealthy fan's promotion, **measured and not asserted**.
+        ///
+        /// Doc 01 §7 says such promotions "typically" burn out in 18–36 months. This test used to
+        /// assert that band, and twice a constant was re-solved to keep it passing. The owner
+        /// ruled that out: an outcome the world is tuned to produce is scripted, however
+        /// indirectly. A wealthy fan's promotion should be able to survive in a world that lets
+        /// it. So this prints what happened for the design record, and when the figure is far
+        /// from the reference the thing to do is look at why — not to turn a dial.
+        ///
+        /// What it does assert is only that the world keeps running and the news says so if
+        /// somebody closes.
         /// </summary>
         [Fact]
-        public void TheWealthyFansPromotionBurnsOut_TheMajorDoesNot()
+        public void WhatBecomesOfTheWealthyFansPromotion_IsMeasuredNotForced()
         {
             var career = World(PromotionTier.Local);
             var ironclad = RivalAt(career, PromotionTier.National);
             var vantage = RivalAt(career, PromotionTier.Global);
             Assert.Equal(FounderMotive.MarkMoney, ironclad.Motive);
 
-            for (int i = 0; i < 365 * 4 && ironclad.IsActive; i++) career.AdvanceOneDay();
+            for (int year = 1; year <= 5; year++)
+            {
+                for (int i = 0; i < 365 && ironclad.IsActive; i++) career.AdvanceOneDay();
+                output.WriteLine($"year {year}: {ironclad.Name} cash {ironclad.Books.Cash:N0}, roster {ironclad.Contracts.Count}, " +
+                                 $"reputation {ironclad.Books.Reputation:F1}; {vantage.Name} cash {vantage.Books.Cash:N0}");
+                if (!ironclad.IsActive) break;
+            }
 
-            var months = (ironclad.Folded!.Value.DayNumber - Day.DayNumber) / 30.4;
-            output.WriteLine($"{ironclad.Name} folded after {months:F0} months; {vantage.Name} cash {vantage.Books.Cash:N0}");
+            if (ironclad.Folded is { } closed)
+            {
+                output.WriteLine($"{ironclad.Name} closed after {(closed.DayNumber - Day.DayNumber) / 30.4:F0} months (doc 01 §7: typically 18–36)");
+                Assert.Contains(career.News, n => n.Text.Contains("has closed"));
+            }
+            else output.WriteLine($"{ironclad.Name} is still running after five years (doc 01 §7: typically 18–36 months)");
 
-            Assert.InRange(months, 18, 40);
-            Assert.True(vantage.IsActive && vantage.Books.Cash > vantage.Books.OpeningCash);
-            Assert.Contains(career.News, n => n.Text.Contains("has closed"));
+            Assert.True(career.Rivals.Any(r => r.IsActive));
         }
 
         /// <summary>

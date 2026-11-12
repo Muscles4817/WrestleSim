@@ -103,8 +103,8 @@ namespace WrestlingSim.Engine
             PromotionTier.Independent => new(18m, 12m,   2_000m,         0m,        0m,        25_000m,       270m),
             PromotionTier.SuperIndie  => new(25m, 14m,   8_000m,         0m,        0m,       150_000m,     1_940m),
             PromotionTier.Established => new(30m,  7m,  50_000m,   350_000m,  120_000m,     3_000_000m,    30_800m),
-            PromotionTier.National    => new(35m,  6m, 120_000m, 1_500_000m,  350_000m,    25_000_000m,   289_200m),
-            PromotionTier.Global      => new(40m,  5m, 200_000m, 4_000_000m,  700_000m,   250_000_000m,   497_700m),
+            PromotionTier.National    => new(35m,  6m, 120_000m, 1_500_000m,  350_000m,    25_000_000m,   161_000m),
+            PromotionTier.Global      => new(40m,  5m, 200_000m, 4_000_000m,  700_000m,   250_000_000m,   124_800m),
             _                         => new(18m, 12m,   2_000m,         0m,        0m,        25_000m,       230m)
         };
 

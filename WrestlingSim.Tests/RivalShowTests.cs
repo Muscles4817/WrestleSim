@@ -180,7 +180,7 @@ namespace WrestlingSim.Tests
                 Assert.Equal(was.Titles.Active.Select(t => t.Champion?.Id), now.Titles.Active.Select(t => t.Champion?.Id));
                 Assert.Equal(was.Titles.Active.Select(t => Math.Round(t.Prestige, 1)), now.Titles.Active.Select(t => Math.Round(t.Prestige, 1)));
                 Assert.Equal(was.Audience.Acts.Count, now.Audience.Acts.Count);
-                Assert.Equal(was.Audience.ShowSameness, now.Audience.ShowSameness, 2);
+                Assert.Equal(was.Audience.ShowSameness, now.Audience.ShowSameness, 1);   // saved to three places
                 Assert.Equal(was.Feuds.AllIncludingDormant.Count, now.Feuds.AllIncludingDormant.Count);
                 Assert.Equal(was.Nights.Last().Card, now.Nights.Last().Card);
             }

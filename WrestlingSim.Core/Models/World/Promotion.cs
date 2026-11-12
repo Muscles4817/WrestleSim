@@ -36,8 +36,13 @@ namespace WrestlingSim.Models.World
             PromotionTier.Independent => 30,
             PromotionTier.SuperIndie  => 21,
             PromotionTier.Established => 7,
-            PromotionTier.National    => 4,
-            PromotionTier.Global      => 3,
+            // Weekly, like Established. One brand runs one television show a week at every
+            // level; a show every three or four days is what a company with a brand split does,
+            // across two rosters. These were 4 and 3, which had a single roster working a
+            // major's whole calendar — each star on every other show — and thinned out every
+            // crowd at the top of the industry.
+            PromotionTier.National    => 7,
+            PromotionTier.Global      => 7,
             _                         => 30
         };
 

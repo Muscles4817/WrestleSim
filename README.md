@@ -127,8 +127,8 @@ audience expects, and what buildings you can fill.
 | Regional Independent | — | 30 days | 720 |
 | Super Indie | — | 21 days | 2,240 |
 | Established | Weekly | 7 days | 6,400 |
-| National | Weekly | 4 days | 12,800 |
-| Global Major | Weekly | 3 days | 20,800 |
+| National | Weekly | 7 days | 12,800 |
+| Global Major | Weekly | 7 days | 20,800 |
 
 Below Established there is no television, so the wizard does not offer it — the
 guaranteed-income dividing line from doc 01, made mechanical. Everything else (too many
