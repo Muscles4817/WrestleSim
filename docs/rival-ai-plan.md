@@ -124,25 +124,97 @@ local level, within weeks. The reference says why:
 So the hole is not in the rival AI. A *player* could run a thin roster today and pay for it only
 in fatigue. The fix is one audience model for everybody.
 
-### 2A.1 Overexposure, per wrestler, per promotion's audience
+### 2A.0 What research found (and what it overturned)
 
-- `Wrestler.Exposure` (0–100, persisted): rises with each appearance in front of a promotion's
-  audience — more for a televised main event than a house-show opener — and decays by the day.
-  Starting values: +12 a televised appearance, +6 untelevised, decay with a ~3-week half-life
-  (the same scale as momentum's). Tune by the test below, not by taste.
-- Above a comfort level (start: 35 — roughly two weeks in three on television) a wrestler's
-  **star power in the draw** and **crowd response in the match** shrink, smoothly, to a floor
-  (start: 55% at full exposure). Momentum cools with it (doc 17: overexposure is how people
-  cool).
-- **Nothing is tier-specific.** A promotion running every 45 days never accumulates exposure on
-  anybody; a weekly television show does within a month. "Only the most local promotion could
-  get away with six" falls out of the cadence — and must, without a special case.
-- Applies to the player's shows and the rivals' identically. One wrestler, one audience per
-  promotion: a wrestler who moves promotions arrives fresh (which is doc 10 §2.7's "the return
-  is a free asset", and the released-star arc of doc 13 §6.1, for free).
-- Player-visible: an exposure reading on the roster card and in the booking picker
-  ("on every show for five weeks — the reactions are getting smaller"), and a line in the box
-  office's reasons ("overexposed ×0.82").
+The first draft of this section modelled *exposure*: appear too often and the audience tires.
+The owner asked for research before any number was chosen. It overturned the premise.
+
+**Quality of evidence, stated plainly:** nothing measures this for wrestling. The wrestling
+sources are trade press and opinion; the measured work is from advertising and television and
+is applied here by analogy. Treat every rate below as a design estimate to be tuned in play.
+
+- **Screen time alone does not wear an audience out.** Parasocial research finds liking and
+  attachment *rise* with exposure to a character (Rubin & McHugh 1987; a season-long tracking
+  study at the University of New Brunswick found small weekly increases). Advertising research
+  largely fails to find wear-out from repetition (Craig, Sternthal & Leavitt 1976 found none at
+  very high repetition; Kantar finds none in its tracking; System1 found 14 worn-out creatives
+  in 50,000) and attributes what exists to saturation and weak creative.
+- **Sameness does.** Berlyne's work ties boredom to low novelty and low complexity; liking
+  peaks at intermediate complexity, and richer stimuli survive repetition longer.
+- **Wrestling cases fit that, not the exposure story.** Rhea Ripley was on screen constantly
+  through 2023–24 and stayed a top merchandise seller; the complaints were from a subset of
+  fans, about always being in the title picture. Hulk Hogan's "first real sign fans were tiring"
+  (the 1992 Rumble) came after years of *the same act* headlining every major show.
+- **Rejection is a different mechanism from boredom, and it is segment-specific.** Roman Reigns
+  2015–18 was the audience sensing the promotion overruling its choice (doc 23 §7 already lists
+  "rejecting a push: sensing the promotion is overruling them"). John Cena was cheered by
+  children and booed by adults in the same building for years, while the top merchandise seller.
+- **Show-level fatigue is real and separate.** Raw routinely lost 20–28% of its audience by its
+  third hour; critics of its 2018–19 decline cite the same matches week after week.
+
+This repo's own doc 17 already had the right variable: §4, "Freshness — the underlying
+variable… everything in wrestling decays", with decay periods per *thing* (a match-up: 2–4
+encounters; a new character: 6–18 months; a faction: 12–24 months), and §3.4: "athletic novelty
+depletes faster than character novelty".
+
+**The six-wrestler case needs no tuned number.** Six people in two divisions have about six
+possible match-ups. At 2–4 encounters each, a weekly show has spent every match it can offer in
+about a month; a promotion running every six weeks takes years to. Pairing arithmetic on the
+existing freshness curve already says "weeks at National, fine at Local".
+
+### 2A.1 Staleness — sameness, not screen time
+
+Three separate things, per the owner. Do not merge them into one meter.
+
+**(a) A wrestler's act goes stale when nothing about it changes.**
+
+- `Wrestler.Staleness` (0–100, per promotion's audience, persisted). Each appearance adds
+  staleness **unless the appearance carried something new**. "New" is read from what the game
+  already records: a first-time or long-rested opponent (the pairing's freshness), a feud that
+  gained heat or a history tag since the last appearance, a title won or lost, a turn or gimmick
+  change, a stipulation not run lately (`StipulationBook`). Something new *reduces* staleness.
+- **The rate is the wrestler's.** It scales down with `Charisma` and with a gimmick that has
+  somewhere to go, and up for overness that rests on athletic novelty (doc 17 §3.4). The game
+  has `Charisma` and `Style` today; doc 31 §3 already lists the missing gimmick attributes
+  (*Motivation*, *Fit*) — if a "depth" reading cannot be derived honestly from what exists,
+  say so and propose the attribute rather than inventing a proxy.
+- Time off screen lets it fall, but slowly, and doc 17 §3.9 still applies: six to ten weeks
+  away with no story costs heat. Rest is not a free reset.
+- Calibration targets are doc 17 §4.1's ranges, not a guess: a strong character doing the same
+  thing should hold for many months; a spot-based act for far fewer.
+
+**(b) Each audience segment feels it differently.**
+
+- The game has `FanGroup` and per-gimmick `AppealRatings`, and the crowd model reads them. Give
+  each group a staleness tolerance and a taste (doc 23 §2–3): casual fans want familiar stars
+  and barely tire; regulars want stories that progress; hardcore fans want novelty and tire of
+  dominance ("winning too much, too easily" — doc 17 §3.11).
+- **The game's groups do not match doc 23's.** `FanGroup` is Casual, Hardcore, Online,
+  International, Families, Kids; doc 23's core segments are casual, regular, hardcore and
+  family, and "the regular viewer… is the audience the weekly product is actually made for".
+  There is no Regular group. Propose to the owner either adding one or stating which existing
+  group stands for it — do not silently map one onto another.
+- So staleness is evaluated **per group**, and one wrestler can be hot with one and stale with
+  another — the Ripley and Cena pattern. The draw is the groups' responses weighted by who is
+  in the building or watching.
+- This is the first half of B3 (audience segments) in `31-sim-mapping.md`. Keep it to what
+  staleness needs: per-group tolerance and per-group response. Separate per-group satisfaction
+  and revenue lines stay out of this slice — write that down.
+
+**(c) Rejection is its own mechanic.**
+
+- When the booked position runs ahead of the perceived one — someone pushed whom the audience
+  did not choose — the response turns hostile, hardcore first, and escalates with insistence
+  (doc 12 §4.3, doc 23 §7, doc 27's Bryan and Reigns patterns). This is B2 in the mapping doc.
+- It is **not** part of staleness and must not be folded into it. It is listed here because the
+  research showed the famous "overexposure" cases were mostly this. **Out of scope for PR 0**
+  unless the owner asks; record it as the next audience slice.
+
+**(d) The show itself goes stale** — see §2A.2.
+
+Player-visible: a staleness reading per wrestler that says *why* ("the same match four weeks
+running — hardcore fans are restless, casual fans are fine"), in the roster, the picker and the
+box office's reasons.
 
 ### 2A.2 The whole card counts
 
@@ -153,8 +225,14 @@ in fatigue. The fix is one audience model for everybody.
 - **Under-filling the runtime is penalised** like overrunning it already is: a television show
   that fills 60% of its slot is a worse show. Applies to the player (`ShowSimulator`) and to
   rivals (the short card of §3.2).
-- **The same person twice in a night** counts as two appearances for exposure and is flagged in
-  the booking read.
+- **The same person twice in a night** is two appearances with nothing new between them, and is
+  flagged in the booking read.
+- **The show's own staleness** (separate from any wrestler's): a per-promotion reading of how
+  alike recent shows have been — the same match types, the same running order, the same faces in
+  the same slots, the same stipulation. It lowers retention and reputation for everybody on the
+  card. Variety resets it. Raw losing a fifth of its audience by hour three is the reference
+  case. Rivals need a way to vary their shows for this to be fair (match types and segments in
+  the abstract card), or it is a tax they cannot avoid — decide which before building.
 
 ### 2A.3 Rivals have titles
 
@@ -185,15 +263,27 @@ New file `AudienceTests.cs`, corpus tests, `StableSeed`:
 
 - `SixWrestlersCannotCarryANationalPromotion` — build a National promotion with the six most
   over wrestlers and nobody else; run its weekly television with the best card those six can
-  make. **Within eight weeks** its average fill and viewers are below 60% of week one's, and
-  its reputation is falling. No line of code may mention roster size.
+  make. Its fill and viewers fall steeply and its reputation with them. **Do not assert a
+  number of weeks chosen in advance**: measure how long it takes, record it, and check it
+  against doc 17 §4.1 (a match-up is fresh for 2–4 encounters, and six people have about six).
+  If it takes many months, the model is wrong. No line of code may mention roster size.
+- `ACharismaticActOutlastsASpotAct` — two wrestlers of equal overness doing the same thing
+  weekly: the one with charisma and character holds; the one built on athletic novelty cools
+  first (doc 17 §3.4).
+- `SomethingNewResetsIt` — a stale wrestler given a fresh opponent, a turn or a title is no
+  longer stale.
+- `OneWrestlerTwoAudiences` — strong booking held for months leaves casual response intact and
+  hardcore response falling.
 - `SixWrestlersCanCarryALocalOne` — the same six at Local cadence hold their houses for a year.
 - `ADeepRosterHoldsItsAudience` — the same National promotion with a tier-sized roster holds
   within 10% of week one over the same eight weeks.
 - `AChampionWithNoDivisionDevaluesTheBelt` — a rival with a two-person division loses prestige
   on that belt over a year; one with eight does not.
-- `ThePlayerPaysForOverexposureToo` — a player show's projection for a wrestler on six
-  consecutive weekly cards draws less than the same wrestler fresh.
+- `ThePlayerPaysForSamenessToo` — a player's wrestler in the same match six weeks running draws
+  less than the same wrestler given something new.
+- `BeingOnEveryWeekIsNotTheProblem` — a wrestler on every show for six months, in a feud that
+  keeps moving, does **not** go stale. This is the test that the model is sameness and not
+  screen time.
 
 ### 2A.6 What this costs
 
@@ -201,7 +291,7 @@ New file `AudienceTests.cs`, corpus tests, `StableSeed`:
   fresh opening roster, so it should not move — but every multi-week measurement (tier margins
   at cadence, rival fold timing) will. Re-measure; re-solve the running costs if a tier leaves
   doc 09 §4's band; record before and after in the design record.
-- **Saves**: `Exposure` per wrestler per promotion, rival titles. Additive; an old save opens
+- **Saves**: `Staleness` per wrestler per promotion, show staleness per promotion, rival titles. Additive; an old save opens
   with everybody fresh and rivals' belts vacant-then-filled on the first premium event.
 - **Scope.** This is a slice of its own — the size of the box-office slice — and it is worth
   doing whether or not the planner is ever built, because it closes a hole in the player's
@@ -837,7 +927,8 @@ These are defaults in this plan; each is the owner's to change.
 1. **The weights and dispositions in §5.2.** They are the game's statement of what each kind of
    promotion wants. Read the table and change anything that does not match how you see them.
 2. **How fast rivals may act:** `MaxMovesPerWeek = 3`. Higher is livelier and noisier.
-3. **The audience proposals in §2A** — overexposure, the whole card counting, rival titles, and
+3. **The audience proposals in §2A** — staleness from sameness (per wrestler, per audience
+   group, and of the show itself), the whole card counting, rival titles, and
    (as a second step) results and wear on rival shows. The owner has ruled that a gutted roster
    is never acceptable and that the reason it fails in real life is what must stop it in the
    game; §2A is the proposal for how. It changes the player's shows as well. Confirm the four
