@@ -189,11 +189,17 @@ Three separate things, per the owner. Do not merge them into one meter.
   each group a staleness tolerance and a taste (doc 23 §2–3): casual fans want familiar stars
   and barely tire; regulars want stories that progress; hardcore fans want novelty and tire of
   dominance ("winning too much, too easily" — doc 17 §3.11).
-- **The game's groups do not match doc 23's.** `FanGroup` is Casual, Hardcore, Online,
-  International, Families, Kids; doc 23's core segments are casual, regular, hardcore and
-  family, and "the regular viewer… is the audience the weekly product is actually made for".
-  There is no Regular group. Propose to the owner either adding one or stating which existing
-  group stands for it — do not silently map one onto another.
+- **Add a Regular group, as a viewing habit only** (owner's default, confirmed in principle).
+  `FanGroup` is Casual, Hardcore, Online, International, Families, Kids, but in the shipped
+  roster only Casual (88 of 90) and Hardcore (89 of 90) are filled in — "Casual" has meant
+  "everybody who is not hardcore". Doc 23 splits that by how often they watch: the casual
+  viewer comes for big events and famous names; the regular viewer watches weekly and is "the
+  audience the weekly product is actually made for". For staleness that difference is the whole
+  point — the regular sees everything and feels sameness first; the casual sees little and
+  barely feels it. So: add `FanGroup.Regular`; where a gimmick has no Regular appeal, read its
+  Casual appeal (**no roster data is rewritten**); the two differ only in how often they watch
+  and what bores them. Weekly television audiences lean Regular; premium events and big gates
+  lean Casual.
 - So staleness is evaluated **per group**, and one wrestler can be hot with one and stale with
   another — the Ripley and Cena pattern. The draw is the groups' responses weighted by who is
   in the building or watching.
@@ -207,8 +213,8 @@ Three separate things, per the owner. Do not merge them into one meter.
   did not choose — the response turns hostile, hardcore first, and escalates with insistence
   (doc 12 §4.3, doc 23 §7, doc 27's Bryan and Reigns patterns). This is B2 in the mapping doc.
 - It is **not** part of staleness and must not be folded into it. It is listed here because the
-  research showed the famous "overexposure" cases were mostly this. **Out of scope for PR 0**
-  unless the owner asks; record it as the next audience slice.
+  research showed the famous "overexposure" cases were mostly this. **Out of scope for PR 0;
+  the owner has agreed it is its own slice, straight after this one.**
 
 **(d) The show itself goes stale** — see §2A.2.
 
@@ -231,8 +237,29 @@ box office's reasons.
   alike recent shows have been — the same match types, the same running order, the same faces in
   the same slots, the same stipulation. It lowers retention and reputation for everybody on the
   card. Variety resets it. Raw losing a fifth of its audience by hour three is the reference
-  case. Rivals need a way to vary their shows for this to be fair (match types and segments in
-  the abstract card), or it is a tax they cannot avoid — decide which before building.
+  case. It applies to rivals as well, which requires §2A.2a.
+
+### 2A.2a Rival cards are real cards (owner's ruling)
+
+Rival shows were built as five plain singles pairings and nothing else — no tags, no title
+matches, no stipulations, no segments. That was a shortcut taken under the word "abstract", and
+the owner has ruled it out: rivals book with the same building blocks the player has.
+
+- A rival card is a list of the **same `ICardItem` types the player books**: `BookedMatch`
+  (singles, tag, trios, multi-man — `MatchPlan.Sides`), with `TitleAtStake` and `Stipulation`
+  set where booked, and `Segment` for promos and angles. `BoxOffice.DrawOf` already prices all
+  of these; nothing new is needed on the draw side.
+- **Still not simulated beat by beat.** "Abstract" now means only that: the rating of an item
+  comes from who is in it, what kind of item it is, and what is at stake — not from running
+  `MatchEngine`. Give each item kind an expected-rating rule built from what the engine already
+  knows (side size, the structure's intent, stipulation), and say in the design record how far
+  that sits from the real engine on a sample of the same matches.
+- `StipulationBook` per rival, so a stipulation run too often is worth less to it too.
+- Standing tag teams: rivals use `TagTeamSeed` / `TagTeam` chemistry for their own rosters.
+- This is what lets show staleness, title defences and "something new" (§2A.1a) mean anything
+  for a rival, and it is what PR C's booker (§8) chooses between.
+- Player-visible: the Rivals screen's "last night" lists the card — match types, the title on
+  the line, the segment — not just a headline.
 
 ### 2A.3 Rivals have titles
 
