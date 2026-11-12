@@ -128,6 +128,40 @@ namespace WrestlingSim.Engine
             return Math.Clamp(1.0 - 0.5 * swing / mean, 0.8, 1.0);
         }
 
+        /// <summary>
+        /// The renewal multiple if every remaining episode of the term drew
+        /// <paramref name="futureViewers"/>. What a promotion planning ahead reads: the audience
+        /// it has had, plus the audience it expects, with the final year weighing double as it
+        /// will at the renewal. Closed form — a five-year term is hundreds of episodes and a
+        /// planner asks this many times a week.
+        /// </summary>
+        public static double ProjectedMultiple(
+            TvDeal deal, PromotionTier tier, int futureViewers, int intervalDays, DateOnly today)
+        {
+            int baseline = BaselineViewers(tier);
+            if (baseline == 0 || intervalDays <= 0) return 1.0;
+
+            var finalYear = deal.End.AddYears(-1);
+            double weighted = 0, weights = 0;
+            foreach (var ep in deal.Episodes)
+            {
+                double w = ep.Date >= finalYear ? 2.0 : 1.0;
+                weighted += w * ep.Viewers / baseline;
+                weights += w;
+            }
+
+            int daysLeft = Math.Max(0, deal.End.DayNumber - today.DayNumber);
+            int daysBeforeFinalYear = Math.Clamp(finalYear.DayNumber - today.DayNumber, 0, daysLeft);
+            double before = daysBeforeFinalYear / (double)intervalDays;
+            double inside = (daysLeft - daysBeforeFinalYear) / (double)intervalDays;
+            double future = before + 2 * inside;
+
+            if (weights + future <= 0) return RenewalFloor;
+            double index = (weighted + futureViewers / (double)baseline * future) / (weights + future);
+
+            return Math.Clamp(RightsInflation * Math.Pow(index, 1.2) * Consistency(deal), RenewalFloor, RenewalCeiling);
+        }
+
         /// <summary>What the next term's fee would be, as a multiple of this one's, if it ended today.</summary>
         public static double RenewalMultiple(TvDeal deal, PromotionTier tier) =>
             Math.Clamp(

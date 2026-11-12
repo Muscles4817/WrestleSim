@@ -720,6 +720,14 @@ it.
 
 ## 6. PR B — the planner
 
+> **Status: built**, with the forecast (§4) and the objectives (§5), as
+> `RivalPlanner.cs` / `RivalForecast.cs`. What it does, what the default world did with it, and
+> what is not built are in `docs/business-design-record.md`, "Slice 6". Differences from this
+> section as written: shortlists are 5/3/3, not 8/6/6; a release is scored on money alone
+> (`NoBetterWithout`), because the recipe booker made releases look like better shows; a promotion
+> that cannot make a card considers booking several people at once; and a week in which nothing
+> it could act on has changed is not planned at all.
+
 `WrestlingSim.Core/Engine/RivalPlanner.cs`.
 
 ### 6.1 Moves

@@ -60,6 +60,25 @@ namespace WrestlingSim.Models.World
         /// </summary>
         public bool Frozen { get; set; }
 
+        /// <summary>What it wants, if not its founder motive's default. See <see cref="Engine.World.ObjectiveOf"/>.</summary>
+        public Objective? Objective { get; set; }
+
+        /// <summary>How it sees the future, if not its founder motive's default.</summary>
+        public Disposition? Disposition { get; set; }
+
+        /// <summary>The owner's chosen wrestlers, by id. Empty unless somebody chose some.</summary>
+        public List<string> Favourites { get; set; } = new();
+
+        /// <summary>What it decided lately and why, newest last. Capped.</summary>
+        public List<RivalDecision> Decisions { get; set; } = new();
+
+        /// <summary>
+        /// The situation it last planned in and found nothing worth doing, and when. While
+        /// that has not changed it does not plan again for a month. Zero when it has no such memory.
+        /// </summary>
+        public int QuietAs { get; set; }
+        public DateOnly? QuietSince { get; set; }
+
         /// <summary>When its next show runs. Advanced by its tier's cadence.</summary>
         public DateOnly NextShow { get; set; }
 

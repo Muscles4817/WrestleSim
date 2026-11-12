@@ -74,6 +74,18 @@ else
 
             <div class="small muted">@profile.Reading</div>
 
+            @* What it is trying to get, and how it sees. Everything it does below follows from
+               these and from what its shows and its money look like — nothing else decides. *@
+            @if (rival.IsActive)
+            {
+                var wants = World.WantsInWords(World.ObjectiveOf(rival));
+                var temperament = World.TemperamentInWords(World.DispositionOf(rival));
+                <div class="small mt">
+                    <span class="muted">Wants:</span> @string.Join(", then ", wants)<text>.</text>
+                    @if (temperament.Length > 0) { <span class="muted" style="margin-left:.35em">@temperament</span> }
+                </div>
+            }
+
             @if (rival.IsActive)
             {
                 <div class="takings__hero mt">
@@ -114,6 +126,35 @@ else
                     <div class="small mt">
                         <span class="muted">Top of the card:</span>
                         @string.Join(", ", signed.Take(6).Select(w => w.RingName))
+                    </div>
+                }
+
+                @* What it has done lately and why — its own reasons, in its own arithmetic. *@
+                @if (rival.Decisions.Count > 0)
+                {
+                    <div class="small mt">
+                        <span class="muted">Lately:</span>
+                        @foreach (var d in rival.Decisions.AsEnumerable().Reverse().Take(5))
+                        {
+                            <details class="decision">
+                                <summary>
+                                    <span class="muted tabnum">@d.Date.ToString("d MMM")</span>
+                                    @Verb(d.Move) @(career.FindWrestler(d.WrestlerId)?.RingName ?? d.WrestlerId)@(d.Annual > 0 ? $" at {Money.Format(d.Annual)} a year" : "")
+                                    <span class="muted">— @d.Reason</span>
+                                </summary>
+                                <div class="muted" style="padding:2px 0 6px 14px">
+                                    <div>At the time it @d.Believed.</div>
+                                    <div>
+                                        Counted for it:
+                                        @string.Join(", ", d.Terms.OrderByDescending(t => Math.Abs(t.Value)).Select(t => $"{TermName(t.Key)} {(t.Value >= 0 ? "+" : "−")}{Math.Abs(t.Value).ToString("0.000")}"))
+                                    </div>
+                                    @if (d.Rejected.Count > 0)
+                                    {
+                                        <div>Next best: @string.Join("; ", d.Rejected)</div>
+                                    }
+                                </div>
+                            </details>
+                        }
                     </div>
                 }
 
@@ -182,6 +223,29 @@ else
 @code {
     private static string ShortTitle(string title, string promotion) =>
         title.StartsWith(promotion) ? title[promotion.Length..].Trim() : title;
+
+    private static string Verb(string move) => move switch
+    {
+        "signed"   => "Signed",
+        "released" => "Released",
+        "bid for"  => "Offered for",
+        "added"    => "Started booking",
+        "dropped"  => "Stopped booking",
+        _          => move
+    };
+
+    private static string TermName(string term) => term switch
+    {
+        "wealth"     => "money",
+        "franchise"  => "television deal",
+        "stars"      => "names",
+        "quality"    => "show quality",
+        "reputation" => "reputation",
+        "favour"     => "owner's people",
+        "stability"  => "continuity",
+        "survival"   => "staying open",
+        _            => term
+    };
 
     private static string Motive(FounderMotive m) => m switch
     {

@@ -606,6 +606,133 @@ is simply not reproduced, and that is recorded rather than forced.
   and the booking rail (desktop) do.
 - **Every rate here is a design estimate.** Nobody has measured these for wrestling.
 
+## Slice 6: the planner — rivals decide by what they want
+
+`RivalPlanner.cs`, `RivalForecast.cs`, `Models/World/Objective.cs`. The plan is
+`docs/rival-ai-plan.md` §4–6 and §5A.
+
+### What it replaced
+
+A rival's talent decisions were rules: sign up to a budget, bid a fixed premium for any expiring
+player contract, release the worst-paid when short. `MotiveProfile` carried `BidPremium` and
+`BuysStars` — behaviour written as constants. All of it is deleted. `MotiveTraits` now holds only
+what is physical about a promotion (opening budget, overhead, a rating bias).
+
+### What it does
+
+- **An objective and a disposition are data.** `Objective` is seven weights — wealth, franchise
+  (the next TV deal), stars, quality, reputation, favour, stability. `Disposition` is how it sees
+  (horizon, optimism) and how it carries risk (runway floor, risk aversion). `World.ObjectiveFor`
+  and `DispositionFor` turn a founder motive into a starting pair; a rival can carry its own
+  (`RivalPromotion.Objective`), which is how a custom database will say what a promotion is for.
+  **Nothing in the planner, the forecast or the booker asks what kind of owner it is.**
+- **The forecast is the world's own arithmetic.** `World.Forecast` books the next four shows with
+  `BookCard` — the booker the world uses — and prices them with `BoxOffice.Night`, carrying its own
+  count of the match-ups and appearances those shows would add. It is pure. Measured against what
+  then happened, planner off (`TheForecastIsTheWorldMinusTheNoise`): houses to the percent on all
+  four rivals, net a show within 0.1%, rating within 2.5 points (the night's luck is ±6).
+- **Every week, each move is scored against doing nothing.** Sign a free agent, release, bid for a
+  player's expiring contract (TV promotions); start or stop booking somebody (below TV). Each term
+  of the score is a relative change, so the weights mean something against each other; fear of
+  closing is added unweighted, by temperament. The best move above `Epsilon` is taken, up to three
+  a week. No randomness.
+- **What somebody is worth is a reservation price**, not a premium: the guarantee at which signing
+  them stops beating not signing them. At expiry a rival keeps a wrestler if that is at least their
+  asking price, and loses them to the player only if the player offered more than it.
+- **Every decision is kept with its reasons** (`RivalDecision`: the terms, what it believed, the
+  next-best moves it turned down). The Rivals screen shows what each promotion wants, how it sees,
+  and its last five decisions, each opening to the arithmetic. The news carries the reason.
+- **Saves** carry overrides, favourites, decisions and the quiet-week memory. Additive.
+
+### Corrections made while building it
+
+- **A release is never credited with better shows** (`NoBetterWithout`). `BookCard` is a recipe: it
+  defends a title because it is the big night and builds a tag from whoever is fourth to seventh
+  in a division, so removing a person can shuffle it into a card that draws slightly more. The
+  first version of the planner exploited that — the wealthy fan's promotion released ten to
+  eighteen people a year for gains that were the recipe's noise, and released a stale champion
+  because the booker cannot decide to beat her. Having somebody cannot make a card worse than not
+  having them, and the scorer now says so. The proper fix is a booker that chooses its card (plan §8).
+- **A promotion with nobody can start again.** One more wrestler does nothing for an empty roster,
+  so a one-move-ahead search left it shut for good. Where no card can be made it now considers
+  booking several at once.
+- **An exclusive deal ends by-the-night arrangements elsewhere**, the player's included, with a
+  news line. Before, an indie's "roster of 21" could be 21 people it could no longer book.
+- **The bid tests assumed the rule.** They took the player's most over wrestler and expected a bid.
+  An Established promotion's biggest name is a 55 who would not make either TV company's card, and
+  nobody bids for him — which is right, and is now its own test. The setup gives them a real star.
+
+### What the default world does with it — measured, not tuned
+
+`WhatTheWorldDoesWithIt_IsMeasuredNotForced` prints five years. **None of this was tuned for and
+none of it is asserted.** One run (the world is deterministic):
+
+| | opening | year 1 | year 2 | year 3 | year 5 |
+|---|---|---|---|---|---|
+| Vantage (global, media) roster / guarantees | 40 / $56.7M | 40 / $44.7M | 37 / $37.0M | 35 / $29.9M | 35 / $21.2M |
+| Vantage cash | $250M | $377M | $515M | $659M | $967M |
+| Ironclad (national, wealthy fan) roster / guarantees | 25 / $3.6M | 29 / $3.7M | 49 / $12.4M | 46 / $15.8M | 44 / $20.8M |
+| Ironclad cash | $25M | $33M | $36M | $35M | $44M |
+| Rust Belt Pro (super-indie) roster | 22 | 11 | 1 | closed May 2027 | |
+| Harbor City (indie) roster | 16 | 8 | 1 | 0 | closed Mar 2028 |
+| Median overness, all 90 wrestlers | 59 | 53 | 44 | 32 | 18 |
+
+What that says, and what to look at:
+
+1. **The challenger takes the major's stars as their deals run out.** The major has ten people
+   over 90; the eleventh is worth less to it than his asking price, and it lets him go. To a
+   promotion whose top name is a 66 he is transformative. Nothing was written to make that happen.
+2. **The two TV companies strip the indies.** There are 90 wrestlers in the world and the two TV
+   companies open holding 65 of them. Each of the other 25 adds a little to somebody's cards, an
+   exclusive deal for a low-card wrestler costs a TV company nothing it notices, and so within two
+   years every regular the indies book is signed away, they cannot fill a card, and they close.
+   **This would happen to a player at an indie tier too.** In life the supply of wrestlers is
+   effectively endless; here it is a closed list. This is the largest open problem the planner
+   exposed and it is a question for the owner, not a constant to adjust.
+3. **Everybody outside a ring only cools.** A rival's shows do not move anybody's overness; the
+   only thing that happens to a wrestler outside the player's shows is the absence decay. The
+   median falls from 59 to 18 in five years and prices follow it. (TV companies sign low-card
+   people at $9–14k a year from the first months; that is the missing floor, below, not the cooling.) Applying the player's win/loss arithmetic (`HeatEconomy`) to
+   rival results was tried and reverted: it took the top ten from 92 to 67, because that economy
+   assumes a booker protecting people. It needs its own design (plan §2A.4).
+4. **The major makes about $140M a year and spends none of it.** Its payroll falls every year (3)
+   while its fee does not.
+5. **The wealthy fan's promotion does not burn out.** It makes money in most years. Nothing here
+   says it should or should not.
+
+### What it costs
+
+Counted (`PlanningStaysInsideItsBudget`): at most 21 forecasts in a week a promotion plans in,
+against a budget of 150, and none in a week where nothing it could act on has changed. Five years
+of the world simulate in 14 seconds, from over six minutes for the first version. What made the
+difference: `FeudBook.Find` walked every feud in the book for any pair that had not met (now an
+index by opposing pair); the booker built a report line for every match-up it priced
+(`BoxOffice.PullOf`, held to `DrawOf` by `TheQuickPullIsThePull`); a release that could not win is
+not forecast; a week with nothing changed is not planned.
+
+In the browser, debug build, a week of the clock took about 10 seconds with the first version and
+takes 0.5–2.7 now, a quiet week being the low end. **That is still slower than before the planner
+and is not finished** — a release build was not measured.
+
+### Not built in slice 6
+
+- **Where wrestlers come from.** Finding 2. Nothing creates a wrestler.
+- **Results on rival shows.** Finding 3.
+- **A floor under a guarantee.** Doc 29 gives $50–100k for the cheapest exclusive deal
+  (developmental); the game will write one for $9,000. Adding the floor changes opening rosters and
+  so the measured medians, and was left for a change that re-measures them.
+- **A booker that chooses its card** (plan §8) — which is what would retire `NoBetterWithout`, and
+  let a promotion take a belt off a stale champion on purpose.
+- **Renewals and releases for the player are not advised by the same arithmetic.** The player sees
+  a rival's reasons, not a reading of their own roster in the same terms.
+- **Identity, quality by a promotion's own audience, and a persistent direction** (plan §5A.1, .3,
+  .6). A rival re-decides from scratch each week; what stops it thrashing is that the world rarely
+  changes enough to matter, not that it has a plan.
+- **Many-worlds distributions** (plan §5A.7). One deterministic world is one sample.
+- **The reservation price ignores the fear of closing** — it is the closed form on money alone,
+  capped at three times the asking price, and five of six objectives hit the cap for a top star at
+  a national promotion.
+
 ## Not built, and written down
 
 - ~~**TV renewal and viewership.**~~ Built in slice 2, above.

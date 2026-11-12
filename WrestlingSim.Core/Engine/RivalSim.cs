@@ -50,7 +50,7 @@ namespace WrestlingSim.Engine
 
                 // Talent business once a week, on a day of its own.
                 if (!rival.Frozen && (today.DayNumber + Math.Abs(StableSeed.From(rival.Id))) % 7 == 0)
-                    Business(career, rival);
+                    Plan(career, rival);
 
                 if (rival.Books.Cash < rival.Books.OpeningCash * FoldAt)
                     Fold(career, rival);
@@ -73,13 +73,7 @@ namespace WrestlingSim.Engine
         /// </summary>
         private static void RunNight(Career career, RivalPromotion rival, DateOnly today)
         {
-            // With television, the big night comes round about once a month (doc 29 §1: 12–16
-            // major events a year at the top), not every fourth show — at a show every three
-            // days that was a premium event every twelve, and a title defended thirty times a
-            // year changed hands so often its prestige went to nothing.
-            bool bigNightDue = rival.Nights.Count >= 3
-                && !rival.Nights.Any(n => n.Type == ShowType.PremiumEvent && today.DayNumber - n.Date.DayNumber < 28);
-            var type = !rival.Promotion.HasTelevision || bigNightDue ? ShowType.PremiumEvent : ShowType.Television;
+            var type = NextShowType(rival.Promotion, today, rival.Nights.Select(n => (n.Date, n.Type)));
 
             var available = rival.Contracts
                 .Select(c => career.FindWrestler(c.WrestlerId))
@@ -99,14 +93,19 @@ namespace WrestlingSim.Engine
                 RuntimeMinutes = rival.Promotion.DefaultRuntimeFor(type),
                 Name = rival.Name
             };
-            show.Card.AddRange(BookCard(rival, available, type, today, Response));
+            // How fresh a match-up is with this audience: what its book remembers of it.
+            double Freshness(BookedMatch m) =>
+                BoxOffice.StoryBetween(m.Plan, rival.Feuds)?.Familiarity(today) ?? 1.0;
+
+            show.Card.AddRange(BookCard(rival, available, type, today, rival.Nights.Count, Response, Freshness));
             if (show.Card.Count == 0) return;
 
             // Read before anything is worked, like the player's: the house is sold on the card as
             // advertised, and how new each act's part is depends on memory the night will change.
             var novelty = AudienceModel.Novelty(rival.Audience, show.Card, rival.Feuds, today);
             var f = BoxOffice.Night(show, rival.Promotion, rival.Books.Reputation, rival.Feuds, rival.Television,
-                w => rival.ContractOf(w)?.IsGuaranteed == true ? 0m : career.PerDateAsk(w), career.Interest, Response);
+                w => rival.ContractOf(w)?.IsGuaranteed == true ? 0m : career.PerDateAsk(w), career.Interest,
+                Response, Freshness);
 
             var rng = new Random(StableSeed.From(rival.Id, today.DayNumber));
             var result = new ShowResult { BookedMinutes = show.BookedMinutes, BudgetMinutes = show.RuntimeMinutes };
@@ -117,7 +116,7 @@ namespace WrestlingSim.Engine
             for (int i = 0; i < show.Card.Count; i++)
             {
                 var item = show.Card[i];
-                double itemRating = ExpectedItemRating(rival, item, today, Response);
+                double itemRating = ExpectedItemRating(rival, item, Response, Freshness);
 
                 if (item is BookedMatch match)
                 {
@@ -215,18 +214,29 @@ namespace WrestlingSim.Engine
         /// The make-up is still a fixed recipe. Choosing it is the planner's job (plan §8); what
         /// this gives it is the vocabulary.
         /// </summary>
+        /// <remarks>
+        /// Takes the audience's response and the match-ups' freshness as functions, not as the
+        /// rival's own books, so that the forecast (<see cref="Forecast"/>) can book the shows
+        /// that have not happened yet with this very code. One booker; if the forecast booked
+        /// differently it would be planning for a world that does not exist.
+        /// </remarks>
         public static List<ICardItem> BookCard(
-            RivalPromotion rival, IReadOnlyList<Wrestler> available, ShowType type, DateOnly today,
-            Func<Wrestler, double> response)
+            RivalPromotion rival, IReadOnlyList<Wrestler> available, ShowType type, DateOnly today, int index,
+            Func<Wrestler, double> response, Func<BookedMatch, double> freshness)
         {
             double target = rival.Promotion.DefaultRuntimeFor(type) * AudienceModel.FullCard;
-            int index = rival.Nights.Count;
             var used = new HashSet<Wrestler>();
             var talking = new List<ICardItem>();
             var matches = new List<BookedMatch>();
             int minutes = 0;
 
-            double Pull(ICardItem i) => BoxOffice.DrawOf(i, rival.Feuds, today, response).Pull;
+            // Asked many times for the same people on one night; the answers do not change within it.
+            var responses = new Dictionary<Wrestler, double>();
+            var asked = response;
+            response = w => responses.TryGetValue(w, out double r) ? r : responses[w] = asked(w);
+            double Pull(ICardItem i) => i is BookedMatch m
+                ? BoxOffice.PullOf(m, null, today, response, freshness)
+                : BoxOffice.DrawOf(i, null, today, response, freshness).Pull;
             IEnumerable<Wrestler> Free(Division d) => available
                 .Where(w => w.Division == d && !used.Contains(w))
                 .OrderByDescending(w => w.EffectiveOverness * response(w))
@@ -291,26 +301,38 @@ namespace WrestlingSim.Engine
             //    roster has to do, and what burns its match-ups.
             var worked = matches.SelectMany(m => m.Wrestlers).Concat(talking.SelectMany(t => t.Wrestlers))
                 .GroupBy(w => w).ToDictionary(g => g.Key, g => g.Count());
+            var divisions = available.GroupBy(w => w.Division).Select(g => g.ToList()).ToList();
+            var pairs = new Dictionary<(Wrestler, Wrestler), (BookedMatch Match, double Pull)>();
+            var booked = matches.Where(x => x.Plan.Sides.Count == 2 && !x.Plan.IsTagMatch && x.Wrestlers.Count == 2)
+                .Select(x => (x.Wrestlers[0], x.Wrestlers[1])).ToHashSet();
             for (int pass = 1; pass <= 2 && minutes < target; pass++)
             {
                 while (minutes < target)
                 {
-                    var best = available.GroupBy(w => w.Division)
-                        .SelectMany(g =>
-                        {
-                            var pool = g.Where(w => worked.GetValueOrDefault(w) < pass)
-                                .OrderByDescending(w => w.EffectiveOverness * response(w))
-                                .ThenBy(w => w.Id, StringComparer.Ordinal).Take(10).ToList();
-                            return pool.SelectMany((a, i) => pool.Skip(i + 1).Select(b => AbstractMatch(null, [a], [b])));
-                        })
-                        .Where(m => !matches.Any(x => x.Plan.Sides.Count == 2 && !x.Plan.IsTagMatch
-                                                      && x.Wrestlers.All(m.Wrestlers.Contains)))
-                        .Select(m => (Match: m, Pull: Pull(m)))
-                        .OrderByDescending(x => x.Pull).ThenBy(x => x.Match.Name, StringComparer.Ordinal)
-                        .FirstOrDefault();
+                    (BookedMatch? Match, double Pull) best = (null, 0);
+                    foreach (var g in divisions)
+                    {
+                        var pool = g.Where(w => worked.GetValueOrDefault(w) < pass)
+                            .OrderByDescending(w => w.EffectiveOverness * response(w))
+                            .ThenBy(w => w.Id, StringComparer.Ordinal).Take(10).ToList();
+                        for (int a = 0; a < pool.Count; a++)
+                            for (int b = a + 1; b < pool.Count; b++)
+                            {
+                                if (!pairs.TryGetValue((pool[a], pool[b]), out var pair))
+                                {
+                                    var made = AbstractMatch(null, [pool[a]], [pool[b]]);
+                                    pair = pairs[(pool[a], pool[b])] = (made, Pull(made));
+                                }
+                                if (booked.Contains((pool[a], pool[b])) || booked.Contains((pool[b], pool[a]))) continue;
+                                if (best.Match is null || pair.Pull > best.Pull
+                                    || (pair.Pull == best.Pull && string.CompareOrdinal(pair.Match.Name, best.Match.Name) < 0))
+                                    best = pair;
+                            }
+                    }
                     if (best.Match is null) break;
 
                     Book(best.Match);
+                    booked.Add((best.Match.Wrestlers[0], best.Match.Wrestlers[1]));
                     foreach (var w in best.Match.Wrestlers) worked[w] = worked.GetValueOrDefault(w) + 1;
                 }
             }
@@ -327,7 +349,8 @@ namespace WrestlingSim.Engine
         /// match-up or these acts too often, what is on the line, and what the promotion is for.
         /// </summary>
         public static double ExpectedItemRating(
-            RivalPromotion rival, ICardItem item, DateOnly on, Func<Wrestler, double>? response = null)
+            RivalPromotion rival, ICardItem item,
+            Func<Wrestler, double>? response = null, Func<BookedMatch, double>? freshness = null)
         {
             var people = item.Wrestlers;
             if (people.Count == 0) return 0;
@@ -339,7 +362,7 @@ namespace WrestlingSim.Engine
             if (item is BookedMatch match)
             {
                 double skill = people.Average(w => w.RingSkills.GetOverallSkill());
-                double fresh = BoxOffice.StoryBetween(match.Plan, rival.Feuds)?.Familiarity(on) ?? 1.0;
+                double fresh = freshness?.Invoke(match) ?? 1.0;
                 double rating = (22 + 6 * skill + 0.2 * over + bias) * acts * (0.75 + 0.25 * fresh);
                 if (match.Plan.IsTitleMatch) rating += 3;
                 return Math.Clamp(rating, 5, 95);
@@ -351,7 +374,7 @@ namespace WrestlingSim.Engine
         }
 
         /// <summary>Takes anything they hold off them, because they are leaving this promotion.</summary>
-        private static void Vacate(Career career, RivalPromotion rival, Wrestler w, string reason)
+        internal static void Vacate(Career career, RivalPromotion rival, Wrestler w, string reason)
         {
             foreach (var title in rival.Titles.HeldBy(w))
                 if (title.CurrentReign is { } reign)
@@ -363,173 +386,10 @@ namespace WrestlingSim.Engine
         }
 
         // ── Talent ───────────────────────────────────────────────────────────
-
-        private static decimal BudgetOf(RivalPromotion rival) =>
-            TierOpeningRoster.For(rival.Promotion.Tier).Budget * (decimal)Profile(rival.Motive).Budget;
-
-        /// <summary>Whether a rival would keep or chase somebody: at least as over as its middle.</summary>
-        private static bool Wants(Career career, RivalPromotion rival, Wrestler w)
-        {
-            var overs = rival.Contracts
-                .Select(c => career.FindWrestler(c.WrestlerId)?.EffectiveOverness ?? 0)
-                .OrderBy(o => o).ToList();
-            var (size, _) = TierOpeningRoster.For(rival.Promotion.Tier);
-            if (overs.Count < size) return true;
-            return w.EffectiveOverness >= overs[overs.Count / 2];
-        }
-
-        /// <summary>A rival's expiring deals: re-signed, lost to a better offer from the player, or let go.</summary>
-        private static void SettleContracts(Career career, RivalPromotion rival)
-        {
-            var today = career.CurrentDate;
-            foreach (var c in rival.Contracts.Where(c => c.End is not null).ToList())
-            {
-                var w = career.FindWrestler(c.WrestlerId);
-                if (w is not null && w.IsInjured(today))
-                {
-                    c.End = c.End!.Value.AddDays(1);
-                    c.DaysTolled++;
-                    continue;
-                }
-                if (today < c.End) continue;
-
-                rival.Contracts.Remove(c);
-                if (w is null) continue;
-
-                var profile = Profile(rival.Motive);
-                decimal payroll = rival.Contracts.Where(x => x.IsGuaranteed).Sum(x => x.AnnualGuarantee);
-                decimal keep = Math.Round(career.GuaranteeAsk(w, 3) * (decimal)profile.BidPremium / 1_000m) * 1_000m;
-                bool wants = Wants(career, rival, w) && payroll + keep <= BudgetOf(rival) * 1.1m;
-                var mine = career.PlayerBid(w);
-
-                if (mine is not null && mine.Annual > (wants ? keep : 0m))
-                {
-                    career.Contracts.Add(new Contract
-                    {
-                        WrestlerId = w.Id, Kind = ContractKind.Guaranteed, AnnualGuarantee = mine.Annual,
-                        Start = today, End = today.AddYears(mine.Years)
-                    });
-                    Vacate(career, rival, w, $"Left for {career.Promotion.Name}");
-                    career.Log(w, $"joined from {rival.Name} at ${mine.Annual:N0} a year");
-                    career.AddNews($"{w.RingName} has left {rival.Name} for {career.Promotion.Name}.", aboutYou: true);
-                }
-                else if (wants)
-                {
-                    rival.Contracts.Add(new Contract
-                    {
-                        WrestlerId = w.Id, Kind = ContractKind.Guaranteed, AnnualGuarantee = keep,
-                        Start = today, End = today.AddYears(3)
-                    });
-                    if (mine is not null)
-                    {
-                        career.Log(w, $"stayed with {rival.Name} at ${keep:N0} a year — your offer was beaten");
-                        career.AddNews($"{w.RingName} re-signed with {rival.Name}, turning down {career.Promotion.Name}.", aboutYou: true);
-                    }
-                }
-                else
-                {
-                    Vacate(career, rival, w, "Contract ran out");
-                    career.AddNews($"{w.RingName}'s deal with {rival.Name} ran out. A free agent.");
-                }
-                career.Bids.RemoveAll(b => b.WrestlerId == w.Id);
-            }
-        }
-
-        /// <summary>The week's business: releases if the money is short, bids, and signings.</summary>
-        private static void Business(Career career, RivalPromotion rival)
-        {
-            var today = career.CurrentDate;
-            var profile = Profile(rival.Motive);
-            var (size, _) = TierOpeningRoster.For(rival.Promotion.Tier);
-            var budget = BudgetOf(rival);
-
-            // Regulars somebody else has since signed are not regulars any more.
-            foreach (var gone in rival.Contracts.Where(c => !c.IsGuaranteed
-                         && career.FindWrestler(c.WrestlerId) is { } w
-                         && (career.IsGuaranteed(w) || (career.SignedTo(w) is { } other && other != rival))).ToList())
-            {
-                rival.Contracts.Remove(gone);
-                if (career.FindWrestler(gone.WrestlerId) is { } w) Vacate(career, rival, w, "Signed elsewhere");
-            }
-
-            if (!rival.Promotion.HasTelevision)
-            {
-                // Below television: keep a list of regulars, booked by the night.
-                var ceiling = TierOpeningRoster.For(rival.Promotion.Tier).Budget;
-                foreach (var w in FreeAgents(career).Where(w => rival.ContractOf(w) is null && career.PerDateAsk(w) <= ceiling)
-                                                    .Take(Math.Max(0, size - rival.Contracts.Count)))
-                    rival.Contracts.Add(new Contract { WrestlerId = w.Id, Kind = ContractKind.Regular, Start = today });
-                return;
-            }
-
-            decimal Payroll() => rival.Contracts.Where(c => c.IsGuaranteed).Sum(c => c.AnnualGuarantee);
-
-            // Doc 13 §2.1: budget releases — the worst value first, a couple at a time.
-            int released = 0;
-            while ((rival.Books.Cash < 0 || Payroll() > budget * 1.15m) && released < 2)
-            {
-                var worst = rival.Contracts.Where(c => c.IsGuaranteed)
-                    .Select(c => (c, w: career.FindWrestler(c.WrestlerId)))
-                    .Where(x => x.w is not null)
-                    .OrderBy(x => x.w!.EffectiveOverness / (double)Math.Max(1m, x.c.AnnualGuarantee))
-                    .FirstOrDefault();
-                if (worst.w is null) break;
-
-                var days = Math.Min(TalentMarket.ReleasePayoutDays, worst.c.DaysLeft(today) ?? 0);
-                rival.Books.Cash -= Math.Round(worst.c.DailyCost * days);
-                rival.Contracts.Remove(worst.c);
-                Vacate(career, rival, worst.w, "Released");
-                career.NonCompetes.Add(new NonCompete { WrestlerId = worst.w.Id, Until = today.AddDays(TalentMarket.ReleasePayoutDays), From = rival.Id });
-                career.AddNews($"{rival.Name} released {worst.w.RingName}. Free in ninety days.");
-                released++;
-            }
-            if (released > 0) return;
-
-            // Doc 10 §2.6: bids for the player's people whose deals are running out.
-            foreach (var c in career.ExpiringWithin(TalentMarket.ExpiryWarningDays).Where(c => c.IsGuaranteed).ToList())
-            {
-                var w = career.FindWrestler(c.WrestlerId);
-                if (w is null || career.Bids.Any(b => b.WrestlerId == w.Id && b.Bidder == rival.Id)) continue;
-                if (!Wants(career, rival, w)) continue;
-
-                var bid = Math.Round(career.GuaranteeAsk(w, 3) * (decimal)profile.BidPremium / 1_000m) * 1_000m;
-                if (Payroll() + bid > budget * 1.1m) continue;
-
-                career.Bids.Add(new Bid { WrestlerId = w.Id, Bidder = rival.Id, Annual = bid, Years = 3, Made = today });
-                career.AddNews($"{rival.Name} has offered {w.RingName} ${bid:N0} a year to leave when the deal ends on {c.End:d MMM}.", aboutYou: true);
-            }
-
-            // Signings, one or two a week, while there is room and money — and never while the
-            // cash is short. A broke promotion that releases on Sunday and signs on Monday was
-            // churning the same names through the door every week.
-            bool flush = rival.Books.Cash > rival.Books.OpeningCash * 0.1m;
-            for (int i = 0; flush && i < 2 && rival.Contracts.Count(c => c.IsGuaranteed) < size; i++)
-            {
-                decimal left = budget - Payroll();
-                int slots = size - rival.Contracts.Count(c => c.IsGuaranteed);
-                decimal share = left / Math.Max(1, slots) * 3m;
-
-                var pick = FreeAgents(career)
-                    .Select(w => (w, ask: career.GuaranteeAsk(w, 3)))
-                    .Where(x => x.ask <= left && x.ask <= share)
-                    .OrderByDescending(x => profile.BuysStars
-                        ? x.w.EffectiveOverness
-                        : x.w.EffectiveOverness / (double)Math.Max(1m, x.ask) * 1_000_000)
-                    .FirstOrDefault();
-                if (pick.w is null) break;
-
-                rival.Contracts.RemoveAll(c => c.WrestlerId == pick.w.Id);
-                rival.Contracts.Add(new Contract
-                {
-                    WrestlerId = pick.w.Id, Kind = ContractKind.Guaranteed, AnnualGuarantee = pick.ask,
-                    Start = today, End = today.AddYears(3)
-                });
-                career.AddNews($"{rival.Name} signed {pick.w.RingName} for three years.");
-            }
-        }
+        // Who a rival signs, keeps, releases and bids for is decided in RivalPlanner.cs.
 
         /// <summary>Anybody nobody holds exclusively, and who is free to work.</summary>
-        private static IEnumerable<Wrestler> FreeAgents(Career career) =>
+        internal static IEnumerable<Wrestler> FreeAgents(Career career) =>
             career.Roster.Where(w => !career.IsGuaranteed(w)
                                   && career.SignedTo(w) is null
                                   && career.NonCompeteOf(w) is null

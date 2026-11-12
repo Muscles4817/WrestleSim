@@ -160,6 +160,28 @@ namespace WrestlingSim.Persistence
         public string NextShow { get; set; } = "";
         public string? Folded { get; set; }
         public List<RivalNightDto> Nights { get; set; } = new();
+
+        // What it wants and how it sees, when it has been given its own in place of its
+        // founder motive's defaults. Absent in every save so far, and in a default world.
+        public Models.World.Objective? Objective { get; set; }
+        public Models.World.Disposition? Disposition { get; set; }
+        public List<string>? Favourites { get; set; }
+        public List<RivalDecisionDto>? Decisions { get; set; }
+        public int QuietAs { get; set; }
+        public string? QuietSince { get; set; }
+    }
+
+    public class RivalDecisionDto
+    {
+        public string Date { get; set; } = "";
+        public string Move { get; set; } = "";
+        public string WrestlerId { get; set; } = "";
+        public decimal Annual { get; set; }
+        public string Reason { get; set; } = "";
+        public double Score { get; set; }
+        public Dictionary<string, double> Terms { get; set; } = new();
+        public string Believed { get; set; } = "";
+        public List<string> Rejected { get; set; } = new();
     }
 
     public class RivalNightDto

@@ -4,18 +4,22 @@ using WrestlingSim.Models.World;
 
 namespace WrestlingSim.Engine
 {
-    /// <summary>How a founder motive behaves, as numbers. Doc 01 §7.</summary>
-    public sealed record MotiveProfile(
-        // Multiplies the tier's payroll budget.
-        double Budget,
+    /// <summary>
+    /// What is *physical* about an organisation run for a given reason — what it costs to run,
+    /// what its product is like, how much it was given to open with. Not how it decides: that
+    /// is its <see cref="Objective"/> and <see cref="Disposition"/>, and the planner.
+    ///
+    /// This used to carry a bid premium and a "buys stars" switch as well. Both were behaviour
+    /// written as constants, and both are gone: what a promotion will pay for somebody, and
+    /// whom it wants, now come out of what it is trying to achieve.
+    /// </summary>
+    public sealed record MotiveTraits(
+        // Multiplies the tier's payroll budget when its opening roster is signed. Opening only.
+        double OpeningBudget,
         // Multiplies the tier's daily running cost.
         double Overhead,
-        // Added to an abstract show's rating: a coherent, well-worked product rates higher.
+        // Added to an item's expected rating: a coherent, well-worked product rates higher.
         double RatingBias,
-        // What it offers over the asking price when it bids for somebody else's wrestler.
-        double BidPremium,
-        // Signs the most over name it can afford (true) or the most over-per-dollar (false).
-        bool BuysStars,
         string Reading);
 
     /// <summary>
@@ -24,16 +28,49 @@ namespace WrestlingSim.Engine
     /// </summary>
     public static partial class World
     {
-        public static MotiveProfile Profile(FounderMotive m) => m switch
+        public static MotiveTraits Profile(FounderMotive m) => m switch
         {
-            FounderMotive.Business  => new(0.85, 0.85, -3, 1.00, false, "Cost discipline and value signings. Will not overpay; will cut favourites."),
-            FounderMotive.Vanity    => new(1.00, 1.00, -4, 1.10, true,  "The owner's favourites are protected. Capped at the owner's own draw."),
-            FounderMotive.Ideology  => new(0.80, 1.00,  6, 1.05, false, "A coherent, well-worked product with a devoted core. Refuses to broaden."),
-            FounderMotive.Legacy    => new(0.90, 1.00,  1, 1.05, true,  "Steady and traditional. Slow to change, slow to die."),
-            FounderMotive.MarkMoney => new(1.50, 1.20,  0, 1.30, true,  "A wealthy fan's money: overspends on names. Typically burns out in 18–36 months."),
-            FounderMotive.Platform  => new(1.00, 1.10, -1, 1.15, true,  "A media company's content: consistent television, creative subordinate to the schedule."),
-            _                       => new(1.00, 1.00,  0, 1.00, false, "")
+            FounderMotive.Business  => new(0.85, 0.85, -3, "Run for a return. Counts the money first."),
+            FounderMotive.Vanity    => new(1.00, 1.00, -4, "Run so that its owner is on top."),
+            FounderMotive.Ideology  => new(0.80, 1.00,  6, "Run because wrestling should be good. Counts the shows first."),
+            FounderMotive.Legacy    => new(0.90, 1.00,  1, "Run so that it carries on as it is."),
+            FounderMotive.MarkMoney => new(1.50, 1.20,  0, "A wealthy fan's money. Wants names, and sees the future brighter than it is."),
+            FounderMotive.Platform  => new(1.00, 1.10, -1, "A media company's content. Wants an audience for its network."),
+            _                       => new(1.00, 1.00,  0, "")
         };
+
+        // ── What each kind of owner wants, and how it sees ───────────────────
+        // The only place a founder motive is turned into behaviour, and it is data. The planner
+        // is handed the result and does not know what kind of owner it came from.
+        // docs/rival-ai-plan.md §5.2. Starting values: tuned by looking at what worlds do with
+        // them, never to make a particular promotion meet a particular end.
+
+        public static Objective ObjectiveFor(FounderMotive m) => m switch
+        {
+            //                                 wealth franchise stars quality reputation favour stability
+            FounderMotive.Business  => new(1.0, 0.6, 0.1, 0.1, 0.2, 0.0, 0.1),
+            FounderMotive.Platform  => new(0.5, 1.0, 0.4, 0.2, 0.3, 0.0, 0.3),
+            FounderMotive.MarkMoney => new(0.1, 0.2, 1.0, 0.3, 0.5, 0.0, 0.0),
+            FounderMotive.Ideology  => new(0.3, 0.1, 0.1, 1.0, 0.6, 0.0, 0.2),
+            FounderMotive.Legacy    => new(0.5, 0.3, 0.2, 0.3, 0.4, 0.0, 1.0),
+            FounderMotive.Vanity    => new(0.3, 0.2, 0.4, 0.1, 0.3, 1.0, 0.2),
+            _                       => new(1.0, 0.5, 0.3, 0.3, 0.3, 0.0, 0.2)
+        };
+
+        public static Disposition DispositionFor(FounderMotive m) => m switch
+        {
+            //                                 horizon optimism runway-floor risk-aversion
+            FounderMotive.Business  => new(365, 0.95, 365, 4),
+            FounderMotive.Platform  => new(365, 1.00, 270, 3),
+            FounderMotive.MarkMoney => new(120, 1.25,  45, 1),
+            FounderMotive.Ideology  => new(270, 1.00, 180, 3),
+            FounderMotive.Legacy    => new(365, 1.00, 365, 4),
+            FounderMotive.Vanity    => new(180, 1.10, 120, 2),
+            _                       => new(365, 1.00, 270, 3)
+        };
+
+        public static Objective ObjectiveOf(RivalPromotion rival) => rival.Objective ?? ObjectiveFor(rival.Motive);
+        public static Disposition DispositionOf(RivalPromotion rival) => rival.Disposition ?? DispositionFor(rival.Motive);
 
         /// <summary>
         /// The default ecosystem before custom databases: a global major, a national challenger
@@ -130,8 +167,14 @@ namespace WrestlingSim.Engine
                 }
                 else
                 {
-                    var source = new TierOpeningRoster(Profile(rival.Motive).Budget);
+                    var source = new TierOpeningRoster(Profile(rival.Motive).OpeningBudget);
                     rival.Contracts.AddRange(source.Open(rival.Promotion, pool, on));
+
+                    // A promotion run for its owner has an owner: the biggest name it opens with.
+                    if (rival.Motive == FounderMotive.Vanity && rival.Favourites.Count == 0
+                        && rival.Contracts.Select(c => career.FindWrestler(c.WrestlerId)).OfType<Wrestler>()
+                                .MaxBy(w => w.EffectiveOverness) is { } owner)
+                        rival.Favourites.Add(owner.Id);
                     foreach (var c in rival.Contracts.Where(c => c.IsGuaranteed)) taken.Add(c.WrestlerId);
                 }
             }

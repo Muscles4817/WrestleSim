@@ -164,6 +164,22 @@ namespace WrestlingSim.Engine
             return weights <= 0 ? 1.0 : total / weights;
         }
 
+        /// <summary>
+        /// The same reading for a sameness and a streak handed in — for a forecast, which
+        /// carries its own count of shows that have not happened.
+        /// </summary>
+        public static double ResponseAt(Wrestler w, double sameness, int streak, PromotionTier tier, ShowType type)
+        {
+            double total = 0, weights = 0;
+            foreach (var (group, share) in Mix(tier, type))
+            {
+                double weight = share * (0.5 + Appeal(w, group));
+                total += weight * GroupResponse(group, sameness, streak);
+                weights += weight;
+            }
+            return weights <= 0 ? 1.0 : total / weights;
+        }
+
         /// <summary>Why an act is wearing, in words, or null when it is not.</summary>
         public static string? Reading(Audience? audience, Wrestler w)
         {
