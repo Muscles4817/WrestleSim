@@ -55,7 +55,13 @@ else
                 if (w is null) continue;
                 <div>
                     @w.RingName — @c.End!.Value.ToString("d MMM")
-                    · asks @Money.Format(TalentMarket.GuaranteeAsk(w, offerYears)) a year now
+                    · asks @Money.Format(career.GuaranteeAsk(w, offerYears)) a year now
+                    @if (career.BestRivalBid(w) is { } rivalBid)
+                    {
+                        <strong class="grade--poor">
+                            · @(career.Rival(rivalBid.Bidder)?.Name ?? "A rival") has offered @Money.Format(rivalBid.Annual) — match it or lose them
+                        </strong>
+                    }
                     <button class="btn btn--sm btn--ghost" @onclick="() => Offer(w)">Re-sign</button>
                 </div>
             }
@@ -64,7 +70,9 @@ else
 
     @if (offering is { } who)
     {
-        var ask = TalentMarket.GuaranteeAsk(who, offerYears);
+        var ask = career.GuaranteeAsk(who, offerYears);
+        var competing = career.BestRivalBid(who);
+        var holder = career.SignedTo(who);
         <div class="panel mt offer">
             <div class="panel__title">
                 Offer — @who.RingName
@@ -72,7 +80,7 @@ else
                 <button class="btn btn--sm btn--ghost" @onclick="() => offering = null">Close</button>
             </div>
             <div class="small muted">
-                Over @who.OvernessDisplay · @Money.Format(TalentMarket.PerDateAsk(who)) a night on the open market.
+                Over @who.OvernessDisplay · @Money.Format(career.PerDateAsk(who)) a night on the open market.
                 A guarantee covers every appearance; book them more than @TalentMarket.DatesInAGuarantee nights a
                 year and it is the cheaper way to pay them — and the rate is fixed for the term, however hot they get.
             </div>
@@ -81,7 +89,7 @@ else
                 {
                     var years = y;
                     <button class="chip @(offerYears == years ? "is-active" : "")" @onclick="() => SetYears(who, years)">
-                        @years yr — @Money.Format(TalentMarket.GuaranteeAsk(who, years))
+                        @years yr — @Money.Format(career.GuaranteeAsk(who, years))
                     </button>
                 }
             </div>
@@ -95,11 +103,22 @@ else
             </div>
             <div class="small muted mt">
                 Asking @Money.Format(ask) a year for @offerYears year@(offerYears == 1 ? "" : "s").
-                Nobody signs for less — and without a rival bidding, nobody holds out for more.
+                @if (holder is not null)
+                {
+                    <text>Signed to @holder.Name until @holder.ContractOf(who)!.End!.Value.ToString("d MMM yyyy") — an offer now is lodged, and they choose between it and @(holder.Name)'s when that deal ends.</text>
+                }
+                else if (competing is not null)
+                {
+                    <strong class="grade--poor">@(career.Rival(competing.Bidder)?.Name) has offered @Money.Format(competing.Annual) a year. Match it or lose them when the deal ends.</strong>
+                }
+                else
+                {
+                    <text>Nobody signs for less — and with no rival bidding, nobody holds out for more.</text>
+                }
             </div>
             @if (refusal is not null)
             {
-                <div class="notice notice--error mt">@refusal</div>
+                <div class="notice @(lodged ? "notice--advice" : "notice--error") mt">@refusal</div>
             }
         </div>
     }
@@ -140,7 +159,7 @@ else
                         <div class="editor-row__sub">
                             @if (c.IsGuaranteed)
                             {
-                                var now = TalentMarket.WorthToday(w, c);
+                                var now = TalentMarket.WorthToday(w, c, career.WageFactor);
                                 <text>@Money.Format(c.AnnualGuarantee) a year · until @c.End!.Value.ToString("d MMM yyyy")</text>
                                 @if (c.DaysTolled > 0) { <text> · extended @c.DaysTolled days for injury</text> }
                                 <br />
@@ -151,7 +170,7 @@ else
                             }
                             else
                             {
-                                <text>Regular · @Money.Format(TalentMarket.PerDateAsk(w)) a night when booked</text>
+                                <text>Regular · @Money.Format(career.PerDateAsk(w)) a night when booked</text>
                             }
                         </div>
                     </div>
@@ -176,7 +195,8 @@ else
         {
             var free = career.Roster
                 .Where(w => career.ContractOf(w) is null && Matches(w))
-                .OrderByDescending(w => w.EffectiveOverness)
+                .OrderBy(w => career.Unavailable(w) is null ? 0 : 1)
+                .ThenByDescending(w => w.EffectiveOverness)
                 .ToList();
 
             @if (free.Count == 0)
@@ -194,15 +214,43 @@ else
                             <Trend Momentum="w.Momentum" ShowLabel="false" />
                         </div>
                         <div class="editor-row__sub">
-                            @Money.Format(TalentMarket.PerDateAsk(w)) a night
-                            @if (signing)
+                            @if (career.SignedTo(w) is { } holderOf)
                             {
-                                <text> · @Money.Format(TalentMarket.GuaranteeAsk(w, 3)) a year on three</text>
+                                var theirs = holderOf.ContractOf(w)!;
+                                <span class="badge badge--sm badge--muted">@holderOf.Name</span>
+                                <text> until @theirs.End!.Value.ToString("d MMM yyyy")</text>
+                                @if (career.PlayerBid(w) is { } mine)
+                                {
+                                    <text> · your offer of @Money.Format(mine.Annual) is lodged</text>
+                                }
+                            }
+                            else if (career.NonCompeteOf(w) is { } nc)
+                            {
+                                <span class="badge badge--sm badge--muted">non-compete</span>
+                                <text> until @nc.Until.ToString("d MMM")</text>
+                            }
+                            else
+                            {
+                                @Money.Format(career.PerDateAsk(w)) <text> a night</text>
+                                @if (signing)
+                                {
+                                    <text> · @Money.Format(career.GuaranteeAsk(w, 3)) a year on three</text>
+                                }
                             }
                         </div>
                     </div>
                     <div class="editor-row__tools">
-                        @if (signing)
+                        @if (career.NonCompeteOf(w) is not null)
+                        {
+                        }
+                        else if (career.SignedTo(w) is { } h)
+                        {
+                            @if (signing && (h.ContractOf(w)!.DaysLeft(career.CurrentDate) ?? int.MaxValue) <= TalentMarket.ExpiryWarningDays)
+                            {
+                                <button class="btn btn--sm btn--primary" @onclick="() => Offer(w)">Make an offer</button>
+                            }
+                        }
+                        else if (signing)
                         {
                             <button class="btn btn--sm btn--primary" @onclick="() => Offer(w)">Make an offer</button>
                         }
@@ -244,6 +292,7 @@ else
     private int offerYears = 3;
     private decimal offerAnnual;
     private string? refusal;
+    private bool lodged;
 
     private bool Matches(Wrestler w) =>
         string.IsNullOrWhiteSpace(query)
@@ -260,14 +309,18 @@ else
     private void SetYears(Wrestler w, int years)
     {
         offerYears = years;
-        offerAnnual = TalentMarket.GuaranteeAsk(w, years);
+        var career = State.Career!;
+        offerAnnual = Math.Max(career.GuaranteeAsk(w, years), career.BestRivalBid(w)?.Annual ?? 0m);
         refusal = null;
+        lodged = false;
     }
 
     private async Task Sign(Wrestler w)
     {
-        refusal = await State.SignAsync(w, offerAnnual, offerYears);
-        if (refusal is null) offering = null;
+        var (accepted, pending, note) = await State.SignAsync(w, offerAnnual, offerYears);
+        refusal = note;
+        lodged = pending;
+        if (accepted && !pending) offering = null;
     }
 
     private async Task Release(Wrestler w)

@@ -206,9 +206,16 @@ ticket.**
   fixed for the term, injuries extending it. A career opens with a roster sized and budgeted for
   its tier; the rest of the world is the market. The Contracts screen shows what each deal costs
   against what the wrestler would ask today.
+- **Rivals.** You are not alone: a global major, a national challenger and two indies run on
+  the same clock, sign from the same ninety wrestlers, sell their houses through the same box
+  office and can go broke. Their signed wrestlers cannot work for you; a rival may bid for your
+  star in the last sixty days of a deal, and you match it or lose them; you can bid for theirs.
+  Every price and every audience follows how many promotions are competing — a rival closing
+  makes wages cheaper and crowds smaller for everybody. The Rivals screen has the standings and
+  the industry's news.
 
 The figures come from docs/wrestling-reference/09 and 29; how they were calibrated, and what
-is not built yet (negotiation, rival promotions, going broke), is in
+is not built yet (head-to-head nights, acquisitions, going broke), is in
 [docs/business-design-record.md](docs/business-design-record.md).
 
 ### Time

@@ -13,10 +13,13 @@ namespace WrestlingSim.Models.World
     /// see docs/wrestling-reference/17-heat-and-getting-over.md.
     /// </summary>
     /// <summary>Whether an offer was taken, and why not.</summary>
-    public sealed record SigningResult(bool Accepted, string? Reason, Contract? Contract)
+    public sealed record SigningResult(bool Accepted, string? Reason, Contract? Contract, bool Pending = false)
     {
         public static SigningResult Signed(Contract c) => new(true, null, c);
         public static SigningResult Refused(string why) => new(false, why, null);
+
+        /// <summary>An offer to somebody still under contract elsewhere, decided when that deal ends.</summary>
+        public static SigningResult Lodged(string note) => new(true, note, null, Pending: true);
     }
 
     public class Career
@@ -72,19 +75,124 @@ namespace WrestlingSim.Models.World
             Contracts.Where(c => c.DaysLeft(CurrentDate) is { } left && left <= days)
                      .OrderBy(c => c.End);
 
+        // ── The world ────────────────────────────────────────────────────────
+
+        /// <summary>The player, as a bidder.</summary>
+        public const string PlayerId = "you";
+
+        /// <summary>The other promotions in the world. See <see cref="World"/>.</summary>
+        public List<RivalPromotion> Rivals { get; set; } = new();
+
+        /// <summary>Released wrestlers who cannot work anywhere yet (doc 13 §3.2).</summary>
+        public List<NonCompete> NonCompetes { get; set; } = new();
+
+        /// <summary>Open offers for wrestlers whose deals are running out.</summary>
+        public List<Bid> Bids { get; set; } = new();
+
+        /// <summary>The industry's news, newest last. Capped.</summary>
+        public List<NewsItem> News { get; set; } = new();
+
+        /// <summary>What competition is doing to every price. 1.0 with two credible employers.</summary>
+        public double WageFactor => Engine.World.WageFactor(this);
+
+        /// <summary>What competition is doing to every audience. 1.0 with two credible employers.</summary>
+        public double Interest => Engine.World.Interest(this);
+
+        public decimal PerDateAsk(Wrestler w) => TalentMarket.PerDateAsk(w, WageFactor);
+        public decimal GuaranteeAsk(Wrestler w, int years) => TalentMarket.GuaranteeAsk(w, years, WageFactor);
+
+        /// <summary>What booking them tonight costs the player: nothing on a guarantee, their price otherwise.</summary>
+        public decimal AppearanceFee(Wrestler w) => IsGuaranteed(w) ? 0m : PerDateAsk(w);
+
+        public RivalPromotion? Rival(string id) => Rivals.FirstOrDefault(r => r.Id == id);
+
+        /// <summary>The rival holding them on an exclusive deal, if any. A regular is nobody's exclusive.</summary>
+        public RivalPromotion? SignedTo(Wrestler w) =>
+            Rivals.FirstOrDefault(r => r.IsActive && r.ContractOf(w)?.IsGuaranteed == true);
+
+        public NonCompete? NonCompeteOf(Wrestler w) =>
+            NonCompetes.FirstOrDefault(n => n.WrestlerId == w.Id && n.Until > CurrentDate);
+
+        /// <summary>Why the player cannot book them, or null if they can.</summary>
+        public string? Unavailable(Wrestler w) =>
+            SignedTo(w) is { } r ? $"signed to {r.Name}"
+            : NonCompeteOf(w) is { } n ? $"under a non-compete until {n.Until:d MMM}"
+            : null;
+
+        /// <summary>Everybody on a card the player cannot put in the ring, and why.</summary>
+        public IReadOnlyList<(Wrestler Wrestler, string Why)> UnavailableOnCard(ScheduledShow show) =>
+            show.Card.SelectMany(i => i.Wrestlers).Distinct()
+                .Select(w => (w, Unavailable(w)))
+                .Where(x => x.Item2 is not null)
+                .Select(x => (x.w, x.Item2!))
+                .ToList();
+
+        public Bid? BestRivalBid(Wrestler w) =>
+            Bids.Where(b => b.WrestlerId == w.Id && b.Bidder != PlayerId).MaxBy(b => b.Annual);
+
+        public Bid? PlayerBid(Wrestler w) =>
+            Bids.FirstOrDefault(b => b.WrestlerId == w.Id && b.Bidder == PlayerId);
+
+        public void AddNews(string text, bool aboutYou = false)
+        {
+            News.Add(new NewsItem { Date = CurrentDate, Text = text, AboutYou = aboutYou });
+            if (News.Count > 80) News.RemoveAt(0);
+        }
+
+        /// <summary>Vacates anything they hold, because they are leaving.</summary>
+        public void VacateTitles(Wrestler w, string reason)
+        {
+            foreach (var title in Titles.HeldBy(w))
+                if (title.CurrentReign is { } reign)
+                {
+                    reign.Lost    = CurrentDate;
+                    reign.Vacated = true;
+                    reign.LostAt  = reason;
+                }
+        }
+
         /// <summary>
-        /// Signs a wrestler to a guarantee, or re-signs one whose deal is running out. Refuses
-        /// below their asking price — doc 10 §6.2: a wrestler with no competing offer has no
-        /// leverage to *raise* the price, but nobody signs for less than they are worth.
+        /// Signs a wrestler to a guarantee, re-signs one whose deal is running out, or — for a
+        /// rival's wrestler in the last sixty days of their deal — lodges an offer that they
+        /// decide on when it ends.
+        ///
+        /// Doc 10 §6.2: a competing offer is the only real leverage a wrestler has. Re-signing
+        /// somebody a rival has bid for means matching the bid.
         /// </summary>
         public SigningResult Sign(Wrestler w, decimal annual, int years)
         {
             if (!CanSign) return SigningResult.Refused("Only a promotion with television signs anybody. Below it, everybody works by the night.");
+            if (NonCompeteOf(w) is { } nc) return SigningResult.Refused($"{w.RingName} is under a non-compete until {nc.Until:d MMM yyyy}.");
+
             years = Math.Clamp(years, TalentMarket.MinTermYears, TalentMarket.MaxTermYears);
-            var ask = TalentMarket.GuaranteeAsk(w, years);
-            if (annual < ask) return SigningResult.Refused($"{w.RingName} wants ${ask:N0} a year for {years} year{(years == 1 ? "" : "s")}.");
+            var ask = GuaranteeAsk(w, years);
+            var plural = years == 1 ? "" : "s";
+
+            if (SignedTo(w) is { } holder)
+            {
+                var theirs = holder.ContractOf(w)!;
+                int left = theirs.DaysLeft(CurrentDate) ?? int.MaxValue;
+                if (left > TalentMarket.ExpiryWarningDays)
+                    return SigningResult.Refused($"{w.RingName} is signed to {holder.Name} until {theirs.End:d MMM yyyy}. Offers open {TalentMarket.ExpiryWarningDays} days before it ends.");
+                if (annual < ask)
+                    return SigningResult.Refused($"{w.RingName} wants ${ask:N0} a year for {years} year{plural}.");
+
+                Bids.RemoveAll(b => b.WrestlerId == w.Id && b.Bidder == PlayerId);
+                Bids.Add(new Bid { WrestlerId = w.Id, Bidder = PlayerId, Annual = annual, Years = years, Made = CurrentDate });
+                Log(w, $"offered ${annual:N0} a year for {years} year{plural} — decides when the {holder.Name} deal ends");
+                return SigningResult.Lodged($"Offer lodged. {w.RingName} decides when the {holder.Name} deal ends on {theirs.End:d MMM}.");
+            }
+
+            if (BestRivalBid(w) is { } rivalBid && rivalBid.Annual > ask)
+            {
+                ask = rivalBid.Annual;
+                if (annual < ask)
+                    return SigningResult.Refused($"{Rival(rivalBid.Bidder)?.Name ?? "A rival"} has offered ${ask:N0} a year. Match it or lose {w.RingName} when the deal ends.");
+            }
+            if (annual < ask) return SigningResult.Refused($"{w.RingName} wants ${ask:N0} a year for {years} year{plural}.");
 
             Contracts.RemoveAll(c => c.WrestlerId == w.Id);
+            Bids.RemoveAll(b => b.WrestlerId == w.Id);
             var contract = new Contract
             {
                 WrestlerId      = w.Id,
@@ -94,7 +202,7 @@ namespace WrestlingSim.Models.World
                 End             = CurrentDate.AddYears(years)
             };
             Contracts.Add(contract);
-            Log(w, $"signed for {years} year{(years == 1 ? "" : "s")} at ${annual:N0} a year");
+            Log(w, $"signed for {years} year{plural} at ${annual:N0} a year");
             return SigningResult.Signed(contract);
         }
 
@@ -106,9 +214,9 @@ namespace WrestlingSim.Models.World
         }
 
         /// <summary>
-        /// Lets a wrestler go. A guaranteed deal pays out ninety days (doc 13 §3.2); a regular
-        /// simply stops being booked, which is how a release happens at the bottom of the
-        /// business (doc 13 §4). Returns what it cost.
+        /// Lets a wrestler go. A guaranteed deal pays out ninety days and starts a ninety-day
+        /// non-compete (doc 13 §3.2); a regular simply stops being booked, which is how a release
+        /// happens at the bottom of the business (doc 13 §4). Returns what it cost.
         /// </summary>
         public decimal Release(Wrestler w)
         {
@@ -122,22 +230,25 @@ namespace WrestlingSim.Models.World
                 payout = Math.Round(contract.DailyCost * days);
                 Books.Cash -= payout;
                 Books.Payroll += payout;
+                NonCompetes.Add(new NonCompete { WrestlerId = w.Id, Until = CurrentDate.AddDays(TalentMarket.ReleasePayoutDays), From = PlayerId });
+                AddNews($"{Promotion.Name} released {w.RingName}.", aboutYou: true);
             }
 
             Contracts.Remove(contract);
+            Bids.RemoveAll(b => b.WrestlerId == w.Id);
             Log(w, payout > 0 ? $"released, paid out ${payout:N0}" : "no longer a regular");
             return payout;
         }
 
-        private void Log(Wrestler w, string what)
+        internal void Log(Wrestler w, string what)
         {
             ContractLog.Add(new ContractEvent { Date = CurrentDate, WrestlerId = w.Id, What = what });
             if (ContractLog.Count > 40) ContractLog.RemoveAt(0);
         }
 
         /// <summary>
-        /// The day's contract business: guarantees paid, the injured tolled, the expired gone to
-        /// the market.
+        /// The day's contract business: guarantees paid, the injured tolled, the expired gone —
+        /// to the best rival bid if there is one, to the market if not.
         /// </summary>
         private void SettleContracts()
         {
@@ -157,11 +268,27 @@ namespace WrestlingSim.Models.World
                     continue;
                 }
 
-                if (CurrentDate >= contract.End)
+                if (CurrentDate < contract.End) continue;
+
+                Contracts.Remove(contract);
+                if (w is null) continue;
+
+                if (BestRivalBid(w) is { } bid && Rival(bid.Bidder) is { IsActive: true } rival)
                 {
-                    Contracts.Remove(contract);
-                    if (w is not null) Log(w, "contract ran out — on the open market");
+                    rival.Contracts.Add(new Contract
+                    {
+                        WrestlerId = w.Id, Kind = ContractKind.Guaranteed, AnnualGuarantee = bid.Annual,
+                        Start = CurrentDate, End = CurrentDate.AddYears(bid.Years)
+                    });
+                    VacateTitles(w, $"Left for {rival.Name}");
+                    Log(w, $"left for {rival.Name} at ${bid.Annual:N0} a year");
+                    AddNews($"{w.RingName} has left {Promotion.Name} for {rival.Name}, signing for ${bid.Annual:N0} a year.", aboutYou: true);
                 }
+                else
+                {
+                    Log(w, "contract ran out — on the open market");
+                }
+                Bids.RemoveAll(b => b.WrestlerId == w.Id);
             }
         }
 
@@ -323,6 +450,10 @@ namespace WrestlingSim.Models.World
             ChargeOverhead(1);
             SettleContracts();
 
+            // The rest of the world runs on the same clock.
+            NonCompetes.RemoveAll(n => n.Until <= CurrentDate);
+            Engine.World.Tick(this);
+
             // The term runs out on the clock, and the network pays next term for what this
             // one drew.
             RenewIfDue();
@@ -398,9 +529,9 @@ namespace WrestlingSim.Models.World
         /// Signs the opening roster from a source — the tier's default, or later a custom
         /// database. Anybody already under contract is left alone.
         /// </summary>
-        public void OpenRoster(IOpeningRoster? source = null)
+        public void OpenRoster(IOpeningRoster? source = null, IReadOnlyList<Wrestler>? pool = null)
         {
-            var opening = (source ?? new TierOpeningRoster()).Open(Promotion, Roster, CurrentDate);
+            var opening = (source ?? new TierOpeningRoster()).Open(Promotion, pool ?? Roster, CurrentDate);
             foreach (var c in opening)
                 if (Contracts.All(x => x.WrestlerId != c.WrestlerId)) Contracts.Add(c);
         }
@@ -433,7 +564,7 @@ namespace WrestlingSim.Models.World
         /// anybody who gets hurt on it.
         /// </summary>
         public ShowFinances Projection(ScheduledShow show) =>
-            BoxOffice.Night(show, Promotion, Books.Reputation, FeudBook, Television, IsGuaranteed);
+            BoxOffice.Night(show, Promotion, Books.Reputation, FeudBook, Television, AppearanceFee, Interest);
 
         /// <summary>
         /// Runs a booked show: sells the house, runs the card and the road, banks the takings
@@ -448,6 +579,9 @@ namespace WrestlingSim.Models.World
         public ShowResult? RunShow(ScheduledShow show)
         {
             if (show.HasRun || !show.IsRunnable) return null;
+
+            // Nobody another promotion holds, or who is sitting out a non-compete, works tonight.
+            if (UnavailableOnCard(show).Count > 0) return null;
 
             // Sold on the card as advertised, before anyone has wrestled.
             var house = Projection(show);
@@ -485,7 +619,7 @@ namespace WrestlingSim.Models.World
             // fixed when the house was sold.
             var finances = house;
             if (road is { Workers.Count: > 0 } && house.Road is { } projected)
-                finances.Road = BoxOffice.Worked(projected, road, IsGuaranteed);
+                finances.Road = BoxOffice.Worked(projected, road, AppearanceFee);
 
             if (finances.HadCard)
                 Books.Reputation = BoxOffice.ReputationAfter(

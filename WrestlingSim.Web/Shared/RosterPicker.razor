@@ -152,13 +152,17 @@
                                exhibition has no books to charge it to. *@
                             @if (State.Career is { } c)
                             {
-                                @if (c.IsGuaranteed(w))
+                                @if (c.Unavailable(w) is { } why)
+                                {
+                                    <span class="badge badge--sm badge--heel">@why</span>
+                                }
+                                else if (c.IsGuaranteed(w))
                                 {
                                     <span class="badge badge--sm badge--muted">signed</span>
                                 }
                                 else
                                 {
-                                    <span class="badge badge--sm badge--cost">@Money.Format(TalentMarket.PerDateAsk(w))</span>
+                                    <span class="badge badge--sm badge--cost">@Money.Format(c.PerDateAsk(w))</span>
                                 }
                             }
                         </span>

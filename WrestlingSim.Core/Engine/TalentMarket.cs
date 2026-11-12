@@ -17,10 +17,10 @@ namespace WrestlingSim.Engine
         /// 85, $30k at 95. Exponential because pay in wrestling is — doc 11 §2.5, the great
         /// majority earn under $25k a year and the top of the card earns millions.
         /// </summary>
-        public static decimal PerDateAsk(Wrestler w)
+        public static decimal PerDateAsk(Wrestler w, double wage = 1.0)
         {
             double o = Math.Clamp(w.EffectiveOverness, 0, 100);
-            double ask = 100.0 * Math.Exp(Steepness * (o - 25));
+            double ask = 100.0 * Math.Exp(Steepness * (o - 25)) * wage;
             return Math.Max(Floor, Math.Round((decimal)ask / 10m) * 10m);
         }
 
@@ -52,8 +52,8 @@ namespace WrestlingSim.Engine
         public const int MaxTermYears = 5;
 
         /// <summary>The annual guarantee they will sign for, for a term of this many years.</summary>
-        public static decimal GuaranteeAsk(Wrestler w, int years) =>
-            Math.Round(PerDateAsk(w) * DatesInAGuarantee * TermFactor(years) / 1_000m) * 1_000m;
+        public static decimal GuaranteeAsk(Wrestler w, int years, double wage = 1.0) =>
+            Math.Round(PerDateAsk(w, wage) * DatesInAGuarantee * TermFactor(years) / 1_000m) * 1_000m;
 
         /// <summary>
         /// What this deal would cost if it were signed today, on the same term. Above the
@@ -61,8 +61,8 @@ namespace WrestlingSim.Engine
         /// below, the promotion is paying for a name that has cooled. Same term on both sides,
         /// or the term discount reads as a change in the wrestler.
         /// </summary>
-        public static decimal WorthToday(Wrestler w, Models.World.Contract c) =>
-            GuaranteeAsk(w, Math.Max(MinTermYears, c.TermYears));
+        public static decimal WorthToday(Wrestler w, Models.World.Contract c, double wage = 1.0) =>
+            GuaranteeAsk(w, Math.Max(MinTermYears, c.TermYears), wage);
 
         /// <summary>
         /// Doc 13 §3.2: a released wrestler is paid through a 90-day non-compete. Releasing

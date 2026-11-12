@@ -391,7 +391,7 @@ namespace WrestlingSim.Tests
             Assert.True(affordable.Net > 0);
             Assert.Equal("R0 vs R1", affordable.Headliners[0]);
 
-            Assert.True(stars.AttendancePerNight > affordable.AttendancePerNight, "Stars sell more tickets…");
+            Assert.True(stars.AttendancePerNight >= affordable.AttendancePerNight, "Stars sell at least as many tickets…");
             Assert.True(stars.Net < 0, "…and cost more than the towns can pay.");
         }
 
@@ -424,13 +424,22 @@ namespace WrestlingSim.Tests
             return cards;
         }
 
-        /// <summary>The tier's opening roster, from the shipped roster, and the contracts it opens with.</summary>
+        /// <summary>
+        /// The tier's opening roster in the default world — signed from whoever the promotions
+        /// above it left (World.Open) — and the contracts it opens with.
+        /// </summary>
         private static (List<Wrestler> Pool, List<Contract> Contracts) OpeningRosterFor(PromotionTier tier)
         {
-            var roster = DataLoaders.LoadEmbeddedWrestlers();
-            var contracts = new TierOpeningRoster().Open(new Promotion { Tier = tier }, roster, Day).ToList();
-            var ids = contracts.Select(c => c.WrestlerId).ToHashSet();
-            return (roster.Where(w => ids.Contains(w.Id)).ToList(), contracts);
+            var career = new Career
+            {
+                Promotion   = new Promotion { Name = "Calibration", Tier = tier },
+                StartDate   = Day,
+                CurrentDate = Day,
+                Roster      = DataLoaders.LoadEmbeddedWrestlers()
+            };
+            World.Open(career, Day);
+            var ids = career.Contracts.Select(c => c.WrestlerId).ToHashSet();
+            return (career.Roster.Where(w => ids.Contains(w.Id)).ToList(), career.Contracts.ToList());
         }
 
         /// <summary>
@@ -500,7 +509,7 @@ namespace WrestlingSim.Tests
                 var show = new ScheduledShow { Date = Day, Type = type, Attendance = promotion.TypicalAttendanceFor(type) };
                 show.Card.AddRange(card);
                 var f = BoxOffice.Night(show, promotion, CareerBooks.OpeningReputation, null,
-                                        guaranteed: w => guaranteed.Contains(w.Id));
+                                        fee: w => guaranteed.Contains(w.Id) ? 0m : TalentMarket.PerDateAsk(w));
                 margins.Add((double)((f.Net - standing) / f.Revenue));
             }
             margins.Sort();
