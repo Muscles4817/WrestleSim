@@ -108,31 +108,33 @@ namespace WrestlingSim.Persistence
             }).ToList(),
 
             Brands = ToDto(career.Brands),
-            Television = career.Television is { } tv ? new TvDealDto
+            Television = career.Television is { } tv ? ToDto(tv) : null,
+            Contracts = career.Contracts.Select(ToDto).ToList(),
+            Rivals = career.Rivals.Select(r => new RivalDto
             {
-                FeePerEpisode = tv.FeePerEpisode,
-                Start         = Iso(tv.Start),
-                End           = Iso(tv.End),
-                Episodes      = tv.Episodes.Select(e => new EpisodeDto { Date = Iso(e.Date), Viewers = e.Viewers }).ToList(),
-                History       = tv.History.Select(t => new TvTermDto
+                Id          = r.Id,
+                Name        = r.Name,
+                Tier        = r.Promotion.Tier,
+                Motive      = r.Motive,
+                Cash        = r.Books.Cash,
+                OpeningCash = r.Books.OpeningCash,
+                Reputation  = Math.Round(r.Books.Reputation, 4),
+                Television  = r.Television is { } rtv ? ToDto(rtv) : null,
+                Contracts   = r.Contracts.Select(ToDto).ToList(),
+                NextShow    = Iso(r.NextShow),
+                Folded      = r.Folded is { } f ? Iso(f) : null,
+                Nights      = r.Nights.Select(n => new RivalNightDto
                 {
-                    Start          = Iso(t.Start),
-                    End            = Iso(t.End),
-                    FeePerEpisode  = t.FeePerEpisode,
-                    Episodes       = t.Episodes,
-                    AverageViewers = t.AverageViewers,
-                    RenewedAt      = Math.Round(t.RenewedAt, 4)
+                    Date = Iso(n.Date), Type = n.Type, Rating = n.Rating, Attendance = n.Attendance,
+                    Capacity = n.Capacity, Viewers = n.Viewers, Net = n.Net, Headline = n.Headline
                 }).ToList()
-            } : null,
-            Contracts = career.Contracts.Select(c => new ContractDto
-            {
-                WrestlerId      = c.WrestlerId,
-                Kind            = c.Kind,
-                AnnualGuarantee = c.AnnualGuarantee,
-                Start           = Iso(c.Start),
-                End             = c.End is { } end ? Iso(end) : null,
-                DaysTolled      = c.DaysTolled
             }).ToList(),
+            NonCompetes = career.NonCompetes.Select(n => new NonCompeteDto { WrestlerId = n.WrestlerId, Until = Iso(n.Until), From = n.From }).ToList(),
+            Bids = career.Bids.Select(b => new BidDto
+            {
+                WrestlerId = b.WrestlerId, Bidder = b.Bidder, Annual = b.Annual, Years = b.Years, Made = Iso(b.Made)
+            }).ToList(),
+            News = career.News.Select(n => new NewsDto { Date = Iso(n.Date), Text = n.Text, AboutYou = n.AboutYou }).ToList(),
             ContractLog = career.ContractLog.Select(e => new ContractEventDto
             {
                 Date = Iso(e.Date), WrestlerId = e.WrestlerId, What = e.What
@@ -562,22 +564,7 @@ namespace WrestlingSim.Persistence
                 career.OpenBooks(career.CurrentDate);
 
             if (dto.Television is { } tv)
-                career.Television = new TvDeal
-                {
-                    FeePerEpisode = tv.FeePerEpisode,
-                    Start         = ParseDate(tv.Start),
-                    End           = ParseDate(tv.End),
-                    Episodes      = tv.Episodes.Select(e => new EpisodeRating { Date = ParseDate(e.Date), Viewers = e.Viewers }).ToList(),
-                    History       = tv.History.Select(t => new TvTerm
-                    {
-                        Start          = ParseDate(t.Start),
-                        End            = ParseDate(t.End),
-                        FeePerEpisode  = t.FeePerEpisode,
-                        Episodes       = t.Episodes,
-                        AverageViewers = t.AverageViewers,
-                        RenewedAt      = t.RenewedAt
-                    }).ToList()
-                };
+                career.Television = FromDto(tv);
             else if (career.Promotion.HasTelevision)
                 // A televised promotion saved before deals had terms. Its term starts today:
                 // backdating it would renew on episodes nobody counted.
@@ -587,21 +574,52 @@ namespace WrestlingSim.Persistence
             if (dto.Contracts is { } contracts)
             {
                 foreach (var c in contracts.Where(c => byId.ContainsKey(c.WrestlerId)))
-                    career.Contracts.Add(new Contract
-                    {
-                        WrestlerId      = byId[c.WrestlerId].Id,
-                        Kind            = c.Kind,
-                        AnnualGuarantee = c.AnnualGuarantee,
-                        Start           = ParseDate(c.Start),
-                        End             = string.IsNullOrEmpty(c.End) ? null : ParseDate(c.End),
-                        DaysTolled      = c.DaysTolled
-                    });
+                    career.Contracts.Add(FromDto(c, byId[c.WrestlerId].Id));
                 career.ContractLog.AddRange(dto.ContractLog
                     .Where(e => byId.ContainsKey(e.WrestlerId))
                     .Select(e => new ContractEvent { Date = ParseDate(e.Date), WrestlerId = byId[e.WrestlerId].Id, What = e.What }));
             }
+            // A save from before contracts has none; World.Open below signs the player's opening
+            // roster along with everybody else's, biggest promotion first.
+
+            // The world. A save from before rivals gets the default ecosystem on load: the
+            // player keeps who they had, and the rivals sign from everybody else.
+            if (dto.Rivals is { } rivals)
+            {
+                foreach (var r in rivals)
+                    career.Rivals.Add(new RivalPromotion
+                    {
+                        Id        = r.Id,
+                        Promotion = new Promotion { Name = r.Name, Tier = r.Tier },
+                        Motive    = r.Motive,
+                        Books     = new CareerBooks { Cash = r.Cash, OpeningCash = r.OpeningCash, Reputation = r.Reputation },
+                        Television = r.Television is { } rtv ? FromDto(rtv) : null,
+                        Contracts = r.Contracts.Where(c => byId.ContainsKey(c.WrestlerId))
+                                               .Select(c => FromDto(c, byId[c.WrestlerId].Id)).ToList(),
+                        NextShow  = ParseDate(r.NextShow),
+                        Folded    = string.IsNullOrEmpty(r.Folded) ? null : ParseDate(r.Folded),
+                        Nights    = r.Nights.Select(n => new RivalNight
+                        {
+                            Date = ParseDate(n.Date), Type = n.Type, Rating = n.Rating, Attendance = n.Attendance,
+                            Capacity = n.Capacity, Viewers = n.Viewers, Net = n.Net, Headline = n.Headline
+                        }).ToList()
+                    });
+                career.NonCompetes.AddRange(dto.NonCompetes.Where(n => byId.ContainsKey(n.WrestlerId))
+                    .Select(n => new NonCompete { WrestlerId = byId[n.WrestlerId].Id, Until = ParseDate(n.Until), From = n.From }));
+                career.Bids.AddRange(dto.Bids.Where(b => byId.ContainsKey(b.WrestlerId))
+                    .Select(b => new Bid { WrestlerId = byId[b.WrestlerId].Id, Bidder = b.Bidder, Annual = b.Annual, Years = b.Years, Made = ParseDate(b.Made) }));
+                career.News.AddRange(dto.News.Select(n => new NewsItem { Date = ParseDate(n.Date), Text = n.Text, AboutYou = n.AboutYou }));
+
+                // A save with a world but no contracts: sign the player from whoever the rivals
+                // do not hold.
+                if (dto.Contracts is null)
+                {
+                    var held = career.Rivals.SelectMany(r => r.Contracts).Where(c => c.IsGuaranteed).Select(c => c.WrestlerId).ToHashSet();
+                    career.OpenRoster(pool: career.Roster.Where(w => !held.Contains(w.Id)).ToList());
+                }
+            }
             else
-                career.OpenRoster();
+                Engine.World.Open(career, career.CurrentDate);
 
             career.ShowDefinitions.AddRange(dto.ShowDefinitions.Select(d => new ShowDefinition
             {
@@ -1254,6 +1272,60 @@ namespace WrestlingSim.Persistence
                 Notes           = new List<string>(i.Notes)
             }).ToList(),
             Finances = dto.Finances is { } f ? FromDto(f) : null
+        };
+
+        private static TvDealDto ToDto(TvDeal tv) => new()
+        {
+            FeePerEpisode = tv.FeePerEpisode,
+            Start         = Iso(tv.Start),
+            End           = Iso(tv.End),
+            Episodes      = tv.Episodes.Select(e => new EpisodeDto { Date = Iso(e.Date), Viewers = e.Viewers }).ToList(),
+            History       = tv.History.Select(t => new TvTermDto
+            {
+                Start          = Iso(t.Start),
+                End            = Iso(t.End),
+                FeePerEpisode  = t.FeePerEpisode,
+                Episodes       = t.Episodes,
+                AverageViewers = t.AverageViewers,
+                RenewedAt      = Math.Round(t.RenewedAt, 4)
+            }).ToList()
+        };
+
+        private static TvDeal FromDto(TvDealDto tv) => new()
+        {
+            FeePerEpisode = tv.FeePerEpisode,
+            Start         = ParseDate(tv.Start),
+            End           = ParseDate(tv.End),
+            Episodes      = tv.Episodes.Select(e => new EpisodeRating { Date = ParseDate(e.Date), Viewers = e.Viewers }).ToList(),
+            History       = tv.History.Select(t => new TvTerm
+            {
+                Start          = ParseDate(t.Start),
+                End            = ParseDate(t.End),
+                FeePerEpisode  = t.FeePerEpisode,
+                Episodes       = t.Episodes,
+                AverageViewers = t.AverageViewers,
+                RenewedAt      = t.RenewedAt
+            }).ToList()
+        };
+
+        private static ContractDto ToDto(Contract c) => new()
+        {
+            WrestlerId      = c.WrestlerId,
+            Kind            = c.Kind,
+            AnnualGuarantee = c.AnnualGuarantee,
+            Start           = Iso(c.Start),
+            End             = c.End is { } end ? Iso(end) : null,
+            DaysTolled      = c.DaysTolled
+        };
+
+        private static Contract FromDto(ContractDto c, string wrestlerId) => new()
+        {
+            WrestlerId      = wrestlerId,
+            Kind            = c.Kind,
+            AnnualGuarantee = c.AnnualGuarantee,
+            Start           = ParseDate(c.Start),
+            End             = string.IsNullOrEmpty(c.End) ? null : ParseDate(c.End),
+            DaysTolled      = c.DaysTolled
         };
 
         // ── Dates ────────────────────────────────────────────────────────────

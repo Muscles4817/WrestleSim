@@ -92,6 +92,66 @@ namespace WrestlingSim.Persistence
         public List<ContractDto>? Contracts { get; set; }
 
         public List<ContractEventDto> ContractLog { get; set; } = new();
+
+        /// <summary>
+        /// The other promotions. Null in every save written before rivals existed: such a career
+        /// gets the default ecosystem on load, signing from whoever the player does not hold.
+        /// </summary>
+        public List<RivalDto>? Rivals { get; set; }
+        public List<NonCompeteDto> NonCompetes { get; set; } = new();
+        public List<BidDto> Bids { get; set; } = new();
+        public List<NewsDto> News { get; set; } = new();
+    }
+
+    public class RivalDto
+    {
+        public string Id { get; set; } = "";
+        public string Name { get; set; } = "";
+        public PromotionTier Tier { get; set; }
+        public Models.World.FounderMotive Motive { get; set; }
+        public decimal Cash { get; set; }
+        public decimal OpeningCash { get; set; }
+        public double Reputation { get; set; }
+        public TvDealDto? Television { get; set; }
+        public List<ContractDto> Contracts { get; set; } = new();
+        public string NextShow { get; set; } = "";
+        public string? Folded { get; set; }
+        public List<RivalNightDto> Nights { get; set; } = new();
+    }
+
+    public class RivalNightDto
+    {
+        public string Date { get; set; } = "";
+        public ShowType Type { get; set; }
+        public double Rating { get; set; }
+        public int Attendance { get; set; }
+        public int Capacity { get; set; }
+        public int Viewers { get; set; }
+        public decimal Net { get; set; }
+        public string Headline { get; set; } = "";
+    }
+
+    public class NonCompeteDto
+    {
+        public string WrestlerId { get; set; } = "";
+        public string Until { get; set; } = "";
+        public string From { get; set; } = "";
+    }
+
+    public class BidDto
+    {
+        public string WrestlerId { get; set; } = "";
+        public string Bidder { get; set; } = "";
+        public decimal Annual { get; set; }
+        public int Years { get; set; }
+        public string Made { get; set; } = "";
+    }
+
+    public class NewsDto
+    {
+        public string Date { get; set; } = "";
+        public string Text { get; set; } = "";
+        public bool AboutYou { get; set; }
     }
 
     public class ContractDto

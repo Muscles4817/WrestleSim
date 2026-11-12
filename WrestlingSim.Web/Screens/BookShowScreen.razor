@@ -444,13 +444,17 @@ else
                         {
                             <span class="badge badge--sm @g.NaturalAlignment.Badge()">@g.NaturalAlignment.Label()</span>
                         }
-                        @if (career.IsGuaranteed(who))
+                        @if (career.Unavailable(who) is { } why)
+                        {
+                            <span class="badge badge--sm badge--heel">@why</span>
+                        }
+                        else if (career.IsGuaranteed(who))
                         {
                             <span class="badge badge--sm badge--muted">signed</span>
                         }
                         else
                         {
-                            <span class="badge badge--sm badge--cost">@Money.Format(TalentMarket.PerDateAsk(who))</span>
+                            <span class="badge badge--sm badge--cost">@Money.Format(career.PerDateAsk(who))</span>
                         }
                     </span>
                     <span class="railrow__why @BookingSuggestions.Tone(row.Band)">@row.Reason</span>
@@ -539,6 +543,20 @@ else
        ahead: the wrestler on next month's card was fit when you booked him and got hurt on
        tonight's show. That is the ordinary case, not the edge one, so the card is checked
        again on the night — and this one stops the show rather than warning about it. *@
+    @* Somebody another promotion now holds, or who is sitting out a non-compete. A card booked
+       weeks ahead can lose a name this way — the deal ran out and a rival's offer won. *@
+    @if (career.UnavailableOnCard(show) is { Count: > 0 } gone)
+    {
+        <div class="notice notice--error mt">
+            <strong>@gone.Count on this card cannot work for you.</strong>
+            @foreach (var (w, why) in gone)
+            {
+                <div>@w.RingName — @why</div>
+            }
+            Take them off the card before running it.
+        </div>
+    }
+
     @if (HurtOnCard(show) is { Count: > 0 } unfit)
     {
         <div class="notice notice--error mt">
@@ -560,7 +578,7 @@ else
 
         <div class="panel">
             <button class="btn btn--primary btn--block"
-                    disabled="@(!show.IsRunnable || HurtOnCard(show).Count > 0)"
+                    disabled="@(!show.IsRunnable || HurtOnCard(show).Count > 0 || career.UnavailableOnCard(show).Count > 0)"
                     @onclick="() => Run(show)">
                 @(show.IsLoopOnly ? "Run the towns ★" : "Run the show ★")
             </button>

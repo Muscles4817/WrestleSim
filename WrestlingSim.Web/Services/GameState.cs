@@ -16,6 +16,7 @@ public enum Screen
     Calendar,
     Roster,
     Contracts,
+    Rivals,
     Feuds,
     Titles,
     Shows,
@@ -284,9 +285,10 @@ public class GameState
 
         career.OpenBooks(startDate);
 
-        // Who the promotion opens with. The tier's default for now; a custom database is
-        // another IOpeningRoster.
-        career.OpenRoster();
+        // Who the promotion opens with, and who it is up against. Everybody signs from one
+        // shared roster, biggest promotion first — see World.Open. A custom database will be
+        // another source.
+        World.Open(career, startDate);
 
         career.ShowDefinitions.AddRange(shows ?? DefaultSlate(promotion));
         career.MaterialiseSchedule();
@@ -575,13 +577,16 @@ public class GameState
 
     // ── Contracts ────────────────────────────────────────────────────────────
 
-    /// <summary>Offers a guarantee. Returns why it was refused, or null when it was signed.</summary>
-    public async Task<string?> SignAsync(Wrestler w, decimal annual, int years)
+    /// <summary>
+    /// Offers a guarantee. Accepted and not pending: signed. Accepted and pending: lodged with a
+    /// wrestler still under contract elsewhere. The note says which, or why it was refused.
+    /// </summary>
+    public async Task<(bool Accepted, bool Pending, string? Note)> SignAsync(Wrestler w, decimal annual, int years)
     {
-        if (Career == null) return "No career open.";
+        if (Career == null) return (false, false, "No career open.");
         var result = Career.Sign(w, annual, years);
         if (result.Accepted) { await SaveAsync(); Notify(); }
-        return result.Reason;
+        return (result.Accepted, result.Pending, result.Reason);
     }
 
     /// <summary>Lets somebody go. Returns what it cost.</summary>

@@ -26,7 +26,7 @@ namespace WrestlingSim.Engine
     /// regulars, booked and paid by the night. At television tiers it is guaranteed deals with
     /// staggered terms, so the renewals arrive a few at a time rather than all in one year.
     /// </summary>
-    public sealed class TierOpeningRoster : IOpeningRoster
+    public sealed class TierOpeningRoster(double budgetMultiplier = 1.0) : IOpeningRoster
     {
         /// <summary>
         /// How many, and what for. For a television tier the budget is a year's guarantees —
@@ -39,15 +39,21 @@ namespace WrestlingSim.Engine
             PromotionTier.Local       => (12,        250m),
             PromotionTier.Independent => (16,        600m),
             PromotionTier.SuperIndie  => (22,      2_000m),
-            PromotionTier.Established => (40,  7_000_000m),
-            PromotionTier.National    => (65, 30_000_000m),
-            PromotionTier.Global      => (120, 150_000_000m),
+            // Sized for a world of ninety shared with rivals (World.Open signs the biggest
+            // first). A Global promotion takes the stars and not everybody, and the three
+            // television sizes together leave a pool nobody holds exclusively — at 45/30/20 the
+            // television promotions signed all ninety and both indies closed within months
+            // with nobody to book.
+            PromotionTier.Established => (15,  7_000_000m),
+            PromotionTier.National    => (25, 30_000_000m),
+            PromotionTier.Global      => (40, 150_000_000m),
             _                         => (16,        600m)
         };
 
         public IReadOnlyList<Contract> Open(Promotion promotion, IReadOnlyList<Wrestler> world, DateOnly on)
         {
-            var (size, budget) = For(promotion.Tier);
+            var (size, baseBudget) = For(promotion.Tier);
+            var budget = baseBudget * (decimal)budgetMultiplier;
             bool guaranteed = promotion.HasTelevision;
 
             // Best first within each division, then taken alternately, so neither division
@@ -62,6 +68,9 @@ namespace WrestlingSim.Engine
 
             var picked = new List<Contract>();
             decimal spent = 0;
+            decimal cheapest = guaranteed && world.Count > 0
+                ? world.Min(w => TalentMarket.GuaranteeAsk(w, 4))
+                : 0m;
             bool progress = true;
 
             while (picked.Count < size && progress)
@@ -89,7 +98,12 @@ namespace WrestlingSim.Engine
                             // still fills the card underneath them.
                             int slotsLeft = size - picked.Count;
                             decimal share = (budget - spent) / slotsLeft * 3m;
-                            if (spent + annual > budget || annual > share) { skipped.Add(w); continue; }
+
+                            // And never so much that the slots after it cannot be filled at the
+                            // cheapest price still on offer. Without this a small roster spent its
+                            // whole budget on its first few names.
+                            decimal floor = (slotsLeft - 1) * cheapest;
+                            if (spent + annual + floor > budget || annual > share) { skipped.Add(w); continue; }
                             spent += annual;
                             picked.Add(new Contract
                             {

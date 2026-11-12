@@ -69,11 +69,11 @@ namespace WrestlingSim.Engine
         public static double TypicalCardPullFor(PromotionTier tier) => tier switch
         {
             PromotionTier.Local       => 0.3312,
-            PromotionTier.Independent => 0.4451,
-            PromotionTier.SuperIndie  => 0.5757,
-            PromotionTier.Established => 0.6186,
-            PromotionTier.National    => 0.7237,
-            PromotionTier.Global      => 0.7562,
+            PromotionTier.Independent => 0.4165,
+            PromotionTier.SuperIndie  => 0.4508,
+            PromotionTier.Established => 0.4934,
+            PromotionTier.National    => 0.6040,
+            PromotionTier.Global      => 0.8699,
             _                         => 0.3000
         };
 
@@ -100,11 +100,11 @@ namespace WrestlingSim.Engine
         {
             //                                price merch  ops       rights/ep  prod/ep      opening    overhead/day
             PromotionTier.Local       => new(12m, 12m,     600m,         0m,        0m,         5_000m,        25m),
-            PromotionTier.Independent => new(18m, 12m,   2_000m,         0m,        0m,        25_000m,       245m),
-            PromotionTier.SuperIndie  => new(25m, 14m,   8_000m,         0m,        0m,       150_000m,     1_650m),
-            PromotionTier.Established => new(30m,  7m,  50_000m,   350_000m,  120_000m,     3_000_000m,    14_300m),
-            PromotionTier.National    => new(35m,  6m, 120_000m, 1_500_000m,  350_000m,    25_000_000m,   217_000m),
-            PromotionTier.Global      => new(40m,  5m, 200_000m, 4_000_000m,  700_000m,   250_000_000m,   485_000m),
+            PromotionTier.Independent => new(18m, 12m,   2_000m,         0m,        0m,        25_000m,       270m),
+            PromotionTier.SuperIndie  => new(25m, 14m,   8_000m,         0m,        0m,       150_000m,     1_940m),
+            PromotionTier.Established => new(30m,  7m,  50_000m,   350_000m,  120_000m,     3_000_000m,    30_800m),
+            PromotionTier.National    => new(35m,  6m, 120_000m, 1_500_000m,  350_000m,    25_000_000m,   289_200m),
+            PromotionTier.Global      => new(40m,  5m, 200_000m, 4_000_000m,  700_000m,   250_000_000m,   497_700m),
             _                         => new(18m, 12m,   2_000m,         0m,        0m,        25_000m,       230m)
         };
 
@@ -113,8 +113,8 @@ namespace WrestlingSim.Engine
         /// appearances are earned against it (doc 11 §2.1); their asking price on the night for
         /// everybody else. One price whoever is buying — <see cref="TalentMarket"/>.
         /// </summary>
-        public static decimal AppearanceFee(Wrestler w, Func<Wrestler, bool>? guaranteed = null) =>
-            guaranteed?.Invoke(w) == true ? 0m : TalentMarket.PerDateAsk(w);
+        public static decimal AppearanceFee(Wrestler w, Func<Wrestler, decimal>? fee = null) =>
+            fee?.Invoke(w) ?? TalentMarket.PerDateAsk(w);
 
         // ── 1. The draw ──────────────────────────────────────────────────────
 
@@ -247,10 +247,11 @@ namespace WrestlingSim.Engine
             0.75 + 0.5 * Math.Clamp(reputation, 0, 100) / 100.0;
 
         /// <summary>How many want to come to a building of this size for a card this strong.</summary>
-        public static int Demand(int capacity, double cardPull, double reputation, PromotionTier tier)
+        public static int Demand(int capacity, double cardPull, double reputation, PromotionTier tier,
+                                 double interest = 1.0)
         {
             if (capacity <= 0 || cardPull <= 0) return 0;
-            double ratio = TypicalFill
+            double ratio = TypicalFill * interest
                          * Math.Pow(cardPull / TypicalCardPullFor(tier), Elasticity)
                          * ReputationFactor(reputation);
             return (int)Math.Round(capacity * ratio);
@@ -321,7 +322,7 @@ namespace WrestlingSim.Engine
         /// </summary>
         public static ShowFinances Night(
             ScheduledShow show, Promotion promotion, double reputation, FeudBook? feuds,
-            TvDeal? deal = null, Func<Wrestler, bool>? guaranteed = null)
+            TvDeal? deal = null, Func<Wrestler, decimal>? fee = null, double interest = 1.0)
         {
             var e = For(promotion.Tier);
             var draws = Draw(show.Card, feuds, show.Date);
@@ -329,7 +330,7 @@ namespace WrestlingSim.Engine
             bool hasCard = draws.Count > 0;
 
             int capacity = hasCard ? show.Attendance : 0;
-            int demand = Demand(capacity, pull, reputation, promotion.Tier);
+            int demand = Demand(capacity, pull, reputation, promotion.Tier, interest);
             int attendance = Math.Min(capacity, demand);
             decimal price = PriceFor(e, show.Type);
 
@@ -349,12 +350,12 @@ namespace WrestlingSim.Engine
                 // meant a promotion running only premium events renewed at the floor every term.
                 TuneIn           = hasCard && promotion.HasTelevision
                                    && show.Type is ShowType.Television or ShowType.PremiumEvent
-                                       ? Television.TuneIn(promotion.Tier, pull, reputation)
+                                       ? Television.TuneIn(promotion.Tier, pull, reputation, interest)
                                        : 0,
-                Talent           = onCard.Sum(w => AppearanceFee(w, guaranteed)),
+                Talent           = onCard.Sum(w => AppearanceFee(w, fee)),
                 Operations       = hasCard ? OperationsFor(e, show.Type) : 0m,
                 Production       = hasCard ? ProductionFor(promotion, show.Type) : 0m,
-                Road             = Road(show, promotion, reputation, onCard, guaranteed),
+                Road             = Road(show, promotion, reputation, onCard, fee, interest),
                 ReputationBefore = reputation,
                 ReputationAfter  = reputation
             };
@@ -369,7 +370,7 @@ namespace WrestlingSim.Engine
         /// </summary>
         private static RoadTakings? Road(
             ScheduledShow show, Promotion promotion, double reputation,
-            IReadOnlyCollection<Wrestler> onCard, Func<Wrestler, bool>? guaranteed)
+            IReadOnlyCollection<Wrestler> onCard, Func<Wrestler, decimal>? fee, double interest)
         {
             if (show.Loop is not { IsBookable: true } loop) return null;
 
@@ -389,11 +390,11 @@ namespace WrestlingSim.Engine
                 .ToList();
 
             int capacity = promotion.TypicalAttendanceFor(ShowType.HouseShow);
-            int attendance = Math.Min(capacity, Demand(capacity, CardPull(poster), reputation, promotion.Tier));
+            int attendance = Math.Min(capacity, Demand(capacity, CardPull(poster), reputation, promotion.Tier, interest));
             int towns = loop.Towns;
 
             var onTelevision = onCard.ToHashSet();
-            decimal talent = cast.Sum(w => loop.NightsFor(w, onTelevision) * AppearanceFee(w, guaranteed));
+            decimal talent = cast.Sum(w => loop.NightsFor(w, onTelevision) * AppearanceFee(w, fee));
 
             return new RoadTakings
             {
@@ -412,7 +413,7 @@ namespace WrestlingSim.Engine
         /// The road as it was actually worked: the houses were sold in advance, but nobody is
         /// paid for a town they went home hurt before.
         /// </summary>
-        public static RoadTakings Worked(RoadTakings projected, LoopResult worked, Func<Wrestler, bool>? guaranteed = null) => new()
+        public static RoadTakings Worked(RoadTakings projected, LoopResult worked, Func<Wrestler, decimal>? fee = null) => new()
         {
             Towns              = projected.Towns,
             CapacityPerNight   = projected.CapacityPerNight,
@@ -420,7 +421,7 @@ namespace WrestlingSim.Engine
             Headliners         = projected.Headliners,
             Gate               = projected.Gate,
             Merchandise        = projected.Merchandise,
-            Talent             = worked.Workers.Sum(w => w.NightsWorked * AppearanceFee(w.Wrestler, guaranteed)),
+            Talent             = worked.Workers.Sum(w => w.NightsWorked * AppearanceFee(w.Wrestler, fee)),
             Operations         = projected.Operations
         };
 

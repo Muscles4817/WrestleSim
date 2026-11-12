@@ -284,10 +284,113 @@ tickets and lose money, and the test pins both halves.
 - **Loading a custom database.** The seam exists (`IOpeningRoster`, plain-data contracts); the
   loader does not.
 
+## Slice 4: competing promotions
+
+*Docs 01, 10 §2.6, 11 §7–8, 13 §3.2, 26 §3.2, 28.* Until this slice the player was alone in the
+world: nobody bid for anybody, nobody else's roster existed, and a guarantee bought nothing a
+free agent's availability did not.
+
+### The decisions the booker made
+
+| Question | Answer |
+|---|---|
+| The default world | **A fixed ecosystem**: a global major, a national challenger, a super-indie and a regional indie — fictional names, the player taking the place of the one at their tier. |
+| Who opens with whom | **Top-down by budget**: the biggest promotion signs first from the shared ninety, then the next. |
+| How rivals' shows run | **Abstractly**: no beats, but the same box office, prices and TV rules as the player's. |
+
+### What it does
+
+- **`RivalPromotion`** — a tier, a founder motive (doc 01 §7), books, a TV deal at TV tiers, a
+  roster on contracts, a show schedule on the tier's cadence, and a history of nights.
+  The four defaults: Vantage Pro Wrestling (Global, a media company's), Ironclad Wrestling
+  Federation (National, a wealthy fan's money), Rust Belt Pro (Super Indie, ideology), Harbor
+  City Wrestling (Independent, business).
+- **Motives are behaviour, not flavour** (`World.Profile`): budget, running costs, a rating
+  bias for a coherent product, the premium over asking it bids, and whether it buys stars or
+  value.
+- **The rivals' day** (`World.Tick`): running costs and guarantees paid; deals tolled, re-signed
+  or let go; TV renewed; a show on the cadence — the top of its roster paired off, sold through
+  `BoxOffice.Night`, rated from skill, overness, motive and a seeded night's variance, its viewers
+  counted for its own renewal; and once a week, talent business — budget releases when short of
+  money, bids for the player's expiring stars, signings while flush.
+- **Exclusivity.** A rival's guaranteed wrestler cannot work for the player; a card holding one
+  will not run, and says why. Regulars are nobody's exclusive.
+- **Non-competes** (doc 13 §3.2): every guaranteed release, the player's or a rival's, keeps
+  that wrestler out of the business for ninety days. A closed promotion has none to enforce.
+- **Competing offers** (doc 10 §6.2): in a deal's last sixty days a rival may bid. Re-signing
+  means matching the bid; not matching it means losing them to the bidder at expiry, with any
+  belt vacated on the way out. The player can lodge offers for a rival's wrestlers in the same
+  window, and wins them if the offer beats what the rival will pay to keep them.
+- **Competition moves wages and audiences** (doc 11 §8, doc 26 §3.2): every price and every
+  crowd and television audience is multiplied by the count of credible employers — promotions at
+  National or above still running, the player's included — against a baseline of two (WWE and
+  AEW, when every figure in this game was taken). A third bidder is +12% on wages and +8% on
+  audiences; a monopoly is the reverse. A career with no world modelled reads 1.0, not monopoly.
+- **Folding**: a rival whose cash falls below minus half its opening cash closes, its roster to
+  the market at once.
+
+### What it measured
+
+Three years of the default world, run with no player input:
+
+- **Ironclad, the wealthy fan's National promotion, folds after about 29 months** in every
+  player-tier scenario — inside doc 01 §7's "typically 18–36 months". Nothing scripts it; it is
+  the motive's spending against the tier's income (`TheWealthyFansPromotionBurnsOut_TheMajorDoesNot`).
+- **Vantage, the global major, runs at about 35%** — doc 09 §4's strong-year Tier 0 margin —
+  and roughly triples its cash.
+- **The indies survive** on the pool the television promotions leave unsigned.
+- **When Ironclad closes, wages fall to ×0.88 and audiences to ×0.92** for everybody, the
+  player included: winning the war quietly costs the winner (doc 26, sim implications).
+
+Two things this run caught before they shipped:
+
+- **The television promotions signed all ninety** at the slice 3 sizes (45/30/20 between them
+  and the player), and both indies closed within months with nobody to book. The television
+  opening rosters are now 40/25/15, which leaves a pool nobody holds exclusively.
+- **A broke rival churned names**: it released somebody on Sunday and signed them again on
+  Monday. Rivals no longer sign while their cash is under a tenth of what they opened with.
+
+### Re-calibration
+
+Opening rosters now come from the shared world, so each tier's typical card was re-measured on
+the roster that tier opens with in it, and the running costs re-solved:
+
+| Tier | Opening roster | Payroll a year | Typical card pull | Daily running cost | Median margin |
+|---|---|---|---|---|---|
+| Local | 11 regulars | — | 0.3312 | $25 | 9.3% |
+| Independent | 16 regulars | — | 0.4165 | $270 | 12.6% |
+| SuperIndie | 22 regulars | — | 0.4508 | $1,940 | 14.9% |
+| Established | 15 signed | $0.8M | 0.4934 | $30,800 | 10.0% |
+| National | 25 signed | $3.6M | 0.6040 | $289,200 | 3.0% |
+| Global | 40 signed | $56.7M | 0.8699 | $497,700 | 35.0% |
+
+*Correcting slice 3's table:* those rosters and figures were measured with the player alone in
+the world and are superseded by these.
+
+The consequence worth saying plainly: **ninety wrestlers do not go far.** A National player opens
+with the forty-first to sixty-fifth most over people on the roster, because a global major signed
+the forty above them; an Established player opens with what both left. That is the industry's
+shape — the major holds the stars — and it is also a roster problem a custom database solves by
+having more wrestlers in it.
+
+### Not built in slice 4
+
+- **Head-to-head nights.** Two televised shows on the same night do not split an audience.
+- **Rivals' storylines.** Their shows are abstract: nobody's overness, momentum or feuds move
+  from working for a rival; only being on screen is recorded.
+- **Poaching mid-contract, buyouts, and acquisitions** (doc 27's Invasion pattern).
+- **Imitation** (doc 27's TNA pattern: copy the leader, buy veterans, fail visibly).
+- **Release waves timed to events** (doc 13 §3.1) — releases are budget-driven only.
+- **Released-talent heat** on debut elsewhere (doc 13 §6.1).
+- **New promotions forming** after one folds; the world only shrinks.
+- **Era settings** — the baseline of two credible employers is the mid-2020s, not a parameter.
+- **A custom database** naming the promotions and who holds whom.
+
 ## Not built, and written down
 
 - ~~**TV renewal and viewership.**~~ Built in slice 2, above.
 - ~~**Contracts and signings.**~~ Built in slice 3, above.
+- ~~**Rival promotions.**~~ Built in slice 4, above.
 - **Consequences of going broke.** Cash goes negative and is reported. Owner funding, or an
   end, comes once the numbers have been played against.
 - **Markets (B5).** Every town on a road run is the same town; the fifth night sells what the

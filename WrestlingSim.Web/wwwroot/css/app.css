@@ -2085,3 +2085,7 @@ button.step:focus-visible { outline: none; box-shadow: var(--ring); }
   padding: 7px 0; border-top: 1px solid var(--line);
 }
 .ledger__row > :last-child { white-space: nowrap; font-weight: 700; }
+
+/* A rival that has closed: kept on the list, because a closed rival is part of the history
+   the wage and audience figures are answering to. */
+.panel.is-folded { opacity: .6; }

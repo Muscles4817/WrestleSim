@@ -78,9 +78,10 @@ So a feature is done when:
   moves it. `ATypicalMatchIsUnmoved_AndThatIsMeasuredNotAsserted` fails when the two part
   company — re-measure and update the constant, do not widen the test.
 - **`BoxOffice.TypicalCardPullFor(tier)` is measured the same way** — the median card pull of
-  random cards from each tier's opening roster — and
+  random cards from each tier's opening roster *in the default world* (`World.Open`) — and
   `ATypicalCardFillsTypically_AndThatIsMeasuredNotAsserted` pins all six. A roster change, a
-  price change (`TalentMarket`) or an opening-roster change moves them; re-measure, do not widen.
+  price change (`TalentMarket`), an opening-roster change or a change to the default rivals
+  moves them; re-measure, do not widen.
 - **Corpus tests must use `StableSeed.From(...)`, never `HashCode.Combine`,** which .NET
   randomises per process, so figures from it are one sample and not reproducible.
 - Documentation lives in `docs/tag-matches-design-record.md` (what the engine does and why)

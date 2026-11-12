@@ -64,10 +64,10 @@ namespace WrestlingSim.Engine
         public const double RenewalCeiling = 2.0;
 
         /// <summary>How many choose to watch, on the card as advertised.</summary>
-        public static int TuneIn(PromotionTier tier, double cardPull, double reputation)
+        public static int TuneIn(PromotionTier tier, double cardPull, double reputation, double interest = 1.0)
         {
             if (cardPull <= 0) return 0;
-            double viewers = BaselineViewers(tier) / TypicalRetention
+            double viewers = BaselineViewers(tier) / TypicalRetention * interest
                            * Math.Pow(cardPull / BoxOffice.TypicalCardPullFor(tier), TuneInElasticity)
                            * BoxOffice.ReputationFactor(reputation);
             return (int)Math.Round(viewers);
