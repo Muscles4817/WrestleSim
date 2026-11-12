@@ -79,6 +79,16 @@ namespace WrestlingSim.Tests
         public void NoCommentaryLine_AssumesAWrestlersGender()
         {
             var roster = DataLoaders.LoadEmbeddedWrestlers().Take(12).ToList();
+
+            // Every move name on the whole roster, longest first so "Dis-Arm-Her" is
+            // removed before anything shorter can bite a piece out of it.
+            var moveNames = DataLoaders.LoadEmbeddedWrestlers()
+                .SelectMany(w => w.Signature.Select(sig => sig.Name)
+                                  .Concat(w.Moveset.Select(m => m.Name)))
+                .Where(n => !string.IsNullOrWhiteSpace(n))
+                .Distinct()
+                .OrderByDescending(n => n.Length)
+                .ToList();
             var offenders = new HashSet<string>();
             var seen = new HashSet<BeatType>();
             int lines = 0;
@@ -106,8 +116,15 @@ namespace WrestlingSim.Tests
                         // Strip the ring names first — a surname containing "her" or "his"
                         // would otherwise false-positive for ever, and a test that cries
                         // wolf gets disabled inside a month.
+                        //
+                        // Move names go the same way and for the same reason. Once the
+                        // engine started naming finishers, Becky Lynch's Dis-Arm-Her —
+                        // a real move, and a pun that ends in "Her" — was flagged twice.
+                        // A proper noun is not the commentary assuming anybody's gender,
+                        // which is what this test is actually for.
                         string stripped = line;
                         foreach (var w in roster) stripped = stripped.Replace(w.RingName, "~");
+                        foreach (var name in moveNames) stripped = stripped.Replace(name, "~");
                         if (Gendered.IsMatch(stripped) || GenderedNoun.IsMatch(stripped))
                             offenders.Add(line);
                     }
