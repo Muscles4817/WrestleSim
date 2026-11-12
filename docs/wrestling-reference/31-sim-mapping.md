@@ -356,6 +356,10 @@ Casual / regular / hardcore / family, each with separate satisfaction, each driv
 different revenue line, each wanting incompatible things. Turns booking from optimisation
 into strategy. Probably the highest-ceiling addition in the whole reference.
 
+*Update:* the first use of segments shipped with the audience slice — a `Regular` group, and
+per-group tolerance for a stale act (`AudienceModel`), so one wrestler can be hot with casual
+fans and stale with hardcore ones. Per-segment **satisfaction** and revenue lines are still open.
+
 Still open, and **half-blocked**. The *taxonomy* exists — `FanGroup` has six members and
 `Gimmick.AppealRatings` holds a per-group appeal that the crowd model already reads, which is
 the §1 row about disposition coming from appeal rather than alignment. What is missing is

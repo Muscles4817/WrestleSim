@@ -121,12 +121,16 @@ namespace WrestlingSim.Persistence
                 Reputation  = Math.Round(r.Books.Reputation, 4),
                 Television  = r.Television is { } rtv ? ToDto(rtv) : null,
                 Contracts   = r.Contracts.Select(ToDto).ToList(),
+                Audience    = ToDto(r.Audience),
+                Feuds       = ToDto(r.Feuds),
+                Titles      = ToDto(r.Titles),
                 NextShow    = Iso(r.NextShow),
                 Folded      = r.Folded is { } f ? Iso(f) : null,
                 Nights      = r.Nights.Select(n => new RivalNightDto
                 {
                     Date = Iso(n.Date), Type = n.Type, Rating = n.Rating, Attendance = n.Attendance,
-                    Capacity = n.Capacity, Viewers = n.Viewers, Net = n.Net, Headline = n.Headline
+                    Capacity = n.Capacity, Viewers = n.Viewers, Net = n.Net, Headline = n.Headline,
+                    Card = new List<string>(n.Card), Filled = Math.Round(n.Filled, 3)
                 }).ToList()
             }).ToList(),
             NonCompetes = career.NonCompetes.Select(n => new NonCompeteDto { WrestlerId = n.WrestlerId, Until = Iso(n.Until), From = n.From }).ToList(),
@@ -135,6 +139,7 @@ namespace WrestlingSim.Persistence
                 WrestlerId = b.WrestlerId, Bidder = b.Bidder, Annual = b.Annual, Years = b.Years, Made = Iso(b.Made)
             }).ToList(),
             News = career.News.Select(n => new NewsDto { Date = Iso(n.Date), Text = n.Text, AboutYou = n.AboutYou }).ToList(),
+            Audience = ToDto(career.Audience),
             ContractLog = career.ContractLog.Select(e => new ContractEventDto
             {
                 Date = Iso(e.Date), WrestlerId = e.WrestlerId, What = e.What
@@ -166,57 +171,11 @@ namespace WrestlingSim.Persistence
                 Chemistry       = Math.Round(t.Chemistry, 4)
             }).ToList(),
 
-            Feuds = career.FeudBook.AllIncludingDormant
-                .Select(f => new FeudDto
-                {
-                    Camps              = f.Camps.Select(c => c.Select(w => w.Id).ToList()).ToList(),
-                    // Still written so a save from this build opens in one that predates
-                    // multi-party feuds. Such a build loses the third camp; it does not lose
-                    // the feud.
-                    SideA              = f.SideA.Select(w => w.Id).ToList(),
-                    SideB              = f.SideB.Select(w => w.Id).ToList(),
-                    Heat               = f.Heat,
-                    MatchCount         = f.MatchCount,
-                    RememberedMeetings = f.RememberedMeetings,
-                    LastMatchDate      = f.LastMatchDate is { } met ? Iso(met) : null,
-                    LastAdvanced       = f.LastAdvanced is { } adv ? Iso(adv) : null,
-                    DecayedTo          = f.DecayedTo is { } dec ? Iso(dec) : null,
-                    Concluded          = f.Concluded,
-                    ConcludedOn        = f.ConcludedOn is { } con ? Iso(con) : null,
-                    MatchesSinceHot    = f.MatchesSinceHot,
-                    ChaptersSettled    = f.ChaptersSettled,
-                    Distrust           = Math.Round(f.Distrust, 4),
-                    History            = new List<FeudHistoryTag>(f.History)
-                })
-                .ToList(),
+            Feuds = ToDto(career.FeudBook),
 
             Shows = career.Shows.Select(ToDto).ToList(),
 
-            Titles = career.Titles.All.Select(t => new TitleDto
-            {
-                Id          = t.Id,
-                Name        = t.Name,
-                Tier        = t.Tier,
-                Division    = t.Division,
-                Established = Iso(t.Established),
-                SideSize    = t.SideSize,
-                Standing    = Math.Round(t.Standing, 3),
-                Retired     = t.Retired,
-                RetiredOn   = t.RetiredOn is { } retired ? Iso(retired) : null,
-                Lineage = t.Lineage.Select(r => new TitleReignDto
-                {
-                    // By id, never by value — champions are live roster instances.
-                    Champions    = r.Champions.Select(c => c.Id).ToList(),
-                    ReignNumber  = r.ReignNumber,
-                    Won          = Iso(r.Won),
-                    Lost         = r.Lost is { } lost ? Iso(lost) : null,
-                    LastDefended = r.LastDefended is { } defended ? Iso(defended) : null,
-                    WonAt        = r.WonAt,
-                    LostAt       = r.LostAt,
-                    Defences     = r.Defences,
-                    Vacated      = r.Vacated
-                }).ToList()
-            }).ToList()
+            Titles = ToDto(career.Titles)
         };
 
         /// <summary>
@@ -421,7 +380,16 @@ namespace WrestlingSim.Persistence
                 StarRating      = i.StarRating,
                 Notes           = new List<string>(i.Notes)
             }).ToList(),
-            Finances = result.Finances is { } f ? ToDto(f) : null
+            Finances = result.Finances is { } f ? ToDto(f) : null,
+            Audience = result.Audience is { } a ? new AudienceReportDto
+            {
+                ShowSamenessBefore = Math.Round(a.ShowSamenessBefore, 2),
+                ShowSamenessAfter  = Math.Round(a.ShowSamenessAfter, 2),
+                SamenessPenalty    = Math.Round(a.SamenessPenalty, 4),
+                Filled             = Math.Round(a.Filled, 4),
+                UnderrunPenalty    = Math.Round(a.UnderrunPenalty, 4),
+                Notes              = new List<string>(a.Notes)
+            } : null
         };
 
         private static ShowFinancesDto ToDto(ShowFinances f) => new()
@@ -431,11 +399,13 @@ namespace WrestlingSim.Persistence
                 Label      = d.Label,
                 Headliners = new List<string>(d.Headliners),
                 StarPower  = Math.Round(d.StarPower, 4),
+                Acts       = Math.Round(d.Acts, 4),
                 Build      = Math.Round(d.Build, 4),
                 Freshness  = Math.Round(d.Freshness, 4),
                 Stakes     = Math.Round(d.Stakes, 4)
             }).ToList(),
             CardPull         = Math.Round(f.CardPull, 4),
+            CardDepth        = Math.Round(f.CardDepth, 4),
             Capacity         = f.Capacity,
             Demand           = f.Demand,
             TicketPrice      = f.TicketPrice,
@@ -470,11 +440,13 @@ namespace WrestlingSim.Persistence
                 Label      = x.Label,
                 Headliners = new List<string>(x.Headliners),
                 StarPower  = x.StarPower,
+                Acts       = x.Acts,
                 Build      = x.Build,
                 Freshness  = x.Freshness,
                 Stakes     = x.Stakes
             }).ToList(),
             CardPull         = d.CardPull,
+            CardDepth        = d.CardDepth,
             Capacity         = d.Capacity,
             Demand           = d.Demand,
             TicketPrice      = d.TicketPrice,
@@ -570,6 +542,8 @@ namespace WrestlingSim.Persistence
                 // backdating it would renew on episodes nobody counted.
                 career.Television ??= Television.Open(career.Promotion.Tier, career.CurrentDate);
 
+            if (dto.Audience is { } audience) career.Audience = FromDto(audience, byId);
+
             // Contracts bind by id, and only to people still in the shipped roster.
             if (dto.Contracts is { } contracts)
             {
@@ -601,9 +575,21 @@ namespace WrestlingSim.Persistence
                         Nights    = r.Nights.Select(n => new RivalNight
                         {
                             Date = ParseDate(n.Date), Type = n.Type, Rating = n.Rating, Attendance = n.Attendance,
-                            Capacity = n.Capacity, Viewers = n.Viewers, Net = n.Net, Headline = n.Headline
+                            Capacity = n.Capacity, Viewers = n.Viewers, Net = n.Net, Headline = n.Headline,
+                            Card = new List<string>(n.Card), Filled = n.Filled
                         }).ToList()
                     });
+
+                // What each rival's audience remembers, its match-ups and its belts. A save from
+                // before rivals had any of these loads them fresh, with the default belts vacant
+                // until its next show fills them.
+                foreach (var (r, rival) in rivals.Zip(career.Rivals))
+                {
+                    if (r.Audience is { } theirs) rival.Audience = FromDto(theirs, byId);
+                    if (r.Feuds is { } feuds) RestoreFeuds(rival.Feuds, feuds, byId, career.CurrentDate);
+                    if (r.Titles is { Count: > 0 } belts) RestoreTitles(rival.Titles, belts, byId);
+                    else rival.Titles.SeedDefaults(rival.Name, career.CurrentDate);
+                }
                 career.NonCompetes.AddRange(dto.NonCompetes.Where(n => byId.ContainsKey(n.WrestlerId))
                     .Select(n => new NonCompete { WrestlerId = byId[n.WrestlerId].Id, Until = ParseDate(n.Until), From = n.From }));
                 career.Bids.AddRange(dto.Bids.Where(b => byId.ContainsKey(b.WrestlerId))
@@ -661,7 +647,23 @@ namespace WrestlingSim.Persistence
             foreach (var use in dto.Stipulations)
                 career.Stipulations.Restore(use.Stipulation, use.LastUsed);
 
-            foreach (var f in dto.Feuds)
+            RestoreFeuds(career.FeudBook, dto.Feuds, byId, career.CurrentDate);
+
+            RestoreTitles(dto, career, byId);
+
+            foreach (var s in dto.Shows)
+                career.Shows.Add(FromDto(s, byId, career.FeudBook, career.Titles, career.Teams));
+
+            ResolveDraws(career);
+
+            return career;
+        }
+
+        /// <summary>Rebuilds a feud book — the career's, or a rival's — binding people by id.</summary>
+        private static void RestoreFeuds(
+            FeudBook book, List<FeudDto> feuds, Dictionary<string, Wrestler> byId, DateOnly today)
+        {
+            foreach (var f in feuds)
             {
                 // v4 writes every camp; v3 writes two sides; a v2 feud names one wrestler
                 // per side. Read the richest form present.
@@ -677,7 +679,7 @@ namespace WrestlingSim.Persistence
                 var camps = campIds.Select(ids => Bind(ids, byId)).ToList();
                 if (camps.Count < 2 || camps.Any(c => c is null)) continue;
 
-                var feud = career.FeudBook.GetOrCreate(
+                var feud = book.GetOrCreate(
                     camps.Select(c => (IReadOnlyList<Wrestler>)c!).ToList());
                 feud.RestoreHeat(f.Heat);
                 feud.MatchCount = f.MatchCount;
@@ -705,7 +707,7 @@ namespace WrestlingSim.Persistence
                 feud.RestoreDecay(
                     ParseOptionalDate(f.LastAdvanced)
                         ?? ParseOptionalDate(f.LastMatchDate)
-                        ?? career.CurrentDate,
+                        ?? today,
                     ParseOptionalDate(f.DecayedTo));
                 feud.RestoreResolution(
                     f.Concluded, ParseOptionalDate(f.ConcludedOn),
@@ -713,15 +715,6 @@ namespace WrestlingSim.Persistence
 
                 foreach (var tag in f.History) feud.AddTag(tag);
             }
-
-            RestoreTitles(dto, career, byId);
-
-            foreach (var s in dto.Shows)
-                career.Shows.Add(FromDto(s, byId, career.FeudBook, career.Titles, career.Teams));
-
-            ResolveDraws(career);
-
-            return career;
         }
 
         /// <summary>
@@ -741,7 +734,13 @@ namespace WrestlingSim.Persistence
                 return;
             }
 
-            foreach (var t in dto.Titles)
+            RestoreTitles(career.Titles, dto.Titles, byId);
+        }
+
+        /// <summary>Rebuilds a registry — the career's, or a rival's — binding champions by id.</summary>
+        private static void RestoreTitles(TitleRegistry registry, List<TitleDto> titles, Dictionary<string, Wrestler> byId)
+        {
+            foreach (var t in titles)
             {
                 var title = new Title
                 {
@@ -788,10 +787,10 @@ namespace WrestlingSim.Persistence
                     });
                 }
 
-                career.Titles.Add(title);
+                registry.Add(title);
             }
 
-            career.Titles.Rebalance();
+            registry.Rebalance();
         }
 
         /// Rebuilds the split. Roster ids that are not in the supplied roster are dropped,
@@ -1271,8 +1270,99 @@ namespace WrestlingSim.Persistence
                 StarRating      = i.StarRating,
                 Notes           = new List<string>(i.Notes)
             }).ToList(),
-            Finances = dto.Finances is { } f ? FromDto(f) : null
+            Finances = dto.Finances is { } f ? FromDto(f) : null,
+            Audience = dto.Audience is { } a ? new AudienceReport
+            {
+                ShowSamenessBefore = a.ShowSamenessBefore,
+                ShowSamenessAfter  = a.ShowSamenessAfter,
+                SamenessPenalty    = a.SamenessPenalty,
+                Filled             = a.Filled,
+                UnderrunPenalty    = a.UnderrunPenalty,
+                Notes              = new List<string>(a.Notes)
+            } : null
         };
+
+        private static List<FeudDto> ToDto(FeudBook book) =>
+            book.AllIncludingDormant.Select(f => new FeudDto
+                {
+                    Camps              = f.Camps.Select(c => c.Select(w => w.Id).ToList()).ToList(),
+                    // Still written so a save from this build opens in one that predates
+                    // multi-party feuds. Such a build loses the third camp; it does not lose
+                    // the feud.
+                    SideA              = f.SideA.Select(w => w.Id).ToList(),
+                    SideB              = f.SideB.Select(w => w.Id).ToList(),
+                    Heat               = f.Heat,
+                    MatchCount         = f.MatchCount,
+                    RememberedMeetings = f.RememberedMeetings,
+                    LastMatchDate      = f.LastMatchDate is { } met ? Iso(met) : null,
+                    LastAdvanced       = f.LastAdvanced is { } adv ? Iso(adv) : null,
+                    DecayedTo          = f.DecayedTo is { } dec ? Iso(dec) : null,
+                    Concluded          = f.Concluded,
+                    ConcludedOn        = f.ConcludedOn is { } con ? Iso(con) : null,
+                    MatchesSinceHot    = f.MatchesSinceHot,
+                    ChaptersSettled    = f.ChaptersSettled,
+                    Distrust           = Math.Round(f.Distrust, 4),
+                    History            = new List<FeudHistoryTag>(f.History)
+                }).ToList();
+
+        private static List<TitleDto> ToDto(TitleRegistry titles) =>
+            titles.All.Select(t => new TitleDto
+            {
+                Id          = t.Id,
+                Name        = t.Name,
+                Tier        = t.Tier,
+                Division    = t.Division,
+                Established = Iso(t.Established),
+                SideSize    = t.SideSize,
+                Standing    = Math.Round(t.Standing, 3),
+                Retired     = t.Retired,
+                RetiredOn   = t.RetiredOn is { } retired ? Iso(retired) : null,
+                Lineage = t.Lineage.Select(r => new TitleReignDto
+                {
+                    // By id, never by value — champions are live roster instances.
+                    Champions    = r.Champions.Select(c => c.Id).ToList(),
+                    ReignNumber  = r.ReignNumber,
+                    Won          = Iso(r.Won),
+                    Lost         = r.Lost is { } lost ? Iso(lost) : null,
+                    LastDefended = r.LastDefended is { } defended ? Iso(defended) : null,
+                    WonAt        = r.WonAt,
+                    LostAt       = r.LostAt,
+                    Defences     = r.Defences,
+                    Vacated      = r.Vacated
+                }).ToList()
+            }).ToList();
+
+        private static AudienceDto ToDto(Audience a) => new()
+        {
+            ShowSameness = Math.Round(a.ShowSameness, 3),
+            Acts = a.Acts.Select(kv => new ActDto
+            {
+                Id = kv.Key, Sameness = Math.Round(kv.Value.Sameness, 3), Streak = kv.Value.Streak,
+                LastKind = kv.Value.LastKind, LastGimmick = kv.Value.LastGimmick,
+                LastSeen = kv.Value.LastSeen is { } seen ? Iso(seen) : null
+            }).OrderBy(x => x.Id, StringComparer.Ordinal).ToList(),
+            Recent = a.Recent.Select(s => new ShowShapeDto
+            {
+                Date = Iso(s.Date), Cast = new List<string>(s.Cast), Formats = new List<string>(s.Formats)
+            }).ToList()
+        };
+
+        private static Audience FromDto(AudienceDto dto, Dictionary<string, Wrestler> byId)
+        {
+            var audience = new Audience { ShowSameness = dto.ShowSameness };
+            foreach (var act in dto.Acts.Where(x => byId.ContainsKey(x.Id)))
+                audience.Acts[byId[act.Id].Id] = new Act
+                {
+                    Sameness = act.Sameness, Streak = act.Streak, LastKind = act.LastKind,
+                    LastGimmick = act.LastGimmick,
+                    LastSeen = string.IsNullOrEmpty(act.LastSeen) ? null : ParseDate(act.LastSeen)
+                };
+            audience.Recent.AddRange(dto.Recent.Select(s => new ShowShape
+            {
+                Date = ParseDate(s.Date), Cast = new List<string>(s.Cast), Formats = new List<string>(s.Formats)
+            }));
+            return audience;
+        }
 
         private static TvDealDto ToDto(TvDeal tv) => new()
         {

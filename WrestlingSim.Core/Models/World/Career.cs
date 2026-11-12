@@ -45,6 +45,19 @@ namespace WrestlingSim.Models.World
         public CareerBooks Books { get; set; } = new();
 
         /// <summary>
+        /// What this promotion's audience has been shown lately — whose act has gone stale with
+        /// them, and how alike the shows have been. See <see cref="AudienceModel"/>.
+        /// </summary>
+        public Audience Audience { get; set; } = new();
+
+        /// <summary>
+        /// How much of a wrestler's pull this audience still feels on a show of this type,
+        /// 1.0 being all of it.
+        /// </summary>
+        public double Response(Wrestler w, ShowType type, int daysAhead = 0) =>
+            AudienceModel.Response(Audience, w, Promotion.Tier, type, daysAhead);
+
+        /// <summary>
         /// The television contract, at a tier that has television; null below it. Opened with
         /// the books, and renewed by the clock when its term runs out.
         /// </summary>
@@ -449,6 +462,7 @@ namespace WrestlingSim.Models.World
             // paid whether or not anybody works.
             ChargeOverhead(1);
             SettleContracts();
+            AudienceModel.Decay(Audience);
 
             // The rest of the world runs on the same clock.
             NonCompetes.RemoveAll(n => n.Until <= CurrentDate);
@@ -564,7 +578,11 @@ namespace WrestlingSim.Models.World
         /// anybody who gets hurt on it.
         /// </summary>
         public ShowFinances Projection(ScheduledShow show) =>
-            BoxOffice.Night(show, Promotion, Books.Reputation, FeudBook, Television, AppearanceFee, Interest);
+            Projection(show, Math.Max(0, show.Date.DayNumber - CurrentDate.DayNumber));
+
+        private ShowFinances Projection(ScheduledShow show, int daysAhead) =>
+            BoxOffice.Night(show, Promotion, Books.Reputation, FeudBook, Television, AppearanceFee, Interest,
+                            w => Response(w, show.Type, daysAhead));
 
         /// <summary>
         /// Runs a booked show: sells the house, runs the card and the road, banks the takings
@@ -583,8 +601,17 @@ namespace WrestlingSim.Models.World
             // Nobody another promotion holds, or who is sitting out a non-compete, works tonight.
             if (UnavailableOnCard(show).Count > 0) return null;
 
+            // Running a date early jumps the clock, and the audience lives through the days it
+            // jumps: an act rested until the show is as rested as it will be on the night.
+            int ahead = Math.Max(0, show.Date.DayNumber - CurrentDate.DayNumber);
+            AudienceModel.Decay(Audience, ahead);
+
             // Sold on the card as advertised, before anyone has wrestled.
-            var house = Projection(show);
+            var house = Projection(show, daysAhead: 0);
+
+            // How new each act's part in tonight is — read now, because running the card moves
+            // the familiarity it is read from.
+            var novelty = AudienceModel.Novelty(Audience, show.Card, FeudBook, show.Date);
 
             // The brand context is what charges the night's crossovers to the split. A
             // company-wide date passes a null home brand, which is how the inter-brand
@@ -595,9 +622,21 @@ namespace WrestlingSim.Models.World
             // which is the ordinary untelevised week.
             var result = show.Card.Count > 0
                 ? new ShowSimulator(FeudBook, titles: Titles, brands: brands,
-                                    stipulations: Stipulations, tier: Promotion.Tier)
+                                    stipulations: Stipulations, tier: Promotion.Tier,
+                                    response: w => Response(w, show.Type))
                     .Simulate(show.ToShow())
                 : new ShowResult { BudgetMinutes = show.RuntimeMinutes };
+
+            // What the night did to the audience's patience, and what their patience did to the
+            // night: a show like the last few, or one that left its slot half empty, is a worse
+            // show. Before reputation and retention read the rating, because both should feel it.
+            if (show.Card.Count > 0)
+            {
+                var audience = AudienceModel.Observe(Audience, show, novelty, result);
+                result.OverallRating = Math.Round(
+                    result.OverallRating * (1 - audience.SamenessPenalty) * (1 - audience.UnderrunPenalty), 2);
+                result.Audience = audience;
+            }
 
             // And the road, when anybody is on it. Anybody on the card works the run a town
             // short: the card is the Monday and the towns are the rest of the week.

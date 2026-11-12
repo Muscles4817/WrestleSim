@@ -386,6 +386,226 @@ having more wrestlers in it.
 - **Era settings** — the baseline of two credible employers is the mid-2020s, not a parameter.
 - **A custom database** naming the promotions and who holds whom.
 
+## Slice 5: the audience — sameness, the whole card, and who is watching
+
+*Docs 16 §4.10, 17 §3–4, 23 §2–3, 29 §6. Plan: `docs/rival-ai-plan.md` §2A. This is the first
+half (the player's shows and the shared model); rivals' real cards, titles and audiences are the
+second half and are not built.*
+
+The owner's test case started it: a national promotion on six wrestlers. The game allowed it and
+charged only fatigue. The ruling was that whatever stops it in real life must stop it here, and
+that nothing already built was off limits.
+
+### What research changed
+
+The first design counted appearances ("exposure"). Research overturned it before it was built —
+liking for a character *rises* with exposure, advertising barely wears out from repetition, and
+boredom follows low novelty; the wrestling cases agree (constant screen time with a moving story
+holds; the same act for years does not). The sources and the full argument are in the plan,
+§2A.0. **The model is sameness, not screen time**, and
+`BeingOnEveryWeekIsNotTheProblem_DoingTheSameThingIs` is the test that keeps it so: two
+wrestlers on television every week for six months, one against a rotation of opponents
+(sameness 5.7), one in the same match (63.7, response ×0.80).
+
+### What it does
+
+Three separate things, plus the card:
+
+- **A wrestler's act goes stale when nothing about it changes** (`Audience.Acts`,
+  `AudienceModel`). An appearance adds sameness in proportion to how little was new, and takes
+  it off in proportion to how much was: a first-time or long-rested opponent, a different kind of
+  match, a new gimmick, a feud that escalated, a title that changed hands. Off screen it halves
+  in ten weeks.
+- **The rate is the wrestler's own** (`AudienceModel.Rate`): charisma 5 wears at 0.6×, charisma
+  0 at 1.5×; `Gimmick.Durability` — in the roster data all along, read by nothing — makes a
+  short-term gimmick 1.3× and a long-term one 0.7×; a high-flyer 1.15× (doc 17 §3.4, athletic
+  novelty). Measured: a low-charisma short-term high-flyer in the same match loses 5% of his
+  reaction in ten weeks; a 4.8-charisma long-term act never does in forty.
+- **Each part of the audience feels it differently** (`Taste`, `Mix`, `Response`). A new
+  `FanGroup.Regular` — the weekly viewer, reading the roster's Casual appeal, so no data
+  changed — tires first of sameness; casual fans barely tire; hardcore fans tire soonest and
+  also tire of a winning streak past five (doc 17 §3.11). Television leans regular, premium
+  events casual, indies hardcore. A wrestler's response is each group's, weighted by how much
+  of the room it is and how much it likes them — so one act is hot with one crowd and stale
+  with another. The roster and booking rail say which: *"9 wins in a row — the hardcore fans are
+  tiring of it; everybody else is fine."*
+- **The show itself goes stale** (`Audience.ShowSameness`): how many of tonight's faces were on
+  the recent shows, and how alike the card's make-up is, recent shows counting most. Up to 20%
+  off the overall rating; halves in four weeks, so a promotion that runs rarely never builds it.
+- **The whole card counts.** A card that leaves the slot under-filled sells fewer tickets and
+  draws fewer viewers (`CardDepth`, ×0.5–1.0, read before the bell like everything that sells a
+  ticket) and is a worse show (up to 30% off). Full credit at half the runtime filled — which is
+  what the game's own `TypicalCardSizeFor` × a television-length match comes to.
+
+Where it reaches: star power in the box office (so the projection shows it while the card can
+still change), each item's score in the show, momentum cooling for an act past 50, and through
+the rating into reputation and television retention.
+
+### What it measured
+
+`SixWrestlersCannotCarryANationalPromotion_ADeepRosterCan` — the six most over wrestlers in the
+game on weekly national television, booked as well as six can be, against thirty booked the same
+way:
+
+| Week | Six: house | Six: viewers | Six: rating | Thirty: house | Thirty: viewers |
+|---|---|---|---|---|---|
+| 1 | 100% | 1.18M | 66 | 100% | 1.23M |
+| 4 | 92% | 0.90M | 47 | 100% | 1.22M |
+| 7 | 61% | 0.69M | 38 | 100% | 1.22M |
+| 12 | 52% | 0.63M | 38 | 100% | 1.16M |
+
+(Table from the first measured run, with full credit at 60% of the slot; the shipped threshold is
+50% and the test asserts the house is below 80% between weeks 2 and 8 — it measures week 6.)
+The house is gone in about six weeks. No line of code mentions roster size.
+
+`TheSameSixLastFarLongerAtALocalPromotion` — the same six every 45 days hold 90% or better for
+six shows (270 days). **They do not hold for ever:** with everybody working everybody every six
+weeks, match-ups never get the sixty idle days they need to be forgotten, and the house slides in
+the second half of the year. That is the existing `Feud` freshness model at a local cadence, not
+anything added here; whether a local audience should be more forgiving is the owner's call.
+
+**An arithmetic claim of mine this corrected:** the plan said six people "have spent every match
+they can offer in about a month". With two matches a night it is nine weeks; it is a month only
+because filling two hours makes everybody work twice. The collapse comes from both.
+
+### A bug this found in slice 1
+
+`BoxOffice` looked for the story behind a match among *live* feuds only. A rematch between two
+people with no heat between them is not a live feud, so it was sold as a first meeting however
+many times it had run. Fixed in `BoxOffice.StoryBetween` (dormant feuds count); pinned by
+`ARematchWithNoHeatIsNotSoldAsAFirstMeeting` — sixth meeting, ×0.50.
+
+### Re-calibration
+
+A typical card now has to be a full card, so the calibration corpus books `TypicalCardSizeFor`
+matches in `DefaultRuntimeFor` minutes instead of five in a default slot. More random matches
+means a stronger top three:
+
+| Tier | Typical card pull (was → is) | Median margin |
+|---|---|---|
+| Local | 0.3312 → 0.3379 | 4.0% |
+| Independent | 0.4165 → 0.4236 | 9.7% |
+| SuperIndie | 0.4508 → 0.4667 | 13.3% |
+| Established | 0.4934 (unchanged) | 10.0% |
+| National | 0.6040 → 0.6161 | 3.0% |
+| Global | 0.8699 → 0.8842 | 35.0% |
+
+All inside doc 09 §4's bands; running costs were left alone. Rivals book a tier-sized card in a
+tier-sized slot for the same reason. `TheWealthyFansPromotionBurnsOut_TheMajorDoesNot` still
+passes its 18–40 month band.
+
+### The second half: a rival's show is a real show
+
+*Plan §2A.2a, §2A.3. Built after the first half.*
+
+Rival shows were five plain singles pairings — a shortcut taken under the word "abstract", which
+the owner ruled out. Now:
+
+- **A rival's card is made of what the player books** (`World.BookCard`): title matches, a tag
+  one week and a three-way now and then, a promo or confrontation on television, and singles
+  until half the slot is filled — each pairing chosen by what it would draw *as that rival's
+  audience now sees those people and that match-up*. If the roster runs out before the slot is
+  filled, people work twice. "Abstract" now means one thing: matches are not worked beat by beat;
+  an item's rating comes from who is in it and what kind of item it is
+  (`World.ExpectedItemRating`).
+- **Its own audience** (`RivalPromotion.Audience`): the same sameness model, per promotion. A
+  wrestler stale to a rival's crowd is fresh to the player's, so a signing arrives fresh.
+- **Its own match-up memory** (`RivalPromotion.Feuds`, an ordinary `FeudBook`), so the box office
+  reads a rival's rematch exactly as it reads the player's.
+- **Its own belts** (`RivalPromotion.Titles`), seeded with the default slate and run on the
+  existing `TitleEconomy`: vacant belts are filled on any night, champions defend on the big
+  night against the freshest draw in the division, title stakes feed the draw, and a wrestler who
+  leaves vacates.
+- The Rivals screen lists each rival's champions with prestige and its last card item by item.
+
+**Two things the three-year probe corrected:**
+
+- *Premium events were every fourth show.* At a show every three days that is one every twelve
+  days and thirty title defences a year; with upsets a belt changed hands so often that the
+  global major's world title fell from 57 prestige to 0 in eighteen months. The big night is now
+  about monthly (doc 29 §1: 12–16 major events a year), and a champion holds 85% of defences.
+  After a year: 82 / 74 / 87 prestige, two to four reigns each.
+- *The wealthy fan stopped folding on time.* Fewer premium events means less production cost,
+  and Ironclad lasted 38 months — past doc 01 §7's 18–36. Its running-cost trait was re-solved
+  from 1.2× to 1.3×: **22 months**. This is sensitive (1.4× gives 15), and it is the last time a
+  trait should be solved to hit this band: under the planner the burn-out is supposed to come
+  from the objective.
+
+  **Withdrawn — the owner ruled this out, and was right.** Solving a constant until a promotion
+  folds on schedule is scripting its fate indirectly; a breach of the reference's range is a
+  thing to look at, not to tune away. The trait is back at 1.2×, the test no longer asserts any
+  fate (`WhatBecomesOfTheWealthyFansPromotion_IsMeasuredNotForced`), and looking at it found the
+  real story — see "The schedule, and what the fold really was" below.
+
+**Measured** (`RivalShowTests`): a national rival cut to its six most over loses its house —
+75% to 19% in twelve weeks, rating 53 to 31. A rival with two wrestlers a division draws 8% on
+its big nights after a year, against 64% with a full roster.
+
+**The finding worth the owner's attention: the top tiers are under-rostered for their
+schedule.** *(Corrected below: the schedule was the bug.)* A national rival with its *full* roster of 25 also slides, 79% to 60% in twelve
+weeks, and the global major with 40 runs at about two-thirds of a house. They run a show every
+four and every three days, so each star works every other show. That is the six-wrestler
+argument at scale, and it is honest: ninety wrestlers shared between five promotions cannot
+staff a major's calendar. The remedies are real ones — a bigger database, a brand split (which
+the player has and rivals do not), or a slower schedule — not a tweak to the rates.
+The calibration constants (`TypicalCardPullFor`) describe a *fresh* typical card; steady-state
+houses now sit below `TypicalFill` at the television tiers for this reason.
+
+### The schedule, and what the fold really was
+
+`Promotion.TypicalShowIntervalDays` had National at a show every four days and Global at every
+three. The owner's correction: one brand runs one television show a week at every level; a show
+every three days is what a company with a brand split does, across two rosters. Both are now
+weekly. The daily running cost of those two tiers was re-solved for a weekly calendar against
+the same doc 09 §4 margins — National $289,200 → $161,000 a day (3.0%), Global $497,700 →
+$124,800 (35.0%). That is calibrating the economy to the reference, not steering an outcome.
+
+What weekly did:
+
+- A national rival's *full* roster now holds its house — 79% to 72% over twelve weeks, where it
+  slid to 60% — and its big nights draw 81% after a year. The under-rostering was mostly the
+  schedule. Six still cannot carry it: 75% to 22%.
+- **The wealthy fan's promotion does not fold.** Five years, measured: cash 25M → 33M → 36.5M
+  → 38.6M → 39.9M, then down to 12.6M in the fifth year.
+
+Looking at why, as the ruling asks:
+
+1. *It was never overspending.* Its "wealthy fan" budget is 1.5× the tier's, but the global
+   major signs first and holds every star; Ironclad opens with the 41st–65th most over
+   wrestlers on $3.6M a year against a $45M budget, and the rule-based AI can only sign free
+   agents, of whom none are stars. A wealthy fan with nobody to overpay is a cheaply-run
+   promotion.
+2. *So the earlier folds were not the motive at all.* At 29 months, and at 22, it was the
+   running cost — set for a show every four days — against a thin house. The burn-out that
+   was celebrated as emergent in slice 4 was an artefact of the schedule and a dial.
+3. *The fifth-year drop is the one emergent thing here:* its television deal comes up after
+   four years of a slowly declining audience (reputation 48.6 → 43.5), renews lower, and the
+   books turn. Nothing scripts that.
+
+What this says about the design: doc 01 §7's burn-out is about a promotion that *can* buy
+names and does. To see it, the wealthy fan needs stars it can reach — poaching, a deeper
+database — and a planner that values them (plan §5). Until then the reference's 18–36 months
+is simply not reproduced, and that is recorded rather than forced.
+
+### Not built in this slice
+
+- **Results and wear on rival shows** (plan §2A.4): working for a rival still moves nobody's
+  overness or momentum and costs no fatigue; only being on screen, the match-up memory and the
+  audience's patience are recorded.
+- **Choosing the card's make-up.** The recipe is fixed (tag on even shows, three-way every
+  third, one talking segment). That choice belongs to the planner (plan §8).
+- **Stipulations and standing tag teams for rivals**; tag belts are in nobody's default slate.
+- **A brand split for rivals**, which is what a real major does about the schedule.
+- **Rejection of a push** (the Reigns case) — its own slice, agreed with the owner.
+- **Gimmick depth beyond `Durability`**: doc 31 §3's *Motivation* and *Fit* are still missing.
+- **A turn** as something new: there is no alignment-change mechanic to read.
+- **Segments move an act only a little** (a flat 0.15): what a promo *did* is not read.
+- **Per-group satisfaction and revenue lines** (B3 proper). Groups shape response and nothing
+  else.
+- **The roster table on desktop** does not show the staleness reading; the roster cards (phone)
+  and the booking rail (desktop) do.
+- **Every rate here is a design estimate.** Nobody has measured these for wrestling.
+
 ## Not built, and written down
 
 - ~~**TV renewal and viewership.**~~ Built in slice 2, above.

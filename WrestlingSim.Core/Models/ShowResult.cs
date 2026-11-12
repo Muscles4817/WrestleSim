@@ -57,6 +57,12 @@ namespace WrestlingSim.Models
         /// </summary>
         public ShowFinances? Finances { get; set; }
 
+        /// <summary>
+        /// What the show did to the audience's patience: how like the last few it was, whether
+        /// it filled its slot, and whose act is wearing. Null in exhibition.
+        /// </summary>
+        public World.AudienceReport? Audience { get; set; }
+
         /// <summary>Whether it sold and whether it delivered, in one line. Null when neither is notable.</summary>
         public string? BusinessVerdict =>
             Finances is { } f ? Engine.BoxOffice.Verdict(f, OverallRating) : null;

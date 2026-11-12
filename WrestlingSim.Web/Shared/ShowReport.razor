@@ -92,6 +92,35 @@ else
     <Takings Finances="books" Verdict="@Result.BusinessVerdict" DailyOverhead="DailyOverhead" Deal="Deal" />
 }
 
+@* What the night did to the audience's patience. Three separate things, said separately:
+   the show being like the last few, the slot left half empty, and whose act is wearing.
+   Null in exhibition, where the audience has no memory. *@
+@if (Result.Audience is { } crowd && (crowd.SamenessPenalty > 0.005 || crowd.UnderrunPenalty > 0.005 || crowd.Notes.Count > 0))
+{
+    <div class="notice notice--warn mt">
+        @if (crowd.SamenessPenalty > 0.005)
+        {
+            <div>
+                <strong>They have seen this show before.</strong>
+                The same faces in the same kinds of match as the last few weeks — overall cut by
+                @Money.Percent(crowd.SamenessPenalty). Change who is on it, or what it is made of.
+            </div>
+        }
+        @if (crowd.UnderrunPenalty > 0.005)
+        {
+            <div>
+                <strong>The show ran short.</strong>
+                Only @Money.Percent(crowd.Filled) of the slot was filled — overall cut by
+                @Money.Percent(crowd.UnderrunPenalty).
+            </div>
+        }
+        @foreach (var note in crowd.Notes)
+        {
+            <div>@note</div>
+        }
+    </div>
+}
+
 @if (Result.OverrunPenalty > 0)
 {
     <div class="notice notice--error mt">

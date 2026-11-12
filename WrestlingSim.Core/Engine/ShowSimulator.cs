@@ -38,6 +38,12 @@ namespace WrestlingSim.Engine
         /// </summary>
         private readonly PromotionTier _tier;
 
+        /// <summary>
+        /// How much of each wrestler's reaction this audience still gives, or null in exhibition,
+        /// where there is no audience with a memory. See <see cref="AudienceModel.Response"/>.
+        /// </summary>
+        private readonly Func<Wrestler, double>? _response;
+
         /// <summary>Most a card can lose for running past its allotted runtime.</summary>
         private const double MaxOverrunPenalty = 0.35;
 
@@ -47,8 +53,10 @@ namespace WrestlingSim.Engine
             TitleRegistry? titles = null,
             BrandContext? brands = null,
             StipulationBook? stipulations = null,
-            PromotionTier tier = PromotionTier.Established)
+            PromotionTier tier = PromotionTier.Established,
+            Func<Wrestler, double>? response = null)
         {
+            _response     = response;
             _tier         = tier;
             _feudBook     = feudBook;
             _seed         = seed;
@@ -139,6 +147,18 @@ namespace WrestlingSim.Engine
                     raw *= 1 + attraction;
                     itemResult.Notes.Add(
                         $"Crossover appearance — a name from another brand (+{attraction * 100:F0}%).");
+                }
+
+                // ── An act the audience has seen too often ───────────────────
+                // Doc 17 §3.2: nothing goes wrong, the reactions just get smaller.
+                if (_response is not null && item.Wrestlers.Count > 0)
+                {
+                    double acts = item.Wrestlers.Average(_response);
+                    if (acts < 0.98)
+                    {
+                        raw *= acts;
+                        itemResult.Notes.Add($"The crowd has seen this too often without anything new (×{acts:0.00}).");
+                    }
                 }
 
                 itemResult.RawScore = raw;

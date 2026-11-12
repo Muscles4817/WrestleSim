@@ -105,6 +105,16 @@
         }
     </div>
 
+    @* A thin card is priced where the card is priced: before the bell. *@
+    @if (Finances.CardDepth < 0.98)
+    {
+        <div class="notice notice--warn mt">
+            <strong>A thin card.</strong> It leaves most of the slot empty, so fewer people buy a ticket
+            or sit down to watch — ×@Finances.CardDepth.ToString("0.00") on the house and the audience.
+            Add matches or segments until about half the runtime is filled.
+        </div>
+    }
+
     @if (!string.IsNullOrEmpty(Verdict))
     {
         <div class="notice notice--advice mt">@Verdict</div>
@@ -203,6 +213,7 @@
     {
         var parts = new List<string>();
         if (d.Headliners.Count > 0) parts.Add($"star power {d.StarPower * 100:F0}");
+        if (d.Acts < 0.98) parts.Add($"the act has gone stale ×{d.Acts:F2}");
         if (d.Build > 1.005) parts.Add($"the feud ×{d.Build:F2}");
         if (d.Freshness < 0.995) parts.Add($"seen before ×{d.Freshness:F2}");
         else if (d.Freshness > 1.005) parts.Add($"the blow-off ×{d.Freshness:F2}");

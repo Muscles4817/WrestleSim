@@ -107,6 +107,7 @@ namespace WrestlingSim.Engine
                     // Staggered off the player's first week so they do not all run on day one.
                     NextShow  = on.AddDays(1 + (int)tier % promotion.TypicalShowIntervalDays)
                 };
+                rival.Titles.SeedDefaults(name, on);
                 career.Rivals.Add(rival);
             }
 

@@ -466,6 +466,10 @@ else
                     {
                         <span class="railrow__cond"><Icon Name="warn" /> @condition</span>
                     }
+                    else if (AudienceModel.Reading(career.Audience, who) is { } stale)
+                    {
+                        <span class="railrow__cond"><Icon Name="warn" /> @stale</span>
+                    }
                     <span class="railrow__pop tabnum @who.CardPosition.Tone()">@who.OvernessDisplay</span>
                 </button>
             }

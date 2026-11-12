@@ -29,6 +29,16 @@ behaviour; it is a bug report against the model. **Nothing already built is off 
 audience model, the box office or the title system has to change to make this true, propose the
 change (§2A does) — do not work around it.
 
+**And a second ruling, after a constant was twice re-solved to keep a promotion folding on
+schedule: do not force outcomes.** When a measured run lands outside what the reference
+describes — a promotion that should "typically" burn out and does not — that is a thing to
+*look at and explain*, not a dial to turn until the number fits. An outcome the world is tuned
+to produce is scripted, however indirectly. A wealthy fan's promotion must be able to survive in
+a world that lets it. Tests assert mechanisms and comparisons ("the same promotion under a
+different objective behaves differently"), never that a named promotion meets a named fate.
+Calibrating the *economy* against the reference's figures (what a tier costs to run) is a
+different thing and is still done — say which of the two a change is.
+
 A rule ("never go below 20 wrestlers", "always bid on champions") is exactly what this rebuild
 removes. When a simulated run shows degenerate behaviour, the cause is one of two things: the
 abstract world is missing a cost real promotions pay (fix the model, §3), or the objective values
@@ -106,7 +116,22 @@ promotion and what it wants). `RivalPromotion` gets optional overrides for both.
 
 ---
 
-## 2A. PR 0 — the audience values the whole show (proposed; needs the owner's yes)
+## 2A. PR 0 — the audience values the whole show
+
+> **Status.** The owner approved this section, and it is **built** except where noted — see
+> `docs/business-design-record.md`, "Slice 5", for what was built, measured and corrected.
+> Built: §2A.1 (a), (b), (d); §2A.2; §2A.2a (rival cards are real cards); §2A.3 (rival titles);
+> a rival's own `Audience` and match-up memory; the tests of §2A.5.
+> **Not built:** §2A.1 (c), rejection — its own slice, next; §2A.4, results and wear on rival
+> shows; rival stipulations and tag teams.
+>
+> **This changes what PR A (§3) still has to do.** §3.1's `PairingLedger` was superseded: each
+> rival has an ordinary `FeudBook` (`RivalPromotion.Feuds`) and the box office reads it through
+> `BoxOffice.StoryBetween`, so there is one freshness path, not two. §3.2's `BookCard` exists
+> (`World.BookCard`) with a fixed recipe and a draw-only score. §3.3's split exists as
+> `World.ExpectedItemRating` plus seeded noise in `RunNight`. **What PR A still owes is the
+> forecast (§4)** — and the forecast will need a cheap way to copy a rival's `FeudBook` and
+> `Audience`, because it simulates shows on copies.
 
 **This comes before everything else, and it changes the player's game as well as the rivals'.**
 
@@ -614,12 +639,14 @@ These are **starting values to be tuned by measurement**, not findings. One tabl
 | Legacy | 365 | 1.00 | 365 | 4 |
 | Vanity | 180 | 1.10 | 120 | 2 |
 
-How the wealthy fan is *meant* to burn out under this design, so the executor can tell whether
-it is happening for the right reason: it barely values cash, looks only four months ahead,
+**Nothing is meant to burn out.** (This paragraph used to say the wealthy fan was "meant" to;
+the owner's ruling in §0 withdrew that.) What the design should make *possible*, so the executor
+can recognise it if it happens: it barely values cash, looks only four months ahead,
 believes its cards sell a quarter more than they do, and does not worry until it has six weeks
 of money left. So it signs stars against revenue that never arrives, and by the time the
 barrier bites, three-year guarantees and ninety-day payouts mean cutting no longer saves it.
-Nothing says "fold at month 29".
+Whether that happens, and when, depends on the world it is in — and in a world with cheap talent
+and a good television deal it should not happen at all.
 
 ### 5.3 Favourites (for Vanity)
 
@@ -630,6 +657,66 @@ favourite. No Vanity promotion is in the default world; it is exercised by a con
 in tests (§11.4). Releasing a favourite is not forbidden — it simply costs `Favour`.
 
 ---
+
+## 5A. Revisions after an outside review of the objectives
+
+The owner had the objectives table (§5.2) reviewed. These points are accepted and change the
+design; **§5 and §6 are to be read with them applied.** The table's numbers stand as a starting
+dataset.
+
+1. **Three layers, not one.** §5 models why somebody owns a promotion. It does not model what
+   kind of promotion it is, or how well it is run. Separate them:
+   - **Owner** — what the money wants. This is `Objective`.
+   - **Identity** — what the promotion *is*: the audience it is for (a weighting over
+     `FanGroup`, which the audience slice gave teeth) and the product it believes in. Two
+     profit-seeking owners can run a spectacle company and a workrate company and should sign
+     different people. New data, per promotion.
+   - **Management** — how well it is run. Split `Disposition` in two, because they are
+     different things: *competence* (how accurate the forecast is — `Optimism`, `HorizonDays`)
+     and *temperament* (how much risk it takes knowingly — `RunwayFloorDays`, `RiskAversion`,
+     plus patience and loyalty). A competent owner who gambles and an incompetent one who
+     misreads the numbers must be different behaviours.
+2. **Wealth is not cash in the bank.** Scored as a balance at the horizon, a promotion can look
+   good by cutting its roster and running fewer shows. Score *performance and what it owns*:
+   profit over the horizon, plus the value of the roster it holds (what each contract would cost
+   to replace today against what it costs — `TalentMarket.WorthToday` — and what a young act
+   could become, read from `AgeCurve`). Without the second half no planner will ever develop
+   anybody, because a prospect is worth less today than a veteran.
+3. **Quality is judged by the promotion's own audience.** One rating for everybody means a
+   hardcore promotion and a family promotion want the same show. A show's quality term is the
+   response of the groups the identity is for.
+4. **Stability is continuity, not inactivity.** As written, every move costs stability, so a
+   stable promotion would not replace an injured or departed wrestler. Charge it for *losing*
+   people the audience and the locker room are used to — tenure-weighted — not for filling a
+   hole.
+5. **Outcomes, constraints, preferences.** Name which each term is. Contract terms, exclusivity
+   and the fold line are constraints the planner cannot break. Survival is a soft constraint
+   whose strength is temperament. Loyalty and favourites are preferences a desperate promotion
+   will override — and an irrational one will not, which is a temperament setting, not a rule.
+6. **A strategy that persists.** The planner in §6 picks the best single move each week and has
+   no memory of what it was trying to do, so it can flip between building youth and buying
+   veterans on a small score difference. Add one layer above it: a **direction** (a small set —
+   build stars, develop its own, cut costs, chase the renewal, hold steady), chosen by the same
+   utility arithmetic on a longer look ahead, kept for a commitment period, and abandoned only
+   when results stay below what it expected for longer than the promotion's patience. The
+   direction re-weights the objective while it holds; the weekly planner is unchanged
+   underneath. Directions are named by us, which is a little authored — the alternative, real
+   multi-month search, is the honest long-term answer and is written down as not built.
+7. **Test distributions, not fates.** One default world run once tells us about that world.
+   Add a harness that generates many worlds (varying which motive sits at which tier, the
+   roster split, the seed) and reports distributions: survival by motive, roster turnover,
+   whether strugglers recover, whether the major always wins. And counterfactuals in both
+   directions — same world, different owner (already §11.4); same owner, different market.
+   Nothing in it asserts that a given kind of owner ends a given way.
+8. **A decision debugger.** §9.2's decision log grows to the full reasoning: current direction,
+   what the promotion believed (its forecast, including its optimism), the move taken, and the
+   alternatives it scored and rejected. For the developer first; a trimmed version is what the
+   player sees.
+
+Declined, for now: eight separate personality dimensions as sliders. Ambition, risk tolerance,
+patience, discipline, adaptability, loyalty, ego and competence are worth having as *concepts*,
+and most already map onto a field above — but a dimension is only added when a behaviour reads
+it.
 
 ## 6. PR B — the planner
 
@@ -863,7 +950,7 @@ predicts. None asserts a specific move.
 
 | Test | Claim | Source |
 |---|---|---|
-| `TheWealthyFansPromotionBurnsOut_TheMajorDoesNot` (exists — must still pass, same band) | Ironclad folds in 18–40 months; Vantage does not and ends richer | doc 01 §7 |
+| `WhatBecomesOfTheWealthyFansPromotion_IsMeasuredNotForced` (exists) | **Asserts no fate.** Prints the wealthy fan's cash, roster and reputation year by year for the design record. Compare with doc 01 §7 ("typically 18–36 months") and *explain* a difference | §0, second ruling |
 | `AMediaCompanySpendsIntoItsRenewal` | Vantage's payroll (or card pull) averaged over the last 12 months of a TV term exceeds its average over the 12 before | doc 08 §3 |
 | `NobodyHollowsOutTheirRoster` | at every half-year checkpoint, every active television rival can fill its card and holds a roster a real promotion of its tier would (doc 29 §12: 20–35 trackable characters on weekly TV, 6–10 a division) — **emerging from §2A, with no rule about size** | doc 29 §12; the owner's test case |
 | `NobodyChurns` | no rival releases and re-signs the same wrestler within 180 days; each rival makes fewer than ~40 moves a year | the bug slice 4 caught by hand |

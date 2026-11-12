@@ -105,6 +105,12 @@
                 {
                     <div class="rcard__warn"><Icon Name="warn" /> @condition</div>
                 }
+                @* The audience's side of it, separate from the body's: an act can be fit and
+                   stale. Says which part of the crowd is tired, because it is rarely all of it. *@
+                @if (AudienceModel.Reading(State.Career?.Audience, w) is { } stale)
+                {
+                    <div class="rcard__warn"><Icon Name="warn" /> @(char.ToUpper(stale[0]) + stale[1..]).</div>
+                }
 
                 @if (w.InjuryHistory.Count > 0)
                 {

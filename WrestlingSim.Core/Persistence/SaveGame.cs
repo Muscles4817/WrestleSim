@@ -101,6 +101,46 @@ namespace WrestlingSim.Persistence
         public List<NonCompeteDto> NonCompetes { get; set; } = new();
         public List<BidDto> Bids { get; set; } = new();
         public List<NewsDto> News { get; set; } = new();
+
+        /// <summary>
+        /// What the promotion's audience has been shown lately. Null in every save written
+        /// before the audience had a memory; such a career loads with everybody fresh.
+        /// </summary>
+        public AudienceDto? Audience { get; set; }
+    }
+
+    public class AudienceDto
+    {
+        public List<ActDto> Acts { get; set; } = new();
+        public double ShowSameness { get; set; }
+        public List<ShowShapeDto> Recent { get; set; } = new();
+    }
+
+    public class ActDto
+    {
+        public string Id { get; set; } = "";
+        public double Sameness { get; set; }
+        public int Streak { get; set; }
+        public string LastKind { get; set; } = "";
+        public string LastGimmick { get; set; } = "";
+        public string? LastSeen { get; set; }
+    }
+
+    public class ShowShapeDto
+    {
+        public string Date { get; set; } = "";
+        public List<string> Cast { get; set; } = new();
+        public List<string> Formats { get; set; } = new();
+    }
+
+    public class AudienceReportDto
+    {
+        public double ShowSamenessBefore { get; set; }
+        public double ShowSamenessAfter { get; set; }
+        public double SamenessPenalty { get; set; }
+        public double Filled { get; set; }
+        public double UnderrunPenalty { get; set; }
+        public List<string> Notes { get; set; } = new();
     }
 
     public class RivalDto
@@ -114,6 +154,9 @@ namespace WrestlingSim.Persistence
         public double Reputation { get; set; }
         public TvDealDto? Television { get; set; }
         public List<ContractDto> Contracts { get; set; } = new();
+        public AudienceDto? Audience { get; set; }
+        public List<FeudDto>? Feuds { get; set; }
+        public List<TitleDto>? Titles { get; set; }
         public string NextShow { get; set; } = "";
         public string? Folded { get; set; }
         public List<RivalNightDto> Nights { get; set; } = new();
@@ -129,6 +172,8 @@ namespace WrestlingSim.Persistence
         public int Viewers { get; set; }
         public decimal Net { get; set; }
         public string Headline { get; set; } = "";
+        public List<string> Card { get; set; } = new();
+        public double Filled { get; set; } = 1;
     }
 
     public class NonCompeteDto
@@ -213,6 +258,7 @@ namespace WrestlingSim.Persistence
     {
         public List<ItemDrawDto> Draws { get; set; } = new();
         public double CardPull { get; set; }
+        public double CardDepth { get; set; } = 1;
         public int Capacity { get; set; }
         public int Demand { get; set; }
         public decimal TicketPrice { get; set; }
@@ -235,6 +281,7 @@ namespace WrestlingSim.Persistence
         public string Label { get; set; } = "";
         public List<string> Headliners { get; set; } = new();
         public double StarPower { get; set; }
+        public double Acts { get; set; } = 1;
         public double Build { get; set; } = 1;
         public double Freshness { get; set; } = 1;
         public double Stakes { get; set; } = 1;
@@ -717,6 +764,9 @@ namespace WrestlingSim.Persistence
 
         /// <summary>Null for a show run before the books were kept.</summary>
         public ShowFinancesDto? Finances { get; set; }
+
+        /// <summary>Null for a show run before the audience had a memory.</summary>
+        public AudienceReportDto? Audience { get; set; }
     }
 
     public class CardItemResultDto

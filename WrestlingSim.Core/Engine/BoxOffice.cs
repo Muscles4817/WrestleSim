@@ -68,12 +68,12 @@ namespace WrestlingSim.Engine
         /// </summary>
         public static double TypicalCardPullFor(PromotionTier tier) => tier switch
         {
-            PromotionTier.Local       => 0.3312,
-            PromotionTier.Independent => 0.4165,
-            PromotionTier.SuperIndie  => 0.4508,
+            PromotionTier.Local       => 0.3379,
+            PromotionTier.Independent => 0.4236,
+            PromotionTier.SuperIndie  => 0.4667,
             PromotionTier.Established => 0.4934,
-            PromotionTier.National    => 0.6040,
-            PromotionTier.Global      => 0.8699,
+            PromotionTier.National    => 0.6161,
+            PromotionTier.Global      => 0.8842,
             _                         => 0.3000
         };
 
@@ -103,8 +103,8 @@ namespace WrestlingSim.Engine
             PromotionTier.Independent => new(18m, 12m,   2_000m,         0m,        0m,        25_000m,       270m),
             PromotionTier.SuperIndie  => new(25m, 14m,   8_000m,         0m,        0m,       150_000m,     1_940m),
             PromotionTier.Established => new(30m,  7m,  50_000m,   350_000m,  120_000m,     3_000_000m,    30_800m),
-            PromotionTier.National    => new(35m,  6m, 120_000m, 1_500_000m,  350_000m,    25_000_000m,   289_200m),
-            PromotionTier.Global      => new(40m,  5m, 200_000m, 4_000_000m,  700_000m,   250_000_000m,   497_700m),
+            PromotionTier.National    => new(35m,  6m, 120_000m, 1_500_000m,  350_000m,    25_000_000m,   161_000m),
+            PromotionTier.Global      => new(40m,  5m, 200_000m, 4_000_000m,  700_000m,   250_000_000m,   124_800m),
             _                         => new(18m, 12m,   2_000m,         0m,        0m,        25_000m,       230m)
         };
 
@@ -119,19 +119,21 @@ namespace WrestlingSim.Engine
         // ── 1. The draw ──────────────────────────────────────────────────────
 
         /// <summary>What one item gives the public a reason to buy. Read before the bell.</summary>
-        public static ItemDraw DrawOf(ICardItem item, FeudBook? feuds, DateOnly? on) => item switch
+        public static ItemDraw DrawOf(ICardItem item, FeudBook? feuds, DateOnly? on,
+                                      Func<Wrestler, double>? response = null) => item switch
         {
-            BookedMatch m => MatchDraw(m, feuds, on),
-            SegmentItem s => TalkingDraw(s.Name, s.Participants, feuds, weight: 0.5),
-            RumblePlan r  => CrowdDraw(r.Name, r.Wrestlers),
-            RumbleDraw d  => TalkingDraw(d.Name, d.Wrestlers, feuds: null, weight: 0.4),
-            _             => TalkingDraw(item.Name, item.Wrestlers, feuds, weight: 0.5)
+            BookedMatch m => MatchDraw(m, feuds, on, response),
+            SegmentItem s => TalkingDraw(s.Name, s.Participants, feuds, weight: 0.5, response),
+            RumblePlan r  => CrowdDraw(r.Name, r.Wrestlers, response),
+            RumbleDraw d  => TalkingDraw(d.Name, d.Wrestlers, feuds: null, weight: 0.4, response),
+            _             => TalkingDraw(item.Name, item.Wrestlers, feuds, weight: 0.5, response)
         };
 
         /// <summary>Every item, best reason to buy first.</summary>
-        public static List<ItemDraw> Draw(IEnumerable<ICardItem> card, FeudBook? feuds, DateOnly? on) =>
+        public static List<ItemDraw> Draw(IEnumerable<ICardItem> card, FeudBook? feuds, DateOnly? on,
+                                          Func<Wrestler, double>? response = null) =>
             card.Where(i => i.Wrestlers.Count > 0)
-                .Select(i => DrawOf(i, feuds, on))
+                .Select(i => DrawOf(i, feuds, on, response))
                 .OrderByDescending(d => d.Pull)
                 .ToList();
 
@@ -147,7 +149,7 @@ namespace WrestlingSim.Engine
             return pull;
         }
 
-        private static ItemDraw MatchDraw(BookedMatch m, FeudBook? feuds, DateOnly? on)
+        private static ItemDraw MatchDraw(BookedMatch m, FeudBook? feuds, DateOnly? on, Func<Wrestler, double>? response)
         {
             var plan = m.Plan;
 
@@ -158,9 +160,7 @@ namespace WrestlingSim.Engine
                 .OrderByDescending(w => w.EffectiveOverness)
                 .ToList();
 
-            // The plan's own feud when the builder attached one; otherwise whatever the book
-            // holds between these people, because the poster sells the story either way.
-            var feud = plan.Feud ?? AcrossTheRing(plan, feuds);
+            var feud = StoryBetween(plan, feuds);
             double stakes = 1.0 + (plan.TitleAtStake?.Prestige ?? 0) / 100.0 * 0.35;
             if (plan.Stipulation != Stipulation.None) stakes *= 1.10;
 
@@ -168,7 +168,8 @@ namespace WrestlingSim.Engine
             {
                 Label      = m.Name,
                 Headliners = tops.Select(w => w.RingName).ToList(),
-                StarPower  = StarPower(tops),
+                StarPower  = StarPower(tops, response),
+                Acts       = ActsOf(tops, response),
                 Build      = BuildOf(feud),
                 Freshness  = feud?.Familiarity(on) ?? 1.0,
                 Stakes     = stakes
@@ -176,23 +177,37 @@ namespace WrestlingSim.Engine
         }
 
         /// <summary>
-        /// The hottest live feud between people on *opposite* sides. Not
-        /// <see cref="FeudBook.Among"/> over everyone in the ring: two tag partners who are
-        /// feuding with each other are not what a match against somebody else is selling.
+        /// The story between the sides of a match: the plan's own feud when the builder attached
+        /// one, otherwise whatever the book holds between people on *opposite* sides — two tag
+        /// partners feuding with each other are not what a match against somebody else sells.
+        ///
+        /// **Dormant feuds count.** This used <see cref="FeudBook.Among"/>, which returns live
+        /// stories only, so a rematch between two people with no heat between them was never
+        /// found and was sold as a first meeting however many times it had run. A pairing with
+        /// no heat still has a match count, and the match count is what goes stale.
         /// </summary>
-        private static Models.MatchPlan.Feud? AcrossTheRing(Models.MatchPlan.MatchPlan plan, FeudBook? feuds)
+        public static Models.MatchPlan.Feud? StoryBetween(Models.MatchPlan.MatchPlan plan, FeudBook? feuds)
         {
+            if (plan.Feud is { } own) return own;
             if (feuds is null) return null;
+
             var sides = plan.Sides.Where(s => s.Members.Count > 0).ToList();
-            return feuds.Among(plan.AllParticipants.ToList())
-                .Where(f => sides.Any(s => sides.Any(o => !ReferenceEquals(s, o) &&
-                    s.Members.Any(a => o.Members.Any(b => f.Opposes(a, b))))))
-                .MaxBy(f => f.Heat);
+            Models.MatchPlan.Feud? best = null;
+            for (int i = 0; i < sides.Count; i++)
+                for (int j = i + 1; j < sides.Count; j++)
+                    foreach (var a in sides[i].Members)
+                        foreach (var b in sides[j].Members)
+                            if (feuds.Find(a, b) is { } f
+                                && (best is null || f.Heat > best.Heat
+                                    || (f.Heat == best.Heat && f.RememberedMeetings > best.RememberedMeetings)))
+                                best = f;
+            return best;
         }
 
         /// <summary>A promo or an angle: it sells a ticket at half the rate a match does.</summary>
         private static ItemDraw TalkingDraw(
-            string label, IReadOnlyList<Wrestler> people, FeudBook? feuds, double weight)
+            string label, IReadOnlyList<Wrestler> people, FeudBook? feuds, double weight,
+            Func<Wrestler, double>? response = null)
         {
             var tops = people.OrderByDescending(w => w.EffectiveOverness).ToList();
             var feud = feuds?.Among(people).MaxBy(f => f.Heat);
@@ -201,20 +216,22 @@ namespace WrestlingSim.Engine
             {
                 Label      = label,
                 Headliners = tops.Take(2).Select(w => w.RingName).ToList(),
-                StarPower  = StarPower(tops) * weight,
+                StarPower  = StarPower(tops, response) * weight,
+                Acts       = ActsOf(tops, response),
                 Build      = BuildOf(feud)
             };
         }
 
         /// <summary>A battle royal sells on its two biggest names and the spectacle of the rest.</summary>
-        private static ItemDraw CrowdDraw(string label, IReadOnlyList<Wrestler> people)
+        private static ItemDraw CrowdDraw(string label, IReadOnlyList<Wrestler> people, Func<Wrestler, double>? response = null)
         {
             var tops = people.OrderByDescending(w => w.EffectiveOverness).ToList();
             return new ItemDraw
             {
                 Label      = label,
                 Headliners = tops.Take(2).Select(w => w.RingName).ToList(),
-                StarPower  = StarPower(tops),
+                StarPower  = StarPower(tops, response),
+                Acts       = ActsOf(tops, response),
                 Stakes     = 1.10
             };
         }
@@ -223,12 +240,27 @@ namespace WrestlingSim.Engine
         /// Doc 18 §7: "both performers are over". The best name counts most, but a star
         /// against nobody sells less than two stars — 60/40 between the top two.
         /// </summary>
-        private static double StarPower(IReadOnlyList<Wrestler> bestFirst) => bestFirst.Count switch
+        private static double StarPower(IReadOnlyList<Wrestler> bestFirst, Func<Wrestler, double>? response = null)
         {
-            0 => 0,
-            1 => 0.6 * bestFirst[0].EffectiveOverness / 100.0,
-            _ => (0.6 * bestFirst[0].EffectiveOverness + 0.4 * bestFirst[1].EffectiveOverness) / 100.0
-        };
+            // What the audience still feels of each name: all of it, unless the act has gone
+            // stale with the people watching (AudienceModel.Response).
+            double Pull(Wrestler w) => w.EffectiveOverness * (response?.Invoke(w) ?? 1.0);
+            return bestFirst.Count switch
+            {
+                0 => 0,
+                1 => 0.6 * Pull(bestFirst[0]) / 100.0,
+                _ => (0.6 * Pull(bestFirst[0]) + 0.4 * Pull(bestFirst[1])) / 100.0
+            };
+        }
+
+        /// <summary>How much of the headliners' pull the audience still feels — for the report to say so.</summary>
+        private static double ActsOf(IReadOnlyList<Wrestler> bestFirst, Func<Wrestler, double>? response)
+        {
+            if (response is null || bestFirst.Count == 0) return 1.0;
+            return bestFirst.Count == 1
+                ? response(bestFirst[0])
+                : 0.6 * response(bestFirst[0]) + 0.4 * response(bestFirst[1]);
+        }
 
         /// <summary>
         /// The build: up to half again for a feud at Nuclear heat, discounted by how much the
@@ -322,15 +354,19 @@ namespace WrestlingSim.Engine
         /// </summary>
         public static ShowFinances Night(
             ScheduledShow show, Promotion promotion, double reputation, FeudBook? feuds,
-            TvDeal? deal = null, Func<Wrestler, decimal>? fee = null, double interest = 1.0)
+            TvDeal? deal = null, Func<Wrestler, decimal>? fee = null, double interest = 1.0,
+            Func<Wrestler, double>? response = null)
         {
             var e = For(promotion.Tier);
-            var draws = Draw(show.Card, feuds, show.Date);
+            var draws = Draw(show.Card, feuds, show.Date, response);
             double pull = CardPull(draws);
             bool hasCard = draws.Count > 0;
 
             int capacity = hasCard ? show.Attendance : 0;
-            int demand = Demand(capacity, pull, reputation, promotion.Tier, interest);
+            // A thin card sells fewer tickets and fewer people sit down for it: the whole card
+            // counts, not only the top of it.
+            double depth = AudienceModel.CardDepth(show);
+            int demand = Demand(capacity, pull, reputation, promotion.Tier, interest * depth);
             int attendance = Math.Min(capacity, demand);
             decimal price = PriceFor(e, show.Type);
 
@@ -340,6 +376,7 @@ namespace WrestlingSim.Engine
             {
                 Draws            = draws,
                 CardPull         = pull,
+                CardDepth        = depth,
                 Capacity         = capacity,
                 Demand           = demand,
                 TicketPrice      = price,
@@ -350,7 +387,7 @@ namespace WrestlingSim.Engine
                 // meant a promotion running only premium events renewed at the floor every term.
                 TuneIn           = hasCard && promotion.HasTelevision
                                    && show.Type is ShowType.Television or ShowType.PremiumEvent
-                                       ? Television.TuneIn(promotion.Tier, pull, reputation, interest)
+                                       ? Television.TuneIn(promotion.Tier, pull, reputation, interest * depth)
                                        : 0,
                 Talent           = onCard.Sum(w => AppearanceFee(w, fee)),
                 Operations       = hasCard ? OperationsFor(e, show.Type) : 0m,

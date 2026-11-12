@@ -127,8 +127,8 @@ audience expects, and what buildings you can fill.
 | Regional Independent | — | 30 days | 720 |
 | Super Indie | — | 21 days | 2,240 |
 | Established | Weekly | 7 days | 6,400 |
-| National | Weekly | 4 days | 12,800 |
-| Global Major | Weekly | 3 days | 20,800 |
+| National | Weekly | 7 days | 12,800 |
+| Global Major | Weekly | 7 days | 20,800 |
 
 Below Established there is no television, so the wizard does not offer it — the
 guaranteed-income dividing line from doc 01, made mechanical. Everything else (too many
@@ -206,13 +206,21 @@ ticket.**
   fixed for the term, injuries extending it. A career opens with a roster sized and budgeted for
   its tier; the rest of the world is the market. The Contracts screen shows what each deal costs
   against what the wrestler would ask today.
+- **The audience gets bored — of sameness, not of screen time.** A wrestler on every show with
+  a story that keeps moving stays hot; one in the same match week after week does not, and how
+  fast depends on their charisma and how long-lived their gimmick is. The weekly viewer tires
+  first, the casual fan barely, the hardcore fan soonest and of winning streaks too — so one
+  act can be hot with one crowd and stale with another. The show itself goes stale if it is the
+  same faces in the same kinds of match, and a card that leaves its slot half empty sells fewer
+  tickets. A national promotion cannot run on six wrestlers; nothing in the code says so.
 - **Rivals.** You are not alone: a global major, a national challenger and two indies run on
   the same clock, sign from the same ninety wrestlers, sell their houses through the same box
   office and can go broke. Their signed wrestlers cannot work for you; a rival may bid for your
   star in the last sixty days of a deal, and you match it or lose them; you can bid for theirs.
   Every price and every audience follows how many promotions are competing — a rival closing
-  makes wages cheaper and crowds smaller for everybody. The Rivals screen has the standings and
-  the industry's news.
+  makes wages cheaper and crowds smaller for everybody. A rival's show is a real card — title
+  matches, tags, promos — in front of its own audience, with its own champions; the Rivals
+  screen has the standings, the champions, each rival's last card and the industry's news.
 
 The figures come from docs/wrestling-reference/09 and 29; how they were calibrated, and what
 is not built yet (head-to-head nights, acquisitions, going broke), is in
