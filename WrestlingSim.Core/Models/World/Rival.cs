@@ -38,6 +38,28 @@ namespace WrestlingSim.Models.World
         public TvDeal? Television { get; set; }
         public List<Contract> Contracts { get; set; } = new();
 
+        /// <summary>
+        /// What this promotion's own audience has been shown. A wrestler stale here is fresh
+        /// to the player's crowd, and the other way about.
+        /// </summary>
+        public Audience Audience { get; set; } = new();
+
+        /// <summary>
+        /// Its match-ups and stories. Mostly a memory of who has met whom and how often — the
+        /// thing that goes stale fastest (doc 17 §4.1) — kept in the same book the player's are,
+        /// so the box office reads a rival's rematch exactly as it reads the player's.
+        /// </summary>
+        public Engine.FeudBook Feuds { get; set; } = new();
+
+        /// <summary>Its championships, on the same prestige model as the player's.</summary>
+        public TitleRegistry Titles { get; set; } = new();
+
+        /// <summary>
+        /// Holds its roster still: no signings, releases, bids or re-signings. For measuring
+        /// what a given roster does, not for play. Not saved.
+        /// </summary>
+        public bool Frozen { get; set; }
+
         /// <summary>When its next show runs. Advanced by its tier's cadence.</summary>
         public DateOnly NextShow { get; set; }
 
@@ -65,6 +87,12 @@ namespace WrestlingSim.Models.World
         public int Viewers { get; init; }
         public decimal Net { get; init; }
         public string Headline { get; init; } = "";
+
+        /// <summary>The card, in running order, as a line each.</summary>
+        public List<string> Card { get; init; } = new();
+
+        /// <summary>How much of the slot the card filled.</summary>
+        public double Filled { get; init; } = 1.0;
     }
 
     /// <summary>

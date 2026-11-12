@@ -494,11 +494,66 @@ All inside doc 09 §4's bands; running costs were left alone. Rivals book a tier
 tier-sized slot for the same reason. `TheWealthyFansPromotionBurnsOut_TheMajorDoesNot` still
 passes its 18–40 month band.
 
-### Not built in this half
+### The second half: a rival's show is a real show
 
-- **Rivals' side of all of it**: their cards are still plain singles pairings, they have no
-  titles, and no audience of their own — a wrestler's sameness is tracked only with the player's
-  audience. Plan §2A.2a, §2A.3. **This is the next piece of work.**
+*Plan §2A.2a, §2A.3. Built after the first half.*
+
+Rival shows were five plain singles pairings — a shortcut taken under the word "abstract", which
+the owner ruled out. Now:
+
+- **A rival's card is made of what the player books** (`World.BookCard`): title matches, a tag
+  one week and a three-way now and then, a promo or confrontation on television, and singles
+  until half the slot is filled — each pairing chosen by what it would draw *as that rival's
+  audience now sees those people and that match-up*. If the roster runs out before the slot is
+  filled, people work twice. "Abstract" now means one thing: matches are not worked beat by beat;
+  an item's rating comes from who is in it and what kind of item it is
+  (`World.ExpectedItemRating`).
+- **Its own audience** (`RivalPromotion.Audience`): the same sameness model, per promotion. A
+  wrestler stale to a rival's crowd is fresh to the player's, so a signing arrives fresh.
+- **Its own match-up memory** (`RivalPromotion.Feuds`, an ordinary `FeudBook`), so the box office
+  reads a rival's rematch exactly as it reads the player's.
+- **Its own belts** (`RivalPromotion.Titles`), seeded with the default slate and run on the
+  existing `TitleEconomy`: vacant belts are filled on any night, champions defend on the big
+  night against the freshest draw in the division, title stakes feed the draw, and a wrestler who
+  leaves vacates.
+- The Rivals screen lists each rival's champions with prestige and its last card item by item.
+
+**Two things the three-year probe corrected:**
+
+- *Premium events were every fourth show.* At a show every three days that is one every twelve
+  days and thirty title defences a year; with upsets a belt changed hands so often that the
+  global major's world title fell from 57 prestige to 0 in eighteen months. The big night is now
+  about monthly (doc 29 §1: 12–16 major events a year), and a champion holds 85% of defences.
+  After a year: 82 / 74 / 87 prestige, two to four reigns each.
+- *The wealthy fan stopped folding on time.* Fewer premium events means less production cost,
+  and Ironclad lasted 38 months — past doc 01 §7's 18–36. Its running-cost trait was re-solved
+  from 1.2× to 1.3×: **22 months**. This is sensitive (1.4× gives 15), and it is the last time a
+  trait should be solved to hit this band: under the planner the burn-out is supposed to come
+  from the objective.
+
+**Measured** (`RivalShowTests`): a national rival cut to its six most over loses its house —
+75% to 19% in twelve weeks, rating 53 to 31. A rival with two wrestlers a division draws 8% on
+its big nights after a year, against 64% with a full roster.
+
+**The finding worth the owner's attention: the top tiers are under-rostered for their
+schedule.** A national rival with its *full* roster of 25 also slides, 79% to 60% in twelve
+weeks, and the global major with 40 runs at about two-thirds of a house. They run a show every
+four and every three days, so each star works every other show. That is the six-wrestler
+argument at scale, and it is honest: ninety wrestlers shared between five promotions cannot
+staff a major's calendar. The remedies are real ones — a bigger database, a brand split (which
+the player has and rivals do not), or a slower schedule — not a tweak to the rates.
+The calibration constants (`TypicalCardPullFor`) describe a *fresh* typical card; steady-state
+houses now sit below `TypicalFill` at the television tiers for this reason.
+
+### Not built in this slice
+
+- **Results and wear on rival shows** (plan §2A.4): working for a rival still moves nobody's
+  overness or momentum and costs no fatigue; only being on screen, the match-up memory and the
+  audience's patience are recorded.
+- **Choosing the card's make-up.** The recipe is fixed (tag on even shows, three-way every
+  third, one talking segment). That choice belongs to the planner (plan §8).
+- **Stipulations and standing tag teams for rivals**; tag belts are in nobody's default slate.
+- **A brand split for rivals**, which is what a real major does about the schedule.
 - **Rejection of a push** (the Reigns case) — its own slice, agreed with the owner.
 - **Gimmick depth beyond `Durability`**: doc 31 §3's *Motivation* and *Fit* are still missing.
 - **A turn** as something new: there is no alignment-change mechanic to read.

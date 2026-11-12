@@ -154,6 +154,9 @@ namespace WrestlingSim.Persistence
         public double Reputation { get; set; }
         public TvDealDto? Television { get; set; }
         public List<ContractDto> Contracts { get; set; } = new();
+        public AudienceDto? Audience { get; set; }
+        public List<FeudDto>? Feuds { get; set; }
+        public List<TitleDto>? Titles { get; set; }
         public string NextShow { get; set; } = "";
         public string? Folded { get; set; }
         public List<RivalNightDto> Nights { get; set; } = new();
@@ -169,6 +172,8 @@ namespace WrestlingSim.Persistence
         public int Viewers { get; set; }
         public decimal Net { get; set; }
         public string Headline { get; set; } = "";
+        public List<string> Card { get; set; } = new();
+        public double Filled { get; set; } = 1;
     }
 
     public class NonCompeteDto

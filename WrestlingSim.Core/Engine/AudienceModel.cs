@@ -261,7 +261,8 @@ namespace WrestlingSim.Engine
         /// sameness moves by how like the last few it was.
         /// </summary>
         public static AudienceReport Observe(
-            Audience audience, ScheduledShow show, IReadOnlyDictionary<string, double> novelty, ShowResult result)
+            Audience audience, ScheduledShow show, IReadOnlyDictionary<string, double> novelty, ShowResult result,
+            IReadOnlySet<string>? winnerIds = null)
         {
             double before = audience.ShowSameness;
 
@@ -277,7 +278,9 @@ namespace WrestlingSim.Engine
                                              .Append(t.Champion).Append(t.OutgoingChampion).OfType<Wrestler>())
                     crowned.Add(w.Id);
 
-            var winners = show.Card.OfType<BookedMatch>()
+            // The booked winners, read off the beat sheet — or handed in, for a show whose
+            // matches were not worked beat by beat and so have no sheet to read.
+            var winners = winnerIds ?? show.Card.OfType<BookedMatch>()
                 .SelectMany(m => m.Plan.BookedWinningSide?.Members ?? [])
                 .Select(w => w.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
             var wrestled = show.Card.OfType<BookedMatch>()

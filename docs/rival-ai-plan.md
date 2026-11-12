@@ -108,12 +108,20 @@ promotion and what it wants). `RivalPromotion` gets optional overrides for both.
 
 ## 2A. PR 0 — the audience values the whole show
 
-> **Status.** The owner approved this section. **The first half is built** — the shared model and
-> the player's shows: §2A.1 (a), (b) and (d), §2A.2, and the player-side tests of §2A.5. See
+> **Status.** The owner approved this section, and it is **built** except where noted — see
 > `docs/business-design-record.md`, "Slice 5", for what was built, measured and corrected.
-> **Still to build from this section:** §2A.2a (rival cards as real cards), §2A.3 (rival
-> titles), a rival's own `Audience`, the rival-side tests of §2A.5, and §2A.4 if those are not
-> enough. §2A.1 (c), rejection, is its own slice.
+> Built: §2A.1 (a), (b), (d); §2A.2; §2A.2a (rival cards are real cards); §2A.3 (rival titles);
+> a rival's own `Audience` and match-up memory; the tests of §2A.5.
+> **Not built:** §2A.1 (c), rejection — its own slice, next; §2A.4, results and wear on rival
+> shows; rival stipulations and tag teams.
+>
+> **This changes what PR A (§3) still has to do.** §3.1's `PairingLedger` was superseded: each
+> rival has an ordinary `FeudBook` (`RivalPromotion.Feuds`) and the box office reads it through
+> `BoxOffice.StoryBetween`, so there is one freshness path, not two. §3.2's `BookCard` exists
+> (`World.BookCard`) with a fixed recipe and a draw-only score. §3.3's split exists as
+> `World.ExpectedItemRating` plus seeded noise in `RunNight`. **What PR A still owes is the
+> forecast (§4)** — and the forecast will need a cheap way to copy a rival's `FeudBook` and
+> `Audience`, because it simulates shows on copies.
 
 **This comes before everything else, and it changes the player's game as well as the rivals'.**
 

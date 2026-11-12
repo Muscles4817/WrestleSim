@@ -116,6 +116,43 @@ else
                         @string.Join(", ", signed.Take(6).Select(w => w.RingName))
                     </div>
                 }
+
+                @* Its belts, on the same prestige model as yours. *@
+                @if (rival.Titles.Active.Count > 0)
+                {
+                    <div class="small mt">
+                        <span class="muted">Champions:</span>
+                        @foreach (var title in rival.Titles.ByPrestige)
+                        {
+                            <div>
+                                @(title.Champion?.RingName ?? "Vacant")
+                                <span class="muted">— @ShortTitle(title.Name, rival.Name) · prestige @title.Prestige.ToString("F0")</span>
+                            </div>
+                        }
+                    </div>
+                }
+
+                @* The last card, item by item: what a rival's show is made of. *@
+                @if (last is { Card.Count: > 0 })
+                {
+                    <div class="small mt">
+                        <span class="muted">
+                            Last card (@last.Type.ToString().Replace("PremiumEvent", "premium event").ToLowerInvariant()):
+                        </span>
+                        @foreach (var line in last.Card)
+                        {
+                            <div>@line.Replace(rival.Name + " ", "")</div>
+                        }
+                        @if (last.Filled < AudienceModel.FullCard)
+                        {
+                            <div class="grade--poor">A thin card — only @Money.Percent(last.Filled) of the slot filled.</div>
+                        }
+                    </div>
+                    @if (rival.Audience.ShowSameness > 30)
+                    {
+                        <div class="small grade--poor">Its audience has been seeing the same show.</div>
+                    }
+                }
             }
         </div>
     }
@@ -143,6 +180,9 @@ else
 }
 
 @code {
+    private static string ShortTitle(string title, string promotion) =>
+        title.StartsWith(promotion) ? title[promotion.Length..].Trim() : title;
+
     private static string Motive(FounderMotive m) => m switch
     {
         FounderMotive.Business  => "business",

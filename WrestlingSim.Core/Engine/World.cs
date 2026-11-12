@@ -30,7 +30,7 @@ namespace WrestlingSim.Engine
             FounderMotive.Vanity    => new(1.00, 1.00, -4, 1.10, true,  "The owner's favourites are protected. Capped at the owner's own draw."),
             FounderMotive.Ideology  => new(0.80, 1.00,  6, 1.05, false, "A coherent, well-worked product with a devoted core. Refuses to broaden."),
             FounderMotive.Legacy    => new(0.90, 1.00,  1, 1.05, true,  "Steady and traditional. Slow to change, slow to die."),
-            FounderMotive.MarkMoney => new(1.50, 1.20,  0, 1.30, true,  "A wealthy fan's money: overspends on names. Typically burns out in 18–36 months."),
+            FounderMotive.MarkMoney => new(1.50, 1.30,  0, 1.30, true,  "A wealthy fan's money: overspends on names. Typically burns out in 18–36 months."),
             FounderMotive.Platform  => new(1.00, 1.10, -1, 1.15, true,  "A media company's content: consistent television, creative subordinate to the schedule."),
             _                       => new(1.00, 1.00,  0, 1.00, false, "")
         };
@@ -107,6 +107,7 @@ namespace WrestlingSim.Engine
                     // Staggered off the player's first week so they do not all run on day one.
                     NextShow  = on.AddDays(1 + (int)tier % promotion.TypicalShowIntervalDays)
                 };
+                rival.Titles.SeedDefaults(name, on);
                 career.Rivals.Add(rival);
             }
 
