@@ -56,6 +56,8 @@ demand = capacity × TypicalFill × (cardPull / TypicalCardPull)^1.5 × reputati
   `ATypicalCardFillsTypically_AndThatIsMeasuredNotAsserted` fails when it has — the same
   contract as `MatchEngine.TypicalInvestment`. It shipped measured at 0.7624; the fourteen
   champions added in #90 moved it to 0.7561, and the test caught it on rebase.
+  *Corrected by slice 3:* it is now one figure **per tier**, measured on that tier's opening
+  roster, because prices no longer depend on the buyer — see "Slice 3" below.
 - **`TypicalFill` = 0.70.** Doc 29 §7 puts break-even at a 50–60% house; a booker who books
   whoever is free should clear it, not by much.
 - **Elasticity 1.5**, because draw is top-heavy: a card twice as strong as typical sells out.
@@ -71,7 +73,7 @@ size and is now treated as that. Demand above capacity is reported as *turned aw
 | Gate | attendance × the tier's net ticket price (×1.6 premium event, ×0.8 house show), in whole dollars so the report's "attendance × price" adds up |
 | Merchandise | attendance × per-head spend × (0.5 + top overness) × 0.55 net — doc 09 §3.4's concentration in the most over name |
 | Television rights | flat per episode at Established and above; a premium event is in the deal at 2× |
-| Talent | per appearance: the tier's base × 1 / 1.5 / 3 / 8 / 20 by card position |
+| Talent | per appearance: the tier's base × 1 / 1.5 / 3 / 8 / 20 by card position. *Replaced in slice 3* by one market price for every buyer, and nothing extra for an appearance a guarantee covers |
 | Building and crew | per show, by tier and show type |
 | Production | per televised episode or premium event, at TV tiers only |
 | The road | a run of towns as house shows, one a night, its cast paired off best against next-best for the poster; talent paid for the nights actually worked |
@@ -85,6 +87,8 @@ against doc 09 §4's 30–40% for Tier 0 and roughly break-even below it. Per-ap
 leaves out offices, staff, insurance and the guarantees of everybody not booked tonight. That
 is doc 09 §2's SG&A line, and it is charged **by the clock**, every day, show or no show —
 not per show, because a promotion that stops running does not stop paying for its office.
+*Corrected by slice 3:* the guarantees came out of it and are now their own line on the clock,
+so it is running costs only, re-solved per tier.
 
 ### 5. Reputation — the next ticket
 
@@ -111,6 +115,10 @@ re-measured on the roster after #90
 | Established | near break-even or modest | 10.5% | 8.1% to 12.6% |
 | National | costs that can exceed revenue | 6.3% | 4.7% to 7.6% |
 | Global | 30–40% in strong years | 35.1% | 34.4% to 35.7% |
+
+*Superseded by slice 3:* these were measured with per-appearance pay scaled to the buyer and on
+cards drawn from all ninety. The current figures, per tier on each tier's opening roster with
+payroll included, are in the slice 3 table below.
 
 The TV tiers' bands are narrow because the flat rights fee dominates their revenue. That is
 the honest consequence of decision 3 and the reason renewal is next.
@@ -198,12 +206,88 @@ caught it; the fee now rounds by dividing.
   like episodes. Unrated, a promotion running only premium events renewed at the floor every
   term and its fee halved each time.
 
+## Slice 3: contracts, the market, and the opening roster
+
+*Docs 10, 11 and 13.* Until this slice every career owned all ninety shipped wrestlers, paid
+each one per appearance at a rate scaled to the buyer's tier, and the daily office cost hid
+everybody else's guarantees.
+
+### The decisions the booker made
+
+| Question | Answer |
+|---|---|
+| How small promotions work | **An open per-date market.** Doc 11 §2.4: below television nobody signs; everybody works by the night. |
+| Does price depend on the buyer | **No.** A star costs what a star costs; a small promotion cannot afford one on a guarantee. |
+| What a career opens with | **A source.** The default is sized and budgeted for the tier; a custom database (WWE opens with WWE's people) will be another `IOpeningRoster`. |
+
+### What it does
+
+- **`TalentMarket.PerDateAsk`** — one price per wrestler, exponential in effective overness:
+  ~$100 a night at 25, $800 at 50, $4k at 70, $13k at 85, $30k at 95. Momentum moves it, so
+  a hot run raises the price (doc 11 §7.1).
+- **Guarantees** (television tiers only): ~120 nights of the asking price a year, less for a
+  longer term (doc 10 §6.1). A top star asks ~$3.6M, a mid-carder ~$470k — inside doc 29 §4.1.
+  Paid daily by the clock; appearances cost nothing extra. The rate is fixed for the term, so
+  somebody who gets hotter is a bargain until it runs out, and the Contracts screen says so.
+- **Regulars** (below television): no contract and no cost until booked. Anybody else is
+  bookable too, at their price.
+- **Tolling:** an injured wrestler's deal extends a day for every day out (doc 11 §2.1).
+- **Expiry:** a deal that runs out goes to the market — still bookable by the night. Warned
+  sixty days ahead on the dashboard and the Contracts screen.
+- **Release:** pays out ninety days of the guarantee (doc 13 §3.2's non-compete); dropping a
+  regular costs nothing (doc 13 §4: at the bottom of the business you just stop being booked).
+- **`TierOpeningRoster`:** at television tiers, guaranteed deals inside a payroll budget (doc 09
+  §2's 25–35% of revenue), the budget spread so each pick takes at most three times its fair
+  share of what is left — a few stars and a full card under them — divisions taken alternately,
+  terms staggered one to four years. Below television, the best regulars whose nightly price is
+  under the tier's indie ceiling (doc 29 §4.2). Quality is not chosen; it falls out of the
+  budget: average overness 30 at Local, 54 at Super Indie, 61 at Global (everyone).
+- **Old saves** open their roster from the source on load. Nobody leaves the world — everybody
+  else is on the market — but the bill is no longer all ninety.
+
+### Re-calibration
+
+Because prices no longer scale with the buyer, a Local promotion can afford the least over end
+of a major-league roster, and its audience is the audience for that card. One typical-card
+figure measured over all ninety put every indie card at a third of a house, so the figure is
+now **per tier**, measured on the tier's opening roster:
+
+| Tier | Opening roster | Payroll a year | Typical card pull | Daily running cost | Median margin |
+|---|---|---|---|---|---|
+| Local | 11 regulars | — | 0.3312 | $25 | 9.3% |
+| Independent | 16 regulars | — | 0.4451 | $245 | 11.6% |
+| SuperIndie | 22 regulars | — | 0.5757 | $1,650 | 15.3% |
+| Established | 40 signed | $6.9M | 0.6186 | $14,300 | 10.0% |
+| National | 65 signed | $29.9M | 0.7237 | $217,000 | 3.2% |
+| Global | 90 signed | $61.1M | 0.7562 | $485,000 | 35.0% |
+
+Running costs were solved from the measured median night for each tier's target in doc 09 §4,
+then confirmed by `ATypicalCardLandsWhereTheReferencePutsTheTier`.
+
+One test's premise changed rather than broke: a road of upper-card stars at a Super Indie
+used to pay. At one market price they ask ~$10k a night each, so the same towns now sell more
+tickets and lose money, and the test pins both halves.
+
+### Not built in slice 3
+
+- **Rival promotions** — and so no competing offers (doc 11 §7.1's only real leverage), no
+  poaching, no non-compete that matters, and no market-wide wage effect (doc 11 §8). Without a
+  rival, a wrestler whose deal runs out goes to a market that only you buy from, and nobody holds
+  out for more than their asking price.
+- **Availability.** A free agent is always available on any date. In reality an unsigned name
+  is booked elsewhere some nights, which is half of what a guarantee buys (doc 11 §6.1:
+  "planning").
+- **Morale** weighted as doc 11 §9 ranks it — creative use and honesty above money — and so no
+  cost to warehousing beyond the salary and the existing off-screen decay.
+- **Release waves and budget pressure** (doc 13 §2.1), **merch royalties**, **creative-control
+  clauses**, **scouting with hidden charisma**, **developmental**.
+- **Loading a custom database.** The seam exists (`IOpeningRoster`, plain-data contracts); the
+  loader does not.
+
 ## Not built, and written down
 
 - ~~**TV renewal and viewership.**~~ Built in slice 2, above.
-- **Contracts and signings.** Per-appearance pay undercounts a TV promotion's payroll; the
-  daily overhead stands in for the guarantees. The oversized-roster trap (doc 09 §2.2) needs a
-  roster the player chooses.
+- ~~**Contracts and signings.**~~ Built in slice 3, above.
 - **Consequences of going broke.** Cash goes negative and is reported. Owner funding, or an
   end, comes once the numbers have been played against.
 - **Markets (B5).** Every town on a road run is the same town; the fifth night sells what the

@@ -82,6 +82,33 @@ namespace WrestlingSim.Persistence
         /// term on the day it is loaded. Additive, like <see cref="Books"/>.
         /// </summary>
         public TvDealDto? Television { get; set; }
+
+        /// <summary>
+        /// Who is signed or a regular, and on what terms. Null in every save written before
+        /// contracts existed: such a career opens its roster from the tier's default source on
+        /// the day it is loaded. Nobody vanishes — everybody else is on the open market, still
+        /// bookable by the night — but the bill for them changes. Additive, no version bump.
+        /// </summary>
+        public List<ContractDto>? Contracts { get; set; }
+
+        public List<ContractEventDto> ContractLog { get; set; } = new();
+    }
+
+    public class ContractDto
+    {
+        public string WrestlerId { get; set; } = "";
+        public Models.World.ContractKind Kind { get; set; }
+        public decimal AnnualGuarantee { get; set; }
+        public string Start { get; set; } = "";
+        public string? End { get; set; }
+        public int DaysTolled { get; set; }
+    }
+
+    public class ContractEventDto
+    {
+        public string Date { get; set; } = "";
+        public string WrestlerId { get; set; } = "";
+        public string What { get; set; } = "";
     }
 
     public class TvDealDto
@@ -116,6 +143,7 @@ namespace WrestlingSim.Persistence
         public decimal Cash { get; set; }
         public decimal OpeningCash { get; set; }
         public decimal Overheads { get; set; }
+        public decimal Payroll { get; set; }
         public double Reputation { get; set; }
         public string OpenedOn { get; set; } = "";
     }

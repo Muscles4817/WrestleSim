@@ -622,7 +622,9 @@ work rather than a missing field.
 **~~One output, which four entries are each separately blocked on~~** — first slice done.
 C5's box office and books exist, so A3, B3, B4 and C1 now have a business result to read.
 What C5 itself still owes: ~~TV renewal and viewership~~ (shipped as slice 2 — a termed
-deal, viewers per episode, renewal on the audience), **contracts**, **a consequence for going broke**, and **the star
+deal, viewers per episode, renewal on the audience), ~~contracts~~ (shipped as slice 3 — one
+market price, guarantees at television tiers, regulars below, an opening roster per tier;
+rival promotions still missing), **a consequence for going broke**, and **the star
 rating's dependence on overness**, which caps the divergence from the rating side. See
 [docs/business-design-record.md](../business-design-record.md).
 

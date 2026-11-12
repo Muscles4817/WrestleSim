@@ -148,6 +148,19 @@
                             {
                                 <span class="badge badge--sm badge--cost">crossover −@BrandIntegrity.CostOf(w).ToString("F1")</span>
                             }
+                            @* What booking them costs, where the choice is made. Career only:
+                               exhibition has no books to charge it to. *@
+                            @if (State.Career is { } c)
+                            {
+                                @if (c.IsGuaranteed(w))
+                                {
+                                    <span class="badge badge--sm badge--muted">signed</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge--sm badge--cost">@Money.Format(TalentMarket.PerDateAsk(w))</span>
+                                }
+                            }
                         </span>
                         <span class="prow__why @BookingSuggestions.Tone(row.Band)">@row.Reason</span>
                         @* Said where the booker is choosing, not three steps later on the

@@ -200,9 +200,15 @@ ticket.**
   stay — and when the term runs out the network pays the next one on that audience, with the
   final year counting double. The dashboard shows what the deal would renew at today.
 - **Cash can go negative.** Nothing stops a career in the red yet; the dashboard says so.
+- **Contracts.** Every wrestler has one asking price, whoever is buying, and it climbs with how
+  over they are. Below television nobody signs — you keep regulars and book anybody by the
+  night. With television you sign guarantees: paid by the day, appearances covered, the rate
+  fixed for the term, injuries extending it. A career opens with a roster sized and budgeted for
+  its tier; the rest of the world is the market. The Contracts screen shows what each deal costs
+  against what the wrestler would ask today.
 
 The figures come from docs/wrestling-reference/09 and 29; how they were calibrated, and what
-is not built yet (negotiation, contracts, going broke), is in
+is not built yet (negotiation, rival promotions, going broke), is in
 [docs/business-design-record.md](docs/business-design-record.md).
 
 ### Time

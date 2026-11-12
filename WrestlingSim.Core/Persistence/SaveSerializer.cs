@@ -124,11 +124,25 @@ namespace WrestlingSim.Persistence
                     RenewedAt      = Math.Round(t.RenewedAt, 4)
                 }).ToList()
             } : null,
+            Contracts = career.Contracts.Select(c => new ContractDto
+            {
+                WrestlerId      = c.WrestlerId,
+                Kind            = c.Kind,
+                AnnualGuarantee = c.AnnualGuarantee,
+                Start           = Iso(c.Start),
+                End             = c.End is { } end ? Iso(end) : null,
+                DaysTolled      = c.DaysTolled
+            }).ToList(),
+            ContractLog = career.ContractLog.Select(e => new ContractEventDto
+            {
+                Date = Iso(e.Date), WrestlerId = e.WrestlerId, What = e.What
+            }).ToList(),
             Books = new BooksDto
             {
                 Cash        = career.Books.Cash,
                 OpeningCash = career.Books.OpeningCash,
                 Overheads   = career.Books.Overheads,
+                Payroll     = career.Books.Payroll,
                 Reputation  = Math.Round(career.Books.Reputation, 4),
                 OpenedOn    = Iso(career.Books.OpenedOn)
             },
@@ -540,6 +554,7 @@ namespace WrestlingSim.Persistence
                     Cash        = books.Cash,
                     OpeningCash = books.OpeningCash,
                     Overheads   = books.Overheads,
+                    Payroll     = books.Payroll,
                     Reputation  = books.Reputation,
                     OpenedOn    = ParseDate(books.OpenedOn)
                 };
@@ -567,6 +582,26 @@ namespace WrestlingSim.Persistence
                 // A televised promotion saved before deals had terms. Its term starts today:
                 // backdating it would renew on episodes nobody counted.
                 career.Television ??= Television.Open(career.Promotion.Tier, career.CurrentDate);
+
+            // Contracts bind by id, and only to people still in the shipped roster.
+            if (dto.Contracts is { } contracts)
+            {
+                foreach (var c in contracts.Where(c => byId.ContainsKey(c.WrestlerId)))
+                    career.Contracts.Add(new Contract
+                    {
+                        WrestlerId      = byId[c.WrestlerId].Id,
+                        Kind            = c.Kind,
+                        AnnualGuarantee = c.AnnualGuarantee,
+                        Start           = ParseDate(c.Start),
+                        End             = string.IsNullOrEmpty(c.End) ? null : ParseDate(c.End),
+                        DaysTolled      = c.DaysTolled
+                    });
+                career.ContractLog.AddRange(dto.ContractLog
+                    .Where(e => byId.ContainsKey(e.WrestlerId))
+                    .Select(e => new ContractEvent { Date = ParseDate(e.Date), WrestlerId = byId[e.WrestlerId].Id, What = e.What }));
+            }
+            else
+                career.OpenRoster();
 
             career.ShowDefinitions.AddRange(dto.ShowDefinitions.Select(d => new ShowDefinition
             {

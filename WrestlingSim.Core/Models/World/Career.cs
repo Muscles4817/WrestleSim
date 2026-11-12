@@ -12,6 +12,13 @@ namespace WrestlingSim.Models.World
     /// are only meaningful relative to a clock that advances and results that are kept —
     /// see docs/wrestling-reference/17-heat-and-getting-over.md.
     /// </summary>
+    /// <summary>Whether an offer was taken, and why not.</summary>
+    public sealed record SigningResult(bool Accepted, string? Reason, Contract? Contract)
+    {
+        public static SigningResult Signed(Contract c) => new(true, null, c);
+        public static SigningResult Refused(string why) => new(false, why, null);
+    }
+
     public class Career
     {
         /// <summary>Stable id so a browser can hold several saves side by side.</summary>
@@ -39,6 +46,124 @@ namespace WrestlingSim.Models.World
         /// the books, and renewed by the clock when its term runs out.
         /// </summary>
         public TvDeal? Television { get; set; }
+
+        /// <summary>
+        /// The promotion's roster: who is signed, or booked as a regular, and on what terms.
+        /// Everyone else in <see cref="Roster"/> is on the open market — still bookable, by the
+        /// night, at their asking price (<see cref="TalentMarket.PerDateAsk"/>).
+        /// </summary>
+        public List<Contract> Contracts { get; set; } = new();
+
+        /// <summary>What happened to the roster lately, newest last. Capped.</summary>
+        public List<ContractEvent> ContractLog { get; set; } = new();
+
+        public Contract? ContractOf(Wrestler w) => Contracts.FirstOrDefault(c => c.WrestlerId == w.Id);
+
+        /// <summary>Paid by the guarantee: their appearances cost nothing extra.</summary>
+        public bool IsGuaranteed(Wrestler w) => ContractOf(w)?.IsGuaranteed == true;
+
+        /// <summary>Only a promotion with television signs anybody. Below it, everybody works by the night.</summary>
+        public bool CanSign => Promotion.HasTelevision;
+
+        /// <summary>A day's guarantees.</summary>
+        public decimal DailyPayroll => Contracts.Sum(c => c.DailyCost);
+
+        public IEnumerable<Contract> ExpiringWithin(int days) =>
+            Contracts.Where(c => c.DaysLeft(CurrentDate) is { } left && left <= days)
+                     .OrderBy(c => c.End);
+
+        /// <summary>
+        /// Signs a wrestler to a guarantee, or re-signs one whose deal is running out. Refuses
+        /// below their asking price — doc 10 §6.2: a wrestler with no competing offer has no
+        /// leverage to *raise* the price, but nobody signs for less than they are worth.
+        /// </summary>
+        public SigningResult Sign(Wrestler w, decimal annual, int years)
+        {
+            if (!CanSign) return SigningResult.Refused("Only a promotion with television signs anybody. Below it, everybody works by the night.");
+            years = Math.Clamp(years, TalentMarket.MinTermYears, TalentMarket.MaxTermYears);
+            var ask = TalentMarket.GuaranteeAsk(w, years);
+            if (annual < ask) return SigningResult.Refused($"{w.RingName} wants ${ask:N0} a year for {years} year{(years == 1 ? "" : "s")}.");
+
+            Contracts.RemoveAll(c => c.WrestlerId == w.Id);
+            var contract = new Contract
+            {
+                WrestlerId      = w.Id,
+                Kind            = ContractKind.Guaranteed,
+                AnnualGuarantee = annual,
+                Start           = CurrentDate,
+                End             = CurrentDate.AddYears(years)
+            };
+            Contracts.Add(contract);
+            Log(w, $"signed for {years} year{(years == 1 ? "" : "s")} at ${annual:N0} a year");
+            return SigningResult.Signed(contract);
+        }
+
+        /// <summary>Adds somebody to the regulars, below television. No contract, no cost until booked.</summary>
+        public void MakeRegular(Wrestler w)
+        {
+            if (ContractOf(w) is not null) return;
+            Contracts.Add(new Contract { WrestlerId = w.Id, Kind = ContractKind.Regular, Start = CurrentDate });
+        }
+
+        /// <summary>
+        /// Lets a wrestler go. A guaranteed deal pays out ninety days (doc 13 §3.2); a regular
+        /// simply stops being booked, which is how a release happens at the bottom of the
+        /// business (doc 13 §4). Returns what it cost.
+        /// </summary>
+        public decimal Release(Wrestler w)
+        {
+            var contract = ContractOf(w);
+            if (contract is null) return 0m;
+
+            decimal payout = 0m;
+            if (contract.IsGuaranteed)
+            {
+                int days = Math.Min(TalentMarket.ReleasePayoutDays, contract.DaysLeft(CurrentDate) ?? 0);
+                payout = Math.Round(contract.DailyCost * days);
+                Books.Cash -= payout;
+                Books.Payroll += payout;
+            }
+
+            Contracts.Remove(contract);
+            Log(w, payout > 0 ? $"released, paid out ${payout:N0}" : "no longer a regular");
+            return payout;
+        }
+
+        private void Log(Wrestler w, string what)
+        {
+            ContractLog.Add(new ContractEvent { Date = CurrentDate, WrestlerId = w.Id, What = what });
+            if (ContractLog.Count > 40) ContractLog.RemoveAt(0);
+        }
+
+        /// <summary>
+        /// The day's contract business: guarantees paid, the injured tolled, the expired gone to
+        /// the market.
+        /// </summary>
+        private void SettleContracts()
+        {
+            decimal payroll = DailyPayroll;
+            Books.Cash -= payroll;
+            Books.Payroll += payroll;
+
+            foreach (var contract in Contracts.Where(c => c.End is not null).ToList())
+            {
+                var w = FindWrestler(contract.WrestlerId);
+
+                // Doc 11 §2.1: the contract freezes while they are hurt.
+                if (w is not null && w.IsInjured(CurrentDate))
+                {
+                    contract.End = contract.End!.Value.AddDays(1);
+                    contract.DaysTolled++;
+                    continue;
+                }
+
+                if (CurrentDate >= contract.End)
+                {
+                    Contracts.Remove(contract);
+                    if (w is not null) Log(w, "contract ran out — on the open market");
+                }
+            }
+        }
 
         /// <summary>Every renewal so far, for the dashboard to report the one that just happened.</summary>
         public TvTerm? LastRenewal => Television?.History.LastOrDefault();
@@ -193,8 +318,10 @@ namespace WrestlingSim.Models.World
 
             CurrentDate = CurrentDate.AddDays(1);
 
-            // The office is open whether or not there is a show tonight.
+            // The office is open whether or not there is a show tonight, and the guarantees are
+            // paid whether or not anybody works.
             ChargeOverhead(1);
+            SettleContracts();
 
             // The term runs out on the clock, and the network pays next term for what this
             // one drew.
@@ -267,6 +394,17 @@ namespace WrestlingSim.Models.World
             if (Promotion.HasTelevision) Television ??= Engine.Television.Open(Promotion.Tier, on);
         }
 
+        /// <summary>
+        /// Signs the opening roster from a source — the tier's default, or later a custom
+        /// database. Anybody already under contract is left alone.
+        /// </summary>
+        public void OpenRoster(IOpeningRoster? source = null)
+        {
+            var opening = (source ?? new TierOpeningRoster()).Open(Promotion, Roster, CurrentDate);
+            foreach (var c in opening)
+                if (Contracts.All(x => x.WrestlerId != c.WrestlerId)) Contracts.Add(c);
+        }
+
         /// <summary>What the promotion costs to keep open for a day, show or no show.</summary>
         public decimal DailyOverhead => BoxOffice.For(Promotion.Tier).DailyOverhead;
 
@@ -295,7 +433,7 @@ namespace WrestlingSim.Models.World
         /// anybody who gets hurt on it.
         /// </summary>
         public ShowFinances Projection(ScheduledShow show) =>
-            BoxOffice.Night(show, Promotion, Books.Reputation, FeudBook, Television);
+            BoxOffice.Night(show, Promotion, Books.Reputation, FeudBook, Television, IsGuaranteed);
 
         /// <summary>
         /// Runs a booked show: sells the house, runs the card and the road, banks the takings
@@ -347,7 +485,7 @@ namespace WrestlingSim.Models.World
             // fixed when the house was sold.
             var finances = house;
             if (road is { Workers.Count: > 0 } && house.Road is { } projected)
-                finances.Road = BoxOffice.Worked(projected, road, Promotion.Tier);
+                finances.Road = BoxOffice.Worked(projected, road, IsGuaranteed);
 
             if (finances.HadCard)
                 Books.Reputation = BoxOffice.ReputationAfter(
@@ -358,7 +496,11 @@ namespace WrestlingSim.Models.World
             // counts toward the term it aired in.
             if (CurrentDate < show.Date)
             {
-                ChargeOverhead(show.Date.DayNumber - CurrentDate.DayNumber);
+                int skipped = show.Date.DayNumber - CurrentDate.DayNumber;
+                ChargeOverhead(skipped);
+                var payroll = DailyPayroll * skipped;
+                Books.Cash -= payroll;
+                Books.Payroll += payroll;
                 CurrentDate = show.Date;
                 RenewIfDue();
             }

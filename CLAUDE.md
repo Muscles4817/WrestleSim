@@ -77,9 +77,10 @@ So a feature is done when:
 - **`MatchEngine.TypicalInvestment` is the measured median of that roster.** Any roster change
   moves it. `ATypicalMatchIsUnmoved_AndThatIsMeasuredNotAsserted` fails when the two part
   company — re-measure and update the constant, do not widen the test.
-- **`BoxOffice.TypicalCardPull` is measured the same way** — the median card pull of random
-  cards from the roster — and `ATypicalCardFillsTypically_AndThatIsMeasuredNotAsserted`
-  pins it. A roster change moves it too; re-measure, do not widen.
+- **`BoxOffice.TypicalCardPullFor(tier)` is measured the same way** — the median card pull of
+  random cards from each tier's opening roster — and
+  `ATypicalCardFillsTypically_AndThatIsMeasuredNotAsserted` pins all six. A roster change, a
+  price change (`TalentMarket`) or an opening-roster change moves them; re-measure, do not widen.
 - **Corpus tests must use `StableSeed.From(...)`, never `HashCode.Combine`,** which .NET
   randomises per process, so figures from it are one sample and not reproducible.
 - Documentation lives in `docs/tag-matches-design-record.md` (what the engine does and why)

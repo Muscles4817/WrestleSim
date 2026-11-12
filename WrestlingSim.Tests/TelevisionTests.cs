@@ -192,7 +192,7 @@ namespace WrestlingSim.Tests
         [InlineData(PromotionTier.Global)]
         public void ATypicalCardAveragesTheTiersBaseline(PromotionTier tier)
         {
-            int tuneIn = Television.TuneIn(tier, BoxOffice.TypicalCardPull, CareerBooks.OpeningReputation);
+            int tuneIn = Television.TuneIn(tier, BoxOffice.TypicalCardPullFor(tier), CareerBooks.OpeningReputation);
             Assert.InRange(tuneIn * Television.TypicalRetention,
                            Television.BaselineViewers(tier) - 1, Television.BaselineViewers(tier) + 1);
         }
@@ -209,10 +209,11 @@ namespace WrestlingSim.Tests
         public void AStrongCardDrawsMoreViewers_ButLessElasticallyThanTickets()
         {
             const PromotionTier tier = PromotionTier.National;
-            double strong = BoxOffice.TypicalCardPull * 1.5;
+            double typical = BoxOffice.TypicalCardPullFor(tier);
+            double strong = typical * 1.5;
 
-            double tvRatio = Television.TuneIn(tier, strong, 50) / (double)Television.TuneIn(tier, BoxOffice.TypicalCardPull, 50);
-            double gateRatio = BoxOffice.Demand(100_000, strong, 50) / (double)BoxOffice.Demand(100_000, BoxOffice.TypicalCardPull, 50);
+            double tvRatio = Television.TuneIn(tier, strong, 50) / (double)Television.TuneIn(tier, typical, 50);
+            double gateRatio = BoxOffice.Demand(100_000, strong, 50, tier) / (double)BoxOffice.Demand(100_000, typical, 50, tier);
 
             Assert.True(tvRatio > 1.2);
             Assert.True(tvRatio < gateRatio, "A television audience is a habit; it moves less than a ticket buyer.");

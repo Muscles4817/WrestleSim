@@ -114,7 +114,11 @@ else
                     <br />
                 }
                 @Money.Signed(career.Books.Cash - career.Books.OpeningCash) since the books opened ·
-                the office costs @Money.Format(career.DailyOverhead) a day.
+                the office costs @Money.Format(career.DailyOverhead) a day
+                @if (career.DailyPayroll > 0)
+                {
+                    <text> and the guarantees @Money.Format(career.DailyPayroll)</text>
+                }.
                 <br />
                 Reputation @career.Books.Reputation.ToString("F1") — what the next card sells on.
             </div>
@@ -227,7 +231,13 @@ else
         @* Roster *@
         <div class="tile tile--static">
             <div class="tile__key">ROSTER</div>
-            <div class="tile__name">@career.Roster.Count under contract</div>
+            <div class="tile__name">@career.Contracts.Count @(career.CanSign ? "signed" : "regulars")</div>
+            @if (career.CanSign && career.ExpiringWithin(TalentMarket.ExpiryWarningDays).ToList() is { Count: > 0 } expiring)
+            {
+                <div class="small grade--poor">
+                    <Icon Name="warn" /> @expiring.Count deal@(expiring.Count == 1 ? "" : "s") run@(expiring.Count == 1 ? "s" : "") out within @TalentMarket.ExpiryWarningDays days
+                </div>
+            }
             <div class="tile__desc">
                 Top of the card: @string.Join(", ", career.RosterByOverness.Take(3).Select(w => w.RingName))
             </div>
@@ -247,6 +257,7 @@ else
             }
             <div class="row mt">
                 <button class="btn btn--sm" @onclick="() => State.Go(Screen.Roster)">View roster</button>
+                <button class="btn btn--sm" @onclick="() => State.Go(Screen.Contracts)">Contracts</button>
             </div>
         </div>
     </div>

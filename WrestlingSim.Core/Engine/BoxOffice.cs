@@ -21,8 +21,6 @@ namespace WrestlingSim.Engine
         decimal TicketPrice,
         // Doc 29 §7: $8–20 a head at an indie, $3–8 in an arena.
         decimal MerchPerHead,
-        // The enhancement rate per date; card position multiplies it. Doc 29 §4.2.
-        decimal AppearanceBase,
         // Building, ring crew, security for a normal night. Doc 09 §3.1: $80–250k at Tier 0.
         decimal Operations,
         // Flat rights fee per televised episode. Doc 09 §3.1: $1.5–8M at Tier 0.
@@ -30,10 +28,10 @@ namespace WrestlingSim.Engine
         // Doc 29 §7: $250k–1M+ per weekly episode at Tier 0.
         decimal ProductionPerEpisode,
         decimal OpeningCash,
-        // What per-appearance pay leaves out: offices, staff, insurance, the ring truck, and
-        // the guarantees of everybody not booked tonight. Charged every day by the clock,
-        // show or no show — doc 09 §2's SG&A line, 15–25% of revenue at Tier 0. Set so a
-        // typical card at the tier's usual cadence lands where doc 09 §4 puts that tier.
+        // Offices, staff, insurance, the ring truck. Charged every day by the clock, show or no
+        // show — doc 09 §2's SG&A line, 15–25% of revenue at Tier 0. The guarantees are no
+        // longer in here: since contracts they are their own line, on the clock beside it.
+        // Solved from the measured typical night so each tier lands where doc 09 §4 puts it.
         decimal DailyOverhead);
 
     /// <summary>
@@ -54,15 +52,30 @@ namespace WrestlingSim.Engine
         // ── Calibration ──────────────────────────────────────────────────────
 
         /// <summary>
-        /// The card pull of a card thrown together from the shipped roster: five singles
-        /// matches between people picked at random, no feuds, nothing on the line. A booker
-        /// who builds stories draws above it; one who books whoever is free draws at it.
+        /// The card pull of a card the tier can afford: five singles matches between people
+        /// picked at random from that tier's opening roster (<see cref="TierOpeningRoster"/>),
+        /// no feuds, nothing on the line. A booker who builds stories draws above it; one who
+        /// books whoever is free draws at it.
         ///
-        /// **Measured, not chosen**, and it moves when the roster does — the same contract as
-        /// <see cref="MatchEngine.TypicalInvestment"/>. <c>ATypicalCardFillsTypically</c>
-        /// measures the corpus and fails when the two part company; re-measure, do not widen.
+        /// **Per tier**, because prices are the same for every buyer: a Local promotion can
+        /// afford the least over end of the roster, and its audience is the audience for that
+        /// card. One figure measured over all ninety put every indie card at a third of a house.
+        ///
+        /// **Measured, not chosen**, and it moves when the roster or the prices do — the same
+        /// contract as <see cref="MatchEngine.TypicalInvestment"/>.
+        /// <c>ATypicalCardFillsTypically_AndThatIsMeasuredNotAsserted</c> measures each tier and
+        /// fails when they part company; re-measure, do not widen.
         /// </summary>
-        public const double TypicalCardPull = 0.7561;
+        public static double TypicalCardPullFor(PromotionTier tier) => tier switch
+        {
+            PromotionTier.Local       => 0.3312,
+            PromotionTier.Independent => 0.4451,
+            PromotionTier.SuperIndie  => 0.5757,
+            PromotionTier.Established => 0.6186,
+            PromotionTier.National    => 0.7237,
+            PromotionTier.Global      => 0.7562,
+            _                         => 0.3000
+        };
 
         /// <summary>
         /// How full a building a typical card fills at an opening reputation. Doc 29 §7 puts
@@ -85,31 +98,23 @@ namespace WrestlingSim.Engine
 
         public static TierEconomics For(PromotionTier tier) => tier switch
         {
-            //                                price merch  base      ops       rights/ep  prod/ep      opening    overhead/day
-            PromotionTier.Local       => new(12m, 12m,    40m,     600m,         0m,        0m,         5_000m,        13m),
-            PromotionTier.Independent => new(18m, 12m,    60m,   2_000m,         0m,        0m,        25_000m,       230m),
-            PromotionTier.SuperIndie  => new(25m, 14m,   100m,   8_000m,         0m,        0m,       150_000m,     1_900m),
-            PromotionTier.Established => new(30m,  7m,   400m,  50_000m,   350_000m,  120_000m,     3_000_000m,    30_000m),
-            PromotionTier.National    => new(35m,  6m,   800m, 120_000m, 1_500_000m,  350_000m,    25_000_000m,   275_000m),
-            PromotionTier.Global      => new(40m,  5m, 1_200m, 200_000m, 4_000_000m,  700_000m,   250_000_000m,   630_000m),
-            _                         => new(18m, 12m,    60m,   2_000m,         0m,        0m,        25_000m,       230m)
+            //                                price merch  ops       rights/ep  prod/ep      opening    overhead/day
+            PromotionTier.Local       => new(12m, 12m,     600m,         0m,        0m,         5_000m,        25m),
+            PromotionTier.Independent => new(18m, 12m,   2_000m,         0m,        0m,        25_000m,       245m),
+            PromotionTier.SuperIndie  => new(25m, 14m,   8_000m,         0m,        0m,       150_000m,     1_650m),
+            PromotionTier.Established => new(30m,  7m,  50_000m,   350_000m,  120_000m,     3_000_000m,    14_300m),
+            PromotionTier.National    => new(35m,  6m, 120_000m, 1_500_000m,  350_000m,    25_000_000m,   217_000m),
+            PromotionTier.Global      => new(40m,  5m, 200_000m, 4_000_000m,  700_000m,   250_000_000m,   485_000m),
+            _                         => new(18m, 12m,   2_000m,         0m,        0m,        25_000m,       230m)
         };
 
         /// <summary>
-        /// One night's fee by card position. Steep on purpose: a main eventer costs twenty
-        /// times an enhancement worker, so a Local promotion can afford one star and not a
-        /// card of them. At Global that puts a top star at ~$24k a date, or $3.6M over 150
-        /// dates — inside doc 29 §4.1's $3–5M.
+        /// What one appearance costs: nothing extra for somebody on a guarantee, whose
+        /// appearances are earned against it (doc 11 §2.1); their asking price on the night for
+        /// everybody else. One price whoever is buying — <see cref="TalentMarket"/>.
         /// </summary>
-        public static decimal AppearanceFee(Wrestler w, PromotionTier tier) =>
-            For(tier).AppearanceBase * w.CardPosition switch
-            {
-                CardPosition.MainEvent   => 20m,
-                CardPosition.UpperCard   => 8m,
-                CardPosition.Midcard     => 3m,
-                CardPosition.LowerCard   => 1.5m,
-                _                        => 1m
-            };
+        public static decimal AppearanceFee(Wrestler w, Func<Wrestler, bool>? guaranteed = null) =>
+            guaranteed?.Invoke(w) == true ? 0m : TalentMarket.PerDateAsk(w);
 
         // ── 1. The draw ──────────────────────────────────────────────────────
 
@@ -242,11 +247,11 @@ namespace WrestlingSim.Engine
             0.75 + 0.5 * Math.Clamp(reputation, 0, 100) / 100.0;
 
         /// <summary>How many want to come to a building of this size for a card this strong.</summary>
-        public static int Demand(int capacity, double cardPull, double reputation)
+        public static int Demand(int capacity, double cardPull, double reputation, PromotionTier tier)
         {
             if (capacity <= 0 || cardPull <= 0) return 0;
             double ratio = TypicalFill
-                         * Math.Pow(cardPull / TypicalCardPull, Elasticity)
+                         * Math.Pow(cardPull / TypicalCardPullFor(tier), Elasticity)
                          * ReputationFactor(reputation);
             return (int)Math.Round(capacity * ratio);
         }
@@ -316,7 +321,7 @@ namespace WrestlingSim.Engine
         /// </summary>
         public static ShowFinances Night(
             ScheduledShow show, Promotion promotion, double reputation, FeudBook? feuds,
-            TvDeal? deal = null)
+            TvDeal? deal = null, Func<Wrestler, bool>? guaranteed = null)
         {
             var e = For(promotion.Tier);
             var draws = Draw(show.Card, feuds, show.Date);
@@ -324,7 +329,7 @@ namespace WrestlingSim.Engine
             bool hasCard = draws.Count > 0;
 
             int capacity = hasCard ? show.Attendance : 0;
-            int demand = Demand(capacity, pull, reputation);
+            int demand = Demand(capacity, pull, reputation, promotion.Tier);
             int attendance = Math.Min(capacity, demand);
             decimal price = PriceFor(e, show.Type);
 
@@ -346,10 +351,10 @@ namespace WrestlingSim.Engine
                                    && show.Type is ShowType.Television or ShowType.PremiumEvent
                                        ? Television.TuneIn(promotion.Tier, pull, reputation)
                                        : 0,
-                Talent           = onCard.Sum(w => AppearanceFee(w, promotion.Tier)),
+                Talent           = onCard.Sum(w => AppearanceFee(w, guaranteed)),
                 Operations       = hasCard ? OperationsFor(e, show.Type) : 0m,
                 Production       = hasCard ? ProductionFor(promotion, show.Type) : 0m,
-                Road             = Road(show, promotion, reputation, onCard),
+                Road             = Road(show, promotion, reputation, onCard, guaranteed),
                 ReputationBefore = reputation,
                 ReputationAfter  = reputation
             };
@@ -364,7 +369,7 @@ namespace WrestlingSim.Engine
         /// </summary>
         private static RoadTakings? Road(
             ScheduledShow show, Promotion promotion, double reputation,
-            IReadOnlyCollection<Wrestler> onCard)
+            IReadOnlyCollection<Wrestler> onCard, Func<Wrestler, bool>? guaranteed)
         {
             if (show.Loop is not { IsBookable: true } loop) return null;
 
@@ -384,11 +389,11 @@ namespace WrestlingSim.Engine
                 .ToList();
 
             int capacity = promotion.TypicalAttendanceFor(ShowType.HouseShow);
-            int attendance = Math.Min(capacity, Demand(capacity, CardPull(poster), reputation));
+            int attendance = Math.Min(capacity, Demand(capacity, CardPull(poster), reputation, promotion.Tier));
             int towns = loop.Towns;
 
             var onTelevision = onCard.ToHashSet();
-            decimal talent = cast.Sum(w => loop.NightsFor(w, onTelevision) * AppearanceFee(w, promotion.Tier));
+            decimal talent = cast.Sum(w => loop.NightsFor(w, onTelevision) * AppearanceFee(w, guaranteed));
 
             return new RoadTakings
             {
@@ -407,7 +412,7 @@ namespace WrestlingSim.Engine
         /// The road as it was actually worked: the houses were sold in advance, but nobody is
         /// paid for a town they went home hurt before.
         /// </summary>
-        public static RoadTakings Worked(RoadTakings projected, LoopResult worked, PromotionTier tier) => new()
+        public static RoadTakings Worked(RoadTakings projected, LoopResult worked, Func<Wrestler, bool>? guaranteed = null) => new()
         {
             Towns              = projected.Towns,
             CapacityPerNight   = projected.CapacityPerNight,
@@ -415,7 +420,7 @@ namespace WrestlingSim.Engine
             Headliners         = projected.Headliners,
             Gate               = projected.Gate,
             Merchandise        = projected.Merchandise,
-            Talent             = worked.Workers.Sum(w => w.NightsWorked * AppearanceFee(w.Wrestler, tier)),
+            Talent             = worked.Workers.Sum(w => w.NightsWorked * AppearanceFee(w.Wrestler, guaranteed)),
             Operations         = projected.Operations
         };
 
