@@ -267,7 +267,11 @@ else
                 </div>
             }
             <div class="tile__desc">
-                Top of the card: @string.Join(", ", career.RosterByOverness.Take(3).Select(w => w.RingName))
+                @* Yours, not the world's: this listed the three most over wrestlers alive,
+                   whoever they worked for. *@
+                Top of the card: @string.Join(", ", career.Contracts
+                    .Select(c => career.FindWrestler(c.WrestlerId)).OfType<Wrestler>()
+                    .OrderByDescending(w => w.EffectiveOverness).Take(3).Select(w => w.RingName))
             </div>
             @if (Movers(career).Any())
             {

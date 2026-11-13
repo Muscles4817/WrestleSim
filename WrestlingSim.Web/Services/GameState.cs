@@ -81,7 +81,10 @@ public class GameState
     {
         Screen.Landing or Screen.NewSave => AppMode.Landing,
         Screen.Exhibition or Screen.Match or Screen.Segment or Screen.Show => AppMode.Exhibition,
-        _ => AppMode.Career
+        // Roster and Feuds are shared. With no career open they are exhibition's — this said
+        // "career" for any screen not named above, so opening the roster from exhibition
+        // swapped the top bar for the career's tabs, and its Home said no career was open.
+        _ => Career != null ? AppMode.Career : AppMode.Exhibition
     };
 
     public bool InCareer => Career != null;

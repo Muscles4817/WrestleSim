@@ -780,6 +780,9 @@ table.data th {
   padding: 0 12px 9px; border-bottom: 1px solid var(--line);
   white-space: nowrap;
 }
+/* A heading sits over its figures. `table.data th` above out-ranks `.num`, so every numeric
+   heading was left-aligned over a right-aligned column. */
+table.data th.num { text-align: right; }
 table.data td {
   padding: 11px 12px; border-bottom: 1px solid var(--line-soft);
   vertical-align: middle;
