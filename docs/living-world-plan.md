@@ -47,6 +47,34 @@ the talent is replaced. Doc 15 §5: a career is 15–25 years, retirement at 35�
 those who start training ever have one. Doc 29: a Tier 0 promotion holds 150–200 people under
 contract and a Tier 1 holds 100–160. The game has the drain and not the supply.
 
+## 0A. Decided in the planning session
+
+Kept here as they are made, so the sections below can be read against them.
+
+**13–14 Nov — the size and shape of the world.**
+
+- **The player chooses a size at career start.** Three: small (about 15 promotions, 500
+  wrestlers), medium (about 40, 1,200), full (about 100, 3,000). A custom database is the size
+  it is, topped up to the nearest. Measured: the full size simulates in 0.76 s a week natively
+  (design record, "Making it scale to many promotions").
+- **The full size, as a starting shape:** 2 global at about 180, 6 national at about 80, 10
+  established at about 40, 20 super-indies and 60 independents booking from a shared pool of
+  about 1,800.
+- **Roster sizes are real, more or less.** Not to match figures — "it's more about making sure
+  that it behaves in a way that feels like it's alive." So brands and a developmental system for
+  rivals come into the plan, and so does the thing below.
+- **Why a big company can carry people it does not use, and why they put up with it, has to be
+  in the model** — whether or not it is built first. The owner's account: people are desperate
+  to get to the biggest name and will wait there for a chance; the ambitious ones leave in the
+  end, or stay for the money until they are released; then they try to turn the name they made
+  into something at a smaller company, believing they will transform it. See Part 6, which this
+  makes much larger than "morale from use".
+- **Regions exist.** Every wrestler and promotion has a home region from the start. Small
+  promotions book from their own.
+- **"The real-life one" is the bundled database.** It holds only WWE people today and will
+  grow. Custom databases (an Attitude Era one, say) are the same mechanism.
+- **Retirement of real wrestlers** is left for when Part 3 is planned.
+
 ## 1. The rule this plan follows
 
 > **Anything that can happen to a wrestler or a promotion happens the same way whoever is
