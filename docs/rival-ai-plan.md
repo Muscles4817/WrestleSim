@@ -727,6 +727,11 @@ it.
 > (`NoBetterWithout`), because the recipe booker made releases look like better shows; a promotion
 > that cannot make a card considers booking several people at once; and a week in which nothing
 > it could act on has changed is not planned at all.
+>
+> **Later, for scale:** a promotion that pays by the night no longer weighs one addition a week;
+> it chooses a booking pool once a month (`PlanBookings`). A candidate who could not make a card
+> is turned down without a forecast (`CutLine`). Design record, "Making it scale to many
+> promotions".
 
 `WrestlingSim.Core/Engine/RivalPlanner.cs`.
 

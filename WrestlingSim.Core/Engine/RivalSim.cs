@@ -16,6 +16,14 @@ namespace WrestlingSim.Engine
 
         public static void Tick(Career career)
         {
+            _ticking = true;
+            _holdings = null;
+            try { TickEveryone(career); }
+            finally { _ticking = false; _holdings = null; }
+        }
+
+        private static void TickEveryone(Career career)
+        {
             var today = career.CurrentDate;
 
             foreach (var rival in career.Rivals.Where(r => r.IsActive).ToList())
@@ -81,7 +89,7 @@ namespace WrestlingSim.Engine
                 .Where(w => !w.IsInjured(today)
                          && career.NonCompeteOf(w) is null
                          && !career.IsGuaranteed(w)
-                         && (career.SignedTo(w) is null || career.SignedTo(w) == rival))
+                         && (HolderOf(career, w) is not { } holder || holder == rival))
                 .ToList();
 
             double Response(Wrestler w) => AudienceModel.Response(rival.Audience, w, rival.Promotion.Tier, type);
@@ -220,9 +228,51 @@ namespace WrestlingSim.Engine
         /// that have not happened yet with this very code. One booker; if the forecast booked
         /// differently it would be planning for a world that does not exist.
         /// </remarks>
+        /// <summary>
+        /// How over somebody would have had to be for the booker to have so much as looked at
+        /// them when it built a card — by division, and for the talking, which is anybody.
+        ///
+        /// Every choice <see cref="BookCard"/> makes is from the top few of some list, ranked
+        /// by overness as this audience now feels it. If a list was full and its last name
+        /// ranked above somebody, adding that somebody would not have changed the list, and so
+        /// not the card. This records the lowest such last name across every list the card was
+        /// built from, and marks a division <see cref="Open"/> where some list was short — where
+        /// anybody at all would have got in.
+        ///
+        /// It is what lets a promotion planning ahead know that a free agent could not make its
+        /// cards without booking a month of shows to find out. It decides nothing; it reports.
+        /// </summary>
+        public sealed class CutLine
+        {
+            public ShowType Type { get; init; }
+            public HashSet<Division> Present { get; } = new();
+            public HashSet<Division> Open { get; } = new();
+            public Dictionary<Division, double> Lowest { get; } = new();
+            public bool AnybodyOpen { get; private set; }
+            public double AnybodyLowest { get; private set; } = double.PositiveInfinity;
+
+            internal void See(Division division, int have, int full, double last)
+            {
+                if (have < full) { Open.Add(division); return; }
+                Lowest[division] = Math.Min(Lowest.GetValueOrDefault(division, double.PositiveInfinity), last);
+            }
+
+            internal void SeeAnybody(int have, int full, double last)
+            {
+                if (have < full) AnybodyOpen = true;
+                else AnybodyLowest = Math.Min(AnybodyLowest, last);
+            }
+
+            /// <summary>Whether somebody this over, in this division, could have been on the card.</summary>
+            public bool CouldHaveBooked(Division division, double felt) =>
+                !Present.Contains(division) || Open.Contains(division) || AnybodyOpen
+                || felt >= AnybodyLowest
+                || (Lowest.TryGetValue(division, out double lowest) && felt >= lowest);
+        }
+
         public static List<ICardItem> BookCard(
             RivalPromotion rival, IReadOnlyList<Wrestler> available, ShowType type, DateOnly today, int index,
-            Func<Wrestler, double> response, Func<BookedMatch, double> freshness)
+            Func<Wrestler, double> response, Func<BookedMatch, double> freshness, CutLine? cut = null)
         {
             double target = rival.Promotion.DefaultRuntimeFor(type) * AudienceModel.FullCard;
             var used = new HashSet<Wrestler>();
@@ -241,6 +291,9 @@ namespace WrestlingSim.Engine
                 .Where(w => w.Division == d && !used.Contains(w))
                 .OrderByDescending(w => w.EffectiveOverness * response(w))
                 .ThenBy(w => w.Id, StringComparer.Ordinal);
+            double Key(Wrestler w) => w.EffectiveOverness * response(w);
+            if (cut is not null) foreach (var w in available) cut.Present.Add(w.Division);
+
             void Book(BookedMatch m)
             {
                 matches.Add(m);
@@ -257,9 +310,12 @@ namespace WrestlingSim.Engine
                 if (champion is not null && (type != ShowType.PremiumEvent || !division.Contains(champion))) continue;
 
                 var holder = champion ?? division.FirstOrDefault();
-                if (holder is null) continue;
+                if (holder is null) { cut?.Open.Add(title.Division); continue; }
 
-                var best = division.Where(w => w != holder).Take(8)
+                var challengers = division.Where(w => w != holder).Take(8).ToList();
+                cut?.See(title.Division, challengers.Count, 8, challengers.Count == 0 ? 0 : Key(challengers[^1]));
+
+                var best = challengers
                     .Select(c => AbstractMatch(title, [holder], [c]))
                     .Select(m => (Match: m, Pull: Pull(m)))
                     .OrderByDescending(x => x.Pull).ThenBy(x => x.Match.Name, StringComparer.Ordinal)
@@ -271,7 +327,16 @@ namespace WrestlingSim.Engine
             //    middle of the card, leaving the top two of a division for their own matches.
             var deepest = available.Select(w => w.Division).Distinct()
                 .OrderByDescending(d => Free(d).Count()).FirstOrDefault();
-            var middle = Free(deepest).Skip(2).ToList();
+            var depth = Free(deepest).ToList();
+            var middle = depth.Skip(2).ToList();
+            if (cut is not null)
+            {
+                // One more person could make another division the deepest, or get into the six
+                // this match is drawn from.
+                foreach (var d in cut.Present)
+                    if (d != deepest && Free(d).Count() + 1 >= depth.Count) cut.Open.Add(d);
+                cut.See(deepest, depth.Count, 6, depth.Count < 6 ? 0 : Key(depth[5]));
+            }
             if (index % 2 == 0 && middle.Count >= 4)
                 Book(AbstractMatch(null, [middle[0], middle[3]], [middle[1], middle[2]]));
             else if (index % 3 == 0 && middle.Count >= 3)
@@ -283,6 +348,7 @@ namespace WrestlingSim.Engine
                 var names = available.Where(w => !used.Contains(w))
                     .OrderByDescending(w => w.EffectiveOverness * response(w))
                     .ThenBy(w => w.Id, StringComparer.Ordinal).Take(2).ToList();
+                cut?.SeeAnybody(names.Count, 2, names.Count == 0 ? 0 : Key(names[^1]));
                 if (index % 2 == 1 && names.Count == 2)
                 {
                     talking.Add(Factories.SegmentFactory.CreateConfrontation(names[0], names[1], "", ""));
@@ -315,6 +381,7 @@ namespace WrestlingSim.Engine
                         var pool = g.Where(w => worked.GetValueOrDefault(w) < pass)
                             .OrderByDescending(w => w.EffectiveOverness * response(w))
                             .ThenBy(w => w.Id, StringComparer.Ordinal).Take(10).ToList();
+                        cut?.See(g[0].Division, pool.Count, 10, pool.Count == 0 ? 0 : Key(pool[^1]));
                         for (int a = 0; a < pool.Count; a++)
                             for (int b = a + 1; b < pool.Count; b++)
                             {
@@ -388,14 +455,70 @@ namespace WrestlingSim.Engine
         // ── Talent ───────────────────────────────────────────────────────────
         // Who a rival signs, keeps, releases and bids for is decided in RivalPlanner.cs.
 
-        /// <summary>Anybody nobody holds exclusively, and who is free to work.</summary>
-        internal static IEnumerable<Wrestler> FreeAgents(Career career) =>
-            career.Roster.Where(w => !career.IsGuaranteed(w)
-                                  && career.SignedTo(w) is null
-                                  && career.NonCompeteOf(w) is null
-                                  && career.PlayerBid(w) is null)
-                         .OrderByDescending(w => w.EffectiveOverness)
-                         .ThenBy(w => w.Id, StringComparer.Ordinal);
+        // ── Who holds whom ───────────────────────────────────────────────────
+
+        /// <summary>
+        /// Who holds each wrestler exclusively, and who is free — worked out once and reused
+        /// for as long as nobody's contracts change.
+        ///
+        /// Both questions were answered by walking every contract in the world for every
+        /// wrestler asked about, every time. With four rivals nobody noticed. With ninety it
+        /// was a third of a week's cost before any forecast ran.
+        ///
+        /// Kept only while the world's own clock is running (<see cref="Tick"/>), where every
+        /// place that changes a contract says so (<see cref="ContractsChanged"/>). Asked from
+        /// anywhere else — a screen, a test, the player signing somebody — it is worked out
+        /// fresh each time.
+        /// </summary>
+        private sealed class Holdings
+        {
+            public required Dictionary<string, RivalPromotion> Holder { get; init; }
+            public IReadOnlyList<Wrestler>? Free { get; set; }
+        }
+
+        [ThreadStatic] private static Holdings? _holdings;
+        [ThreadStatic] private static bool _ticking;
+
+        internal static void ContractsChanged() => _holdings = null;
+
+        private static Holdings HoldingsOf(Career career)
+        {
+            if (_ticking && _holdings is { } kept) return kept;
+
+            var holder = new Dictionary<string, RivalPromotion>();
+            foreach (var rival in career.Rivals)
+                if (rival.IsActive)
+                    foreach (var c in rival.Contracts)
+                        if (c.IsGuaranteed) holder.TryAdd(c.WrestlerId, rival);
+
+            var made = new Holdings { Holder = holder };
+            if (_ticking) _holdings = made;
+            return made;
+        }
+
+        /// <summary>The rival that holds them exclusively, or null. <see cref="Career.SignedTo"/>, indexed.</summary>
+        internal static RivalPromotion? HolderOf(Career career, Wrestler w) =>
+            HoldingsOf(career).Holder.GetValueOrDefault(w.Id);
+
+        /// <summary>Anybody nobody holds exclusively, and who is free to work. Most over first.</summary>
+        internal static IReadOnlyList<Wrestler> FreeAgents(Career career)
+        {
+            var holdings = HoldingsOf(career);
+            if (holdings.Free is { } known) return known;
+
+            var mine = career.Contracts.Where(c => c.IsGuaranteed).Select(c => c.WrestlerId).ToHashSet();
+            var barred = career.NonCompetes.Where(n => n.Until > career.CurrentDate).Select(n => n.WrestlerId).ToHashSet();
+            var free = career.Roster
+                .Where(w => !mine.Contains(w.Id)
+                         && !holdings.Holder.ContainsKey(w.Id)
+                         && !barred.Contains(w.Id)
+                         && career.PlayerBid(w) is null)
+                .OrderByDescending(w => w.EffectiveOverness)
+                .ThenBy(w => w.Id, StringComparer.Ordinal)
+                .ToList();
+            holdings.Free = free;
+            return free;
+        }
 
         /// <summary>
         /// Out of money. Everybody it held is a free agent at once — a closed promotion has no
@@ -406,6 +529,7 @@ namespace WrestlingSim.Engine
             int freed = rival.Contracts.Count(c => c.IsGuaranteed);
             rival.Folded = career.CurrentDate;
             rival.Contracts.Clear();
+            ContractsChanged();
             rival.Television = null;
             career.Bids.RemoveAll(b => b.Bidder == rival.Id);
             career.AddNews($"{rival.Name} has closed. {freed} wrestler{(freed == 1 ? " is" : "s are")} free agents.", aboutYou: true);

@@ -407,8 +407,35 @@ namespace WrestlingSim.Models.World
 
         // ── Roster queries ───────────────────────────────────────────────────
 
-        public Wrestler? FindWrestler(string id) =>
-            Roster.FirstOrDefault(w => w.Id == id);
+        /// <summary>
+        /// By id, through an index. This walked the whole roster comparing strings, and a
+        /// promotion forecasting its month asks it once for every contract it holds — in a
+        /// world of three thousand that walk was most of what a forecast cost.
+        ///
+        /// The index is rebuilt when the roster is replaced or changes length, and a miss or a
+        /// stale hit falls back to the walk, so it can be slower than it should be but not wrong.
+        /// </summary>
+        public Wrestler? FindWrestler(string id)
+        {
+            if (_byId is null || !ReferenceEquals(_indexed, Roster) || _indexedCount != Roster.Count) IndexRoster();
+            if (_byId!.TryGetValue(id, out var hit) && hit.Id == id) return hit;
+
+            var found = Roster.FirstOrDefault(w => w.Id == id);
+            if (found is not null) IndexRoster();
+            return found;
+        }
+
+        private Dictionary<string, Wrestler>? _byId;
+        private List<Wrestler>? _indexed;
+        private int _indexedCount;
+
+        private void IndexRoster()
+        {
+            _byId = new Dictionary<string, Wrestler>(Roster.Count);
+            foreach (var w in Roster) _byId.TryAdd(w.Id, w);
+            _indexed = Roster;
+            _indexedCount = Roster.Count;
+        }
 
         public IEnumerable<Wrestler> RosterByOverness =>
             Roster.OrderByDescending(w => w.EffectiveOverness);

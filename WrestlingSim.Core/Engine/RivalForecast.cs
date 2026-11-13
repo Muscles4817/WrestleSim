@@ -36,6 +36,12 @@ namespace WrestlingSim.Engine
         /// <summary>Forecasts run on this thread since the counter was last cleared. A planner's cost is counted, not timed.</summary>
         [ThreadStatic] public static int ForecastsRun;
 
+        /// <summary>
+        /// Where the forecasts went, by the size of promotion, when somebody is asking: count
+        /// and stopwatch ticks. Null — and costing nothing — unless a measurement sets it.
+        /// </summary>
+        [ThreadStatic] public static Dictionary<PromotionTier, (int Count, long Ticks)>? ForecastCost;
+
         /// <summary>What kind of show a rival's next one is, given the shows before it.</summary>
         public static ShowType NextShowType(Promotion promotion, DateOnly date, IEnumerable<(DateOnly Date, ShowType Type)> before)
         {
@@ -46,6 +52,32 @@ namespace WrestlingSim.Engine
             bool due = past.Count >= 3
                 && !past.Any(n => n.Type == ShowType.PremiumEvent && date.DayNumber - n.Date.DayNumber < 28);
             return due ? ShowType.PremiumEvent : ShowType.Television;
+        }
+
+        /// <summary>
+        /// Whether adding this wrestler to the roster a forecast was made for could have changed
+        /// any card in it — read off the forecast's own cut lines, without forecasting again.
+        ///
+        /// **False is exact, not an estimate.** If they could not have got onto the first card
+        /// it is the card that was booked, so the audience remembers the same things going
+        /// into the second, and so on down the month: every card is the same card, and the
+        /// only thing the wrestler changes is what they are paid. A promotion can turn them
+        /// down on that alone. True means only "book it and see".
+        /// </summary>
+        public static bool CouldAppear(RivalPromotion rival, Wrestler w, IReadOnlyList<CutLine> cuts)
+        {
+            // Nobody the forecast imagined booking is them, so their act only rests.
+            double sameness = rival.Audience.SamenessOf(w);
+            int streak = rival.Audience.ActOf(w)?.Streak ?? 0;
+            double rest = Math.Pow(0.5, Math.Max(1, rival.Promotion.TypicalShowIntervalDays) / AudienceModel.ActHalfLifeDays);
+
+            foreach (var cut in cuts)
+            {
+                double felt = w.EffectiveOverness * AudienceModel.ResponseAt(w, sameness, streak, rival.Promotion.Tier, cut.Type);
+                if (cut.CouldHaveBooked(w.Division, felt)) return true;
+                sameness *= rest;
+            }
+            return cuts.Count == 0;
         }
 
         /// <summary>
@@ -65,9 +97,11 @@ namespace WrestlingSim.Engine
         public static Outlook Forecast(
             Career career, RivalPromotion rival, IReadOnlyList<Contract> roster,
             Disposition disposition, decimal oneOffCost = 0m, IReadOnlySet<string>? assume = null,
-            List<(ShowType Type, double Pull, List<ICardItem> Card)>? cards = null)
+            List<(ShowType Type, double Pull, List<ICardItem> Card)>? cards = null,
+            List<CutLine>? cuts = null)
         {
             ForecastsRun++;
+            long started = ForecastCost is null ? 0 : System.Diagnostics.Stopwatch.GetTimestamp();
 
             var today = career.CurrentDate;
             var promotion = rival.Promotion;
@@ -83,7 +117,7 @@ namespace WrestlingSim.Engine
                 .OfType<Wrestler>()
                 .Where(w => !w.IsInjured(today) && career.NonCompeteOf(w) is null
                          && (assume?.Contains(w.Id) == true
-                             || (!career.IsGuaranteed(w) && (career.SignedTo(w) is null || career.SignedTo(w) == rival))))
+                             || (!career.IsGuaranteed(w) && (HolderOf(career, w) is not { } holder || holder == rival))))
                 .ToList();
 
             // Its own count of what the shows it is imagining would add.
@@ -120,7 +154,9 @@ namespace WrestlingSim.Engine
                 double Response(Wrestler w) =>
                     AudienceModel.ResponseAt(w, sameness.GetValueOrDefault(w.Id), streaks.GetValueOrDefault(w.Id), tier, type);
 
-                var card = BookCard(rival, people, type, date, rival.Nights.Count + k, Response, Freshness);
+                CutLine? cut = cuts is null ? null : new CutLine { Type = type };
+                cuts?.Add(cut!);
+                var card = BookCard(rival, people, type, date, rival.Nights.Count + k, Response, Freshness, cut);
                 if (card.Count == 0) continue;
 
                 var show = new ScheduledShow
@@ -229,6 +265,12 @@ namespace WrestlingSim.Engine
                     double yearsLeft = Math.Min((c.DaysLeft(today) ?? 0) / 365.0, horizon / 365.0);
                     equity += (TalentMarket.WorthToday(w, c, career.WageFactor) - c.AnnualGuarantee) * (decimal)yearsLeft;
                 }
+
+            if (ForecastCost is { } cost)
+            {
+                var (count, ticks) = cost.GetValueOrDefault(tier);
+                cost[tier] = (count + 1, ticks + System.Diagnostics.Stopwatch.GetTimestamp() - started);
+            }
 
             return new Outlook(
                 CardPull: ran == 0 ? 0 : pull / n, Rating: avgRating, Fill: ran == 0 ? 0 : fill / n,

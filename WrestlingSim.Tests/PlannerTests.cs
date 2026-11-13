@@ -369,7 +369,11 @@ namespace WrestlingSim.Tests
 
             foreach (var rival in career.Rivals)
             {
-                Assert.All(rival.Decisions.GroupBy(d => d.Date), week => Assert.True(week.Count() <= World.MaxMovesPerWeek));
+                // A television promotion signs and releases one person at a time. One that
+                // pays by the night re-books its whole pool at once, and is held to once a
+                // month instead (ABookingPoolIsChosenOnceAMonth).
+                if (rival.Promotion.HasTelevision)
+                    Assert.All(rival.Decisions.GroupBy(d => d.Date), week => Assert.True(week.Count() <= World.MaxMovesPerWeek));
                 Assert.All(rival.Decisions, d =>
                 {
                     Assert.False(string.IsNullOrWhiteSpace(d.Reason));
@@ -400,6 +404,107 @@ namespace WrestlingSim.Tests
             Assert.True(World.Forecast(career, indie, indie.Contracts, World.DispositionOf(indie)).ShowsInHorizon > 0);
         }
 
+
+        /// <summary>
+        /// A promotion that pays by the night chooses where it books from, once, and then
+        /// leaves it alone until it loses somebody or a month has gone by. The first version
+        /// added one person at a time, every week, for ever.
+        /// </summary>
+        [Fact]
+        public void ABookingPoolIsChosenOnceAMonth()
+        {
+            var career = NewWorld(PromotionTier.Local);
+            var indie = RivalAt(career, PromotionTier.Independent);
+            foreach (var other in career.Rivals.Where(r => r != indie)) other.Frozen = true;   // nobody signs its people away
+
+            World.Plan(career, indie);
+            var roster = indie.Contracts.Select(c => c.WrestlerId).OrderBy(id => id).ToList();
+            Assert.NotNull(indie.QuietSince);
+
+            // The same month again costs nothing and changes nothing.
+            World.ForecastsRun = 0;
+            for (int i = 0; i < 3; i++) World.Plan(career, indie);
+            Assert.Equal(0, World.ForecastsRun);
+            Assert.Equal(roster, indie.Contracts.Select(c => c.WrestlerId).OrderBy(id => id).ToList());
+
+            // Everybody it books is somebody its cards use.
+            var cards = new List<(ShowType Type, double Pull, List<ICardItem> Card)>();
+            World.Forecast(career, indie, indie.Contracts, World.DispositionOf(indie), cards: cards);
+            var used = cards.SelectMany(c => c.Card).SelectMany(i => i.Wrestlers).Select(w => w.Id).ToHashSet();
+            if (indie.Decisions.Count > 0) Assert.All(indie.Contracts, c => Assert.Contains(c.WrestlerId, used));
+
+            // Losing somebody is a reason to look again.
+            indie.Contracts.RemoveAt(0);
+            World.ForecastsRun = 0;
+            World.Plan(career, indie);
+            Assert.True(World.ForecastsRun > 0);
+        }
+
+        /// <summary>
+        /// Somebody who could not get onto any card a promotion would run is turned down
+        /// without forecasting — and that has to be exactly right, never an estimate: the
+        /// forecast with them on the books is the forecast without them, to the last figure
+        /// that is not their pay.
+        /// </summary>
+        [Fact]
+        public void SomebodyWhoCouldNotMakeACardChangesNothingButThePayroll()
+        {
+            var career = NewWorld(PromotionTier.Local);
+            for (int i = 0; i < 40; i++) career.AdvanceOneDay();
+            int ruledOut = 0, kept = 0;
+
+            // A roster deep enough for the question to have an answer. With forty people most
+            // of a roster is in play for every card and almost anybody could get on one; it
+            // is at a real company's size that a low-card free agent plainly could not.
+            var major = RivalAt(career, PromotionTier.Global);
+            var everybody = career.Roster.OrderByDescending(w => w.EffectiveOverness).ToList();
+            foreach (var other in career.Rivals.Where(r => r != major)) other.Contracts.Clear();
+            career.Contracts.Clear();
+            major.Contracts.Clear();
+            major.Contracts.AddRange(everybody.Take(70).Select(w => new Contract
+            {
+                WrestlerId = w.Id, Kind = ContractKind.Guaranteed, AnnualGuarantee = career.GuaranteeAsk(w, 3),
+                Start = career.CurrentDate, End = career.CurrentDate.AddYears(3)
+            }));
+
+            foreach (var rival in new[] { major })
+            {
+                var sees = World.DispositionOf(rival);
+                var cuts = new List<World.CutLine>();
+                var hold = World.Forecast(career, rival, rival.Contracts, sees, cuts: cuts);
+
+                foreach (var w in career.Roster.Where(w => rival.ContractOf(w) is null))
+                {
+                    if (World.CouldAppear(rival, w, cuts)) { kept++; continue; }
+                    ruledOut++;
+
+                    var deal = new Contract
+                    {
+                        WrestlerId = w.Id, Kind = ContractKind.Guaranteed, AnnualGuarantee = 100_000m,
+                        Start = career.CurrentDate, End = career.CurrentDate.AddYears(3)
+                    };
+                    var with = World.Forecast(career, rival, [.. rival.Contracts, deal], sees, 0m, new HashSet<string> { w.Id });
+
+                    Assert.Equal(hold.CardPull, with.CardPull);
+                    Assert.Equal(hold.Rating, with.Rating);
+                    Assert.Equal(hold.Fill, with.Fill);
+                    Assert.Equal(hold.Viewers, with.Viewers);
+                    Assert.Equal(hold.RevenuePerShow, with.RevenuePerShow);
+                    Assert.Equal(hold.NetPerShow, with.NetPerShow);
+                    Assert.True(with.DailyFixed > hold.DailyFixed);
+                }
+            }
+            output.WriteLine($"{ruledOut} ruled out without a forecast, {kept} worth forecasting");
+            Assert.True(ruledOut > 0);
+
+            // And it never rules out somebody who would be on the card: its own biggest name,
+            // taken off the books, is plainly worth a forecast.
+            var star = everybody[0];
+            major.Contracts.RemoveAll(c => c.WrestlerId == star.Id);
+            var without = new List<World.CutLine>();
+            World.Forecast(career, major, major.Contracts, World.DispositionOf(major), cuts: without);
+            Assert.True(World.CouldAppear(major, star, without));
+        }
 
         /// <summary>Plan §7: what planning costs is counted, not timed.</summary>
         [Fact]

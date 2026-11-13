@@ -704,15 +704,74 @@ What that says, and what to look at:
 
 Counted (`PlanningStaysInsideItsBudget`): at most 21 forecasts in a week a promotion plans in,
 against a budget of 150, and none in a week where nothing it could act on has changed. Five years
-of the world simulate in 14 seconds, from over six minutes for the first version. What made the
-difference: `FeudBook.Find` walked every feud in the book for any pair that had not met (now an
-index by opposing pair); the booker built a report line for every match-up it priced
+of the default world simulate in about 14 seconds, from over six minutes for the first version.
+What made that difference: `FeudBook.Find` walked every feud in the book for any pair that had not
+met (now an index by opposing pair); the booker built a report line for every match-up it priced
 (`BoxOffice.PullOf`, held to `DrawOf` by `TheQuickPullIsThePull`); a release that could not win is
 not forecast; a week with nothing changed is not planned.
 
 In the browser, debug build, a week of the clock took about 10 seconds with the first version and
-takes 0.5–2.7 now, a quiet week being the low end. **That is still slower than before the planner
-and is not finished** — a release build was not measured.
+0.5–2.7 after those changes. A release build was not measured.
+
+### Making it scale to many promotions
+
+All of the above was measured with four rivals. The living-world plan
+(`docs/living-world-plan.md`) needs dozens to hundreds, so the planner was measured on stand-in
+worlds (`WorldScaleProbe` — the ninety real wrestlers copied under numbered names, for timing
+only). Native time for one week of the clock:
+
+| World | First planner | Now | Forecasts a week, then → now |
+|---|---|---|---|
+| 90 wrestlers, 4 rivals (the default) | 0.11 s | 0.11 s | 36 → 28 |
+| 600 wrestlers, 32 rivals, today's roster sizes | 3.4 s | 0.43 s | 1,009 → 162 |
+| 3,000 wrestlers, 92 rivals, real roster sizes | 70 s | 0.76 s | 3,706 → 142 |
+| 6,000 wrestlers, 208 rivals, real roster sizes | did not finish | 3.2 s | — → 472 |
+
+**The number of wrestlers costs almost nothing; the number of promotions deciding is what
+costs.** Going from 90 to 2,000 wrestlers with the same four rivals did not move the time.
+
+What changed, in the order it was found:
+
+1. **Looking somebody up scanned the world.** `Career.FindWrestler` compared strings down the
+   whole roster, a forecast asked it once per contract, and "who holds this wrestler" walked
+   every contract of every rival. Now an id index, a per-promotion contract index, and one table
+   of who holds whom, kept for the length of a `Tick` and thrown away whenever a contract changes
+   (`ContractsChanged`). No decision changed: five years of the default world produce the same
+   113 decisions to the last score.
+2. **Somebody who could not make a card is turned down without a forecast** (`CutLine`,
+   `CouldAppear`). Every choice `BookCard` makes is from the top few of some list; if every list
+   was full and its last name ranked above a candidate, the card with them is the card without
+   them, and so is the next one. That is exact, not an estimate
+   (`SomebodyWhoCouldNotMakeACardChangesNothingButThePayroll` checks every figure), and again no
+   decision changed. It does nothing for a roster of forty, where most of the roster is in play
+   for every card; at seventy it ruled out every low-card free agent tried, and at real sizes it
+   is why the two global companies cost seven forecasts a week between them.
+3. **A promotion that pays by the night plans its bookings, not a roster** (`PlanBookings`).
+   **This one changes decisions.** Nobody is exclusive to such a promotion and nobody costs it
+   anything on a night they do not work, so the first planner — weighing one addition a week like
+   a television company — found that adding somebody is always worth a little and did it three
+   times a week for ever: a sixteen-person indie had thirty "regulars" after twelve weeks and ran
+   about 120 forecasts a month collecting them. It now chooses, once a month or when it loses
+   somebody, where it books from — the names on offer, the best workers, or the best value —
+   by forecasting each with the booker building cards from the wider pool, taking whoever those
+   cards used as its roster, and scoring that against carrying on, by what it wants. Seven
+   forecasts a month. Rosters settle (fifteen indies held 222 people between them after twelve
+   weeks, against 362 and climbing).
+4. **"Has anything changed" looks at what it would act on.** The quiet-week check hashed every
+   free agent in the world, so with ninety promotions it never held. It now hashes the shortlist.
+
+What is still owed:
+
+- **In the browser.** Native-to-browser was roughly 10–50 times on the default world, so the
+  real-scale world is somewhere between several seconds and half a minute a week in a debug build.
+  Not measured: a stand-in world cannot be loaded into the browser, a release build was not tried,
+  and the simulation still runs on the page's own thread.
+- **Above about a hundred promotions** the cost outside forecasting starts to climb (2.1 of the
+  3.2 seconds at 208 rivals). Not investigated.
+- **The save.** 2.3 MB after eight weeks at real scale and 4.9 MB at the largest, against a
+  browser allowance of about 5 MB. A world this size needs a different place to keep its save,
+  or a smaller one.
+- **The stand-in worlds say nothing about behaviour.** Only about time.
 
 ### Not built in slice 6
 

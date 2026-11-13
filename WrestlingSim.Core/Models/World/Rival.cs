@@ -91,7 +91,28 @@ namespace WrestlingSim.Models.World
         public bool IsActive => Folded is null;
         public string Name => Promotion.Name;
 
-        public Contract? ContractOf(Wrestler w) => Contracts.FirstOrDefault(c => c.WrestlerId == w.Id);
+        /// <summary>
+        /// Their deal here, through an index kept beside the list. Rebuilt whenever the list is
+        /// a different list, a different length, or ends in a different contract — every way
+        /// the game changes it does one of those.
+        /// </summary>
+        public Contract? ContractOf(Wrestler w)
+        {
+            int count = Contracts.Count;
+            var last = count == 0 ? null : Contracts[count - 1];
+            if (_deals is null || !ReferenceEquals(_dealsOf, Contracts) || _dealsCount != count || !ReferenceEquals(_dealsLast, last))
+            {
+                _deals = new Dictionary<string, Contract>(count);
+                foreach (var c in Contracts) _deals.TryAdd(c.WrestlerId, c);
+                (_dealsOf, _dealsCount, _dealsLast) = (Contracts, count, last);
+            }
+            return _deals.TryGetValue(w.Id, out var deal) ? deal : null;
+        }
+
+        private Dictionary<string, Contract>? _deals;
+        private List<Contract>? _dealsOf;
+        private int _dealsCount;
+        private Contract? _dealsLast;
         public decimal DailyPayroll => Contracts.Sum(c => c.DailyCost);
     }
 

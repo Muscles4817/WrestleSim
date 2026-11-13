@@ -107,6 +107,13 @@ namespace WrestlingSim.Engine
             var tier = rival.Promotion.Tier;
             var today = career.CurrentDate;
 
+            // A promotion that pays by the night has no roster to manage, only shows to book.
+            if (!rival.Promotion.HasTelevision)
+            {
+                PlanBookings(career, rival, wants, sees);
+                return;
+            }
+
             for (int round = 0; round < MaxMovesPerWeek; round++)
             {
                 // Nothing it could act on has changed since it last looked and found nothing
@@ -120,9 +127,10 @@ namespace WrestlingSim.Engine
                     && today.DayNumber - since.DayNumber < QuietRecheckDays)
                     return;
 
-                var hold = Forecast(career, rival, rival.Contracts, sees);
+                var cuts = new List<CutLine>();
+                var hold = Forecast(career, rival, rival.Contracts, sees, cuts: cuts);
 
-                var scored = Candidates(career, rival, hold, wants, sees)
+                var scored = Candidates(career, rival, hold, wants, sees, cuts)
                     .Where(c => c.AtMost is not { } most || most > Epsilon)
                     .Select(c =>
                     {
@@ -144,6 +152,7 @@ namespace WrestlingSim.Engine
 
                 var (best, score) = scored[0];
                 best.Apply();
+                ContractsChanged();
                 var turnedDown = scored.Skip(1).Take(3)
                     .Select(x => $"{x.Candidate.Move} {x.Candidate.Who.RingName} ({x.Score.Total:+0.000;-0.000})").ToList();
                 Remember(career, rival, best.Move, best.Who, best.Annual, score, hold, turnedDown);
@@ -157,7 +166,7 @@ namespace WrestlingSim.Engine
 
         /// <summary>
         /// What a rival's decisions this week depend on that can change from outside: who it
-        /// has, who is on offer, whose deals with the player are running out, and roughly how
+        /// has, who it would look at signing, whose deals with the player are running out, and roughly how
         /// much money it has. Two weeks with the same answer here are, near enough, the same
         /// week to plan.
         /// </summary>
@@ -165,7 +174,10 @@ namespace WrestlingSim.Engine
         {
             var parts = rival.Contracts.Select(c => c.WrestlerId).OrderBy(id => id, StringComparer.Ordinal)
                 .Append("|")
-                .Concat(FreeAgents(career).Where(w => rival.ContractOf(w) is null).Select(w => w.Id).OrderBy(id => id, StringComparer.Ordinal))
+                // The free agents it would look at, not every free agent there is: in a world
+                // of ninety promotions somebody is always coming free somewhere, and nearly
+                // always it is nobody this promotion would have considered.
+                .Concat(Shortlist(career, rival).Select(w => w.Id).OrderBy(id => id, StringComparer.Ordinal))
                 .Append("|")
                 .Concat(career.ExpiringWithin(TalentMarket.ExpiryWarningDays).Where(c => c.IsGuaranteed).Select(c => c.WrestlerId)
                               .OrderBy(id => id, StringComparer.Ordinal))
@@ -178,26 +190,159 @@ namespace WrestlingSim.Engine
         }
 
         /// <summary>
+        /// The free agents a promotion looks at: the most over, the best in the ring and the
+        /// best value, so that whatever it wants, its best candidate is on the list.
+        /// </summary>
+        private static List<Wrestler> Shortlist(Career career, RivalPromotion rival, int names = 5, int others = 3)
+        {
+            var free = FreeAgents(career).Where(w => rival.ContractOf(w) is null).ToList();
+            return free.Take(names)
+                .Concat(BestInTheRing(free).Take(others))
+                .Concat(BestValue(career, free).Take(others))
+                .Distinct()
+                .ToList();
+        }
+
+        private static IEnumerable<Wrestler> BestInTheRing(IEnumerable<Wrestler> people) =>
+            people.OrderByDescending(w => w.RingSkills.GetOverallSkill()).ThenBy(w => w.Id, StringComparer.Ordinal);
+
+        private static IEnumerable<Wrestler> BestValue(Career career, IEnumerable<Wrestler> people) =>
+            people.OrderByDescending(w => w.EffectiveOverness / (double)Math.Max(1m, career.PerDateAsk(w)))
+                  .ThenBy(w => w.Id, StringComparer.Ordinal);
+
+        // ── Below television: booking, not signing ───────────────────────────
+
+        /// <summary>
+        /// The month's bookings for a promotion that pays by the night.
+        ///
+        /// Such a promotion has no roster in the sense a television company has one. Nobody is
+        /// exclusive to it and nobody costs it anything on a night they do not work, so "who
+        /// is on its books" is only "who it has been booking". The first planner treated it
+        /// like a television company anyway: every week it weighed adding one person at a
+        /// time, and because adding somebody it need not pay is always worth a little, it
+        /// added three a week for ever — a sixteen-person indie had thirty "regulars" after
+        /// twelve weeks and had run a hundred and twenty forecasts a month to collect them.
+        ///
+        /// What it decides instead is **where it books from**: the people it has, plus the
+        /// names on offer, or the best workers on offer, or the best value on offer. Each is
+        /// forecast — the booker builds the month's cards from that wider pool — and whoever
+        /// those cards used is the roster it would have. That roster is scored against carrying
+        /// on as it is, by what the promotion wants, like any other move: a promotion run for
+        /// good shows ends up booking from the workers and one run for a return from the value,
+        /// and neither is told to. Once a month, or sooner if it loses somebody.
+        /// </summary>
+        private static void PlanBookings(Career career, RivalPromotion rival, Objective wants, Disposition sees)
+        {
+            var today = career.CurrentDate;
+            var tier = rival.Promotion.Tier;
+
+            int situation = BookingSituationOf(career, rival);
+            if (rival.QuietAs == situation && rival.QuietSince is { } since
+                && today.DayNumber - since.DayNumber < QuietRecheckDays)
+                return;
+
+            static HashSet<string> On(List<(ShowType Type, double Pull, List<ICardItem> Card)> cards) =>
+                cards.SelectMany(c => c.Card).SelectMany(i => i.Wrestlers).Select(w => w.Id).ToHashSet();
+
+            var now = new List<(ShowType, double, List<ICardItem>)>();
+            var hold = Forecast(career, rival, rival.Contracts, sees, cards: now);
+            var onNow = On(now);
+
+            var free = FreeAgents(career).Where(w => rival.ContractOf(w) is null).ToList();
+            int reach = 2 * TierOpeningRoster.For(tier).Size;
+            var pools = new (string From, List<Wrestler> People)[]
+            {
+                ("the names on offer",        free.Take(reach).ToList()),
+                ("the best workers on offer", BestInTheRing(free).Take(reach).ToList()),
+                ("the best value on offer",   BestValue(career, free).Take(reach).ToList())
+            };
+
+            (Score Score, List<Contract> Roster, List<Wrestler> Added, List<Wrestler> Displaced, string From)? best = null;
+            var turnedDown = new List<string>();
+
+            foreach (var (from, people) in pools)
+            {
+                var offered = people.ToDictionary(
+                    w => w.Id, w => new Contract { WrestlerId = w.Id, Kind = ContractKind.Regular, Start = today });
+
+                var wide = new List<(ShowType, double, List<ICardItem>)>();
+                Forecast(career, rival, [.. rival.Contracts, .. offered.Values], sees, cards: wide);
+                var used = On(wide);
+
+                var added = people.Where(w => used.Contains(w.Id)).ToList();
+                if (added.Count == 0) continue;
+
+                var roster = rival.Contracts.Where(c => used.Contains(c.WrestlerId))
+                    .Concat(added.Select(w => offered[w.Id])).ToList();
+                var displaced = rival.Contracts.Where(c => onNow.Contains(c.WrestlerId) && !used.Contains(c.WrestlerId)).ToList();
+
+                // Continuity is lost with the people its audience was actually seeing.
+                double continuity = displaced.Sum(c => 0.5 + Math.Max(0, today.DayNumber - c.Start.DayNumber) / 365.0);
+                var score = ScoreOf(hold, Forecast(career, rival, roster, sees), wants, sees, tier, continuity);
+
+                if (best is null || score.Total > best.Value.Score.Total)
+                {
+                    if (best is { } was) turnedDown.Add($"booking from {was.From} ({was.Score.Total:+0.000;-0.000})");
+                    best = (score, roster, added,
+                            displaced.Select(c => career.FindWrestler(c.WrestlerId)).OfType<Wrestler>().ToList(), from);
+                }
+                else turnedDown.Add($"booking from {from} ({score.Total:+0.000;-0.000})");
+            }
+
+            if (best is { } chosen && chosen.Score.Total > Epsilon)
+            {
+                foreach (var gone in rival.Contracts.Where(c => !chosen.Roster.Contains(c)).ToList())
+                    if (career.FindWrestler(gone.WrestlerId) is { } w) Vacate(career, rival, w, "No longer booked");
+
+                rival.Contracts.Clear();
+                rival.Contracts.AddRange(chosen.Roster);
+                ContractsChanged();
+
+                foreach (var w in chosen.Added) Remember(career, rival, "added", w, 0m, chosen.Score, hold, turnedDown);
+                foreach (var w in chosen.Displaced) Remember(career, rival, "dropped", w, 0m, chosen.Score, hold, turnedDown);
+            }
+
+            (rival.QuietAs, rival.QuietSince) = (BookingSituationOf(career, rival), today);
+        }
+
+        /// <summary>Who it is booking, who of them is hurt, and roughly how much money it has.</summary>
+        private static int BookingSituationOf(Career career, RivalPromotion rival)
+        {
+            var today = career.CurrentDate;
+            var parts = rival.Contracts.Select(c => c.WrestlerId).OrderBy(id => id, StringComparer.Ordinal)
+                .Append("|")
+                .Concat(rival.Contracts.Select(c => career.FindWrestler(c.WrestlerId)).OfType<Wrestler>()
+                             .Where(w => w.IsInjured(today)).Select(w => w.Id).OrderBy(id => id, StringComparer.Ordinal))
+                .Append("|")
+                // In debt, short, or neither. Not finer: a promotion that opened on $25,000
+                // crosses a tenth of that most weeks, in either direction, without anything
+                // about its position having changed.
+                .Append(rival.Books.Cash < 0 ? "debt" : rival.Books.Cash < rival.Books.OpeningCash / 2 ? "short" : "fine");
+            int hash = StableSeed.From(string.Join(",", parts));
+            return hash == 0 ? 1 : hash;
+        }
+
+        /// <summary>
         /// The moves open to a rival this week. The shortlists are a cost device, not behaviour:
         /// three different ways of ranking free agents so that every objective's best candidate
         /// is on the list. The objective chooses.
         /// </summary>
         private static IEnumerable<Candidate> Candidates(
-            Career career, RivalPromotion rival, Outlook hold, Objective wants, Disposition sees)
+            Career career, RivalPromotion rival, Outlook hold, Objective wants, Disposition sees, IReadOnlyList<CutLine> cuts)
         {
             var today = career.CurrentDate;
             bool signs = rival.Promotion.HasTelevision;
 
-            var free = FreeAgents(career).Where(w => rival.ContractOf(w) is null).ToList();
-            var shortlist = free.Take(5)
-                .Concat(free.OrderByDescending(w => w.RingSkills.GetOverallSkill()).ThenBy(w => w.Id, StringComparer.Ordinal).Take(3))
-                .Concat(free.OrderByDescending(w => w.EffectiveOverness / (double)Math.Max(1m, career.PerDateAsk(w)))
-                            .ThenBy(w => w.Id, StringComparer.Ordinal).Take(3))
-                .Distinct()
-                .ToList();
+            var shortlist = Shortlist(career, rival);
 
             foreach (var w in shortlist)
             {
+                // Somebody who could not get onto any card it would run changes nothing but
+                // what it pays, so there is nothing to forecast: the answer is no. This is
+                // where most of a week's planning used to go — booking a month of shows to
+                // learn that a man who would not have been on them was not on them.
+                if (!CouldAppear(rival, w, cuts)) continue;
+
                 var contract = signs
                     ? new Contract
                     {
@@ -215,29 +360,6 @@ namespace WrestlingSim.Engine
                         if (contract.IsGuaranteed) EndArrangements(career, rival, w);
                     });
             }
-
-            // Several at once, for a promotion that cannot put on a show. One more person does
-            // nothing for a roster of none — it takes two to have a match, and more than one
-            // match to have a show worth opening the doors for — so looking one move ahead
-            // every addition is worth nothing or less, and it would sit shut until the rent
-            // closed it with free agents walking past. A search that shallow is the planner's
-            // limit and not the promotion's, so where no card can be made it looks at booking
-            // a roster: the first two of its shortlist, the first four, and so on.
-            if (hold.ShowsInHorizon <= 0 && !signs)
-                for (int size = 2; size <= shortlist.Count; size += 2)
-                {
-                    var group = shortlist.Take(size).ToList();
-                    var deals = group
-                        .Select(w => new Contract { WrestlerId = w.Id, Kind = ContractKind.Regular, Start = today }).ToList();
-                    yield return new Candidate(
-                        "added", group[0], [.. rival.Contracts, .. deals], 0m, 0m, 0, null,
-                        () =>
-                        {
-                            rival.Contracts.RemoveAll(c => group.Any(w => w.Id == c.WrestlerId));
-                            rival.Contracts.AddRange(deals);
-                        },
-                        group.Skip(1).ToList());
-                }
 
             // Letting somebody go. The ones worth least for what they cost, and the dearest.
             var held = rival.Contracts
@@ -300,7 +422,7 @@ namespace WrestlingSim.Engine
                     if (w is null || career.Bids.Any(b => b.WrestlerId == w.Id && b.Bidder == rival.Id)) continue;
 
                     decimal ask = career.GuaranteeAsk(w, 3);
-                    decimal most = Reservation(career, rival, w, hold, wants, sees);
+                    decimal most = Reservation(career, rival, w, hold, wants, sees, cuts);
                     if (most < ask) continue;
 
                     decimal bid = Math.Round((ask + 0.5m * (most - ask)) / 1_000m) * 1_000m;
@@ -324,8 +446,13 @@ namespace WrestlingSim.Engine
         /// counts money will pay almost anything for a name it wants.
         /// </summary>
         public static decimal Reservation(
-            Career career, RivalPromotion rival, Wrestler w, Outlook hold, Objective wants, Disposition sees)
+            Career career, RivalPromotion rival, Wrestler w, Outlook hold, Objective wants, Disposition sees,
+            IReadOnlyList<CutLine>? cuts = null)
         {
+            // Not somebody it would book: worth nothing to it, and known without forecasting.
+            // (Only when the cut lines are for a roster without them on it.)
+            if (cuts is not null && rival.ContractOf(w) is null && !CouldAppear(rival, w, cuts)) return 0m;
+
             var today = career.CurrentDate;
             decimal ask = career.GuaranteeAsk(w, 3);
             var contract = new Contract
@@ -367,13 +494,15 @@ namespace WrestlingSim.Engine
                 if (today < c.End) continue;
 
                 rival.Contracts.Remove(c);
+                ContractsChanged();
                 if (w is null) continue;
 
                 var wants = ObjectiveOf(rival);
                 var sees = DispositionOf(rival);
-                var without = Forecast(career, rival, rival.Contracts, sees);
+                var cuts = new List<CutLine>();
+                var without = Forecast(career, rival, rival.Contracts, sees, cuts: cuts);
                 decimal ask = career.GuaranteeAsk(w, 3);
-                decimal most = Reservation(career, rival, w, without, wants, sees);
+                decimal most = Reservation(career, rival, w, without, wants, sees, cuts);
                 var mine = career.PlayerBid(w);
 
                 if (mine is not null && mine.Annual > most)
@@ -408,6 +537,7 @@ namespace WrestlingSim.Engine
                     career.AddNews($"{w.RingName}'s deal with {rival.Name} ran out — not worth the price to it. A free agent.");
                 }
                 career.Bids.RemoveAll(b => b.WrestlerId == w.Id);
+                ContractsChanged();
             }
         }
 
