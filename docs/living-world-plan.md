@@ -75,6 +75,27 @@ Kept here as they are made, so the sections below can be read against them.
   grow. Custom databases (an Attitude Era one, say) are the same mechanism.
 - **Retirement of real wrestlers** is left for when Part 3 is planned.
 
+**14 Nov — wrestlers who want things (Part 6).**
+
+- **Every wrestler has personal traits:** ambition (how much being used matters), patience (how
+  long they will wait), loyalty (what staying put is worth), and how much money matters. None
+  exist today — the only "mental" attributes are in-ring ones.
+- **One running measure of how content they are**, driven as doc 14 §5 lists it: being used
+  first, the standing of the place (which is what lets people wait at the biggest company),
+  money "less than outsiders assume", broken promises worst.
+- **What somebody does when it runs low depends on who they are**, and is not scripted: the
+  ambitious ask for a release, which the promotion may refuse (doc 13 §2.9 — refusing keeps them
+  off a rival's show, granting keeps its name for decency); the patient or well-paid do not
+  re-sign; the money-minded stay until they are cut.
+- **Budget waves** (doc 13 §2.1, "the largest category, by a distance") should come out of the
+  planner having a reason to care about cost at certain moments, not be scheduled.
+- **The released star** (doc 13 §6.1): a temporary lift on arrival somewhere smaller that fades
+  over three to nine months, and converts or not by how they are booked. Doc 13 puts conversion
+  at 30–40%; nothing sets that figure, it is what the harness should be compared against.
+- **The player's roster gets exactly the same treatment.** Unused people get unhappy, ask to
+  leave, and can be poached.
+- **The player sees the traits**, as words that sharpen the longer somebody has worked for them.
+
 ## 1. The rule this plan follows
 
 > **Anything that can happen to a wrestler or a promotion happens the same way whoever is
