@@ -83,6 +83,23 @@ else
         <div class="score-hero__label">Final crowd</div>
         <div class="score-hero__main">@Result.FinalCrowdMood.ToString("F1") <span class="muted">/ 10</span></div>
     </div>
+    @* The night's business in the same line as its rating, so the report answers "how did it
+       go" in one glance; the full takings follow below. *@
+    @if (Result.Finances is { HadCard: true } night)
+    {
+        <div>
+            <div class="score-hero__label">House</div>
+            <div class="score-hero__main">@Money.Percent(night.Fill)<span class="muted"> · @night.Attendance.ToString("N0")</span></div>
+        </div>
+        <div>
+            <div class="score-hero__label">Made</div>
+            <div class="score-hero__main @Money.Tone(night.Net)">@Money.Signed(night.Net)</div>
+        </div>
+        <div>
+            <div class="score-hero__label">Reputation</div>
+            <div class="score-hero__main">@night.ReputationAfter.ToString("F1") <span class="@(night.ReputationAfter >= night.ReputationBefore ? "grade--great" : "grade--poor")">@((night.ReputationAfter - night.ReputationBefore).ToString("+0.0;−0.0"))</span></div>
+        </div>
+    }
 </div>
 
 @* The business, beside the rating and not folded into it. Null in exhibition, which has no

@@ -1,0 +1,452 @@
+@*
+    Everybody in the world as one table: yours, the market, or everyone, with the same
+    columns, filters and sorting in each. It replaces a roster screen that listed all ninety
+    wrestlers twice (once for the summary, once again for ring skills) without saying which of
+    them were the player's, and a market that was a name on the left and a button on the right
+    with nothing between.
+
+    A name opens the profile. Region is not a column because the game has no regions yet
+    (docs/living-world-plan.md).
+*@
+@using WrestlingSim.Models.Person
+@inherits StateComponent
+
+@{
+    var career = State.Career;
+    var view = career is null ? TalentView.Everyone : State.TalentView;
+    var rows = Rows(career, view).ToList();
+    var regulars = RegularsElsewhere(career);
+}
+
+@if (career is null)
+{
+    <div class="screen__head">
+        <div class="screen__eyebrow">@State.Roster.Count wrestlers</div>
+        <h1 class="screen__title">Wrestlers</h1>
+    </div>
+}
+
+@if (offering is not null)
+{
+    <OfferPanel Wrestler="offering" OnClose="() => offering = null" />
+}
+
+<div class="filters @(filtersOpen ? "is-open" : "")">
+    <div class="field field--wide">
+        <label class="field__label" for="talent-q">Search</label>
+        <div class="row">
+            <input id="talent-q" class="input" type="search" placeholder="Name or gimmick" style="flex: 1 1 auto; min-width: 0"
+                   value="@query" @oninput="e => query = e.Value?.ToString() ?? string.Empty" />
+            <button class="btn btn--sm filters__toggle" aria-expanded="@filtersOpen" @onclick="() => filtersOpen = !filtersOpen">Filters</button>
+        </div>
+    </div>
+    <div class="field">
+        <label class="field__label" for="talent-division">Division</label>
+        <select id="talent-division" class="input" @bind="division">
+            <option value="">Any</option>
+            <option value="@Division.Mens">Men's</option>
+            <option value="@Division.Womens">Women's</option>
+        </select>
+    </div>
+    <div class="field">
+        <label class="field__label" for="talent-style">Style</label>
+        <select id="talent-style" class="input" @bind="style">
+            <option value="">Any</option>
+            @foreach (var s in State.Roster.Select(w => w.Style).Distinct().OrderBy(s => s.ToString()))
+            {
+                <option value="@s">@StyleLabel(s)</option>
+            }
+        </select>
+    </div>
+    <div class="field">
+        <label class="field__label" for="talent-age">Age</label>
+        <select id="talent-age" class="input" @bind="age">
+            <option value="">Any</option>
+            <option value="young">Under 25</option>
+            <option value="prime">25 to 34</option>
+            <option value="veteran">35 and over</option>
+        </select>
+    </div>
+    @if (career is not null && view != TalentView.Yours)
+    {
+        <div class="field">
+            <label class="field__label" for="talent-fee">Fee a night up to</label>
+            <select id="talent-fee" class="input" @bind="feeCap">
+                <option value="0">Any</option>
+                @foreach (var cap in FeeCaps(career))
+                {
+                    <option value="@cap">@Money.Format(cap)</option>
+                }
+            </select>
+        </div>
+        <div class="field">
+            <label class="field__label" for="talent-free">Availability</label>
+            <select id="talent-free" class="input" @bind="availability">
+                <option value="">Anyone</option>
+                <option value="free">Free to book</option>
+                <option value="signed">Signed elsewhere</option>
+            </select>
+        </div>
+    }
+    <div class="field">
+        <span class="field__label">Columns</span>
+        <div class="chips">
+            <button class="chip @(!skills ? "is-active" : "")" @onclick="() => skills = false">Overview</button>
+            <button class="chip @(skills ? "is-active" : "")" @onclick="() => skills = true">Ring skills</button>
+        </div>
+    </div>
+</div>
+
+<div class="resultline">
+    <span>
+        @rows.Count @(rows.Count == 1 ? "wrestler" : "wrestlers")
+        @if (career is not null && view == TalentView.Market)
+        {
+            <text> · @rows.Count(w => career.Unavailable(w) is null) free to book</text>
+        }
+    </span>
+    @if (career is not null && view == TalentView.Yours && career.CanSign)
+    {
+        <span class="muted">Payroll @Money.Format(career.DailyPayroll) a day</span>
+    }
+    else if (career is not null && view == TalentView.Yours)
+    {
+        <span class="muted">Below television nobody is signed. Your regulars are who you book most; anybody free can be booked for a night at their price.</span>
+    }
+</div>
+
+@if (rows.Count == 0)
+{
+    <div class="empty">
+        <div class="empty__mark"><Icon Name="roster" /></div>
+        @(career is not null && view == TalentView.Yours && career.Contracts.Count == 0
+            ? "Nobody on your roster yet. Find people in the market."
+            : "Nobody matches these filters.")
+    </div>
+}
+else
+{
+    <div class="panel">
+        <div class="table-wrap">
+            <table class="data">
+                <thead>
+                    <tr>
+                        <th>@Header("Wrestler", "name")</th>
+                        @if (!skills)
+                        {
+                            <th class="col-wide">@Header("Style", "style")</th>
+                            <th class="num col-wide">@Header("Age", "age")</th>
+                            <th class="num">@Header("Popularity", "pop")</th>
+                            <th class="num">@Header("In ring", "ring")</th>
+                            <th class="num col-wide">@Header("Charisma", "cha")</th>
+                            <th class="col-wide">Condition</th>
+                            @if (career is not null)
+                            {
+                                <th class="col-wide">@Header(view == TalentView.Yours ? "Deal" : "Works for", "works")</th>
+                                <th class="num">@Header(view == TalentView.Yours ? "Costs" : "Fee a night", "fee")</th>
+                                <th><span class="sr-only">Action</span></th>
+                            }
+                        }
+                        else
+                        {
+                            <th class="num">@Header("Flyer", "flyer")</th>
+                            <th class="num">@Header("Grappler", "grappler")</th>
+                            <th class="num">@Header("Power", "power")</th>
+                            <th class="num">@Header("Technical", "technical")</th>
+                            <th class="num">@Header("Brawler", "brawler")</th>
+                            <th class="num">@Header("Striker", "striker")</th>
+                            <th class="num col-wide">@Header("Psychology", "psych")</th>
+                            <th class="num col-wide">@Header("Selling", "sell")</th>
+                            <th class="num col-wide">@Header("Stamina", "stamina")</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var w in rows)
+                    {
+                        var mine = career?.ContractOf(w);
+                        <tr class="@(mine is not null && view != TalentView.Yours ? "is-mine" : "")">
+                            <td>
+                                <button class="namecell" @onclick="() => State.OpenProfile(w)">
+                                    <strong>@w.RingName</strong>
+                                    <span class="small muted">
+                                        @(w.Gimmick?.Type.ToString() ?? "No gimmick") · @(w.Division == Division.Womens ? "Women's" : "Men's")
+                                        @if (State.BrandOf(w) is { } brand) { <text> · @brand.Name</text> }
+                                    </span>
+                                </button>
+                            </td>
+                            @if (!skills)
+                            {
+                                <td class="small muted col-wide nowrap">@StyleLabel(w.Style)</td>
+                                <td class="num col-wide">@(w.AgeOn(Today)?.ToString() ?? "—")</td>
+                                <td class="num @w.CardPosition.Tone()"><strong>@w.OvernessDisplay</strong> <Trend Momentum="w.Momentum" ShowLabel="false" /></td>
+                                <td class="num">@w.RingSkills.GetOverallSkill().ToString("F1")</td>
+                                <td class="num col-wide">@w.Charisma.ToString("F1")</td>
+                                <td class="small col-wide">@Condition(w)</td>
+                                @if (career is not null)
+                                {
+                                    <td class="small col-wide">@WorksFor(career, w, mine, regulars)</td>
+                                    <td class="num small nowrap">@Fee(career, w, mine)</td>
+                                    <td class="nowrap">@Action(career, w, mine)</td>
+                                }
+                            }
+                            else
+                            {
+                                <td class="num">@w.RingSkills.HighFlyer.ToString("F1")</td>
+                                <td class="num">@w.RingSkills.Grappler.ToString("F1")</td>
+                                <td class="num">@w.RingSkills.Powerhouse.ToString("F1")</td>
+                                <td class="num">@w.RingSkills.Technical.ToString("F1")</td>
+                                <td class="num">@w.RingSkills.Brawler.ToString("F1")</td>
+                                <td class="num">@w.RingSkills.Striker.ToString("F1")</td>
+                                <td class="num col-wide">@w.Mental.Psychology</td>
+                                <td class="num col-wide">@w.Mental.Selling</td>
+                                <td class="num col-wide">@w.Physical.Stamina</td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@code {
+    private string query = "";
+    private string division = "";
+    private string style = "";
+    private string age = "";
+    private decimal feeCap;
+    private string availability = "";
+    private bool skills;
+    private bool filtersOpen;
+    private string sortKey = "pop";
+    private bool descending = true;
+    private Wrestler? offering;
+
+    private DateOnly Today => State.Career?.CurrentDate ?? DateOnly.FromDateTime(DateTime.Today);
+
+    private IEnumerable<Wrestler> Rows(Career? career, TalentView view)
+    {
+        var people = State.Roster.AsEnumerable();
+        if (career is not null)
+            people = view switch
+            {
+                TalentView.Yours  => people.Where(w => career.ContractOf(w) is not null),
+                TalentView.Market => people.Where(w => career.ContractOf(w) is null),
+                _                 => people
+            };
+
+        people = people
+            .Where(w => division == "" || w.Division.ToString() == division)
+            .Where(w => style == "" || w.Style.ToString() == style)
+            .Where(w => age == "" || AgeBand(w) == age)
+            .Where(w => string.IsNullOrWhiteSpace(query)
+                     || (w.RingName?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false)
+                     || (w.RealName?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false)
+                     || (w.Gimmick?.PersonaDescriptor?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false));
+
+        if (career is not null && view != TalentView.Yours)
+        {
+            if (feeCap > 0) people = people.Where(w => career.PerDateAsk(w) <= feeCap);
+            if (availability == "free") people = people.Where(w => career.Unavailable(w) is null);
+            if (availability == "signed") people = people.Where(w => career.SignedTo(w) is not null);
+        }
+
+        Func<Wrestler, IComparable> key = sortKey switch
+        {
+            "name"      => w => w.RingName ?? "",
+            "style"     => w => w.Style.ToString(),
+            "age"       => w => w.AgeOn(Today) ?? 0,
+            "ring"      => w => w.RingSkills.GetOverallSkill(),
+            "cha"       => w => w.Charisma,
+            "fee"       => w => career is null ? 0m : Cost(career, w),
+            "works"     => w => career is null ? "" : WorksForKey(career, w),
+            "flyer"     => w => w.RingSkills.HighFlyer,
+            "grappler"  => w => w.RingSkills.Grappler,
+            "power"     => w => w.RingSkills.Powerhouse,
+            "technical" => w => w.RingSkills.Technical,
+            "brawler"   => w => w.RingSkills.Brawler,
+            "striker"   => w => w.RingSkills.Striker,
+            "psych"     => w => w.Mental.Psychology,
+            "sell"      => w => w.Mental.Selling,
+            "stamina"   => w => w.Physical.Stamina,
+            _           => w => w.EffectiveOverness
+        };
+        var sorted = descending ? people.OrderByDescending(key) : people.OrderBy(key);
+        return sorted.ThenBy(w => w.RingName, StringComparer.Ordinal);
+    }
+
+    private RenderFragment Header(string label, string key) => __builder =>
+    {
+        bool on = sortKey == key;
+        <button class="sort @(on ? "is-on" : "")" @onclick="() => SortBy(key)"
+                aria-label="@($"Sort by {label}")">
+            @label @(on ? (descending ? "▾" : "▴") : "")
+        </button>
+    };
+
+    private void SortBy(string key)
+    {
+        if (sortKey == key) descending = !descending;
+        else { sortKey = key; descending = key is not ("name" or "style" or "works"); }
+    }
+
+    private string AgeBand(Wrestler w) => w.AgeOn(Today) switch
+    {
+        null => "",
+        < 25 => "young",
+        < 35 => "prime",
+        _    => "veteran"
+    };
+
+    private static string StyleLabel(WrestlingStyle s) => s switch
+    {
+        WrestlingStyle.HighFlyer => "High flyer",
+        WrestlingStyle.Powerhouse => "Power",
+        WrestlingStyle.Null => "None",
+        _ => s.ToString()
+    };
+
+    private static IEnumerable<decimal> FeeCaps(Career career)
+    {
+        var asks = career.Roster.Select(career.PerDateAsk).OrderBy(a => a).ToList();
+        if (asks.Count == 0) yield break;
+        foreach (var q in new[] { 0.25, 0.5, 0.75 })
+        {
+            var raw = asks[(int)(q * (asks.Count - 1))];
+            yield return raw >= 1000 ? Math.Round(raw / 1000m) * 1000m : Math.Round(raw / 50m) * 50m;
+        }
+    }
+
+    private RenderFragment Condition(Wrestler w) => __builder =>
+    {
+        if (w.Injury is { } injury && injury.KeepsOut(Today))
+        {
+            <span class="grade--poor"><Icon Name="injury" /> Injured</span>
+        }
+        else if (State.Career is { } c && c.ContractOf(w) is null)
+        {
+            // Rival shows do not wear anybody out or keep them sharp yet (living-world plan,
+            // Part 4), so everybody who works elsewhere read "ring rusty". Not a fact the game
+            // knows; shown as nothing.
+            <span class="muted">—</span>
+        }
+        else if (w.Fatigue >= RingCondition.CookedThreshold)
+        {
+            <span class="grade--poor">Worn out</span>
+        }
+        else if (w.Sharpness <= RingCondition.RustyThreshold)
+        {
+            <span class="gold">Ring rusty</span>
+        }
+        else if (State.Career is not null && w.IsTouring(Today))
+        {
+            <span class="muted">On the road</span>
+        }
+        else
+        {
+            <span class="muted">Fit</span>
+        }
+    };
+
+    /// <summary>Which rivals book somebody by the night. They can work for several.</summary>
+    private static Dictionary<string, List<string>> RegularsElsewhere(Career? career)
+    {
+        var map = new Dictionary<string, List<string>>();
+        if (career is null) return map;
+        foreach (var rival in career.Rivals.Where(r => r.IsActive))
+            foreach (var c in rival.Contracts.Where(c => !c.IsGuaranteed))
+            {
+                if (!map.TryGetValue(c.WrestlerId, out var list)) map[c.WrestlerId] = list = [];
+                list.Add(rival.Name);
+            }
+        return map;
+    }
+
+    private static string WorksForKey(Career career, Wrestler w) =>
+        career.ContractOf(w) is not null ? "0" : career.SignedTo(w)?.Name ?? "zz";
+
+    private RenderFragment WorksFor(Career career, Wrestler w, Contract? mine, Dictionary<string, List<string>> regulars) => __builder =>
+    {
+        if (mine is not null)
+        {
+            if (mine.IsGuaranteed)
+            {
+                <span>Signed to you until @mine.End!.Value.ToString("MMM yyyy")</span>
+            }
+            else
+            {
+                <span>Your regular</span>
+            }
+            if (regulars.TryGetValue(w.Id, out var also))
+            {
+                <div class="muted">also @string.Join(", ", also)</div>
+            }
+        }
+        else if (career.SignedTo(w) is { } holder)
+        {
+            <span>Signed to @holder.Name</span>
+            <div class="muted">until @holder.ContractOf(w)!.End!.Value.ToString("MMM yyyy")</div>
+        }
+        else if (career.NonCompeteOf(w) is { } nc)
+        {
+            <span class="muted">Non-compete until @nc.Until.ToString("d MMM")</span>
+        }
+        else if (regulars.TryGetValue(w.Id, out var where))
+        {
+            <span>@string.Join(", ", where)</span>
+        }
+        else
+        {
+            <span class="muted">Nobody</span>
+        }
+    };
+
+    private static decimal Cost(Career career, Wrestler w) =>
+        career.ContractOf(w) is { IsGuaranteed: true } c ? c.AnnualGuarantee / 365m : career.PerDateAsk(w);
+
+    private RenderFragment Fee(Career career, Wrestler w, Contract? mine) => __builder =>
+    {
+        if (mine is { IsGuaranteed: true })
+        {
+            <span>@Money.Format(mine.AnnualGuarantee) a year</span>
+        }
+        else
+        {
+            <span>@Money.Format(career.PerDateAsk(w))</span>
+        }
+    };
+
+    private RenderFragment Action(Career career, Wrestler w, Contract? mine) => __builder =>
+    {
+        if (mine is not null)
+        {
+            if (mine.IsGuaranteed)
+            {
+                <button class="btn btn--sm" @onclick="() => offering = w">Re-sign</button>
+            }
+            else
+            {
+                <button class="btn btn--sm btn--ghost" @onclick="() => State.ReleaseAsync(w)">Drop</button>
+            }
+        }
+        else if (career.NonCompeteOf(w) is not null)
+        {
+        }
+        else if (career.SignedTo(w) is { } holder)
+        {
+            if (career.CanSign && (holder.ContractOf(w)!.DaysLeft(career.CurrentDate) ?? int.MaxValue) <= TalentMarket.ExpiryWarningDays)
+            {
+                <button class="btn btn--sm btn--primary" @onclick="() => offering = w">Make an offer</button>
+            }
+        }
+        else if (career.CanSign)
+        {
+            <button class="btn btn--sm btn--primary" @onclick="() => offering = w">Make an offer</button>
+        }
+        else
+        {
+            <button class="btn btn--sm" @onclick="() => State.MakeRegularAsync(w)">Make a regular</button>
+        }
+    };
+}

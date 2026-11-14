@@ -1,0 +1,421 @@
+@*
+    One wrestler, everything the game knows about them. Opened from any name.
+
+    There was no such screen: a roster row did not open, so "who is this, how good are they,
+    what have they done here" meant reading a table and a second table of ring skills and
+    remembering the rest. Everything here is read from what the game already tracks.
+
+    Not here, because the game does not model them yet (docs/living-world-plan.md, Part 2 and
+    Part 6): personality traits, contentment, potential and the scouting outlook.
+*@
+@using WrestlingSim.Models.Person
+@inherits StateComponent
+
+@if (State.ProfileOf is not { } w)
+{
+    <div class="empty">Nobody selected.</div>
+}
+else
+{
+    var career = State.Career;
+    var today = career?.CurrentDate ?? DateOnly.FromDateTime(DateTime.Today);
+    var mine = career?.ContractOf(w);
+    var age = w.AgeOn(today);
+    var held = State.Titles.HeldBy(w);
+
+    <button class="btn btn--sm btn--ghost" @onclick="Back">← Back</button>
+
+    <section class="phead mt">
+        <div class="phead__who">
+            <div class="phead__badges">
+                <span class="badge @(w.Gimmick?.NaturalAlignment.Badge() ?? "badge--muted")">@(w.Gimmick?.NaturalAlignment.ToString() ?? "No alignment")</span>
+                <span class="badge badge--muted">@(w.Division == Division.Womens ? "Women's division" : "Men's division")</span>
+                <span class="badge badge--muted">@w.CardPosition.Label()</span>
+                @foreach (var title in held)
+                {
+                    <span class="badge badge--gold">@title.Name</span>
+                }
+                @if (w.Injury is { } inj && inj.KeepsOut(today))
+                {
+                    <span class="badge badge--heel">Injured</span>
+                }
+                @if (career?.BestRivalBid(w) is not null)
+                {
+                    <span class="badge badge--heel">A rival has bid for them</span>
+                }
+            </div>
+            <h1 class="phead__name">@w.RingName</h1>
+            <span class="phead__line">
+                @w.RealName
+                @if (age is { } a) { <text> · @a (@AgeCurve.Band(a).ToLowerInvariant())</text> }
+                @if (w.DebutedIn is { } debut) { <text> · @(today.Year - debut) years in the ring</text> }
+                · @w.Style style
+            </span>
+            @if (w.Gimmick is { } g)
+            {
+                <span class="phead__line">
+                    @(string.IsNullOrWhiteSpace(g.PersonaDescriptor) ? g.Type.ToString() : $"{g.PersonaDescriptor}, a {g.Type.ToString().ToLowerInvariant()} gimmick")
+                    · @g.Tone.ToString().ToLowerInvariant() tone
+                </span>
+            }
+        </div>
+        <div class="phead__figs">
+            <div class="phead__fig">
+                <b class="@w.CardPosition.Tone()">@w.OvernessDisplay</b>
+                <span>Popularity</span>
+                <small><Trend Momentum="w.Momentum" /></small>
+            </div>
+            <div class="phead__fig">
+                <b>@w.RingSkills.GetOverallSkill().ToString("F1")</b>
+                <span>In ring</span>
+                <small>out of 5</small>
+            </div>
+            <div class="phead__fig">
+                <b>@w.Charisma.ToString("F1")</b>
+                <span>Charisma</span>
+                <small>out of 5</small>
+            </div>
+        </div>
+        @if (career is not null)
+        {
+            <div class="phead__act">
+                @if (mine is null && career.Unavailable(w) is null)
+                {
+                    @if (career.CanSign)
+                    {
+                        <button class="btn btn--primary" @onclick="() => offering = true">Make an offer</button>
+                    }
+                    else
+                    {
+                        <button class="btn btn--primary" @onclick="() => State.MakeRegularAsync(w)">Make a regular</button>
+                    }
+                }
+                else if (mine is { IsGuaranteed: true })
+                {
+                    <button class="btn" @onclick="() => offering = true">Re-sign</button>
+                }
+                else if (mine is not null)
+                {
+                    <button class="btn btn--ghost" @onclick="() => State.ReleaseAsync(w)">Stop booking them</button>
+                }
+                else if (career.SignedTo(w) is { } holder && career.CanSign
+                         && (holder.ContractOf(w)!.DaysLeft(today) ?? int.MaxValue) <= TalentMarket.ExpiryWarningDays)
+                {
+                    <button class="btn btn--primary" @onclick="() => offering = true">Make an offer</button>
+                }
+                @if (career.NextShow is { } next)
+                {
+                    <button class="btn btn--ghost" @onclick="() => State.OpenShow(next)">Open @next.Name</button>
+                }
+            </div>
+        }
+    </section>
+
+    @if (offering && career is not null)
+    {
+        <OfferPanel Wrestler="w" OnClose="() => offering = false" />
+    }
+
+    <div class="pgrid mt">
+        <section class="panel">
+            <div class="panel__title">In the ring</div>
+            @foreach (var (label, value) in RingSkills(w))
+            {
+                <div class="skillbar">
+                    <span>@label</span>
+                    <span class="skillbar__track" aria-hidden="true"><i class="@(value >= 3.5 ? "is-strong" : "")" style="width:@((value / 5 * 100).ToString("F0"))%"></i></span>
+                    <b>@value.ToString("F1")</b>
+                </div>
+            }
+            <div class="small muted mt">Out of 5. Gold marks a strength.</div>
+        </section>
+
+        <section class="panel">
+            <div class="panel__title">Body and mind</div>
+            @foreach (var (label, value) in Attributes(w))
+            {
+                <div class="skillbar">
+                    <span>@label</span>
+                    <span class="skillbar__track" aria-hidden="true"><i class="@(value >= 80 ? "is-strong" : "")" style="width:@value%"></i></span>
+                    <b>@value</b>
+                </div>
+            }
+            @if (age is { } years)
+            {
+                <div class="small muted mt">@AgeCurve.Reading(years)</div>
+            }
+        </section>
+
+        <section class="panel">
+            <div class="panel__title">@(career is null ? "Condition" : mine is null ? "Where they work" : "With you")</div>
+            @if (career is not null)
+            {
+                @if (mine is { IsGuaranteed: true })
+                {
+                    var worth = TalentMarket.WorthToday(w, mine, career.WageFactor);
+                    <div class="kv"><span>Deal</span><span>@Money.Format(mine.AnnualGuarantee) a year</span></div>
+                    <div class="kv"><span>Until</span><span>@mine.End!.Value.ToString("d MMM yyyy")</span></div>
+                    <div class="kv"><span>Would ask today</span><span class="@(worth > mine.AnnualGuarantee ? "grade--great" : worth < mine.AnnualGuarantee ? "grade--poor" : "")">@Money.Format(worth)</span></div>
+                }
+                else if (mine is not null)
+                {
+                    <div class="kv"><span>Arrangement</span><span>Your regular</span></div>
+                    <div class="kv"><span>Fee</span><span>@Money.Format(career.PerDateAsk(w)) a night when booked</span></div>
+                    <div class="kv"><span>Since</span><span>@mine.Start.ToString("MMM yyyy")</span></div>
+                }
+                else if (career.SignedTo(w) is { } holder)
+                {
+                    <div class="kv"><span>Signed to</span><span><button class="namelink" @onclick="() => State.OpenRival(holder)">@holder.Name</button></span></div>
+                    <div class="kv"><span>Until</span><span>@holder.ContractOf(w)!.End!.Value.ToString("d MMM yyyy")</span></div>
+                    @if (career.PlayerBid(w) is { } bid)
+                    {
+                        <div class="kv"><span>Your offer</span><span>@Money.Format(bid.Annual) a year, lodged</span></div>
+                    }
+                }
+                else if (career.NonCompeteOf(w) is { } nc)
+                {
+                    <div class="kv"><span>Non-compete</span><span>until @nc.Until.ToString("d MMM yyyy")</span></div>
+                }
+                else
+                {
+                    <div class="kv"><span>Fee</span><span>@Money.Format(career.PerDateAsk(w)) a night</span></div>
+                    @if (career.CanSign)
+                    {
+                        <div class="kv"><span>On three years</span><span>@Money.Format(career.GuaranteeAsk(w, 3)) a year</span></div>
+                    }
+                }
+                var elsewhere = career.Rivals.Where(r => r.IsActive && r.ContractOf(w) is { IsGuaranteed: false }).Select(r => r).ToList();
+                @if (elsewhere.Count > 0)
+                {
+                    <div class="kv">
+                        <span>@(mine is null ? "Booked by" : "Also booked by")</span>
+                        <span>
+                            @for (int i = 0; i < elsewhere.Count; i++)
+                            {
+                                var r = elsewhere[i];
+                                @if (i > 0) { <text>, </text> }
+                                <button class="namelink" @onclick="() => State.OpenRival(r)">@r.Name</button>
+                            }
+                        </span>
+                    </div>
+                }
+                @if (career.BestRivalBid(w) is { } rivalBid)
+                {
+                    <div class="warnbox mt">
+                        <strong>@(career.Rival(rivalBid.Bidder)?.Name ?? "A rival") has offered @Money.Format(rivalBid.Annual) a year.</strong>
+                        Match it before the deal ends or they leave when it does.
+                    </div>
+                }
+            }
+
+            @if (career is not null && mine is null)
+            {
+                <div class="small muted mt">How fresh and sharp they are is only tracked for people who work for you.</div>
+            }
+            else
+            {
+            <div class="mt">
+                <Meter Label="Fresh" Value="@(100 - w.Fatigue)" Max="100" ValueText="@($"{100 - w.Fatigue:F0} / 100")"
+                       Variant="@(w.Fatigue >= RingCondition.CookedThreshold ? "heel" : "gold")" />
+                <Meter Label="Sharp" Value="@w.Sharpness" Max="100" ValueText="@($"{w.Sharpness:F0} / 100")"
+                       Variant="@(w.Sharpness <= RingCondition.RustyThreshold ? "heel" : "gold")" />
+            </div>
+            }
+            @if (w.Injury is { } injury && injury.KeepsOut(today))
+            {
+                <div class="warnbox mt"><strong>@injury.Describe(today)</strong></div>
+            }
+            else if ((career is null || mine is not null) && RingCondition.WarningFor(w) is { } warning)
+            {
+                <div class="small gold mt">@(char.ToUpper(warning[0]) + warning[1..]).</div>
+            }
+            @if (w.InjuryHistory.Count > 0)
+            {
+                <div class="small muted mt">
+                    Injury history: @string.Join(", ", w.InjuryHistory.GroupBy(i => i.Part)
+                        .OrderByDescending(gr => gr.Count())
+                        .Select(gr => gr.Count() > 1 ? $"{Injury.Label(gr.Key).ToLowerInvariant()} ×{gr.Count()}" : Injury.Label(gr.Key).ToLowerInvariant()))
+                </div>
+            }
+            @if (career is not null && mine is not null)
+            {
+                <div class="row mt">
+                    @if (w.IsTouring(today))
+                    {
+                        <span class="small">On the road until @w.TouringUntil!.Value.ToString("d MMM")</span>
+                        <span class="spacer"></span>
+                        <button class="btn btn--sm btn--ghost" @onclick="SendHome">Bring home</button>
+                    }
+                    else
+                    {
+                        <span class="small muted">Send on the road for</span>
+                        @foreach (var weeks in new[] { 2, 4, 8 })
+                        {
+                            var run = weeks;
+                            <button class="btn btn--sm" @onclick="() => SendOut(run)">@run weeks</button>
+                        }
+                    }
+                </div>
+            }
+        </section>
+
+        @if (career is not null)
+        {
+            <section class="panel">
+                <div class="panel__title">Recent matches with you</div>
+                @{ var matches = RecentMatches(career, w).Take(6).ToList(); }
+                @if (matches.Count == 0)
+                {
+                    <div class="small muted">None yet.</div>
+                }
+                @foreach (var m in matches)
+                {
+                    <div class="kv">
+                        <span>
+                            <span class="tabnum muted">@m.Date.ToString("d MMM")</span>
+                            <strong class="@(m.Won == true ? "grade--great" : m.Won == false ? "grade--poor" : "muted")">@(m.Won == true ? "W" : m.Won == false ? "L" : "–")</strong>
+                            @m.Against
+                        </span>
+                        <span class="tabnum gold">@(m.Rating?.ToString("F1") ?? "")</span>
+                    </div>
+                }
+            </section>
+        }
+
+        <section class="panel">
+            <div class="panel__title">Stories and titles</div>
+            @{ var feuds = State.FeudBook.For(w); }
+            @if (feuds.Count == 0 && held.Count == 0)
+            {
+                <div class="small muted">No live feuds and no titles.</div>
+            }
+            @foreach (var feud in feuds.Take(4))
+            {
+                <div class="kv">
+                    <span>@string.Join(" vs ", feud.CampNames)</span>
+                    <span><span class="badge @FeudUpdates.IntensityBadge(feud.Intensity)">@feud.Intensity</span> @feud.MatchCount match@(feud.MatchCount == 1 ? "" : "es")</span>
+                </div>
+            }
+            @foreach (var title in held)
+            {
+                <div class="kv">
+                    <span>@title.Name</span>
+                    <span>@title.CurrentReign!.LengthLabel(today) · @title.CurrentReign.Defences defence@(title.CurrentReign.Defences == 1 ? "" : "s")</span>
+                </div>
+            }
+            @if (career is not null && AudienceModel.Reading(career.Audience, w) is { } reading)
+            {
+                <div class="small gold mt">With your crowd: @reading.</div>
+            }
+            else if (career is not null)
+            {
+                <div class="small muted mt">With your crowd: their act is fresh.</div>
+            }
+        </section>
+
+        <section class="panel">
+            <div class="panel__title">History</div>
+            @{ var reigns = State.Titles.All.SelectMany(t => t.ReignsOf(w).Select(r => (Title: t, Reign: r))).OrderByDescending(x => x.Reign.Won).ToList(); }
+            @foreach (var (title, reign) in reigns.Take(5))
+            {
+                <div class="kv">
+                    <span>@title.Name</span>
+                    <span class="small">@reign.Won.ToString("MMM yyyy") · @reign.LengthLabel(today)</span>
+                </div>
+            }
+            @if (w.Gimmick?.PreviousNames is { Count: > 0 } names)
+            {
+                <div class="kv"><span>Has also been</span><span>@string.Join(", ", names)</span></div>
+            }
+            @if (career is not null)
+            {
+                @foreach (var e in career.ContractLog.Where(e => e.WrestlerId == w.Id).Reverse().Take(5))
+                {
+                    <div class="kv"><span class="tabnum muted">@e.Date.ToString("d MMM yyyy")</span><span class="small">@e.What</span></div>
+                }
+            }
+            @if (reigns.Count == 0 && (w.Gimmick?.PreviousNames?.Count ?? 0) == 0 && (career is null || !career.ContractLog.Any(e => e.WrestlerId == w.Id)))
+            {
+                <div class="small muted">Nothing recorded yet.</div>
+            }
+        </section>
+    </div>
+}
+
+@code {
+    private bool offering;
+    private Wrestler? shownFor;
+
+    protected override void OnParametersSet()
+    {
+        if (State.ProfileOf != shownFor) { shownFor = State.ProfileOf; offering = false; }
+    }
+
+    private void Back()
+    {
+        var back = State.ProfileReturn;
+        if (back == Screen.Roster) State.GoTalent(State.Career is null ? TalentView.Everyone : State.TalentView);
+        else State.Go(back);
+    }
+
+    private static (string, double)[] RingSkills(Wrestler w) =>
+    [
+        ("Technical", w.RingSkills.Technical),
+        ("Grappling", w.RingSkills.Grappler),
+        ("Striking",  w.RingSkills.Striker),
+        ("Brawling",  w.RingSkills.Brawler),
+        ("Power",     w.RingSkills.Powerhouse),
+        ("Flying",    w.RingSkills.HighFlyer),
+    ];
+
+    private static (string, int)[] Attributes(Wrestler w) =>
+    [
+        ("Psychology", w.Mental.Psychology),
+        ("Selling",    w.Mental.Selling),
+        ("Ring IQ",    w.Mental.RingIQ),
+        ("Toughness",  w.Mental.Toughness),
+        ("Strength",   w.Physical.Strength),
+        ("Speed",      w.Physical.Speed),
+        ("Agility",    w.Physical.Agility),
+        ("Stamina",    w.Physical.Stamina),
+    ];
+
+    private sealed record MatchLine(DateOnly Date, string Against, bool? Won, double? Rating);
+
+    /// <summary>Their matches on the player's shows, newest first, from the cards as booked.</summary>
+    private static IEnumerable<MatchLine> RecentMatches(Career career, Wrestler w)
+    {
+        foreach (var show in career.Completed.OrderByDescending(s => s.Date))
+        {
+            for (int i = 0; i < show.Card.Count; i++)
+            {
+                if (show.Card[i] is not BookedMatch m || !m.Wrestlers.Contains(w)) continue;
+                var mySide = m.Plan.Sides.FirstOrDefault(s => s.Members.Contains(w));
+                var others = m.Plan.Sides.Where(s => s != mySide).Select(s => s.Name);
+                var partners = mySide?.Members.Where(x => x != w).Select(x => x.RingName).ToList() ?? [];
+                string against = (partners.Count > 0 ? $"with {string.Join(" and ", partners)}, " : "")
+                               + "vs " + string.Join(" and ", others);
+                bool? won = m.Plan.BookedWinningSide is { } winner ? winner == mySide : null;
+                // The result list is the card in order; paired by position, only when they line up.
+                double? rating = show.Result is { } r && r.Items.Count == show.Card.Count ? r.Items[i].Score : null;
+                yield return new MatchLine(show.Date, against, won, rating);
+            }
+        }
+    }
+
+    private async Task SendOut(int weeks)
+    {
+        if (State.ProfileOf is not { } w || State.Career is not { } career) return;
+        w.TouringUntil = career.CurrentDate.AddDays(weeks * 7);
+        await State.SaveAsync();
+        State.Notify();
+    }
+
+    private async Task SendHome()
+    {
+        if (State.ProfileOf is not { } w) return;
+        w.TouringUntil = null;
+        await State.SaveAsync();
+        State.Notify();
+    }
+}

@@ -1,0 +1,104 @@
+@*
+    The television deal: what it pays, what the audience has been, and what it would renew at
+    if the term ended today. Moved here from a dashboard tile. Doc 08 §3.
+*@
+@if (Career.Television is not { } deal)
+{
+    var established = BoxOffice.For(PromotionTier.Established);
+    <section class="panel">
+        <div class="panel__title">Television</div>
+        <p>@Career.Promotion.TierLabel promotions have no television deal.</p>
+        <p class="small muted">
+            Television starts at the Established level, at about @Money.Format(established.RightsPerEpisode) an
+            episode for a weekly show. Promotions do not move between levels yet, so a career that starts
+            below Established stays without television for now.
+        </p>
+    </section>
+}
+else
+{
+    var tier = Career.Promotion.Tier;
+    var multiple = Television.RenewalMultiple(deal, tier);
+    var index = Television.AudienceIndex(deal, tier);
+    var today = Career.CurrentDate;
+
+    <section class="kpis">
+        <div class="kpi">
+            <span class="kpi__key">Fee</span>
+            <span class="kpi__val">@Money.Format(deal.FeePerEpisode)</span>
+            <span class="kpi__sub">an episode, fixed until @deal.End.ToString("d MMM yyyy")</span>
+        </div>
+        <div class="kpi">
+            <span class="kpi__key">Audience</span>
+            <span class="kpi__val">@(deal.Episodes.Count == 0 ? "—" : Money.Audience((int)deal.Episodes.Average(e => e.Viewers)))</span>
+            <span class="kpi__sub">a typical card at your level draws @Money.Audience(Television.BaselineViewers(tier))</span>
+        </div>
+        <div class="kpi">
+            <span class="kpi__key">If it renewed today</span>
+            <span class="kpi__val @(multiple >= 1 ? "grade--great" : "grade--poor")">×@multiple.ToString("0.00")</span>
+            <span class="kpi__sub">@Money.Format(Television.RenewedFee(deal.FeePerEpisode, multiple)) an episode</span>
+        </div>
+        <div class="kpi">
+            <span class="kpi__key">Term left</span>
+            <span class="kpi__val">@deal.DaysLeft(today) days</span>
+            <span class="kpi__sub">@(deal.InRenewalWindow(today) ? "The final year: every episode counts double." : "The final year counts double at renewal.")</span>
+        </div>
+    </section>
+
+    <div class="layout">
+        <div class="layout__main">
+            <section class="panel">
+                <div class="panel__title">This term's episodes</div>
+                @if (deal.Episodes.Count == 0)
+                {
+                    <div class="small muted">No episodes yet this term. The network is paying for television nobody has made.</div>
+                }
+                else
+                {
+                    var eps = deal.Episodes.OrderBy(e => e.Date).TakeLast(12).ToList();
+                    var top = Math.Max(1, eps.Max(e => e.Viewers));
+                    int baseline = Television.BaselineViewers(tier);
+                    <div class="bars" role="img" aria-label="@string.Join(", ", eps.Select(e => $"{e.Date:d MMM}: {Money.Audience(e.Viewers)}"))">
+                        @foreach (var e in eps)
+                        {
+                            <div class="bars__col">
+                                <span class="bars__val">@Money.Audience(e.Viewers)</span>
+                                <span class="bars__bar @(e.Viewers < baseline ? "is-low" : "")" style="height:@(Math.Max(2, e.Viewers * 140 / top))px"></span>
+                            </div>
+                        }
+                    </div>
+                    <div class="bars__labels">
+                        @foreach (var e in eps) { <span>@e.Date.ToString("d MMM")</span> }
+                    </div>
+                    <div class="small muted mt">
+                        Weighted against the baseline: @Money.Percent(index).
+                        @if (Television.Consistency(deal) < 0.93)
+                        {
+                            <text> The audience is swinging, and the network pays less for a number it cannot sell against.</text>
+                        }
+                    </div>
+                }
+            </section>
+        </div>
+        <aside class="layout__side">
+            <section class="panel">
+                <div class="panel__title">Past terms</div>
+                @if (deal.History.Count == 0)
+                {
+                    <div class="small muted">This is the first term.</div>
+                }
+                @foreach (var term in deal.History.AsEnumerable().Reverse())
+                {
+                    <div class="kv">
+                        <span>@term.Start.ToString("yyyy") to @term.End.ToString("yyyy")<div class="small muted">@term.Episodes episodes, @Money.Audience(term.AverageViewers) a week</div></span>
+                        <span class="tabnum @(term.RenewedAt >= 1 ? "grade--great" : "grade--poor")">×@term.RenewedAt.ToString("0.00")</span>
+                    </div>
+                }
+            </section>
+        </aside>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public Career Career { get; set; } = default!;
+}

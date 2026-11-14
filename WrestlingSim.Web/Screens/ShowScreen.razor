@@ -13,7 +13,7 @@
     <ShowReport Result="result" Today="@DateOnly.FromDateTime(show.Date)" />
 
     <div class="wizard-bar">
-        <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Exhibition)">← Main menu</button>
+        <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Exhibition)">← Exhibition start</button>
         <span class="wizard-bar__spacer"></span>
         <button class="btn btn--primary" @onclick="Reset">Book another show</button>
     </div>
@@ -151,7 +151,7 @@ else
     }
 
     <div class="wizard-bar">
-        <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Exhibition)">← Main menu</button>
+        <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Exhibition)">← Exhibition start</button>
     </div>
 }
 

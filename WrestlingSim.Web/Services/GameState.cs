@@ -22,6 +22,12 @@ public enum Screen
     Shows,
     Brands,
     BookShow,
+    Profile,
+    Stories,
+    Rival,
+    News,
+    Business,
+    Television,
 
     // Exhibition — the old sandbox, kept for trying the engine without a career
     Exhibition,
@@ -32,6 +38,9 @@ public enum Screen
 }
 
 public enum AppMode { Landing, Career, Exhibition }
+
+/// <summary>Which of the talent table's views is showing.</summary>
+public enum TalentView { Yours, Market, Everyone }
 
 /// <summary>
 /// The app's whole state: which mode we are in, the career if there is one, and the
@@ -769,6 +778,42 @@ public class GameState
     }
 
     // ── Navigation ───────────────────────────────────────────────────────────
+
+    /// <summary>The wrestler the profile screen is showing.</summary>
+    public Wrestler? ProfileOf { get; private set; }
+
+    /// <summary>Where the profile's back link returns to.</summary>
+    public Screen ProfileReturn { get; private set; } = Screen.Roster;
+
+    /// <summary>
+    /// Opens somebody's profile from wherever their name was. Every name in the app that a
+    /// booker might want to know more about goes through here, so "who is this" is one
+    /// click from anywhere rather than a trip to the roster and a search.
+    /// </summary>
+    public void OpenProfile(Wrestler wrestler)
+    {
+        if (Current != Screen.Profile) ProfileReturn = Current;
+        ProfileOf = wrestler;
+        Go(Screen.Profile);
+    }
+
+    /// <summary>The rival promotion the rival page is showing.</summary>
+    public RivalPromotion? ViewingRival { get; private set; }
+
+    public void OpenRival(RivalPromotion rival)
+    {
+        ViewingRival = rival;
+        Go(Screen.Rival);
+    }
+
+    /// <summary>Which view of the talent table is open. Kept here so the tabs above it can set it.</summary>
+    public TalentView TalentView { get; private set; } = TalentView.Yours;
+
+    public void GoTalent(TalentView view)
+    {
+        TalentView = view;
+        Go(Screen.Roster);
+    }
 
     public void Go(Screen screen)
     {

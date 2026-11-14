@@ -1,19 +1,18 @@
 @inject GameState State
 
 <div class="screen__head">
-    <div class="screen__eyebrow">Exhibition</div>
-    <h1 class="screen__title">Book something, see what happens</h1>
+    <h1 class="screen__title">Try the engine</h1>
     <p class="screen__lede">
-        A sandbox for the engine: build feuds with segments, design matches beat by beat, then
-        put it all on a card. There is no clock and nothing is saved — close the tab and it is
-        gone. For a promotion that persists, start a career.
+        Book one thing and watch it play out. There is no calendar, no money and no career here,
+        and nothing is saved: feuds you build last until you leave. For a promotion that lasts,
+        leave exhibition and start a career.
     </p>
 </div>
 
 <div class="tiles">
     @foreach (var tile in Tiles)
     {
-        <button class="tile" @onclick="() => State.Go(tile.Screen)">
+        <button class="tile" @onclick="() => Open(tile.Screen)">
             <div class="tile__name">@tile.Name</div>
             <div class="tile__desc">@tile.Desc</div>
         </button>
@@ -53,24 +52,27 @@ else
     </div>
 }
 
-<div class="wizard-bar">
-    <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Landing)">← Main menu</button>
-</div>
 
 @code {
+    private void Open(Screen screen)
+    {
+        if (screen == Screen.Roster) State.GoTalent(TalentView.Everyone);
+        else State.Go(screen);
+    }
+
     private static readonly (Screen Screen, string Name, string Desc)[] Tiles =
     [
-        (Screen.Match, "Book a Match",
+        (Screen.Match, "A match",
             "Pick two wrestlers, say what the match is for, and the game writes the beats. Edit them if you want to."),
-        (Screen.Segment, "Book a Segment",
+        (Screen.Segment, "A segment",
             "Promos, confrontations, beatdowns and turns. This is how feuds actually get built."),
-        (Screen.Show, "Book a Show",
+        (Screen.Show, "A whole show",
             "Assemble a full card in running order against a runtime budget. Position and pacing both matter."),
-        (Screen.Rumble, "Battle Royal",
+        (Screen.Rumble, "A battle royal",
             "Over the top rope. A Rumble with timed entries or everybody in at once — judged on moments rather than on work."),
-        (Screen.Roster, "View Roster",
-            "Overness, ring skills, charisma and gimmick for everyone on the books."),
-        (Screen.Feuds, "Feud Book",
-            "Every rivalry you have going, how hot it is, and what it has unlocked."),
+        (Screen.Roster, "Wrestlers",
+            "Everyone you can book here, with full profiles. Nobody has a contract in exhibition."),
+        (Screen.Feuds, "This session's feuds",
+            "Every rivalry you have built since you came in, how hot it is, and what it has unlocked."),
     ];
 }
