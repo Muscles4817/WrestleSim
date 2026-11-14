@@ -147,6 +147,17 @@ potential, contentment, regions and world size will show when they are built.
   Decided 0–100. **Both built** (14 Nov): `docs/ui-record.md`, and the design record's
   "Every owner has favourites".
 
+**14 Nov — rising and falling, and the harness (Parts 7 and 8).**
+
+- Proposed for Part 7, from doc 01 §3 (tiers are separated by dividing lines, the first being
+  guaranteed money that is not attendance): a promotion's **level is read off its business**
+  each quarter with about six months' hysteresis, not set; **television is won** from a limited
+  number of network slots and **can be lost** (the network walks away from a weak enough term,
+  leaving guaranteed contracts to be paid without the income); **new promotions are founded**
+  when there is room; takeovers later. Awaiting the owner on: the player moving levels by the
+  same rules, how a television offer works for the player, and how scarce slots are.
+- **Decided: the harness report is a page with charts**, opened in the browser, comparing runs.
+
 ## 1. The rule this plan follows
 
 > **Anything that can happen to a wrestler or a promotion happens the same way whoever is
