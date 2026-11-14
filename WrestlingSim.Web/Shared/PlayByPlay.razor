@@ -92,9 +92,9 @@
             <div class="pbp__trow" role="row">
                 <span>@beat.BeatLabel</span>
                 <span class="tabnum">@beat.CrowdEnergyBefore.ToString("F0") → @beat.CrowdEnergyAfter.ToString("F0")</span>
-                <span class="tabnum">@beat.AdvantageAfter.ToString("+0.0;-0.0;0.0")</span>
-                <span class="tabnum">+@beat.TechnicalContribution.ToString("F1")</span>
-                <span class="tabnum">+@beat.StorytellingContribution.ToString("F1")</span>
+                <span class="tabnum">@Shown.Change(beat.AdvantageAfter)</span>
+                <span class="tabnum">@Shown.Change(beat.TechnicalContribution)</span>
+                <span class="tabnum">@Shown.Change(beat.StorytellingContribution)</span>
             </div>
         }
     </div>

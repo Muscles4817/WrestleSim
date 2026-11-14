@@ -54,6 +54,30 @@ structure, the defects that review found, and what the mock-ups showed that is *
 - **Show report**: house, money made and reputation change beside the rating at the top.
 - **New career**: a World panel saying which world the career is in.
 
+## Numbers people can read (14 Nov)
+
+The engine's numbers were printed as they were: a ring skill of 3.68, a match of 3.68 / 5.00, a
+feud worth ×1.03. One set of display rules now (`Shared/Shown.cs`), display only:
+
+- **People on one scale, whole numbers out of 100.** Ring skills and charisma (0–5 inside the
+  engine) are multiplied by 20 to join popularity, psychology, selling and stamina.
+- **Matches in quarter stars, in words**: "3¾ stars". One rule,
+  `MatchEngineResult.StarWords`, used by the interface, the show notes and the console, and
+  rounded the way the drawn stars are.
+- **Everything else whole**: show ratings, prestige, reputation, integrity. Crowd mood and a
+  segment's impact (0–10 inside the engine) are shown out of 100.
+- **Multipliers as percentages**: "the feud +3%", "seen before −35%".
+- The planner's decision terms on a rival's page are whole points.
+
+Notes written into a show report before this change keep their old wording; they are stored text.
+
+## What a promotion wants, editable (14 Nov)
+
+A rival's page shows its seven weights as bars and its favourites, and **Edit** opens sliders for
+the weights, how far ahead it plans, its optimism, the money it wants in hand and its fear of
+closing, plus its favourites, with a reset to its founder's defaults. Saved as an override only
+where it differs from the defaults; the promotion acts on it from its next weekly decision.
+
 ## Defects the review found, fixed
 
 - In exhibition, opening Roster or Feuds switched the top bar to the career's, whose Home

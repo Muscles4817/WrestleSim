@@ -17,12 +17,12 @@ else
     <section class="kpis">
         <div class="kpi">
             <span class="kpi__key">Wrestlers' prices</span>
-            <span class="kpi__val">×@career.WageFactor.ToString("0.00")</span>
+            <span class="kpi__val">@Shown.Factor(career.WageFactor)</span>
             <span class="kpi__sub">@RivalLabels.WageReading(career.WageFactor)</span>
         </div>
         <div class="kpi">
             <span class="kpi__key">Interest in wrestling</span>
-            <span class="kpi__val">×@career.Interest.ToString("0.00")</span>
+            <span class="kpi__val">@Shown.Factor(career.Interest)</span>
             <span class="kpi__sub">@RivalLabels.InterestReading(career.Interest)</span>
         </div>
         <div class="kpi">

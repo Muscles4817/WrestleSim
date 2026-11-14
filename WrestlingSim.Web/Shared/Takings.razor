@@ -89,9 +89,9 @@
             var moved = Finances.ReputationAfter - Finances.ReputationBefore;
             <div>
                 <div class="score-hero__label">Reputation</div>
-                <div class="takings__big tabnum">@Finances.ReputationAfter.ToString("F1")</div>
+                <div class="takings__big tabnum">@Shown.Whole(Finances.ReputationAfter)</div>
                 <div class="small @(moved >= 0 ? "grade--great" : "grade--poor")">
-                    @(moved >= 0 ? "+" : "")@moved.ToString("F1") — what the next card sells on
+                    @Shown.Change(moved) — what the next card sells on
                 </div>
             </div>
         }
@@ -99,7 +99,7 @@
         {
             <div>
                 <div class="score-hero__label">Reputation</div>
-                <div class="takings__big tabnum">@Finances.ReputationBefore.ToString("F1")</div>
+                <div class="takings__big tabnum">@Shown.Whole(Finances.ReputationBefore)</div>
                 <div class="small muted">@ReputationReading(Finances.ReputationBefore)</div>
             </div>
         }
@@ -110,7 +110,7 @@
     {
         <div class="notice notice--warn mt">
             <strong>A thin card.</strong> It leaves most of the slot empty, so fewer people buy a ticket
-            or sit down to watch — ×@Finances.CardDepth.ToString("0.00") on the house and the audience.
+            or sit down to watch — @Shown.Factor(Finances.CardDepth) on the house and the audience.
             Add matches or segments until about half the runtime is filled.
         </div>
     }
@@ -213,11 +213,11 @@
     {
         var parts = new List<string>();
         if (d.Headliners.Count > 0) parts.Add($"star power {d.StarPower * 100:F0}");
-        if (d.Acts < 0.98) parts.Add($"the act has gone stale ×{d.Acts:F2}");
-        if (d.Build > 1.005) parts.Add($"the feud ×{d.Build:F2}");
-        if (d.Freshness < 0.995) parts.Add($"seen before ×{d.Freshness:F2}");
-        else if (d.Freshness > 1.005) parts.Add($"the blow-off ×{d.Freshness:F2}");
-        if (d.Stakes > 1.005) parts.Add($"stakes ×{d.Stakes:F2}");
+        if (d.Acts < 0.98) parts.Add($"the act has gone stale {Shown.Factor(d.Acts)}");
+        if (d.Build > 1.005) parts.Add($"the feud {Shown.Factor(d.Build)}");
+        if (d.Freshness < 0.995) parts.Add($"seen before {Shown.Factor(d.Freshness)}");
+        else if (d.Freshness > 1.005) parts.Add($"the blow-off {Shown.Factor(d.Freshness)}");
+        if (d.Stakes > 1.005) parts.Add($"stakes {Shown.Factor(d.Stakes)}");
         return string.Join(" · ", parts);
     }
 

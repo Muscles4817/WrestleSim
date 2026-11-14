@@ -10,7 +10,7 @@
                     <span class="feud__names">
                         @update.Feud.WrestlerA.RingName <span class="faint">vs</span> @update.Feud.WrestlerB.RingName
                     </span>
-                    <span class="feud__delta">+@update.HeatAdded.ToString("F1") heat</span>
+                    <span class="feud__delta">@Shown.Change(update.HeatAdded) heat</span>
                     <span class="badge @IntensityBadge(update.LevelAfter)">@update.LevelAfter</span>
                 </div>
 

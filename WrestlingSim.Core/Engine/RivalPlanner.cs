@@ -106,6 +106,7 @@ namespace WrestlingSim.Engine
             var sees = DispositionOf(rival);
             var tier = rival.Promotion.Tier;
             var today = career.CurrentDate;
+            EnsureFavourites(career, rival);
 
             // A promotion that pays by the night has no roster to manage, only shows to book.
             if (!rival.Promotion.HasTelevision)
@@ -154,7 +155,7 @@ namespace WrestlingSim.Engine
                 best.Apply();
                 ContractsChanged();
                 var turnedDown = scored.Skip(1).Take(3)
-                    .Select(x => $"{x.Candidate.Move} {x.Candidate.Who.RingName} ({x.Score.Total:+0.000;-0.000})").ToList();
+                    .Select(x => $"{x.Candidate.Move} {x.Candidate.Who.RingName} ({Points(x.Score.Total)})").ToList();
                 Remember(career, rival, best.Move, best.Who, best.Annual, score, hold, turnedDown);
                 foreach (var other in best.With ?? [])
                     Remember(career, rival, best.Move, other, best.Annual, score, hold, turnedDown);
@@ -282,11 +283,11 @@ namespace WrestlingSim.Engine
 
                 if (best is null || score.Total > best.Value.Score.Total)
                 {
-                    if (best is { } was) turnedDown.Add($"booking from {was.From} ({was.Score.Total:+0.000;-0.000})");
+                    if (best is { } was) turnedDown.Add($"booking from {was.From} ({Points(was.Score.Total)})");
                     best = (score, roster, added,
                             displaced.Select(c => career.FindWrestler(c.WrestlerId)).OfType<Wrestler>().ToList(), from);
                 }
-                else turnedDown.Add($"booking from {from} ({score.Total:+0.000;-0.000})");
+                else turnedDown.Add($"booking from {from} ({Points(score.Total)})");
             }
 
             if (best is { } chosen && chosen.Score.Total > Epsilon)
@@ -574,6 +575,13 @@ namespace WrestlingSim.Engine
             "favour"     => "its owner wants them on top",
             _            => "it judged it worth doing"
         };
+
+        /// <summary>A score as whole points (thousandths of the score), for the decision log the player reads.</summary>
+        public static string Points(double score)
+        {
+            int n = (int)Math.Round(score * 1000);
+            return n > 0 ? $"+{n}" : n < 0 ? $"−{-n}" : "0";
+        }
 
         /// <summary>What a promotion is trying to get, most wanted first, in words.</summary>
         public static IReadOnlyList<string> WantsInWords(Objective wants) =>

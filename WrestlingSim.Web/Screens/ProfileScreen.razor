@@ -66,14 +66,14 @@ else
                 <small><Trend Momentum="w.Momentum" /></small>
             </div>
             <div class="phead__fig">
-                <b>@w.RingSkills.GetOverallSkill().ToString("F1")</b>
+                <b>@Shown.Of100(w.RingSkills.GetOverallSkill())</b>
                 <span>In ring</span>
-                <small>out of 5</small>
+                <small>out of 100</small>
             </div>
             <div class="phead__fig">
-                <b>@w.Charisma.ToString("F1")</b>
+                <b>@Shown.Of100(w.Charisma)</b>
                 <span>Charisma</span>
-                <small>out of 5</small>
+                <small>out of 100</small>
             </div>
         </div>
         @if (career is not null)
@@ -123,11 +123,11 @@ else
             {
                 <div class="skillbar">
                     <span>@label</span>
-                    <span class="skillbar__track" aria-hidden="true"><i class="@(value >= 3.5 ? "is-strong" : "")" style="width:@((value / 5 * 100).ToString("F0"))%"></i></span>
-                    <b>@value.ToString("F1")</b>
+                    <span class="skillbar__track" aria-hidden="true"><i class="@(value >= 3.5 ? "is-strong" : "")" style="width:@Shown.Of100(value)%"></i></span>
+                    <b>@Shown.Of100(value)</b>
                 </div>
             }
-            <div class="small muted mt">Out of 5. Gold marks a strength.</div>
+            <div class="small muted mt">Out of 100. Gold marks a strength.</div>
         </section>
 
         <section class="panel">
@@ -276,7 +276,7 @@ else
                             <strong class="@(m.Won == true ? "grade--great" : m.Won == false ? "grade--poor" : "muted")">@(m.Won == true ? "W" : m.Won == false ? "L" : "–")</strong>
                             @m.Against
                         </span>
-                        <span class="tabnum gold">@(m.Rating?.ToString("F1") ?? "")</span>
+                        <span class="tabnum gold">@(m.Rating is { } rated ? Shown.Whole(rated) : "")</span>
                     </div>
                 }
             </section>

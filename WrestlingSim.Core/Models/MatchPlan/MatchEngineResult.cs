@@ -196,7 +196,22 @@ namespace WrestlingSim.Models.MatchPlan
 
         // ── Display helpers ──────────────────────────────────────────────────
 
-        public string StarDisplay => $"{GlyphsFor(StarRating)}  ({StarRating:F2} / 5.00)";
+        public string StarDisplay => $"{GlyphsFor(StarRating)}  ({StarWords(StarRating)})";
+
+        /// <summary>
+        /// A rating as the player reads it: quarter stars in words, "3¾ stars", "½ star",
+        /// "no stars". The interface uses this too, so the words never disagree with the glyphs.
+        /// (It printed "3.68 / 5.00", which reads as nothing; changed Nov 2026.)
+        /// </summary>
+        public static string StarWords(double rating)
+        {
+            double q = Math.Round(Math.Clamp(rating, 0, 5) * 4, MidpointRounding.AwayFromZero) / 4;
+            if (q <= 0) return "no stars";
+            int whole = (int)Math.Floor(q);
+            string frac = (q - whole) switch { 0.25 => "¼", 0.5 => "½", 0.75 => "¾", _ => "" };
+            string number = whole == 0 ? frac : $"{whole}{frac}";
+            return q == 1 ? "1 star" : q < 1 ? $"{number} star" : $"{number} stars";
+        }
 
         /// <summary>
         /// Star glyphs for a 0–5 rating, rounded to the nearest quarter star.

@@ -18,11 +18,11 @@ else
     <div class="score-hero">
         <div>
             <div class="score-hero__label">Crowd reaction</div>
-            <div class="score-hero__main">@result.AudienceImpact.ToString("F1") <span class="muted">/ 10</span></div>
+            <div class="score-hero__main">@Shown.Whole(result.AudienceImpact * 10) <span class="muted">/ 100</span></div>
         </div>
         <div>
             <div class="score-hero__label">Feud heat</div>
-            <div class="score-hero__main gold">+@result.HeatGenerated.ToString("F1")</div>
+            <div class="score-hero__main gold">@Shown.Change(result.HeatGenerated)</div>
         </div>
     </div>
 
@@ -30,9 +30,9 @@ else
         <div class="panel__title">Outcome</div>
         <div class="stack">
             <Meter Label="Crowd reaction" Value="@result.AudienceImpact" Max="10"
-                   ValueText="@($"{result.AudienceImpact:F1} / 10")" />
+                   ValueText="@($"{Shown.Whole(result.AudienceImpact * 10)} / 100")" />
             <Meter Label="Heat generated" Value="@result.HeatGenerated" Max="15"
-                   ValueText="@($"+{result.HeatGenerated:F1}")" Variant="cyan" />
+                   ValueText="@(Shown.Change(result.HeatGenerated))" Variant="cyan" />
         </div>
 
         @if (result.Botched)

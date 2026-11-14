@@ -96,6 +96,57 @@ Kept here as they are made, so the sections below can be read against them.
   leave, and can be poached.
 - **The player sees the traits**, as words that sharpen the longer somebody has worked for them.
 
+**14 Nov — careers, arriving and leaving (Parts 2 and 3).** The owner accepted the proposals:
+
+- Potential is shown as words, not numbers, sharpening the longer somebody works for you and
+  the better the scouting.
+- Development comes through booking (who works with whom, how often), and a television-level
+  promotion can also run a developmental brand where young wrestlers improve faster. Trainers
+  and facilities as a system of their own are later.
+- Charisma develops a little; the gimmick is what really moves how somebody connects.
+- A yearly class of rookies, sized to keep the population steady, starting in their home
+  region's small promotions.
+- Retirement becomes likelier with age, injuries and having nowhere to work, often through a
+  part-time stage first. Returns come later, not in the first build.
+- Real wrestlers retire on the simulation's schedule by default, with a switch at career start
+  to hold real people in place for a set number of years.
+- Retired wrestlers stay in the world as names, so records and title histories still read.
+
+**14 Nov — the interface.** Rebuilt around a career frame and six groups (#98,
+`docs/ui-record.md`). The profile, the talent table and the new-career screen are where traits,
+potential, contentment, regions and world size will show when they are built.
+
+**14 Nov — consequences and rival booking (Parts 4 and 5).**
+
+- **No summary match.** The full match engine costs 0.11 ms a match natively, about 50 ms a
+  week at full size, so every match in the world runs through the same engine as the player's.
+  A rival's booker fills in a brief, `BriefDirector` writes the beats, the engine works them,
+  and the result goes through the same popularity, fatigue, injury and feud code. Rival
+  play-by-play is not stored. (Browser cost to be measured when built.)
+- **Rival booking follows a direction** decided monthly and kept: who it is building, a plan
+  for each title, which feuds are heading to a pay-off, chosen by the same forecast-and-score
+  approach as signings. Weekly cards follow it. The fixed card recipe and `NoBetterWithout`
+  retire. Booking competence is a property of the promotion.
+- **Rejection of a push** is folded into Part 5 and applies to the player's pushes too.
+- Decided: the player gets the rival booker as **"Suggest a card"** (a suggestion to accept or
+  edit, never automatic); a rival's page shows its **current direction** plus results, with
+  title changes and big moments in the news; **watching a rival's show** is not in the first build.
+
+**14 Nov — two changes the owner asked for.**
+
+- **Every promotion can have favourites.** Favour was a weight only the vanity owner had
+  (`ObjectiveFor` gave every other motive 0, and only `Vanity` got a `Favourites` list).
+  Picking favourites is not unique to one kind of promoter. Every promotion gets favourites
+  chosen by its own taste and a favour weight whose default differs by motive.
+- **The player can edit what a promotion wants**: its seven weights, its disposition and its
+  favourites, on the rival's page, with a reset to its founder's defaults. The same fields go in
+  the custom database editor when it exists.
+- **No raw decimals in the interface.** People on one 0–100 whole-number scale (ring skills and
+  charisma converted to it); matches as stars in quarter steps; shows as a whole number out of
+  100; words wherever a number is not needed. Display only: the engine keeps its scales.
+  Decided 0–100. **Both built** (14 Nov): `docs/ui-record.md`, and the design record's
+  "Every owner has favourites".
+
 ## 1. The rule this plan follows
 
 > **Anything that can happen to a wrestler or a promotion happens the same way whoever is

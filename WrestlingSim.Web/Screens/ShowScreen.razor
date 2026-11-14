@@ -93,9 +93,9 @@ else
                     <div class="editor-row__name">@item.Name</div>
                     <div class="editor-row__sub">
                         @item.Kind · @item.DurationMinutes min
-                        @if (i == 0) { <text> · opener ×1.2</text> }
-                        @if (i == show.Card.Count - 1 && show.Card.Count > 1) { <text> · main event ×1.5</text> }
-                        @if (fatigued) { <text> · fatigue ×0.85</text> }
+                        @if (i == 0) { <text> · opener +20%</text> }
+                        @if (i == show.Card.Count - 1 && show.Card.Count > 1) { <text> · main event +50%</text> }
+                        @if (fatigued) { <text> · fatigue −15%</text> }
                     </div>
                 </div>
                 <div class="editor-row__tools">

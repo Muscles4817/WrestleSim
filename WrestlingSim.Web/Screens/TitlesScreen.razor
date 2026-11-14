@@ -23,7 +23,7 @@ else
             The audience's attention
             <span class="spacer"></span>
             <span class="small muted">
-                @registry.Demand.ToString("F2") of @TitleRegistry.AttentionCapacity.ToString("F2") committed
+                @Shown.Percent(registry.Demand / TitleRegistry.AttentionCapacity) committed
             </span>
         </div>
 
@@ -63,11 +63,11 @@ else
             <div class="score-hero">
                 <div>
                     <div class="score-hero__label">Prestige</div>
-                    <div class="score-hero__main">@title.Prestige.ToString("F1") <span class="muted">/ 100</span></div>
+                    <div class="score-hero__main">@Shown.Whole(title.Prestige) <span class="muted">/ 100</span></div>
                 </div>
                 <div>
                     <div class="score-hero__label">Earned</div>
-                    <div class="score-hero__main">@title.Standing.ToString("F1")</div>
+                    <div class="score-hero__main">@Shown.Whole(title.Standing)</div>
                 </div>
                 <div>
                     <div class="score-hero__label">Reigns</div>
@@ -132,7 +132,7 @@ else
 
             <div class="row mt">
                 <span class="small muted">
-                    Claims @title.AttentionClaim.ToString("F2") of the attention pool.
+                    Claims @Shown.Percent(title.AttentionClaim / TitleRegistry.AttentionCapacity) of the attention pool.
                 </span>
                 <span class="spacer"></span>
                 <button class="btn btn--sm btn--danger" @onclick="() => State.RetireTitleAsync(title)">
@@ -207,7 +207,7 @@ else
 
         <div class="notice notice--warn mt">
             <strong>This costs.</strong> A @TierLabel(newTier).ToLowerInvariant() title claims
-            @ClaimOf(newTier).ToString("F2") of the attention pool, which would take
+            @Shown.Percent(ClaimOf(newTier) / TitleRegistry.AttentionCapacity) of the attention pool, which would take
             @((registry.DilutionCostOfAdding(newTier) * 100).ToString("F0"))% off the prestige of
             every belt you already have. It also starts with no lineage —
             standing @Title.NewTitleStanding — because a new title has no history and history
@@ -254,8 +254,8 @@ else
     };
 
     private static string AttentionText(TitleRegistry registry) => registry.SpareAttention >= 0
-        ? $"{registry.Demand:F2} / {TitleRegistry.AttentionCapacity:F2} — {registry.SpareAttention:F2} spare"
-        : $"{registry.Demand:F2} / {TitleRegistry.AttentionCapacity:F2} — over by {-registry.SpareAttention:F2}";
+        ? $"{Shown.Percent(registry.Demand / TitleRegistry.AttentionCapacity)} committed, {Shown.Percent(registry.SpareAttention / TitleRegistry.AttentionCapacity)} spare"
+        : $"{Shown.Percent(registry.Demand / TitleRegistry.AttentionCapacity)} committed, over by {Shown.Percent(-registry.SpareAttention / TitleRegistry.AttentionCapacity)}";
 
     /// <summary>
     /// How the belt is being treated. Doc 21 §4 puts "being ignored on television" at the

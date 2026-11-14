@@ -146,7 +146,7 @@
                             @if (row.BookedAs is { } role) { <span class="badge badge--sm badge--muted">@role</span> }
                             @if (State.IsCrossover(w))
                             {
-                                <span class="badge badge--sm badge--cost">crossover −@BrandIntegrity.CostOf(w).ToString("F1")</span>
+                                <span class="badge badge--sm badge--cost">crossover −@Shown.Whole(BrandIntegrity.CostOf(w))</span>
                             }
                             @* What booking them costs, where the choice is made. Career only:
                                exhibition has no books to charge it to. *@

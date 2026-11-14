@@ -35,7 +35,7 @@ else
         </div>
         <div class="kpi">
             <span class="kpi__key">If it renewed today</span>
-            <span class="kpi__val @(multiple >= 1 ? "grade--great" : "grade--poor")">×@multiple.ToString("0.00")</span>
+            <span class="kpi__val @(multiple >= 1 ? "grade--great" : "grade--poor")">@Shown.Factor(multiple)</span>
             <span class="kpi__sub">@Money.Format(Television.RenewedFee(deal.FeePerEpisode, multiple)) an episode</span>
         </div>
         <div class="kpi">
@@ -91,7 +91,7 @@ else
                 {
                     <div class="kv">
                         <span>@term.Start.ToString("yyyy") to @term.End.ToString("yyyy")<div class="small muted">@term.Episodes episodes, @Money.Audience(term.AverageViewers) a week</div></span>
-                        <span class="tabnum @(term.RenewedAt >= 1 ? "grade--great" : "grade--poor")">×@term.RenewedAt.ToString("0.00")</span>
+                        <span class="tabnum @(term.RenewedAt >= 1 ? "grade--great" : "grade--poor")">@Shown.Factor(term.RenewedAt)</span>
                     </div>
                 }
             </section>

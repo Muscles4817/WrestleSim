@@ -31,7 +31,7 @@
                     <strong class="tabnum @(update.PrestigeDelta >= 0 ? "gold" : "")">
                         @update.PrestigeDelta.ToString("+0.00;-0.00;0")
                     </strong>
-                    <span class="tabnum muted">@update.PrestigeAfter.ToString("F1")</span>
+                    <span class="tabnum muted">@Shown.Whole(update.PrestigeAfter)</span>
                 </div>
             </div>
         }
