@@ -177,7 +177,7 @@ else
 
             <section class="panel">
                 <div class="panel__title">Standing</div>
-                <div class="kv"><span>Reputation</span><span class="tabnum">@career.Books.Reputation.ToString("F1")</span></div>
+                <div class="kv"><span>Reputation</span><span class="tabnum">@Shown.Whole(career.Books.Reputation)</span></div>
                 <div class="small muted">What the next card sells on. Good shows raise it, bad ones lower it.</div>
                 <div class="kv mt"><span>Level</span><span>@career.Promotion.TierLabel</span></div>
                 <div class="small muted">Promotions do not move between levels yet.</div>

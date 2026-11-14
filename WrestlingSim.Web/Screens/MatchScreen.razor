@@ -36,7 +36,7 @@ else
 
     <div class="verdict reveal reveal--pop" style="--d:.3s">
         <Stars Rating="@result.StarRating" ShowNumber="false" />
-        <span class="verdict__num">@result.StarRating.ToString("F2")</span>
+        <span class="verdict__num">@Shown.Stars(result.StarRating)</span>
         <span class="verdict__word @Grades.OfStars(result.StarRating).Tone()">
             @Grades.OfStars(result.StarRating).Label()
         </span>
@@ -285,7 +285,7 @@ else
     }
 
     private static string Pts(double points) =>
-        $"{(points >= 0 ? "+" : "−")}{Math.Abs(points):F1} pts";
+        $"{Shown.Change(points)} points";
 
     /// <summary>How it ended, in the booker's words rather than the enum's.</summary>
     private string FinishLabel()

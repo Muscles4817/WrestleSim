@@ -128,7 +128,7 @@ else
                         <span class="beat-row__sub">
                             @(host is null
                                 ? "the drum is just there — tap to put somebody behind it"
-                                : $"charisma {host.Charisma:F1} — worth ×{RumbleDrawEngine.HostFactor(host):F2} on the night")
+                                : $"charisma {Shown.Of100(host.Charisma)} — worth {Shown.Factor(RumbleDrawEngine.HostFactor(host))} on the night")
                         </span>
                     </button>
                 </div>

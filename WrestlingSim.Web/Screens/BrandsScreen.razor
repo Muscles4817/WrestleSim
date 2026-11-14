@@ -189,8 +189,8 @@ else if (!career.Brands.Active)
         @* A promotion that has split before does not get a clean sheet. Doc 22 §4.1. *@
         <div class="notice notice--warn">
             <strong>You have split before.</strong>
-            @((100 - career.Brands.Ceiling).ToString("F1")) points of split integrity are gone
-            for good, so a new split would start at @career.Brands.Ceiling.ToString("F1") rather
+            @Shown.Whole(100 - career.Brands.Ceiling) points of split integrity are gone
+            for good, so a new split would start at @Shown.Whole(career.Brands.Ceiling) rather
             than whole. The audience remembers being told the line moves when it is convenient.
         </div>
     }
@@ -255,8 +255,8 @@ else
             @report.Moved of @report.Picks.Count changed brand.
             @report.PairingsRefreshed pairing@(report.PairingsRefreshed == 1 ? "" : "s") went back to fresh
             and @report.FeudsEnded feud@(report.FeudsEnded == 1 ? "" : "s") ended for want of a shared show.
-            Integrity @report.IntegrityBefore.ToString("F1") → @report.IntegrityAfter.ToString("F1")
-            (ceiling @report.Ceiling.ToString("F1")).
+            Integrity @Shown.Whole(report.IntegrityBefore) → @Shown.Whole(report.IntegrityAfter)
+            (ceiling @Shown.Whole(report.Ceiling)).
             @if (report.WasEarly)
             {
                 <text>
@@ -277,7 +277,7 @@ else
         </div>
 
         <Meter Label="How much the split still means" Value="@split.Integrity" Max="100"
-               ValueText="@($"{split.Integrity:F1} / 100")"
+               ValueText="@($"{Shown.Whole(split.Integrity)} / 100")"
                Variant="@IntegrityVariant(split.Integrity)" />
 
         <p class="small muted mt">@BrandIntegrity.PhaseNote(split.Integrity)</p>
@@ -285,7 +285,7 @@ else
         <div class="score-hero">
             <div>
                 <div class="score-hero__label">Ceiling</div>
-                <div class="score-hero__main">@split.Ceiling.ToString("F1")</div>
+                <div class="score-hero__main">@Shown.Whole(split.Ceiling)</div>
             </div>
             <div>
                 <div class="score-hero__label">Star-making</div>
@@ -296,7 +296,7 @@ else
             <div>
                 <div class="score-hero__label">Exclusivity worth</div>
                 <div class="score-hero__main">
-                    +@((BrandIntegrity.ExclusivityBonus(split.Integrity) * 100).ToString("F1"))<span class="muted">%</span>
+                    +@Shown.Whole(BrandIntegrity.ExclusivityBonus(split.Integrity) * 100)<span class="muted">%</span>
                 </div>
             </div>
         </div>
@@ -328,7 +328,7 @@ else
                         · next due @due.ToString("d MMM yyyy")
                         · a draft today would restore
                         @((Draft.RepairShare(Draft.DaysSince(split, career.CurrentDate)) * 100).ToString("F0"))%
-                        of the @((split.Ceiling - split.Integrity).ToString("F1")) integrity you are down.
+                        of the @Shown.Whole(split.Ceiling - split.Integrity) integrity you are down.
                     </text>
                 }
             </span>
@@ -360,7 +360,7 @@ else
                     @roster.Count on the roster
                     @if (brand.Form is { } form)
                     {
-                        <text> · form @form.ToString("F1") over @brand.RecentRatings.Count show@(brand.RecentRatings.Count == 1 ? "" : "s")</text>
+                        <text> · form @Shown.Whole(form) over @brand.RecentRatings.Count show@(brand.RecentRatings.Count == 1 ? "" : "s")</text>
                     }
                 </span>
             </div>
@@ -477,7 +477,7 @@ else
             Crossovers
             <span class="spacer"></span>
             <span class="small muted">
-                @split.CrossoverCount booked · @((100 - split.Ceiling).ToString("F1")) permanently lost
+                @split.CrossoverCount booked · @Shown.Whole(100 - split.Ceiling) permanently lost
             </span>
         </div>
 
@@ -496,7 +496,7 @@ else
             @foreach (var crossover in split.Crossovers.AsEnumerable().Reverse().Take(12))
             {
                 <div class="editor-row">
-                    <div class="editor-row__n">−@crossover.Cost.ToString("F1")</div>
+                    <div class="editor-row__n">−@Shown.Whole(crossover.Cost)</div>
                     <div>
                         <div class="editor-row__name">@crossover.WrestlerName on @crossover.ShowName</div>
                         <div class="editor-row__sub">

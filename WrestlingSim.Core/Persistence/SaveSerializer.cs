@@ -611,6 +611,10 @@ namespace WrestlingSim.Persistence
                     if (r.Feuds is { } feuds) RestoreFeuds(rival.Feuds, feuds, byId, career.CurrentDate);
                     if (r.Titles is { Count: > 0 } belts) RestoreTitles(rival.Titles, belts, byId);
                     else rival.Titles.SeedDefaults(rival.Name, career.CurrentDate);
+
+                    // A save from before every owner had favourites gives them theirs now,
+                    // by the same taste as a new world, rather than waiting a week.
+                    Engine.World.EnsureFavourites(career, rival);
                 }
                 career.NonCompetes.AddRange(dto.NonCompetes.Where(n => byId.ContainsKey(n.WrestlerId))
                     .Select(n => new NonCompete { WrestlerId = byId[n.WrestlerId].Id, Until = ParseDate(n.Until), From = n.From }));

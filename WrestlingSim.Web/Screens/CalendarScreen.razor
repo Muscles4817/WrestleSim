@@ -102,7 +102,7 @@ else
                                 @show.TypeLabel · @show.RuntimeMinutes min budget
                                 @if (show.HasRun)
                                 {
-                                    <text> · rated </text><span class="tabnum @Grades.OfScore(show.Result!.OverallRating).Tone()">@show.Result!.OverallRating.ToString("F1")</span>
+                                    <text> · rated </text><span class="tabnum @Grades.OfScore(show.Result!.OverallRating).Tone()">@Shown.Whole(show.Result!.OverallRating)</span>
                                 }
                                 else if (show.IsBooked)
                                 {

@@ -321,9 +321,9 @@ else
                         {
                             <text> · @belt.Name</text>
                         }
-                        @if (i == 0) { <text> · opener ×1.2</text> }
-                        @if (i == show.Card.Count - 1 && show.Card.Count > 1) { <text> · main event ×1.5</text> }
-                        @if (fatigued) { <text> · fatigue ×0.85</text> }
+                        @if (i == 0) { <text> · opener +20%</text> }
+                        @if (i == show.Card.Count - 1 && show.Card.Count > 1) { <text> · main event +50%</text> }
+                        @if (fatigued) { <text> · fatigue −15%</text> }
                     </div>
                 </div>
                 <div class="editor-row__tools">
@@ -572,7 +572,7 @@ else
             <div class="notice notice--warn mt">
                 <strong>
                     @crossing.Count crossover@(crossing.Count == 1 ? "" : "s") on this card —
-                    @CrossoverCost(career, show).ToString("F1") split integrity if you run it.
+                    @Shown.Whole(CrossoverCost(career, show)) split integrity if you run it.
                 </strong>
                 @string.Join(", ", crossing.Select(c => $"{c.Wrestler.RingName} ({c.Home.Name})")).
                 Each of these is worth something tonight.

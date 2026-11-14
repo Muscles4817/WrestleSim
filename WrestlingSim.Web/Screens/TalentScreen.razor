@@ -180,8 +180,8 @@ else
                                 <td class="small muted col-wide nowrap">@StyleLabel(w.Style)</td>
                                 <td class="num col-wide">@(w.AgeOn(Today)?.ToString() ?? "—")</td>
                                 <td class="num @w.CardPosition.Tone()"><strong>@w.OvernessDisplay</strong> <Trend Momentum="w.Momentum" ShowLabel="false" /></td>
-                                <td class="num">@w.RingSkills.GetOverallSkill().ToString("F1")</td>
-                                <td class="num col-wide">@w.Charisma.ToString("F1")</td>
+                                <td class="num">@Shown.Of100(w.RingSkills.GetOverallSkill())</td>
+                                <td class="num col-wide">@Shown.Of100(w.Charisma)</td>
                                 <td class="small col-wide">@Condition(w)</td>
                                 @if (career is not null)
                                 {
@@ -192,12 +192,12 @@ else
                             }
                             else
                             {
-                                <td class="num">@w.RingSkills.HighFlyer.ToString("F1")</td>
-                                <td class="num">@w.RingSkills.Grappler.ToString("F1")</td>
-                                <td class="num">@w.RingSkills.Powerhouse.ToString("F1")</td>
-                                <td class="num">@w.RingSkills.Technical.ToString("F1")</td>
-                                <td class="num">@w.RingSkills.Brawler.ToString("F1")</td>
-                                <td class="num">@w.RingSkills.Striker.ToString("F1")</td>
+                                <td class="num">@Shown.Of100(w.RingSkills.HighFlyer)</td>
+                                <td class="num">@Shown.Of100(w.RingSkills.Grappler)</td>
+                                <td class="num">@Shown.Of100(w.RingSkills.Powerhouse)</td>
+                                <td class="num">@Shown.Of100(w.RingSkills.Technical)</td>
+                                <td class="num">@Shown.Of100(w.RingSkills.Brawler)</td>
+                                <td class="num">@Shown.Of100(w.RingSkills.Striker)</td>
                                 <td class="num col-wide">@w.Mental.Psychology</td>
                                 <td class="num col-wide">@w.Mental.Selling</td>
                                 <td class="num col-wide">@w.Physical.Stamina</td>

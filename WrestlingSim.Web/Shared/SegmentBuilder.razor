@@ -95,7 +95,7 @@
                     <select class="select" @bind="customLocation">
                         @foreach (var v in Enum.GetValues<SegmentLocation>())
                         {
-                            <option value="@v">@v (×@LocationMultiplier(v).ToString("0.00"))</option>
+                            <option value="@v">@v (@Shown.Factor(LocationMultiplier(v)))</option>
                         }
                     </select>
                 </div>
@@ -124,7 +124,7 @@
                                    means the wrestler is one. *@
                                 @if (State.IsCrossover(w))
                                 {
-                                    <span class="badge badge--sm badge--cost">crossover −@BrandIntegrity.CostOf(w).ToString("F1")</span>
+                                    <span class="badge badge--sm badge--cost">crossover −@Shown.Whole(BrandIntegrity.CostOf(w))</span>
                                 }
                             </span>
                             <span class="pick__desc">@w.CharismaLabel · @w.CardPosition.Label()</span>
@@ -223,7 +223,7 @@
 
         <div class="row small">
             <span class="badge">@segment.Type</span>
-            <span class="badge">@segment.Location ×@LocationMultiplier(segment.Location).ToString("0.00")</span>
+            <span class="badge">@segment.Location @Shown.Factor(LocationMultiplier(segment.Location))</span>
             <label class="check spacer">
                 <input type="checkbox" checked="@segment.IsScripted"
                        @onchange="e => segment.IsScripted = (bool)(e.Value ?? true)" />
@@ -238,7 +238,7 @@
             }
             else
             {
-                <text><strong>Unscripted:</strong> ×1.15 crowd reaction, but low-Psychology performers can botch — which costs impact, heat <em>and</em> popularity.</text>
+                <text><strong>Unscripted:</strong> +15% crowd reaction, but low-Psychology performers can botch — which costs impact, heat <em>and</em> popularity.</text>
             }
         </div>
 

@@ -343,6 +343,50 @@ namespace WrestlingSim.Tests
             Assert.True(broke.Count(d => d.Move == "released") >= flush.Count(d => d.Move == "released"));
         }
 
+        /// <summary>
+        /// Favouritism is every owner's, not only the vanity owner's: every kind of founder has
+        /// some weight on it, and every rival opens with somebody it favours, chosen by its own
+        /// taste from its own roster.
+        /// </summary>
+        [Fact]
+        public void EveryOwnerHasSomebodyItFavours()
+        {
+            Assert.All(Enum.GetValues<FounderMotive>(), m => Assert.True(World.ObjectiveFor(m).Favour > 0, m.ToString()));
+            Assert.True(World.ObjectiveFor(FounderMotive.Vanity).Favour > World.ObjectiveFor(FounderMotive.Business).Favour);
+
+            var career = NewWorld(PromotionTier.Local);
+            foreach (var rival in career.Rivals)
+            {
+                Assert.NotEmpty(rival.Favourites);
+                Assert.All(rival.Favourites, id => Assert.NotNull(rival.ContractOf(career.FindWrestler(id)!)));
+            }
+        }
+
+        /// <summary>
+        /// Second on the card is less than first, not nothing. A favourite pushed down the card
+        /// by a bigger star keeps part of its share of what the card sells; the measure used to
+        /// be all or nothing, which made every owner refuse any star once they all had favourites.
+        /// </summary>
+        [Fact]
+        public void AFavouriteSecondOnTheCardStillCountsForSomething()
+        {
+            var career = NewWorld(PromotionTier.Local);
+            var rival = RivalAt(career, PromotionTier.National);
+            var major = RivalAt(career, PromotionTier.Global);
+            var star = major.Contracts.Select(c => career.FindWrestler(c.WrestlerId)!).MaxBy(w => w.EffectiveOverness)!;
+            major.Contracts.RemoveAll(c => c.WrestlerId == star.Id);
+
+            var hold = World.Forecast(career, rival, rival.Contracts, Sober);
+            var deal = new Contract { WrestlerId = star.Id, Kind = ContractKind.Guaranteed, AnnualGuarantee = career.GuaranteeAsk(star, 3),
+                                      Start = career.CurrentDate, End = career.CurrentDate.AddYears(3) };
+            var with = World.Forecast(career, rival, [.. rival.Contracts, deal], Sober, 0m, new HashSet<string> { star.Id });
+
+            output.WriteLine($"favourites' share of what the card sells: {hold.FavourShare:P0} without the star, {with.FavourShare:P0} with");
+            Assert.True(hold.FavourShare > 0);
+            Assert.True(with.FavourShare < hold.FavourShare);
+            Assert.True(with.FavourShare > 0, "A favourite pushed down the card still counts for something.");
+        }
+
         // ── The weekly decision ──────────────────────────────────────────────
 
         [Fact]

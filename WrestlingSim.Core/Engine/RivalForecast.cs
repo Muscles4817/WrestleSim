@@ -199,10 +199,22 @@ namespace WrestlingSim.Engine
                     viewers += (long)Math.Round(f.TuneIn * Television.Retention(night));
                     televised++;
                 }
-                if (rival.Favourites.Count > 0 && f.Draws.FirstOrDefault() is { } top)
+                // How much of what the card sells is sold on the favourites: their items' share of
+                // the billed pull. It was all or nothing — a favourite headlining the top item or
+                // counting for zero — which was harmless while only the vanity owner cared, and
+                // made every owner refuse any star who would push its favourite to second once
+                // they all did. Second on the card is less than first, not nothing.
+                if (rival.Favourites.Count > 0 && f.Draws.Count > 0)
                 {
                     var names = rival.Favourites.Select(id => career.FindWrestler(id)?.RingName).ToHashSet();
-                    if (top.Headliners.Any(names.Contains)) favour++;
+                    double billed = 0, theirs = 0;
+                    for (int i = 0; i < Math.Min(f.Draws.Count, BoxOffice.BillingWeights.Count); i++)
+                    {
+                        double share = f.Draws[i].Pull * BoxOffice.BillingWeights[i];
+                        billed += share;
+                        if (f.Draws[i].Headliners.Any(names.Contains)) theirs += share;
+                    }
+                    if (billed > 0) favour += theirs / billed;
                 }
                 ran++;
 

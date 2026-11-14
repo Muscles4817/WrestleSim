@@ -773,6 +773,25 @@ What is still owed:
   or a smaller one.
 - **The stand-in worlds say nothing about behaviour.** Only about time.
 
+### Every owner has favourites (14 Nov)
+
+Favour was a weight only the vanity owner had: `ObjectiveFor` gave every other motive 0, and only
+`Vanity` got a `Favourites` list. The owner pointed out that picking favourites is not unique to
+one kind of promoter. Every motive now has a favour weight (Vanity 1.0, MarkMoney 0.5, Legacy 0.4,
+Platform and Ideology 0.2, Business 0.1), every rival opens with a favourite chosen by its own
+taste (`FavouriteTaste`: the biggest name, the best worker, the most charismatic, the steadiest
+veteran, the best value), and one is picked again if none is left on its books
+(`EnsureFavourites`). The player can change all of it on the rival's page.
+
+**That exposed a fault in how favour was measured.** `FavourShare` was all or nothing per show:
+a favourite headlining the top item or counting zero. Harmless with one owner caring; with all of
+them caring, every kind of owner refused a free-agent Roman Reigns at his asking price, because he
+would push its favourite to second. It is now the favourites' share of the card's billed pull
+(`BillingWeights`), so second on the card is less than first, not nothing
+(`AFavouriteSecondOnTheCardStillCountsForSomething`). With that, for the same free agent a
+wealthy fan or a media company would pay $11.4M a year, an owner run for the wrestling $6.6M,
+while a vanity owner, a family business and one run for a return pass. Not tuned for; measured.
+
 ### Not built in slice 6
 
 - **Where wrestlers come from.** Finding 2. Nothing creates a wrestler.

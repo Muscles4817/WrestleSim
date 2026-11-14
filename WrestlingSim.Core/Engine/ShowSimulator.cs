@@ -157,7 +157,7 @@ namespace WrestlingSim.Engine
                     if (acts < 0.98)
                     {
                         raw *= acts;
-                        itemResult.Notes.Add($"The crowd has seen this too often without anything new (×{acts:0.00}).");
+                        itemResult.Notes.Add($"The crowd has seen this too often without anything new (−{Math.Round((1 - acts) * 100):0}%).");
                     }
                 }
 
@@ -176,7 +176,7 @@ namespace WrestlingSim.Engine
                 {
                     score *= 0.85;
                     itemResult.FatiguePenaltyApplied = true;
-                    itemResult.Notes.Add("Follows the same kind of item — crowd fatigue (×0.85).");
+                    itemResult.Notes.Add("Follows the same kind of item — crowd fatigue (−15%).");
                 }
 
                 // ── Crowd mood carries between items ─────────────────────────
@@ -340,7 +340,7 @@ namespace WrestlingSim.Engine
 
             itemResult.RumbleResult = result;
             itemResult.Notes.Add($"{result.Winner.RingName} wins the {rumble.Field.Count}-wrestler " +
-                                 $"{(rumble.IsBattleRoyal ? "battle royal" : "rumble")} — {result.StarRating:F2}★");
+                                 $"{(rumble.IsBattleRoyal ? "battle royal" : "rumble")} — {Models.MatchPlan.MatchEngineResult.StarWords(result.StarRating)}");
 
             if (result.IronMan is { } iron && iron != result.Winner && result.IronManOutlasted > 0)
                 itemResult.Notes.Add($"{iron.RingName} outlasted {result.IronManOutlasted} of them.");
@@ -415,14 +415,14 @@ namespace WrestlingSim.Engine
 
             if (stakes < 0)
                 return $"{label} — the story had not got there yet. The room knew " +
-                       $"({stakes:F1} crowd energy).";
+                       $"({Math.Round(stakes * 10):0} crowd energy).";
 
             double freshness = StipulationRules.Scarcity(daysSince);
             if (freshness < 0.9 && daysSince is { } days)
                 return $"{label} — last one was {days} days ago, so it was worth " +
-                       $"{freshness * 100:F0}% of a rare one (+{stakes:F1}).";
+                       $"{freshness * 100:F0}% of a rare one (+{Math.Round(stakes * 10):0}).";
 
-            return $"{label} — earned, and it has been a while (+{stakes:F1}).";
+            return $"{label} — earned, and it has been a while (+{Math.Round(stakes * 10):0}).";
         }
 
         /// <summary>

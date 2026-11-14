@@ -164,7 +164,7 @@
             @if (PairingHistory is { MatchCount: > 0 } history)
             {
                 <div class="notice @(PairingFamiliarity < 0.8 ? "notice--advice" : "notice--info") mt">
-                    <strong>Meeting @NextMeeting.ToString("F1") — @((int)Math.Round(PairingFamiliarity * 100))% of what the first one drew.</strong>
+                    <strong>Meeting @Shown.Whole(NextMeeting) — @((int)Math.Round(PairingFamiliarity * 100))% of what the first one drew.</strong>
                     @SideAName and @SideBName have met @history.MatchCount time@(history.MatchCount == 1 ? "" : "s").
                     @FreshnessAdvice
                 </div>
@@ -254,7 +254,7 @@
                 <Trend Momentum="@w.Momentum" ShowLabel="false" />
                 @if (State.IsCrossover(w))
                 {
-                    <span class="badge badge--sm badge--cost">crossover −@BrandIntegrity.CostOf(w).ToString("F1")</span>
+                    <span class="badge badge--sm badge--cost">crossover −@Shown.Whole(BrandIntegrity.CostOf(w))</span>
                 }
             </span>
         }
@@ -473,7 +473,7 @@
         @if (title is not null)
         {
             <div class="notice notice--tip mt">
-                <strong>@title.Name — prestige @title.Prestige.ToString("F1").</strong>
+                <strong>@title.Name — prestige @Shown.Whole(title.Prestige).</strong>
                 @title.PrestigeLabel. Worth +@title.StakesBonus.ToString("F0") crowd energy at the bell.
                 <br />
                 Titles do not change hands on a disqualification or a count-out. Book one of
@@ -578,7 +578,7 @@
                         <span class="pick__name">
                             This is the blow-off
                             <span class="badge @(BlowOffWorthIt ? "badge--gold" : "badge--heel")">
-                                ×@BlowOffPayoff.ToString("F2") on the finish@(BlowOffWorthIt ? "" : " — unearned")
+                                @Shown.Factor(BlowOffPayoff) on the finish@(BlowOffWorthIt ? "" : " — unearned")
                             </span>
                         </span>
                         <span class="pick__desc">
@@ -668,7 +668,7 @@
                     @StipulationRules.Label(stipulation) wants a @StipulationRules.Demands(stipulation)
                     feud and this one is @FeudReached. A stipulation nobody earned tells the room
                     the promotion has run out of ideas — it is worth
-                    <strong>@StipulationStakes.ToString("F1") crowd energy</strong>, which is worse
+                    <strong>@Shown.Whole(StipulationStakes * 10) crowd energy</strong>, which is worse
                     than booking nothing.
                 </div>
             }
@@ -677,7 +677,7 @@
                 <div class="notice notice--warn mt">
                     <strong>This was on recently.</strong> Worth
                     @((Freshness(stipulation) * 100).ToString("F0"))% of a rare one
-                    (+@StipulationStakes.ToString("F1")). A cage match is special once a year;
+                    (+@Shown.Whole(StipulationStakes * 10)). A cage match is special once a year;
                     run monthly it devalues every cage match you will ever book.
                 </div>
             }
@@ -685,7 +685,7 @@
             {
                 <div class="notice notice--info mt">
                     Earned, and it has been a while — worth
-                    <strong>+@StipulationStakes.ToString("F1") crowd energy</strong>.
+                    <strong>+@Shown.Whole(StipulationStakes * 10) crowd energy</strong>.
                     Every stipulation takes away the disqualification and the count-out, so
                     nobody in this match can lose cheaply.
                 </div>

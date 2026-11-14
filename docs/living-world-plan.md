@@ -144,7 +144,8 @@ potential, contentment, regions and world size will show when they are built.
 - **No raw decimals in the interface.** People on one 0–100 whole-number scale (ring skills and
   charisma converted to it); matches as stars in quarter steps; shows as a whole number out of
   100; words wherever a number is not needed. Display only: the engine keeps its scales.
-  (Proposed; awaiting the owner's word on 0–100 against a coarser scale.)
+  Decided 0–100. **Both built** (14 Nov): `docs/ui-record.md`, and the design record's
+  "Every owner has favourites".
 
 ## 1. The rule this plan follows
 

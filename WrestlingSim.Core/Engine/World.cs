@@ -45,17 +45,53 @@ namespace WrestlingSim.Engine
         // docs/rival-ai-plan.md §5.2. Starting values: tuned by looking at what worlds do with
         // them, never to make a particular promotion meet a particular end.
 
+        // Favour is every owner's, not only the vanity owner's: nearly every promoter has people
+        // they protect. It was 0 for every motive but Vanity, which baked favouritism into one
+        // kind of founder. The owner asked for it to be general (14 Nov 2026); the defaults
+        // differ by how much each kind of owner lets it steer the card.
         public static Objective ObjectiveFor(FounderMotive m) => m switch
         {
             //                                 wealth franchise stars quality reputation favour stability
-            FounderMotive.Business  => new(1.0, 0.6, 0.1, 0.1, 0.2, 0.0, 0.1),
-            FounderMotive.Platform  => new(0.5, 1.0, 0.4, 0.2, 0.3, 0.0, 0.3),
-            FounderMotive.MarkMoney => new(0.1, 0.2, 1.0, 0.3, 0.5, 0.0, 0.0),
-            FounderMotive.Ideology  => new(0.3, 0.1, 0.1, 1.0, 0.6, 0.0, 0.2),
-            FounderMotive.Legacy    => new(0.5, 0.3, 0.2, 0.3, 0.4, 0.0, 1.0),
+            FounderMotive.Business  => new(1.0, 0.6, 0.1, 0.1, 0.2, 0.1, 0.1),
+            FounderMotive.Platform  => new(0.5, 1.0, 0.4, 0.2, 0.3, 0.2, 0.3),
+            FounderMotive.MarkMoney => new(0.1, 0.2, 1.0, 0.3, 0.5, 0.5, 0.0),
+            FounderMotive.Ideology  => new(0.3, 0.1, 0.1, 1.0, 0.6, 0.2, 0.2),
+            FounderMotive.Legacy    => new(0.5, 0.3, 0.2, 0.3, 0.4, 0.4, 1.0),
             FounderMotive.Vanity    => new(0.3, 0.2, 0.4, 0.1, 0.3, 1.0, 0.2),
-            _                       => new(1.0, 0.5, 0.3, 0.3, 0.3, 0.0, 0.2)
+            _                       => new(1.0, 0.5, 0.3, 0.3, 0.3, 0.2, 0.2)
         };
+
+        /// <summary>
+        /// Who an owner of this kind takes to: the biggest name for a fan or a vanity owner, the
+        /// best worker for one who runs it for the wrestling, the most charismatic for a media
+        /// company, the steadiest veteran for a family business, the best value for one run for a
+        /// return. Data, like the tables above.
+        /// </summary>
+        public static Func<Wrestler, double> FavouriteTaste(FounderMotive m) => m switch
+        {
+            FounderMotive.Ideology => w => w.RingSkills.GetOverallSkill(),
+            FounderMotive.Platform => w => w.Charisma,
+            FounderMotive.Legacy   => w => w.Mental.Psychology + (w.DebutedIn is { } d ? -d : 0),
+            FounderMotive.Business => w => w.EffectiveOverness / (double)Math.Max(1m, TalentMarket.PerDateAsk(w)),
+            _                      => w => w.EffectiveOverness
+        };
+
+        /// <summary>
+        /// Gives a promotion that cares about favourites somebody to favour, when none of the
+        /// ones it has is still on its books. Its own choice, by its own taste; a favourite the
+        /// player set by hand is kept as long as they are there.
+        /// </summary>
+        public static void EnsureFavourites(Career career, RivalPromotion rival)
+        {
+            if (ObjectiveOf(rival).Favour <= 0 || rival.Contracts.Count == 0) return;
+            if (rival.Favourites.Any(id => rival.Contracts.Any(c => c.WrestlerId == id))) return;
+
+            var taste = FavouriteTaste(rival.Motive);
+            if (rival.Contracts.Select(c => career.FindWrestler(c.WrestlerId)).OfType<Wrestler>()
+                    .OrderByDescending(taste).ThenBy(w => w.Id, StringComparer.Ordinal)
+                    .FirstOrDefault() is { } pick)
+                rival.Favourites.Add(pick.Id);
+        }
 
         public static Disposition DispositionFor(FounderMotive m) => m switch
         {
@@ -170,11 +206,8 @@ namespace WrestlingSim.Engine
                     var source = new TierOpeningRoster(Profile(rival.Motive).OpeningBudget);
                     rival.Contracts.AddRange(source.Open(rival.Promotion, pool, on));
 
-                    // A promotion run for its owner has an owner: the biggest name it opens with.
-                    if (rival.Motive == FounderMotive.Vanity && rival.Favourites.Count == 0
-                        && rival.Contracts.Select(c => career.FindWrestler(c.WrestlerId)).OfType<Wrestler>()
-                                .MaxBy(w => w.EffectiveOverness) is { } owner)
-                        rival.Favourites.Add(owner.Id);
+                    // Every owner has somebody they take to, by their own taste.
+                    EnsureFavourites(career, rival);
                     foreach (var c in rival.Contracts.Where(c => c.IsGuaranteed)) taken.Add(c.WrestlerId);
                 }
             }

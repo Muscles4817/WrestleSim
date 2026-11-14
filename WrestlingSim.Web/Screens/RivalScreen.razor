@@ -51,6 +51,111 @@ else
 
     <div class="layout">
         <div class="layout__main">
+            @if (rival.IsActive)
+            {
+                <section class="panel">
+                    <div class="panel__title">
+                        What it wants
+                        <span class="spacer"></span>
+                        @if (!editing)
+                        {
+                            <button class="btn btn--sm" @onclick="() => StartEditing(rival)">Edit</button>
+                        }
+                    </div>
+                    @if (!editing)
+                    {
+                        var wants = World.ObjectiveOf(rival);
+                        @foreach (var (key, label, value) in Weights(wants))
+                        {
+                            <div class="skillbar">
+                                <span style="flex-basis: 190px">@label</span>
+                                <span class="skillbar__track" aria-hidden="true"><i class="@(value >= 0.7 ? "is-strong" : "")" style="width:@((value * 100).ToString("F0"))%"></i></span>
+                                <b>@((int)Math.Round(value * 100))</b>
+                            </div>
+                        }
+                        <div class="kv mt">
+                            <span>Its favourites</span>
+                            <span>
+                                @if (rival.Favourites.Count == 0) { <span class="muted">None</span> }
+                                @for (int i = 0; i < rival.Favourites.Count; i++)
+                                {
+                                    var fav = career.FindWrestler(rival.Favourites[i]);
+                                    @if (i > 0) { <text>, </text> }
+                                    @if (fav is not null) { <button class="namelink" @onclick="() => State.OpenProfile(fav)">@fav.RingName</button> }
+                                }
+                            </span>
+                        </div>
+                        <div class="small muted mt">
+                            @(rival.Objective is null && rival.Disposition is null ? "Its founder's defaults." : "Changed from its founder's defaults.")
+                            Each weight is how much it counts against the others; what it does each week follows from these.
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var key in WeightKeys)
+                        {
+                            var k = key;
+                            <div class="skillbar">
+                                <label for="w-@k" style="flex: 0 0 190px; color: var(--ink-2)">@WeightLabel(k)</label>
+                                <input id="w-@k" type="range" min="0" max="100" step="5" style="flex: 1 1 auto"
+                                       value="@draft[k]" @oninput="e => draft[k] = Num(e)" />
+                                <b>@draft[k]</b>
+                            </div>
+                        }
+                        <div class="panel__title mt" style="font-size: 13px">How it sees</div>
+                        <div class="skillbar">
+                            <label for="d-horizon" style="flex: 0 0 190px; color: var(--ink-2)">Plans ahead</label>
+                            <input id="d-horizon" type="range" min="30" max="730" step="30" style="flex: 1 1 auto" value="@horizon" @oninput="e => horizon = Num(e)" />
+                            <b style="flex-basis: 76px">@(horizon / 30) mo</b>
+                        </div>
+                        <div class="skillbar">
+                            <label for="d-optimism" style="flex: 0 0 190px; color: var(--ink-2)">Optimism</label>
+                            <input id="d-optimism" type="range" min="70" max="140" step="5" style="flex: 1 1 auto" value="@optimism" @oninput="e => optimism = Num(e)" />
+                            <b style="flex-basis: 76px">@OptimismWord(optimism)</b>
+                        </div>
+                        <div class="skillbar">
+                            <label for="d-floor" style="flex: 0 0 190px; color: var(--ink-2)">Money it wants in hand</label>
+                            <input id="d-floor" type="range" min="0" max="730" step="30" style="flex: 1 1 auto" value="@floor" @oninput="e => floor = Num(e)" />
+                            <b style="flex-basis: 76px">@(floor / 30) mo</b>
+                        </div>
+                        <div class="skillbar">
+                            <label for="d-risk" style="flex: 0 0 190px; color: var(--ink-2)">Fear of closing</label>
+                            <input id="d-risk" type="range" min="0" max="8" step="1" style="flex: 1 1 auto" value="@risk" @oninput="e => risk = Num(e)" />
+                            <b style="flex-basis: 76px">@risk of 8</b>
+                        </div>
+
+                        <div class="panel__title mt" style="font-size: 13px">Favourites</div>
+                        <div class="chips">
+                            @foreach (var id in favourites.ToList())
+                            {
+                                var fid = id;
+                                <button class="chip is-active" title="Remove" @onclick="() => favourites.Remove(fid)">@(career.FindWrestler(fid)?.RingName ?? fid) ✕</button>
+                            }
+                        </div>
+                        <div class="row mt">
+                            <label class="sr-only" for="fav-add">Add a favourite</label>
+                            <select id="fav-add" class="input" style="flex: 1 1 auto" @bind="adding">
+                                <option value="">Add somebody on its roster…</option>
+                                @foreach (var (c, w) in people.Where(x => !favourites.Contains(x.Wrestler!.Id)))
+                                {
+                                    <option value="@w!.Id">@w.RingName</option>
+                                }
+                            </select>
+                            <button class="btn btn--sm" disabled="@(adding.Length == 0)" @onclick="AddFavourite">Add</button>
+                        </div>
+
+                        <div class="small muted mt">With nobody listed, it picks a favourite of its own at its next decision. Set its favourites' weight to 0 for none.</div>
+                        <div class="row mt">
+                            <button class="btn btn--primary" @onclick="() => Save(rival)">Save</button>
+                            <button class="btn btn--ghost" @onclick="() => editing = false">Cancel</button>
+                            <span class="spacer"></span>
+                            <button class="btn btn--sm btn--ghost" @onclick="() => ResetToFounder(rival)">Reset to its founder's defaults</button>
+                        </div>
+                        <div class="small muted mt">It acts on the change from its next weekly decision.</div>
+                    }
+                </section>
+            }
+
             @if (outlook is not null)
             {
                 <section class="panel">
@@ -124,7 +229,7 @@ else
                         </summary>
                         <div class="muted small" style="padding: 4px 0 8px 14px">
                             <div>At the time it @d.Believed.</div>
-                            <div>Counted for it: @string.Join(", ", d.Terms.OrderByDescending(t => Math.Abs(t.Value)).Select(t => $"{TermName(t.Key)} {(t.Value >= 0 ? "+" : "−")}{Math.Abs(t.Value):0.000}"))</div>
+                            <div>Counted for it (in points of its score): @string.Join(", ", d.Terms.OrderByDescending(t => Math.Abs(t.Value)).Select(t => $"{TermName(t.Key)} {Shown.Change(t.Value * 1000)}"))</div>
                             @if (d.Rejected.Count > 0)
                             {
                                 <div>Next best: @string.Join("; ", d.Rejected)</div>
@@ -196,6 +301,84 @@ else
 }
 
 @code {
+    private static readonly string[] WeightKeys = ["wealth", "franchise", "stars", "quality", "reputation", "favour", "stability"];
+
+    private static string WeightLabel(string key) => key switch
+    {
+        "wealth"     => "Making money",
+        "franchise"  => "A bigger television deal",
+        "stars"      => "Names on its cards",
+        "quality"    => "Good shows",
+        "reputation" => "A name for good shows",
+        "favour"     => "Its favourites on top",
+        _            => "Keeping the people it has"
+    };
+
+    private static IEnumerable<(string Key, string Label, double Value)> Weights(Objective o)
+    {
+        var values = new[] { o.Wealth, o.Franchise, o.Stars, o.Quality, o.Reputation, o.Favour, o.Stability };
+        for (int i = 0; i < WeightKeys.Length; i++) yield return (WeightKeys[i], WeightLabel(WeightKeys[i]), values[i]);
+    }
+
+    private static string OptimismWord(int pct) =>
+        pct >= 115 ? "Rosy" : pct >= 105 ? "Hopeful" : pct <= 90 ? "Gloomy" : pct <= 95 ? "Cautious" : "Sober";
+
+    private static int Num(ChangeEventArgs e) => int.TryParse(e.Value?.ToString(), out var n) ? n : 0;
+
+    private void AddFavourite()
+    {
+        if (adding.Length > 0 && !favourites.Contains(adding)) favourites.Add(adding);
+        adding = string.Empty;
+    }
+
+    private bool editing;
+    private Dictionary<string, int> draft = new();
+    private int horizon, optimism, floor, risk;
+    private List<string> favourites = new();
+    private string adding = "";
+
+    private void Load(Objective o, Disposition d, IEnumerable<string> favs)
+    {
+        draft = Weights(o).ToDictionary(x => x.Key, x => (int)Math.Round(x.Value * 100));
+        horizon = d.HorizonDays;
+        optimism = (int)Math.Round(d.Optimism * 100);
+        floor = d.RunwayFloorDays;
+        risk = (int)Math.Round(d.RiskAversion);
+        favourites = favs.ToList();
+        adding = "";
+    }
+
+    private void StartEditing(RivalPromotion rival)
+    {
+        Load(World.ObjectiveOf(rival), World.DispositionOf(rival), rival.Favourites);
+        editing = true;
+    }
+
+    private void ResetToFounder(RivalPromotion rival) =>
+        Load(World.ObjectiveFor(rival.Motive), World.DispositionFor(rival.Motive), favourites);
+
+    private async Task Save(RivalPromotion rival)
+    {
+        var objective = new Objective(draft["wealth"] / 100.0, draft["franchise"] / 100.0, draft["stars"] / 100.0,
+            draft["quality"] / 100.0, draft["reputation"] / 100.0, draft["favour"] / 100.0, draft["stability"] / 100.0);
+        var disposition = new Disposition(horizon, optimism / 100.0, floor, risk);
+
+        // Kept as an override only where it differs from the founder's, so a promotion reset to
+        // its defaults goes on following them if those ever change.
+        rival.Objective = objective == World.ObjectiveFor(rival.Motive) ? null : objective;
+        rival.Disposition = disposition == World.DispositionFor(rival.Motive) ? null : disposition;
+        rival.Favourites.Clear();
+        rival.Favourites.AddRange(favourites);
+
+        // Look again next week rather than waiting out a quiet month.
+        rival.QuietAs = 0;
+        rival.QuietSince = null;
+
+        editing = false;
+        await State.SaveAsync();
+        State.Notify();
+    }
+
     private static string ShortTitle(string title, string promotion) =>
         title.StartsWith(promotion) ? title[promotion.Length..].Trim() : title;
 

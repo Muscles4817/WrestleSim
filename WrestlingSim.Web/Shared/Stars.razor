@@ -22,7 +22,7 @@
 *@
 <span class="stars" title="@Grades.OfStars(Rating).Label()">
     <svg class="stars__marks @Grades.OfStars(Rating).Tone()" viewBox="0 0 @Width 20"
-         role="img" aria-label="@Rating.ToString("F2") out of 5">
+         role="img" aria-label="@Shown.Stars(Rating)">
         @for (int i = 0; i < 5; i++)
         {
             var fill = Quarters(i);
@@ -52,7 +52,7 @@
     </svg>
     @if (ShowNumber)
     {
-        <span class="stars__num">@Rating.ToString("F2") / 5.00</span>
+        <span class="stars__num">@Shown.Stars(Rating)</span>
         @* The word, so the band is not carried by colour alone. *@
         <span class="stars__verdict @Grades.OfStars(Rating).Tone()">@Grades.OfStars(Rating).Label()</span>
     }

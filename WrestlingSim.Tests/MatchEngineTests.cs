@@ -1110,5 +1110,16 @@ namespace WrestlingSim.Tests
             Assert.True(result.StorytellingScore > original.StorytellingScore * 1.3,
                 $"…and well above the original's own: got {result.StorytellingScore:F1} vs {original.StorytellingScore:F1}");
         }
+    
+        /// <summary>A rating as the player reads it: quarter stars in words, never "3.68 / 5.00".</summary>
+        [Theory]
+        [InlineData(3.68, "3¾ stars")]
+        [InlineData(1.0, "1 star")]
+        [InlineData(0.5, "½ star")]
+        [InlineData(0.05, "no stars")]
+        [InlineData(4.9, "5 stars")]
+        [InlineData(2.13, "2¼ stars")]
+        public void ARatingReadsAsQuarterStars(double rating, string words) =>
+            Assert.Equal(words, MatchEngineResult.StarWords(rating));
     }
 }
