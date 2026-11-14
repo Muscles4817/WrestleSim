@@ -78,7 +78,7 @@ else
 }
 
 <div class="row mt">
-    <button class="btn btn--ghost" @onclick="() => State.Go(State.HomeScreen)">← Main menu</button>
+    <button class="btn btn--ghost" @onclick="() => State.Go(State.HomeScreen)">← @(State.InCareer ? "Home" : "Exhibition start")</button>
 </div>
 
 @code {

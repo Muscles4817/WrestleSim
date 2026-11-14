@@ -1,0 +1,102 @@
+@*
+    An offer of a guaranteed contract. Taken out of the contracts screen so that the talent
+    table and the wrestler profile make the same offer the same way: one form, one wording of
+    what a guarantee is, one statement of what a rival has bid.
+*@
+@inherits StateComponent
+
+@if (State.Career is { } career && Wrestler is { } who)
+{
+    var ask = career.GuaranteeAsk(who, years);
+    var competing = career.BestRivalBid(who);
+    var holder = career.SignedTo(who);
+
+    <div class="panel offer">
+        <div class="panel__title">
+            Offer — @who.RingName
+            <span class="spacer"></span>
+            <button class="btn btn--sm btn--ghost" @onclick="Close">Close</button>
+        </div>
+        <div class="small muted">
+            @Money.Format(career.PerDateAsk(who)) a night on the open market. A guarantee covers every
+            appearance; book them more than @TalentMarket.DatesInAGuarantee nights a year and it is the
+            cheaper way to pay them, and the rate is fixed for the term however hot they get.
+        </div>
+        <div class="chips mt">
+            @for (int y = TalentMarket.MinTermYears; y <= TalentMarket.MaxTermYears; y++)
+            {
+                var term = y;
+                <button class="chip @(years == term ? "is-active" : "")" @onclick="() => SetYears(term)">
+                    @term yr — @Money.Format(career.GuaranteeAsk(who, term))
+                </button>
+            }
+        </div>
+        <div class="row mt">
+            <label class="field">
+                <span class="field__label">A year</span>
+                <input class="input tabnum" type="number" step="1000" min="0" @bind="annual" />
+            </label>
+            <span class="spacer"></span>
+            <button class="btn btn--primary" @onclick="Sign">Offer @Money.Format(annual) × @years yr</button>
+        </div>
+        <div class="small muted mt">
+            Asking @Money.Format(ask) a year for @years year@(years == 1 ? "" : "s").
+            @if (holder is not null)
+            {
+                <text>Signed to @holder.Name until @holder.ContractOf(who)!.End!.Value.ToString("d MMM yyyy"). An offer now is lodged, and they choose between it and @(holder.Name)'s when that deal ends.</text>
+            }
+            else if (competing is not null)
+            {
+                <strong class="grade--poor">@(career.Rival(competing.Bidder)?.Name) has offered @Money.Format(competing.Annual) a year. Match it or lose them when the deal ends.</strong>
+            }
+            else
+            {
+                <text>Nobody signs for less, and with no rival bidding, nobody holds out for more.</text>
+            }
+        </div>
+        @if (note is not null)
+        {
+            <div class="notice @(lodged ? "notice--advice" : "notice--error") mt">@note</div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public Wrestler? Wrestler { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private int years = 3;
+    private decimal annual;
+    private string? note;
+    private bool lodged;
+    private Wrestler? setFor;
+
+    protected override void OnParametersSet()
+    {
+        if (Wrestler is not null && Wrestler != setFor)
+        {
+            setFor = Wrestler;
+            SetYears(years);
+        }
+    }
+
+    private void SetYears(int term)
+    {
+        years = term;
+        if (State.Career is { } career && Wrestler is { } who)
+            annual = Math.Max(career.GuaranteeAsk(who, term), career.BestRivalBid(who)?.Annual ?? 0m);
+        note = null;
+        lodged = false;
+    }
+
+    private async Task Sign()
+    {
+        if (Wrestler is null) return;
+        var (accepted, pending, message) = await State.SignAsync(Wrestler, annual, years);
+        note = message;
+        lodged = pending;
+        if (accepted && !pending) await Close();
+    }
+
+    private Task Close() => OnClose.InvokeAsync();
+}

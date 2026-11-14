@@ -1,0 +1,224 @@
+@*
+    One rival promotion: what it wants, what it expects of itself, who it has, what it last
+    put on, and every decision it made with its reasons. The decisions are the planner's own
+    record (docs/rival-ai-plan.md §6), so "why did they sign him" has an answer.
+*@
+@inherits StateComponent
+
+@if (State.Career is not { } career || State.ViewingRival is not { } rival)
+{
+    <div class="empty">No promotion selected.</div>
+}
+else
+{
+    var today = career.CurrentDate;
+    var last = rival.Nights.LastOrDefault();
+    var outlook = rival.IsActive ? World.Forecast(career, rival, rival.Contracts, World.DispositionOf(rival)) : null;
+    var temperament = World.TemperamentInWords(World.DispositionOf(rival));
+    var people = rival.Contracts
+        .Select(c => (Contract: c, Wrestler: career.FindWrestler(c.WrestlerId)))
+        .Where(x => x.Wrestler is not null)
+        .OrderByDescending(x => x.Wrestler!.EffectiveOverness).ToList();
+
+    <button class="btn btn--sm btn--ghost" @onclick="() => State.Go(Screen.Rivals)">← All promotions</button>
+
+    <section class="phead mt @(rival.IsActive ? "" : "is-folded")">
+        <div class="phead__who">
+            <div class="phead__badges">
+                <span class="badge badge--muted">@rival.Promotion.TierLabel</span>
+                <span class="badge badge--violet">@RivalLabels.Motive(rival.Motive)</span>
+                @if (!rival.IsActive)
+                {
+                    <span class="badge badge--heel">Closed @rival.Folded!.Value.ToString("d MMM yyyy")</span>
+                }
+            </div>
+            <h1 class="phead__name">@rival.Name</h1>
+            <span class="phead__line">@World.Profile(rival.Motive).Reading</span>
+            @if (rival.IsActive)
+            {
+                <span class="phead__line">
+                    <strong style="color: var(--ink)">Wants</strong> @string.Join(", then ", World.WantsInWords(World.ObjectiveOf(rival))).
+                    @if (temperament.Length > 0) { <text> @temperament</text> }
+                </span>
+            }
+        </div>
+        <div class="phead__figs">
+            <div class="phead__fig"><b class="@Money.Tone(rival.Books.Cash)">@Money.Format(rival.Books.Cash)</b><span>Cash</span></div>
+            <div class="phead__fig"><b>@rival.Books.Reputation.ToString("F0")</b><span>Reputation</span></div>
+            <div class="phead__fig"><b>@rival.Contracts.Count</b><span>Roster</span></div>
+        </div>
+    </section>
+
+    <div class="layout">
+        <div class="layout__main">
+            @if (outlook is not null)
+            {
+                <section class="panel">
+                    <div class="panel__title">What it expects</div>
+                    <div class="kpis kpis--inpanel">
+                        <div class="kpi"><span class="kpi__key">Its houses</span><span class="kpi__val">@Money.Percent(outlook.Fill)</span><span class="kpi__sub">over the next month</span></div>
+                        <div class="kpi"><span class="kpi__key">Its shows</span><span class="kpi__val">@outlook.Rating.ToString("F0")</span><span class="kpi__sub">expected rating</span></div>
+                        <div class="kpi">
+                            <span class="kpi__key">Money</span>
+                            <span class="kpi__val @(outlook.RunwayDays >= 9999 ? "grade--great" : outlook.RunwayDays < 180 ? "grade--poor" : "")">@(outlook.RunwayDays >= 9999 ? "Making money" : $"{Math.Max(1, outlook.RunwayDays / 30)} months")</span>
+                            <span class="kpi__sub">@(outlook.RunwayDays >= 9999 ? "at this rate" : "before it would have to close")</span>
+                        </div>
+                        @if (outlook.Viewers > 0)
+                        {
+                            <div class="kpi"><span class="kpi__key">Watching</span><span class="kpi__val">@Money.Audience(outlook.Viewers)</span><span class="kpi__sub">a week</span></div>
+                        }
+                    </div>
+                    <div class="small muted mt">Its own forecast, through its own eyes: an optimistic owner expects more than will come.</div>
+                </section>
+            }
+
+            <section class="panel">
+                <div class="panel__title">Its roster</div>
+                @if (people.Count == 0)
+                {
+                    <div class="small muted">Nobody.</div>
+                }
+                else
+                {
+                    <div class="table-wrap">
+                        <table class="data">
+                            <thead><tr><th>Wrestler</th><th class="num">Popularity</th><th>Deal</th></tr></thead>
+                            <tbody>
+                                @foreach (var (c, w) in people)
+                                {
+                                    var who = w!;
+                                    <tr class="@(career.ContractOf(who) is not null ? "is-mine" : "")">
+                                        <td>
+                                            <button class="namecell" @onclick="() => State.OpenProfile(who)">
+                                                <strong>@who.RingName</strong>
+                                                <span class="small muted">
+                                                    @(who.Division == Division.Womens ? "Women's" : "Men's")
+                                                    @if (rival.Titles.HeldBy(who).FirstOrDefault() is { } belt) { <text> · @belt.Name</text> }
+                                                    @if (career.ContractOf(who) is not null) { <text> · also works for you</text> }
+                                                </span>
+                                            </button>
+                                        </td>
+                                        <td class="num @who.CardPosition.Tone()">@who.OvernessDisplay</td>
+                                        <td class="small">@(c.IsGuaranteed ? $"{Money.Format(c.AnnualGuarantee)} a year until {c.End:MMM yyyy}" : "By the night")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </section>
+
+            <section class="panel">
+                <div class="panel__title">Its decisions</div>
+                @if (rival.Decisions.Count == 0)
+                {
+                    <div class="small muted">None yet.</div>
+                }
+                @foreach (var d in rival.Decisions.AsEnumerable().Reverse())
+                {
+                    <details class="decision">
+                        <summary>
+                            <span class="muted tabnum">@d.Date.ToString("d MMM yyyy")</span>
+                            @Verb(d.Move) @(career.FindWrestler(d.WrestlerId)?.RingName ?? d.WrestlerId)@(d.Annual > 0 ? $" at {Money.Format(d.Annual)} a year" : "")
+                            <span class="muted">— @d.Reason</span>
+                        </summary>
+                        <div class="muted small" style="padding: 4px 0 8px 14px">
+                            <div>At the time it @d.Believed.</div>
+                            <div>Counted for it: @string.Join(", ", d.Terms.OrderByDescending(t => Math.Abs(t.Value)).Select(t => $"{TermName(t.Key)} {(t.Value >= 0 ? "+" : "−")}{Math.Abs(t.Value):0.000}"))</div>
+                            @if (d.Rejected.Count > 0)
+                            {
+                                <div>Next best: @string.Join("; ", d.Rejected)</div>
+                            }
+                        </div>
+                    </details>
+                }
+            </section>
+        </div>
+
+        <aside class="layout__side">
+            @if (last is not null)
+            {
+                <section class="panel">
+                    <div class="panel__title">Last show <span class="spacer"></span><span class="small muted">@last.Date.ToString("d MMM")</span></div>
+                    <div class="kv"><span>Rated</span><span class="tabnum">@last.Rating.ToString("F0")</span></div>
+                    <div class="kv"><span>House</span><span class="tabnum">@last.Attendance.ToString("N0") of @last.Capacity.ToString("N0")</span></div>
+                    @if (last.Viewers > 0)
+                    {
+                        <div class="kv"><span>Watching</span><span class="tabnum">@Money.Audience(last.Viewers)</span></div>
+                    }
+                    <div class="kv"><span>Made</span><span class="tabnum @Money.Tone(last.Net)">@Money.Signed(last.Net)</span></div>
+                    <div class="mt small">
+                        @foreach (var line in last.Card)
+                        {
+                            <div style="padding: 2px 0">@line</div>
+                        }
+                    </div>
+                    @if (last.Filled < AudienceModel.FullCard)
+                    {
+                        <div class="small grade--poor mt">A thin card: only @Money.Percent(last.Filled) of the slot filled.</div>
+                    }
+                </section>
+            }
+
+            @if (rival.Titles.Active.Count > 0)
+            {
+                <section class="panel">
+                    <div class="panel__title">Champions</div>
+                    @foreach (var title in rival.Titles.ByPrestige)
+                    {
+                        <div class="kv">
+                            <span>
+                                @if (title.Champion is { } champ)
+                                {
+                                    <button class="namelink" @onclick="() => State.OpenProfile(champ)">@champ.RingName</button>
+                                }
+                                else
+                                {
+                                    <span class="muted">Vacant</span>
+                                }
+                            </span>
+                            <span class="small muted">@ShortTitle(title.Name, rival.Name) · prestige @title.Prestige.ToString("F0")</span>
+                        </div>
+                    }
+                </section>
+            }
+
+            @if (rival.Television is { } tv)
+            {
+                <section class="panel">
+                    <div class="panel__title">Television</div>
+                    <div class="kv"><span>Fee</span><span>@Money.Format(tv.FeePerEpisode) an episode</span></div>
+                    <div class="kv"><span>Until</span><span>@tv.End.ToString("MMM yyyy")</span></div>
+                </section>
+            }
+        </aside>
+    </div>
+}
+
+@code {
+    private static string ShortTitle(string title, string promotion) =>
+        title.StartsWith(promotion) ? title[promotion.Length..].Trim() : title;
+
+    private static string Verb(string move) => move switch
+    {
+        "signed"   => "Signed",
+        "released" => "Released",
+        "bid for"  => "Offered for",
+        "added"    => "Started booking",
+        "dropped"  => "Stopped booking",
+        _          => move
+    };
+
+    private static string TermName(string term) => term switch
+    {
+        "wealth"     => "money",
+        "franchise"  => "television deal",
+        "stars"      => "names",
+        "quality"    => "show quality",
+        "reputation" => "reputation",
+        "favour"     => "owner's people",
+        "stability"  => "continuity",
+        "survival"   => "staying open",
+        _            => term
+    };
+}

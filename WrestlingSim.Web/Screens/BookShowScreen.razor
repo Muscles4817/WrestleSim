@@ -31,7 +31,7 @@ else if (show.HasRun)
     <ShowReport Result="result" Today="@show.Date" DailyOverhead="career.DailyOverhead" Deal="career.Television" />
 
     <div class="wizard-bar">
-        <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Dashboard)">← Dashboard</button>
+        <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Dashboard)">← Home</button>
         <span class="wizard-bar__spacer"></span>
         <button class="btn btn--primary" @onclick="() => State.Go(Screen.Calendar)">Calendar →</button>
     </div>
@@ -195,6 +195,43 @@ else
             </div>
         </div>
     </div>
+
+    @* What the card does, while it can still be changed: the four numbers a booker builds
+       towards, at the top and updating as the card does. The full breakdown is in the rail. *@
+    var forecast = show.IsBooked && !show.IsLoopOnly ? career.Projection(show) : null;
+    <section class="kpis" aria-label="What this card will do">
+        <div class="kpi">
+            <span class="kpi__key">Time filled</span>
+            <span class="kpi__val @(show.IsOverrunning ? "grade--poor" : "")">@show.BookedMinutes of @show.RuntimeMinutes min</span>
+            <span class="kpi__bar" aria-hidden="true"><i style="width:@(Math.Min(100, show.BookedMinutes * 100 / Math.Max(1, show.RuntimeMinutes)))%"></i></span>
+        </div>
+        @if (forecast is { HadCard: true } f)
+        {
+            <div class="kpi">
+                <span class="kpi__key">Expected house</span>
+                <span class="kpi__val">@f.Attendance.ToString("N0") of @f.Capacity.ToString("N0")</span>
+                <span class="kpi__sub">@Money.Percent(f.Fill)@(f.Draws.FirstOrDefault() is { } top ? $", sold on {top.Label}" : "")</span>
+            </div>
+            <div class="kpi">
+                <span class="kpi__key">Wrestlers' fees</span>
+                <span class="kpi__val">@Money.Format(f.Talent)</span>
+                <span class="kpi__sub">@show.Card.SelectMany(i => i.Wrestlers).Distinct().Count() people on the card</span>
+            </div>
+            <div class="kpi">
+                <span class="kpi__key">Expected result</span>
+                <span class="kpi__val @Money.Tone(f.Net)">@Money.Signed(f.Net)</span>
+                <span class="kpi__sub">after the fees and the hall</span>
+            </div>
+        }
+        else
+        {
+            <div class="kpi">
+                <span class="kpi__key">Expected house</span>
+                <span class="kpi__val muted">—</span>
+                <span class="kpi__sub">Book a match to see what the card sells.</span>
+            </div>
+        }
+    </section>
 
     @* Two columns from 1100px: the running order is the work and takes the space, and the
        details, the warnings and the button that runs the night become a rail that follows you
@@ -573,6 +610,20 @@ else
         </div>
     }
 
+        @if (show.Card.Count > 0 && !show.HasRun)
+        {
+            <div class="panel">
+                <div class="panel__title">Before you run it</div>
+                @foreach (var (level, text) in Checks(career, show, forecast))
+                {
+                    <div class="check">
+                        <span class="check__level check__level--@level">@(level == "fix" ? "Fix" : level == "think" ? "Think" : "Good")</span>
+                        <span>@text</span>
+                    </div>
+                }
+            </div>
+        }
+
         @* What the card will sell, while it can still be changed. Exact rather than an estimate
            for the card: the house is sold on the card as advertised, before anybody wrestles. *@
         @if (show.IsBooked)
@@ -625,12 +676,52 @@ else
 
     <div class="wizard-bar">
         <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Calendar)">← Calendar</button>
-        <span class="wizard-bar__spacer"></span>
-        <button class="btn btn--sm btn--ghost" @onclick="() => State.Go(Screen.Dashboard)">Dashboard</button>
     </div>
 }
 
 @code {
+    /// <summary>
+    /// Everything worth knowing before the bell, in three grades: what stops the show or
+    /// costs it badly (fix), what a booker would want to weigh (think), and a line saying so
+    /// when there is nothing. Read from the same projection the house is sold on.
+    /// </summary>
+    private IEnumerable<(string Level, string Text)> Checks(Career career, ScheduledShow show, ShowFinances? forecast)
+    {
+        bool any = false;
+        foreach (var (w, why) in career.UnavailableOnCard(show)) { any = true; yield return ("fix", $"{w.RingName} is {why}."); }
+        foreach (var (w, injury) in HurtOnCard(show)) { any = true; yield return ("fix", $"{w.RingName}: {injury.Reason(show.Date)}."); }
+        if (show.Unfinished.Count() is > 0 and var unfinished) { any = true; yield return ("fix", $"{unfinished} item{(unfinished == 1 ? "" : "s")} still to finish."); }
+        if (show.IsOverrunning) { any = true; yield return ("fix", $"The card runs {show.BookedMinutes - show.RuntimeMinutes} minutes long."); }
+        else if (!show.IsLoopOnly && show.BookedMinutes < show.RuntimeMinutes * AudienceModel.FullCard)
+        {
+            any = true;
+            yield return ("fix", $"The card fills {show.BookedMinutes} of {show.RuntimeMinutes} minutes. A thin show costs you on the night and at the next gate.");
+        }
+
+        if (forecast is not null)
+            foreach (var d in forecast.Draws.Where(d => d.Freshness < 0.75))
+            {
+                any = true;
+                yield return ("think", $"{d.Label} has been seen before. A fresh match-up would sell more.");
+            }
+
+        // The same reading for several people is one line, not one each.
+        var cast = show.Card.SelectMany(i => i.Wrestlers).Distinct().ToList();
+        var readings = cast.Select(w => (Who: w.RingName, Why: AudienceModel.Reading(career.Audience, w)))
+            .Concat(cast.Select(w => (Who: w.RingName, Why: RingCondition.WarningFor(w))))
+            .Where(x => x.Why is not null)
+            .GroupBy(x => x.Why!);
+        foreach (var g in readings)
+        {
+            any = true;
+            var names = g.Select(x => x.Who).ToList();
+            string who = names.Count == 1 ? names[0] : string.Join(", ", names.Take(names.Count - 1)) + " and " + names[^1];
+            yield return ("think", $"{who}: {g.Key}.");
+        }
+
+        if (!any) yield return ("good", "Nothing on this card needs fixing. Everybody is fit and nothing is stale.");
+    }
+
     /// <summary>
     /// What kind of night this is, in colour. A premium event is the one the year is built
     /// around, television is the week, and a house show is the one nobody is filming — three

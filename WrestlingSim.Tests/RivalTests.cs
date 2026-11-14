@@ -19,6 +19,8 @@ namespace WrestlingSim.Tests
 
         private static readonly DateOnly Day = new(2025, 1, 6);
 
+        internal static Career NewWorld(PromotionTier tier) => World(tier);
+
         private static Career World(PromotionTier tier)
         {
             var career = new Career
@@ -129,6 +131,23 @@ namespace WrestlingSim.Tests
         // ── Competing offers ─────────────────────────────────────────────────
 
         /// <summary>
+        /// The player's biggest name, made into somebody a rival would headline with.
+        ///
+        /// These tests used to take the player's most over wrestler as they came, and a rival
+        /// bid for them because bidding was a rule. An Established promotion opens with what
+        /// the two above it left — its "star" is a mid-carder who would not make either of their
+        /// cards — and a rival that decides by what somebody would do for it does not bid for
+        /// him. Which is right, and is its own test
+        /// (<see cref="PlannerTests.NobodyBidsForSomebodyWhoWouldNotMakeTheirCard"/>).
+        /// </summary>
+        private static Wrestler AStarWorthBiddingFor(Career career)
+        {
+            var star = career.Contracts.Select(c => career.FindWrestler(c.WrestlerId)!).MaxBy(w => w.EffectiveOverness)!;
+            star.Overness = 97;
+            return star;
+        }
+
+        /// <summary>
         /// Doc 10 §6.2: a competing offer is the only real leverage. A rival bids for the
         /// player's star in the last sixty days; re-signing means matching it; not matching it
         /// means losing them — with the belt vacated on the way out.
@@ -137,7 +156,7 @@ namespace WrestlingSim.Tests
         public void ARivalBidsForAnExpiringStar_AndTakesThemIfThePlayerDoesNotMatch()
         {
             var career = World(PromotionTier.Established);
-            var star = career.Contracts.Select(c => career.FindWrestler(c.WrestlerId)!).MaxBy(w => w.EffectiveOverness)!;
+            var star = AStarWorthBiddingFor(career);
             var contract = career.ContractOf(star)!;
             contract.End = Day.AddDays(30);
 
@@ -164,7 +183,7 @@ namespace WrestlingSim.Tests
         public void MatchingTheBidKeepsThem()
         {
             var career = World(PromotionTier.Established);
-            var star = career.Contracts.Select(c => career.FindWrestler(c.WrestlerId)!).MaxBy(w => w.EffectiveOverness)!;
+            var star = AStarWorthBiddingFor(career);
             career.ContractOf(star)!.End = Day.AddDays(30);
 
             for (int i = 0; i < 8; i++) career.AdvanceOneDay();

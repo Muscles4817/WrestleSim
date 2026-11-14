@@ -1,0 +1,34 @@
+@* Everything the industry has heard, newest first, by month. *@
+@inherits StateComponent
+
+@if (State.Career is not { } career)
+{
+    <div class="empty">No career open.</div>
+}
+else
+{
+    <div class="chips" style="margin-bottom: 14px">
+        <button class="chip @(!mineOnly ? "is-active" : "")" @onclick="() => mineOnly = false">Everything</button>
+        <button class="chip @(mineOnly ? "is-active" : "")" @onclick="() => mineOnly = true">About you</button>
+    </div>
+
+    var items = career.News.Where(n => !mineOnly || n.AboutYou).Reverse().ToList();
+    @if (items.Count == 0)
+    {
+        <div class="empty">Nothing yet. The industry moves on the clock.</div>
+    }
+    @foreach (var month in items.GroupBy(n => new DateOnly(n.Date.Year, n.Date.Month, 1)))
+    {
+        <section class="panel">
+            <div class="panel__title">@month.Key.ToString("MMMM yyyy")</div>
+            @foreach (var n in month)
+            {
+                <div class="newsline @(n.AboutYou ? "is-you" : "")"><span>@n.Date.ToString("d MMM")</span><span>@n.Text</span></div>
+            }
+        </section>
+    }
+}
+
+@code {
+    private bool mineOnly;
+}

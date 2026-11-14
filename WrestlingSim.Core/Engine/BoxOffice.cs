@@ -120,9 +120,10 @@ namespace WrestlingSim.Engine
 
         /// <summary>What one item gives the public a reason to buy. Read before the bell.</summary>
         public static ItemDraw DrawOf(ICardItem item, FeudBook? feuds, DateOnly? on,
-                                      Func<Wrestler, double>? response = null) => item switch
+                                      Func<Wrestler, double>? response = null,
+                                      Func<BookedMatch, double>? freshness = null) => item switch
         {
-            BookedMatch m => MatchDraw(m, feuds, on, response),
+            BookedMatch m => MatchDraw(m, feuds, on, response, freshness),
             SegmentItem s => TalkingDraw(s.Name, s.Participants, feuds, weight: 0.5, response),
             RumblePlan r  => CrowdDraw(r.Name, r.Wrestlers, response),
             RumbleDraw d  => TalkingDraw(d.Name, d.Wrestlers, feuds: null, weight: 0.4, response),
@@ -131,9 +132,10 @@ namespace WrestlingSim.Engine
 
         /// <summary>Every item, best reason to buy first.</summary>
         public static List<ItemDraw> Draw(IEnumerable<ICardItem> card, FeudBook? feuds, DateOnly? on,
-                                          Func<Wrestler, double>? response = null) =>
+                                          Func<Wrestler, double>? response = null,
+                                          Func<BookedMatch, double>? freshness = null) =>
             card.Where(i => i.Wrestlers.Count > 0)
-                .Select(i => DrawOf(i, feuds, on, response))
+                .Select(i => DrawOf(i, feuds, on, response, freshness))
                 .OrderByDescending(d => d.Pull)
                 .ToList();
 
@@ -149,7 +151,47 @@ namespace WrestlingSim.Engine
             return pull;
         }
 
-        private static ItemDraw MatchDraw(BookedMatch m, FeudBook? feuds, DateOnly? on, Func<Wrestler, double>? response)
+        /// <summary>
+        /// A match's pull and nothing else: the same figure as <see cref="DrawOf"/>'s, without
+        /// building the line a report would print. A promotion planning ahead prices hundreds
+        /// of match-ups it will never book for every one it does, and the label, the
+        /// headliners' names and the sorted list were most of what that cost.
+        /// <c>TheQuickPullIsThePull</c> holds the two together.
+        /// </summary>
+        public static double PullOf(BookedMatch m, FeudBook? feuds, DateOnly? on,
+                                    Func<Wrestler, double>? response = null,
+                                    Func<BookedMatch, double>? freshness = null)
+        {
+            var plan = m.Plan;
+
+            // The two biggest names among the sides' top people, best first; earlier side on a tie.
+            Wrestler? first = null, second = null;
+            foreach (var side in plan.Sides)
+            {
+                Wrestler? top = null;
+                foreach (var w in side.Members)
+                    if (top is null || w.EffectiveOverness > top.EffectiveOverness) top = w;
+                if (top is null) continue;
+
+                if (first is null || top.EffectiveOverness > first.EffectiveOverness) { second = first; first = top; }
+                else if (second is null || top.EffectiveOverness > second.EffectiveOverness) second = top;
+            }
+            if (first is null) return 0;
+
+            double Felt(Wrestler w) => w.EffectiveOverness * (response?.Invoke(w) ?? 1.0);
+            double stars = second is null
+                ? 0.6 * Felt(first) / 100.0
+                : (0.6 * Felt(first) + 0.4 * Felt(second)) / 100.0;
+
+            var feud = StoryBetween(plan, feuds);
+            double stakes = 1.0 + (plan.TitleAtStake?.Prestige ?? 0) / 100.0 * 0.35;
+            if (plan.Stipulation != Stipulation.None) stakes *= 1.10;
+
+            return stars * BuildOf(feud) * (freshness?.Invoke(m) ?? feud?.Familiarity(on) ?? 1.0) * stakes;
+        }
+
+        private static ItemDraw MatchDraw(BookedMatch m, FeudBook? feuds, DateOnly? on,
+                                          Func<Wrestler, double>? response, Func<BookedMatch, double>? freshness = null)
         {
             var plan = m.Plan;
 
@@ -171,7 +213,9 @@ namespace WrestlingSim.Engine
                 StarPower  = StarPower(tops, response),
                 Acts       = ActsOf(tops, response),
                 Build      = BuildOf(feud),
-                Freshness  = feud?.Familiarity(on) ?? 1.0,
+                // The match-up's freshness is the feud's, unless the caller knows better — a
+                // forecast of shows that have not happened yet carries its own count of them.
+                Freshness  = freshness?.Invoke(m) ?? feud?.Familiarity(on) ?? 1.0,
                 Stakes     = stakes
             };
         }
@@ -355,10 +399,10 @@ namespace WrestlingSim.Engine
         public static ShowFinances Night(
             ScheduledShow show, Promotion promotion, double reputation, FeudBook? feuds,
             TvDeal? deal = null, Func<Wrestler, decimal>? fee = null, double interest = 1.0,
-            Func<Wrestler, double>? response = null)
+            Func<Wrestler, double>? response = null, Func<BookedMatch, double>? freshness = null)
         {
             var e = For(promotion.Tier);
-            var draws = Draw(show.Card, feuds, show.Date, response);
+            var draws = Draw(show.Card, feuds, show.Date, response, freshness);
             double pull = CardPull(draws);
             bool hasCard = draws.Count > 0;
 

@@ -1,5 +1,12 @@
-@using WrestlingSim.Enums
-@using WrestlingSim.Models.World
+@*
+    Home. It leads with what is waiting on the booker — a card two matches short, a rival bid
+    for somebody, a title nobody holds — each with the button that deals with it, instead of a
+    wall of tiles that each had to be read to find out whether anything was wrong.
+
+    The clock, the date and the money are in the frame above every screen, so they are not
+    repeated here. The television deal and the brand split, which had tiles of their own,
+    live under Business and Booking.
+*@
 @inherits StateComponent
 
 @if (State.Career is not { } career)
@@ -8,426 +15,291 @@
 }
 else
 {
-    <div class="screen__head">
-        <div class="screen__eyebrow">@career.Promotion.TierLabel</div>
-        <h1 class="screen__title">@career.Promotion.Name</h1>
-    </div>
+    var needs = Needs(career).ToList();
 
-    @if (State.SaveMessage is { } message)
-    {
-        <div class="notice notice--warn">
-            @message
-            <span class="spacer"></span>
-            <button class="btn btn--sm btn--ghost" @onclick="State.ClearMessage">Dismiss</button>
-        </div>
-    }
-
-    @* ── What needs doing ────────────────────────────────────────────────── *@
-    @if (career.Due.FirstOrDefault() is { } due)
-    {
-        <div class="notice notice--warn">
-            <strong>@due.Name is today@(due.Date < career.CurrentDate ? " (overdue)" : "").</strong>
-            The clock will not move until you run it or take it off the calendar.
-            <span class="spacer"></span>
-            <button class="btn btn--sm btn--primary" @onclick="() => State.OpenShow(due)">
-                @(due.IsBooked ? "Open the card" : "Book the card")
-            </button>
-        </div>
-    }
-
-    <div class="tiles">
-        @* Next show *@
-        <div class="tile tile--static">
-            <div class="tile__key">NEXT</div>
-            @if (career.NextShow is { } next)
-            {
-                <div class="tile__name">@next.Name</div>
-                <div class="tile__desc">
-                    @next.TypeLabel · @next.Date.ToString("ddd d MMM")
-                    @if (career.DaysUntil(next) > 0)
-                    {
-                        <text> · in @career.DaysUntil(next) day@(career.DaysUntil(next) == 1 ? "" : "s")</text>
-                    }
-                    <br />
-                    @if (next.IsBooked)
-                    {
-                        <text>@next.Card.Count item@(next.Card.Count == 1 ? "" : "s") booked · @next.BookedMinutes / @next.RuntimeMinutes min</text>
-                    }
-                    else
-                    {
-                        <text>Nothing booked yet.</text>
-                    }
-                </div>
-                <div class="row mt">
-                    <button class="btn btn--sm btn--primary" @onclick="() => State.OpenShow(next)">
-                        @(next.IsBooked ? "Open the card" : "Book the card")
-                    </button>
-                </div>
-            }
-            else
-            {
-                <div class="tile__name">Nothing scheduled</div>
-                <div class="tile__desc">The calendar is empty. Put a show on it.</div>
-                <div class="row mt">
-                    <button class="btn btn--sm" @onclick="() => State.Go(Screen.Calendar)">Open the calendar</button>
-                </div>
-            }
-        </div>
-
-        @* Time *@
-        <div class="tile tile--static">
-            <div class="tile__key">TIME</div>
-            <div class="tile__name">@career.CurrentDate.ToString("d MMM yyyy")</div>
-            <div class="tile__desc">
-                @if (career.HasShowDue)
+    <div class="layout">
+        <div class="layout__main">
+            <section class="panel">
+                <div class="panel__title">Needs you</div>
+                @if (needs.Count == 0)
                 {
-                    <text>A show is due. Time is held until it is dealt with.</text>
+                    <div class="small muted">Nothing is waiting on you. Advance the clock, or get ahead on the next card.</div>
+                }
+                <div class="needs">
+                    @foreach (var n in needs)
+                    {
+                        var need = n;
+                        <div class="need">
+                            <span class="need__kind need__kind--@need.Tone">@need.Kind</span>
+                            <span class="need__text">@need.Text</span>
+                            <button class="btn btn--sm need__act" @onclick="need.Act">@need.Action</button>
+                        </div>
+                    }
+                </div>
+            </section>
+
+            <section class="panel">
+                @if ((career.Due.FirstOrDefault() ?? career.NextShow) is { } next)
+                {
+                    var projection = next.IsBooked && !next.IsLoopOnly ? career.Projection(next) : null;
+                    <div class="panel__title">
+                        Next show
+                        <span class="spacer"></span>
+                        <span class="small muted">@next.Date.ToString("ddd d MMM") · @next.TypeLabel@(string.IsNullOrWhiteSpace(next.Venue) ? "" : $" · {next.Venue}")</span>
+                    </div>
+                    <div class="kpis kpis--inpanel">
+                        <div class="kpi">
+                            <span class="kpi__key">@next.Name</span>
+                            <span class="kpi__val">@next.BookedMinutes of @next.RuntimeMinutes min</span>
+                            <span class="kpi__sub">@next.Card.Count item@(next.Card.Count == 1 ? "" : "s") booked</span>
+                            <span class="kpi__bar" aria-hidden="true"><i style="width:@(Math.Min(100, next.BookedMinutes * 100 / Math.Max(1, next.RuntimeMinutes)))%"></i></span>
+                        </div>
+                        @if (projection is { HadCard: true } p)
+                        {
+                            <div class="kpi">
+                                <span class="kpi__key">Expected house</span>
+                                <span class="kpi__val">@Money.Percent(p.Fill)</span>
+                                <span class="kpi__sub">@p.Attendance.ToString("N0") of @p.Capacity.ToString("N0")</span>
+                            </div>
+                            <div class="kpi">
+                                <span class="kpi__key">Expected result</span>
+                                <span class="kpi__val @Money.Tone(p.Net)">@Money.Signed(p.Net)</span>
+                                <span class="kpi__sub">after fees and the hall</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="kpi">
+                                <span class="kpi__key">Expected house</span>
+                                <span class="kpi__val muted">—</span>
+                                <span class="kpi__sub">Book a card to see what it sells.</span>
+                            </div>
+                        }
+                    </div>
+                    <div class="row mt">
+                        <button class="btn btn--primary" @onclick="() => State.OpenShow(next)">@(next.IsBooked ? "Open the card" : "Book the card")</button>
+                        <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Calendar)">Calendar</button>
+                    </div>
                 }
                 else
                 {
-                    <text>Advance the clock. Nothing ages until you do.</text>
+                    <div class="panel__title">Next show</div>
+                    <div class="small muted">Nothing is on the calendar.</div>
+                    <div class="row mt"><button class="btn btn--primary" @onclick="() => State.Go(Screen.Calendar)">Put a show on the calendar</button></div>
                 }
-            </div>
-            <div class="row mt">
-                <button class="btn btn--sm" disabled="@career.HasShowDue" @onclick="() => State.AdvanceAsync(1)">+1 day</button>
-                <button class="btn btn--sm" disabled="@career.HasShowDue" @onclick="() => State.AdvanceAsync(7)">+1 week</button>
-                <button class="btn btn--sm btn--primary" disabled="@(career.HasShowDue || career.NextShow is null)"
-                        @onclick="State.AdvanceToNextShowAsync">
-                    To next show
-                </button>
-            </div>
-        </div>
+            </section>
 
-        @* The books. Cash is what the cards sold; reputation is what the shows were worth, and
-           it is what the next card sells on. Cash can go negative — nothing stops a career in
-           the red yet, so the tile says so instead. *@
-        <div class="tile tile--static">
-            <div class="tile__key">BOOKS</div>
-            <div class="tile__name tabnum @(career.Books.InTheRed ? "grade--poor" : "")">
-                @Money.Format(career.Books.Cash)
-            </div>
-            <div class="tile__desc">
-                @if (career.Books.InTheRed)
+            <section class="panel">
+                <div class="panel__title">
+                    In the industry
+                    <span class="spacer"></span>
+                    <button class="btn btn--sm btn--ghost" @onclick="() => State.Go(Screen.News)">All news</button>
+                </div>
+                @if (career.News.Count == 0)
                 {
-                    <strong class="grade--poor">In the red.</strong>
-                    <text> Nothing stops a promotion that cannot pay yet — but the cards have to start selling.</text>
-                    <br />
+                    <div class="small muted">Quiet so far.</div>
                 }
-                @Money.Signed(career.Books.Cash - career.Books.OpeningCash) since the books opened ·
-                the office costs @Money.Format(career.DailyOverhead) a day
-                @if (career.DailyPayroll > 0)
+                @foreach (var n in career.News.AsEnumerable().Reverse().Take(6))
                 {
-                    <text> and the guarantees @Money.Format(career.DailyPayroll)</text>
-                }.
-                <br />
-                Reputation @career.Books.Reputation.ToString("F1") — what the next card sells on.
-            </div>
-            @if (RecentNights(career).ToList() is { Count: > 0 } nights)
+                    <div class="newsline @(n.AboutYou ? "is-you" : "")"><span>@n.Date.ToString("d MMM")</span><span>@n.Text</span></div>
+                }
+            </section>
+
+            @if (career.Completed.Any())
             {
-                <div class="mt small">
-                    @foreach (var (night, books) in nights)
+                <section class="panel">
+                    <div class="panel__title">Recent shows</div>
+                    @foreach (var show in career.Completed.OrderByDescending(s => s.Date).Take(4))
                     {
-                        <div class="row" style="padding:2px 0">
-                            <span>@night.Name <span class="muted">· @night.Date.ToString("d MMM")</span></span>
-                            <span class="spacer"></span>
-                            @if (books.HadCard)
-                            {
-                                <span class="tabnum muted">@Money.Percent(books.Fill)</span>
-                                <span>&nbsp;</span>
-                            }
-                            <span class="tabnum @Money.Tone(books.Net)">@Money.Signed(books.Net)</span>
+                        var shown = show;
+                        <div class="kv">
+                            <span><button class="namelink" @onclick="() => State.OpenShow(shown)">@show.Name</button> <span class="muted">· @show.Date.ToString("d MMM")</span></span>
+                            <span>
+                                @if (show.Result!.Finances is { } f)
+                                {
+                                    <span class="tabnum muted">@Money.Percent(f.Fill) house</span>
+                                    <span class="tabnum @Money.Tone(f.Net)">&nbsp; @Money.Signed(f.Net)</span>
+                                }
+                                <strong class="tabnum @Grades.OfScore(show.Result!.OverallRating).Tone()">&nbsp; @show.Result!.OverallRating.ToString("F0")</strong>
+                            </span>
                         </div>
                     }
-                </div>
+                </section>
             }
         </div>
 
-        @* The split *@
-        @if (career.Brands.Active)
-        {
-            <div class="tile tile--static">
-                <div class="tile__key">SPLIT</div>
-                <div class="tile__name">
-                    @career.Brands.Integrity.ToString("F0") integrity
-                    <span class="muted small">/ @career.Brands.Ceiling.ToString("F0") ceiling</span>
+        <aside class="layout__side">
+            <section class="panel">
+                <div class="panel__title">
+                    Your roster
+                    <span class="spacer"></span>
+                    <button class="btn btn--sm btn--ghost" @onclick="() => State.GoTalent(TalentView.Yours)">All @career.Contracts.Count</button>
                 </div>
-                <div class="tile__desc">
-                    @BrandIntegrity.Phase(career.Brands.Integrity).
-                    @career.Brands.CrossoverCount crossover@(career.Brands.CrossoverCount == 1 ? "" : "s") booked.
-                    @if (career.Brands.Brands.FirstOrDefault(b => BrandIntegrity.IsSecondary(b, career.Brands)) is { } weak)
-                    {
-                        <text><br />@weak.Name is rating as the B-show.</text>
-                    }
-                </div>
-                <div class="row mt">
-                    <button class="btn btn--sm" @onclick="() => State.Go(Screen.Brands)">Brands</button>
-                    @if (Draft.IsDue(career.Brands, career.CurrentDate))
-                    {
-                        <button class="btn btn--sm btn--primary" @onclick="() => State.Go(Screen.Brands)">
-                            Draft due
-                        </button>
-                    }
-                </div>
-            </div>
-        }
-
-        @* The television deal. The fee is fixed for the term; what the episodes draw decides
-           the next one, so the tile leads with what the deal would renew at today — the
-           number the booking is actually moving. Doc 08 §3. *@
-        @if (career.Television is { } deal)
-        {
-            var tier = career.Promotion.Tier;
-            var multiple = Television.RenewalMultiple(deal, tier);
-            var index = Television.AudienceIndex(deal, tier);
-            <div class="tile tile--static">
-                <div class="tile__key">
-                    TV DEAL
-                    @if (deal.InRenewalWindow(career.CurrentDate))
-                    {
-                        <span class="badge badge--gold badge--sm">final year — counts double</span>
-                    }
-                </div>
-                <div class="tile__name tabnum">@Money.Format(deal.FeePerEpisode) <span class="muted small">an episode</span></div>
-                <div class="tile__desc">
-                    Fixed until @deal.End.ToString("d MMM yyyy") · @deal.DaysLeft(career.CurrentDate) days left.
-                    <br />
-                    @if (deal.Episodes.Count == 0)
-                    {
-                        <text>No episodes this term yet. The network is paying for television nobody has made.</text>
-                    }
-                    else
-                    {
-                        <text>
-                            Averaging @Money.Audience((int)deal.Episodes.Average(e => e.Viewers))
-                            over @deal.Episodes.Count episode@(deal.Episodes.Count == 1 ? "" : "s"),
-                            against @Money.Audience(Television.BaselineViewers(tier)) for a typical card
-                            (@Money.Percent(index) weighted).
-                        </text>
-                    }
-                </div>
-                <div class="mt small">
-                    If it renewed today:
-                    <strong class="tabnum @(multiple >= 1 ? "grade--great" : "grade--poor")">
-                        ×@multiple.ToString("0.00") → @Money.Format(Television.RenewedFee(deal.FeePerEpisode, multiple))
-                    </strong>
-                    @* Only a real swing. A ±10% week-to-week wobble is what television does and
-                       costs about 3%; flagging it told the booker something was wrong when
-                       nothing was. *@
-                    @if (Television.Consistency(deal) < 0.93)
-                    {
-                        <div class="muted">The audience is swinging — the network pays less for a number it cannot sell against.</div>
-                    }
-                </div>
-                @if (career.LastRenewal is { } last)
+                @{ var yours = career.Contracts.Select(c => career.FindWrestler(c.WrestlerId)).OfType<Wrestler>().OrderByDescending(w => w.EffectiveOverness).Take(8).ToList(); }
+                @if (yours.Count == 0)
                 {
-                    <div class="mt small muted">
-                        Last renewed @last.End.ToString("MMM yyyy") at ×@last.RenewedAt.ToString("0.00"),
-                        on @Money.Audience(last.AverageViewers) a week.
-                    </div>
+                    <div class="small muted">Nobody yet. <button class="namelink gold" @onclick="() => State.GoTalent(TalentView.Market)">Find people in the market.</button></div>
                 }
-            </div>
-        }
-
-        @* The industry. What the rivals did lately, the player's own news first, and what
-           competition is doing to prices and audiences. *@
-        @if (career.Rivals.Count > 0)
-        {
-            <div class="tile tile--static">
-                <div class="tile__key">THE INDUSTRY</div>
-                <div class="tile__name">
-                    @career.Rivals.Count(r => r.IsActive) rival@(career.Rivals.Count(r => r.IsActive) == 1 ? "" : "s")
-                    <span class="muted small">· wages ×@career.WageFactor.ToString("0.00") · audiences ×@career.Interest.ToString("0.00")</span>
-                </div>
-                <div class="mt small">
-                    @foreach (var n in career.News.AsEnumerable().Reverse().OrderByDescending(n => n.AboutYou && n.Date >= career.CurrentDate.AddDays(-30)).Take(4))
-                    {
-                        <div style="padding:2px 0" class="@(n.AboutYou ? "gold" : "")">
-                            <span class="muted tabnum">@n.Date.ToString("d MMM")</span> @n.Text
-                        </div>
-                    }
-                    @if (career.News.Count == 0)
-                    {
-                        <div class="muted">Quiet so far.</div>
-                    }
-                </div>
-                <div class="row mt">
-                    <button class="btn btn--sm" @onclick="() => State.Go(Screen.Rivals)">Rivals</button>
-                </div>
-            </div>
-        }
-
-        @* Roster *@
-        <div class="tile tile--static">
-            <div class="tile__key">ROSTER</div>
-            <div class="tile__name">@career.Contracts.Count @(career.CanSign ? "signed" : "regulars")</div>
-            @if (career.CanSign && career.ExpiringWithin(TalentMarket.ExpiryWarningDays).ToList() is { Count: > 0 } expiring)
-            {
-                <div class="small grade--poor">
-                    <Icon Name="warn" /> @expiring.Count deal@(expiring.Count == 1 ? "" : "s") run@(expiring.Count == 1 ? "s" : "") out within @TalentMarket.ExpiryWarningDays days
-                </div>
-            }
-            <div class="tile__desc">
-                Top of the card: @string.Join(", ", career.RosterByOverness.Take(3).Select(w => w.RingName))
-            </div>
-            @if (Movers(career).Any())
-            {
-                <div class="mt small">
-                    @foreach (var w in Movers(career))
-                    {
-                        <div class="row" style="padding:2px 0">
-                            <span>@w.RingName</span>
-                            <span class="spacer"></span>
-                            <span class="tabnum @w.CardPosition.Tone()">@w.OvernessDisplay</span>
-                            <Trend Momentum="w.Momentum" />
-                        </div>
-                    }
-                </div>
-            }
-            <div class="row mt">
-                <button class="btn btn--sm" @onclick="() => State.Go(Screen.Roster)">View roster</button>
-                <button class="btn btn--sm" @onclick="() => State.Go(Screen.Contracts)">Contracts</button>
-            </div>
-        </div>
-    </div>
-
-    @* ── Championships ───────────────────────────────────────────────────── *@
-    <div class="panel mt-2">
-        <div class="panel__title">
-            Championships
-            <span class="spacer"></span>
-            <button class="btn btn--sm btn--ghost" @onclick="() => State.Go(Screen.Titles)">View all</button>
-        </div>
-
-        @foreach (var title in career.Titles.ByPrestige)
-        {
-            <div class="editor-row">
-                <div class="editor-row__n"><Icon Name="@(title.IsVacant ? "vacant" : "star")" /></div>
-                <div>
-                    <div class="editor-row__name">
-                        @(title.CurrentReign?.ChampionName ?? "Vacant")
-                    </div>
-                    <div class="editor-row__sub">
-                        @title.Name
-                        @if (title.CurrentReign is { } reign)
-                        {
-                            <text>
-                                · @reign.LengthLabel(career.CurrentDate) ·
-                                @reign.Defences defence@(reign.Defences == 1 ? "" : "s")
-                            </text>
-                        }
-                    </div>
-                </div>
-                <div class="editor-row__tools">
-                    <strong class="tabnum gold">@title.Prestige.ToString("F0")</strong>
-                </div>
-            </div>
-        }
-
-        @if (career.Titles.Dilution < 1)
-        {
-            <p class="small muted mt">
-                @career.Titles.Active.Count belts are competing for an audience that has room
-                for fewer. Each is worth @((100 - career.Titles.Dilution * 100).ToString("F0"))%
-                less than it has earned.
-            </p>
-        }
-    </div>
-
-    @* ── Feuds ───────────────────────────────────────────────────────────── *@
-    <div class="panel mt-2">
-        <div class="panel__title">
-            Live feuds
-            <span class="spacer"></span>
-            @if (State.ActiveFeudCount > 0)
-            {
-                <button class="btn btn--sm btn--ghost" @onclick="() => State.Go(Screen.Feuds)">View all</button>
-            }
-        </div>
-
-        @if (State.ActiveFeudCount == 0)
-        {
-            <div class="empty">
-                <div class="empty__mark"><Icon Name="close" /></div>
-                Nobody has any history yet. Book a segment on your next show — a betrayal or a
-                beatdown generates the most heat — and the rivalry will show up here.
-            </div>
-        }
-        else
-        {
-            @foreach (var feud in State.FeudBook.All.Take(4))
-            {
-                <div class="feud">
-                    <div class="feud__top">
-                        <span class="feud__names">
-                            @feud.WrestlerA.RingName <span class="faint">vs</span> @feud.WrestlerB.RingName
+                @foreach (var w in yours)
+                {
+                    var who = w;
+                    <div class="kv">
+                        <span><button class="namelink" style="color: var(--ink); font-weight: 600" @onclick="() => State.OpenProfile(who)">@w.RingName</button></span>
+                        <span>
+                            <span class="small @(StatusTone(career, w))">@Status(career, w)</span>
+                            <strong class="tabnum @w.CardPosition.Tone()">&nbsp; @w.OvernessDisplay</strong>
                         </span>
-                        <span class="badge @FeudUpdates.IntensityBadge(feud.Intensity)">@feud.Intensity</span>
-                        <span class="spacer"></span>
-                        <span class="small muted">@feud.MatchCount match@(feud.MatchCount == 1 ? "" : "es")</span>
                     </div>
-                    <Meter Label="Heat" Value="@feud.Heat" Max="50" ValueText="@($"{feud.Heat:F0} / 50")" />
+                }
+            </section>
+
+            <section class="panel">
+                <div class="panel__title">
+                    Money this month
+                    <span class="spacer"></span>
+                    <button class="btn btn--sm btn--ghost" @onclick="() => State.Go(Screen.Business)">Business</button>
                 </div>
-            }
-        }
-    </div>
+                @{ var month = ThisMonth(career); }
+                <div class="kv"><span>Shows (@month.Shows)</span><span class="tabnum @Money.Tone(month.ShowNet)">@Money.Signed(month.ShowNet)</span></div>
+                <div class="kv"><span>Running the office</span><span class="tabnum">@Money.Signed(-month.Office)</span></div>
+                @if (month.Payroll > 0)
+                {
+                    <div class="kv"><span>Guarantees</span><span class="tabnum">@Money.Signed(-month.Payroll)</span></div>
+                }
+                <div class="kv"><strong>Net so far</strong><strong class="tabnum @Money.Tone(month.Net)">@Money.Signed(month.Net)</strong></div>
+            </section>
 
-    @* ── Recent shows ────────────────────────────────────────────────────── *@
-    @if (career.Completed.Any())
-    {
-        <div class="panel">
-            <div class="panel__title">
-                Recent shows
-                <span class="spacer"></span>
-                <button class="btn btn--sm btn--ghost" @onclick="() => State.Go(Screen.Calendar)">Calendar</button>
-            </div>
-
-            @foreach (var show in career.Completed.Take(5))
-            {
-                <div class="editor-row">
-                    <div class="editor-row__n">★</div>
-                    <div>
-                        <div class="editor-row__name">@show.Name</div>
-                        <div class="editor-row__sub">
-                            @show.TypeLabel · @show.Date.ToString("d MMM yyyy") · @show.Card.Count items
-                        </div>
-                    </div>
-                    <div class="editor-row__tools">
-                        <strong class="tabnum @Grades.OfScore(show.Result!.OverallRating).Tone()">@show.Result!.OverallRating.ToString("F1")</strong>
-                        <button class="btn btn--sm btn--ghost" @onclick="() => State.OpenShow(show)">Review</button>
-                    </div>
+            <section class="panel">
+                <div class="panel__title">
+                    Champions
+                    <span class="spacer"></span>
+                    <button class="btn btn--sm btn--ghost" @onclick="() => State.Go(Screen.Titles)">Titles</button>
                 </div>
-            }
-        </div>
-    }
-
-    @* ── Save controls ───────────────────────────────────────────────────── *@
-    <div class="wizard-bar">
-        <button class="btn btn--ghost" @onclick="State.ExitToLandingAsync">← Save and exit</button>
-        <span class="wizard-bar__spacer"></span>
-        <button class="btn btn--sm btn--ghost" @onclick="State.ExportAsync">Export save</button>
-        <button class="btn btn--sm" @onclick="State.SaveAsync">Save now</button>
+                @foreach (var title in career.Titles.ByPrestige)
+                {
+                    <div class="kv">
+                        <span>
+                            @if (title.Champion is { } champ && title.CurrentReign!.Champions.Count == 1)
+                            {
+                                <button class="namelink" style="color: var(--ink); font-weight: 600" @onclick="() => State.OpenProfile(champ)">@champ.RingName</button>
+                            }
+                            else
+                            {
+                                <span class="@(title.IsVacant ? "muted" : "")">@(title.CurrentReign?.ChampionName ?? "Vacant")</span>
+                            }
+                        </span>
+                        <span class="small muted">@title.Name@(title.CurrentReign is { } r ? $" · {r.LengthLabel(career.CurrentDate)}" : "")</span>
+                    </div>
+                }
+            </section>
+        </aside>
     </div>
 }
 
 @code {
-}
-
-@code {
-    /// <summary>The last few nights that kept books, newest first.</summary>
-    private static IEnumerable<(ScheduledShow Night, ShowFinances Books)> RecentNights(Career career) =>
-        career.Completed
-            .Where(s => s.Result?.Finances is not null)
-            .OrderByDescending(s => s.Date)
-            .Take(4)
-            .Select(s => (s, s.Result!.Finances!));
+    private sealed record Need(string Kind, string Tone, string Text, string Action, Action Act);
 
     /// <summary>
-    /// The people whose trend has actually moved, hottest and coldest first. Momentum is
-    /// invisible unless it is surfaced, and this is the readout a booker acts on.
+    /// What is waiting on the booker, most urgent first. Every line is read off the career as
+    /// it is; nothing here is a reminder for its own sake.
     /// </summary>
-    private static IEnumerable<WrestlingSim.Models.Wrestler> Movers(WrestlingSim.Models.World.Career career) =>
-        career.Roster
-            .Where(w => Math.Abs(w.Momentum) >= 6)
-            .OrderByDescending(w => Math.Abs(w.Momentum))
-            .Take(4);
+    private IEnumerable<Need> Needs(Career career)
+    {
+        var today = career.CurrentDate;
+
+        if (career.Due.FirstOrDefault() is { } due)
+            yield return new("Today", "urgent",
+                due.IsBooked ? $"{due.Name} is today. The clock is held until it runs." : $"{due.Name} is today and nothing is booked.",
+                due.IsBooked ? "Run the show" : "Book the card", () => State.OpenShow(due));
+
+        if (career.Books.InTheRed)
+            yield return new("Money", "urgent",
+                $"You are {Money.Format(-career.Books.Cash)} in the red.", "See the money", () => State.Go(Screen.Business));
+
+        foreach (var c in career.Contracts.Where(c => c.IsGuaranteed))
+            if (career.FindWrestler(c.WrestlerId) is { } w && career.BestRivalBid(w) is { } bid)
+            {
+                var who = w;
+                yield return new("Offer", "urgent",
+                    $"{career.Rival(bid.Bidder)?.Name ?? "A rival"} has offered {w.RingName} {Money.Format(bid.Annual)} a year. Match it before {c.End:d MMM} or they leave.",
+                    $"See {w.RingName}", () => State.OpenProfile(who));
+            }
+
+        if (career.NextShow is { } next && career.Due.All(d => d != next) && career.DaysUntil(next) <= 7)
+        {
+            string when = career.DaysUntil(next) == 1 ? "tomorrow" : $"in {career.DaysUntil(next)} days";
+            if (!next.IsBooked)
+                yield return new("Show", "do", $"{next.Name} is {when} and nothing is booked.", "Book the card", () => State.OpenShow(next));
+            else if (!next.IsLoopOnly && next.BookedMinutes < next.RuntimeMinutes * AudienceModel.FullCard)
+                yield return new("Show", "do",
+                    $"{next.Name} is {when} and fills {next.BookedMinutes} of {next.RuntimeMinutes} minutes. A thin show costs you on the night and at the next gate.",
+                    "Book the card", () => State.OpenShow(next));
+
+            foreach (var (w, why) in career.UnavailableOnCard(next))
+                yield return new("Card", "urgent", $"{w.RingName} is on {next.Name} but is {why}.", "Open the card", () => State.OpenShow(next));
+            foreach (var w in next.Card.SelectMany(i => i.Wrestlers).Distinct().Where(w => w.IsInjured(next.Date)))
+                yield return new("Injury", "urgent", $"{w.RingName} is on {next.Name} and will not be fit.", "Open the card", () => State.OpenShow(next));
+        }
+
+        foreach (var c in career.ExpiringWithin(TalentMarket.ExpiryWarningDays).Where(c => c.IsGuaranteed))
+            if (career.FindWrestler(c.WrestlerId) is { } w && career.BestRivalBid(w) is null)
+            {
+                var who = w;
+                yield return new("Contract", "do", $"{w.RingName}'s deal runs out on {c.End:d MMM}. Re-sign or they go to the market.", $"See {w.RingName}", () => State.OpenProfile(who));
+            }
+
+        var vacant = career.Titles.Active.Where(t => t.IsVacant).ToList();
+        if (vacant.Count == 1)
+            yield return new("Title", "do", $"The {vacant[0].Name} has no champion. A vacant title loses value every week.", "Titles", () => State.Go(Screen.Titles));
+        else if (vacant.Count > 1)
+            yield return new("Titles", "do", $"{vacant.Count} of your titles have no champion. A vacant title loses value every week.", "Titles", () => State.Go(Screen.Titles));
+
+        if (Draft.IsDue(career.Brands, today))
+            yield return new("Brands", "do", "The brand draft is due.", "Brands", () => State.Go(Screen.Brands));
+
+        foreach (var n in career.News.Where(n => n.AboutYou && n.Date >= today.AddDays(-14)).Reverse().Take(2))
+            yield return new("News", "note", n.Text, "News", () => State.Go(Screen.News));
+
+        var stale = career.Contracts.Select(c => career.FindWrestler(c.WrestlerId)).OfType<Wrestler>()
+            .Select(w => (Wrestler: w, Reading: AudienceModel.Reading(career.Audience, w)))
+            .Where(x => x.Reading is not null).Take(2);
+        foreach (var (w, reading) in stale)
+        {
+            var who = w;
+            yield return new("Crowd", "note", $"{w.RingName}: {reading}.", $"See {w.RingName}", () => State.OpenProfile(who));
+        }
+    }
+
+    private static string Status(Career career, Wrestler w)
+    {
+        var today = career.CurrentDate;
+        if (w.Injury is { } i && i.KeepsOut(today)) return "Injured";
+        if (w.Fatigue >= RingCondition.CookedThreshold) return "Worn out";
+        if (career.BestRivalBid(w) is not null) return "Has an offer";
+        if (w.IsTouring(today)) return "On the road";
+        if (AudienceModel.Reading(career.Audience, w) is not null) return "Crowd tiring";
+        return "";
+    }
+
+    private static string StatusTone(Career career, Wrestler w) =>
+        Status(career, w) switch { "" or "On the road" => "muted", _ => "grade--poor" };
+
+    private sealed record Month(int Shows, decimal ShowNet, decimal Office, decimal Payroll)
+    {
+        public decimal Net => ShowNet - Office - Payroll;
+    }
+
+    /// <summary>
+    /// This calendar month so far. The office and the guarantees are charged every day, so
+    /// they are the daily rate times the days gone; the shows are their own books.
+    /// </summary>
+    private static Month ThisMonth(Career career)
+    {
+        var today = career.CurrentDate;
+        var start = new DateOnly(today.Year, today.Month, 1);
+        var opened = career.Books.OpenedOn > start ? career.Books.OpenedOn : start;
+        int days = Math.Max(0, today.DayNumber - opened.DayNumber);
+        var shows = career.Completed.Where(s => s.Date >= start && s.Result?.Finances is not null).ToList();
+        return new Month(shows.Count, shows.Sum(s => s.Result!.Finances!.Net), career.DailyOverhead * days, career.DailyPayroll * days);
+    }
 }

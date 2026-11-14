@@ -8,18 +8,21 @@
 }
 else
 {
-    <div class="screen__head">
-        <h1 class="screen__title">@MonthStart.ToString("MMMM yyyy")</h1>
-    </div>
+    var marks = Marks(career);
 
-    <div class="row row--between">
-        <button class="btn btn--sm" @onclick="() => Shift(-1)">← @MonthStart.AddMonths(-1).ToString("MMM")</button>
-        <button class="btn btn--sm btn--ghost" @onclick="ToToday">Today</button>
-        <button class="btn btn--sm" @onclick="() => Shift(1)">@MonthStart.AddMonths(1).ToString("MMM") →</button>
-    </div>
+    <div class="layout">
+    <div class="layout__main">
+    <div class="panel">
+        <div class="calhead">
+            <button class="btn btn--sm" aria-label="Previous month" @onclick="() => Shift(-1)">← @MonthStart.AddMonths(-1).ToString("MMM")</button>
+            <div class="calhead__mid">
+                <span class="calhead__month">@MonthStart.ToString("MMMM yyyy")</span>
+                <button class="btn btn--sm btn--ghost" @onclick="ToToday">Today</button>
+            </div>
+            <button class="btn btn--sm" aria-label="Next month" @onclick="() => Shift(1)">@MonthStart.AddMonths(1).ToString("MMM") →</button>
+        </div>
 
-    <div class="panel mt">
-        <div class="cal">
+        <div class="cal mt">
             @foreach (var label in DayLabels)
             {
                 <div class="cal__dow">@label</div>
@@ -32,7 +35,7 @@ else
                 var otherMonth = day.Month != MonthStart.Month;
                 var past = day < career.CurrentDate;
 
-                <button class="cal__day @(isToday ? "is-today" : "") @(otherMonth ? "is-outside" : "") @(past ? "is-past" : "")"
+                <button class="cal__day @(isToday ? "is-today" : "") @(otherMonth ? "is-outside" : "") @(past ? "is-past" : "") @(selected == day ? "is-selected" : "")"
                         @onclick="() => Select(day)">
                     <span class="cal__num">@day.Day</span>
                     @foreach (var show in shows)
@@ -42,11 +45,29 @@ else
                             @show.Name
                         </span>
                     }
+                    @if (marks.TryGetValue(day, out var dayMarks))
+                    {
+                        @foreach (var m in dayMarks.Take(2))
+                        {
+                            <span class="cal__show @(m.Deadline ? "is-deadline" : "is-rival")" title="@m.Text">@m.Short</span>
+                        }
+                        @if (dayMarks.Count > 2)
+                        {
+                            <span class="cal__show is-rival">+@(dayMarks.Count - 2) more</span>
+                        }
+                    }
                 </button>
             }
         </div>
+        <div class="legend">
+            <span><i style="background: var(--gold)"></i>Your shows</span>
+            <span><i style="background: var(--cyan)"></i>Rival shows</span>
+            <span><i style="background: var(--heel)"></i>Deadlines</span>
+        </div>
+    </div>
     </div>
 
+    <aside class="layout__side">
     @* ── The selected day ────────────────────────────────────────────────── *@
     @if (selected is { } day2)
     {
@@ -148,8 +169,26 @@ else
         </div>
     }
 
-    <div class="wizard-bar">
-        <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Dashboard)">← Dashboard</button>
+    <div class="panel">
+        <div class="panel__title">Coming up</div>
+        @{ var upcoming = career.Upcoming.Take(5).ToList(); }
+        @if (upcoming.Count == 0)
+        {
+            <div class="small muted">Nothing scheduled. Pick a date to put a show on it.</div>
+        }
+        @foreach (var show in upcoming)
+        {
+            var s = show;
+            <div class="kv">
+                <span>
+                    <strong>@show.Name</strong>
+                    <div class="small muted">@show.Date.ToString("ddd d MMM") · @(show.IsBooked ? $"{show.BookedMinutes} of {show.RuntimeMinutes} min booked" : "nothing booked")</div>
+                </span>
+                <span><button class="btn btn--sm @(show.IsBooked ? "" : "btn--primary")" @onclick="() => State.OpenShow(s)">@(show.IsBooked ? "Open" : "Book")</button></span>
+            </div>
+        }
+    </div>
+    </aside>
     </div>
 }
 
@@ -176,6 +215,48 @@ else
     }
 
     private DateOnly MonthStart => month ?? DateOnly.FromDateTime(DateTime.Today);
+
+    private sealed record Mark(string Short, string Text, bool Deadline);
+
+    /// <summary>
+    /// What else is on each day of the visible grid: rival shows (the ones they have run, and
+    /// the ones their schedule says are coming) and the dates something runs out.
+    /// </summary>
+    private Dictionary<DateOnly, List<Mark>> Marks(Career career)
+    {
+        var first = GridDays.First();
+        var last = GridDays.Last();
+        var marks = new Dictionary<DateOnly, List<Mark>>();
+        void Add(DateOnly day, Mark m)
+        {
+            if (day < first || day > last) return;
+            if (!marks.TryGetValue(day, out var list)) marks[day] = list = [];
+            list.Add(m);
+        }
+
+        foreach (var rival in career.Rivals.Where(r => r.IsActive || r.Folded >= first))
+        {
+            foreach (var night in rival.Nights)
+                Add(night.Date, new(rival.Name, $"{rival.Name}: {night.Headline}", false));
+            if (!rival.IsActive) continue;
+            int interval = Math.Max(1, rival.Promotion.TypicalShowIntervalDays);
+            for (var d = rival.NextShow; d <= last; d = d.AddDays(interval))
+                Add(d, new(rival.Name, $"{rival.Name} runs a show", false));
+        }
+
+        foreach (var c in career.Contracts.Where(c => c.IsGuaranteed && c.End is not null))
+            if (career.FindWrestler(c.WrestlerId) is { } w)
+                Add(c.End!.Value, new($"{w.RingName}'s deal ends", $"{w.RingName}'s contract runs out", true));
+
+        foreach (var bid in career.Bids.Where(b => b.Bidder == Career.PlayerId))
+            if (career.FindWrestler(bid.WrestlerId) is { } w && career.SignedTo(w)?.ContractOf(w)?.End is { } end)
+                Add(end, new($"{w.RingName} decides", $"{w.RingName} chooses between your offer and their current deal", true));
+
+        if (career.Television is { } deal)
+            Add(deal.End, new("TV deal renews", "Your television deal renews", true));
+
+        return marks;
+    }
 
     /// <summary>
     /// Six weeks from the Monday on or before the 1st — a fixed grid, so the layout does

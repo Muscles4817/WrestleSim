@@ -60,6 +60,25 @@ namespace WrestlingSim.Models.World
         /// </summary>
         public bool Frozen { get; set; }
 
+        /// <summary>What it wants, if not its founder motive's default. See <see cref="Engine.World.ObjectiveOf"/>.</summary>
+        public Objective? Objective { get; set; }
+
+        /// <summary>How it sees the future, if not its founder motive's default.</summary>
+        public Disposition? Disposition { get; set; }
+
+        /// <summary>The owner's chosen wrestlers, by id. Empty unless somebody chose some.</summary>
+        public List<string> Favourites { get; set; } = new();
+
+        /// <summary>What it decided lately and why, newest last. Capped.</summary>
+        public List<RivalDecision> Decisions { get; set; } = new();
+
+        /// <summary>
+        /// The situation it last planned in and found nothing worth doing, and when. While
+        /// that has not changed it does not plan again for a month. Zero when it has no such memory.
+        /// </summary>
+        public int QuietAs { get; set; }
+        public DateOnly? QuietSince { get; set; }
+
         /// <summary>When its next show runs. Advanced by its tier's cadence.</summary>
         public DateOnly NextShow { get; set; }
 
@@ -72,7 +91,28 @@ namespace WrestlingSim.Models.World
         public bool IsActive => Folded is null;
         public string Name => Promotion.Name;
 
-        public Contract? ContractOf(Wrestler w) => Contracts.FirstOrDefault(c => c.WrestlerId == w.Id);
+        /// <summary>
+        /// Their deal here, through an index kept beside the list. Rebuilt whenever the list is
+        /// a different list, a different length, or ends in a different contract — every way
+        /// the game changes it does one of those.
+        /// </summary>
+        public Contract? ContractOf(Wrestler w)
+        {
+            int count = Contracts.Count;
+            var last = count == 0 ? null : Contracts[count - 1];
+            if (_deals is null || !ReferenceEquals(_dealsOf, Contracts) || _dealsCount != count || !ReferenceEquals(_dealsLast, last))
+            {
+                _deals = new Dictionary<string, Contract>(count);
+                foreach (var c in Contracts) _deals.TryAdd(c.WrestlerId, c);
+                (_dealsOf, _dealsCount, _dealsLast) = (Contracts, count, last);
+            }
+            return _deals.TryGetValue(w.Id, out var deal) ? deal : null;
+        }
+
+        private Dictionary<string, Contract>? _deals;
+        private List<Contract>? _dealsOf;
+        private int _dealsCount;
+        private Contract? _dealsLast;
         public decimal DailyPayroll => Contracts.Sum(c => c.DailyCost);
     }
 

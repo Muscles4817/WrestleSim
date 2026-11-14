@@ -1,0 +1,201 @@
+@*
+    The money, which had no screen: the cash and how long it lasts, what each show made,
+    where it all went since the books opened, and the television deal. Everything is read from
+    the books the game keeps; "at this rate" is the last few shows and the daily costs carried
+    forward, and says so.
+*@
+@inherits StateComponent
+
+@if (State.Career is not { } career)
+{
+    <div class="empty">No career open.</div>
+}
+else if (View == BusinessView.Television)
+{
+    <TelevisionView Career="career" />
+}
+else
+{
+    var shows = career.Completed.Where(s => s.Result?.Finances is not null).OrderBy(s => s.Date).ToList();
+    var recent = shows.TakeLast(4).ToList();
+    decimal typical = recent.Count == 0 ? 0 : recent.Average(s => s.Result!.Finances!.Net);
+    decimal daily = career.DailyOverhead + career.DailyPayroll;
+    double showsPerDay = ShowsPerDay(career);
+    decimal dailyNet = typical * (decimal)showsPerDay - daily;
+    int? runway = dailyNet >= 0 ? null : career.Books.Cash <= 0 ? 0 : (int)(career.Books.Cash / -dailyNet);
+
+    <section class="kpis">
+        <div class="kpi">
+            <span class="kpi__key">Cash</span>
+            <span class="kpi__val @Money.Tone(career.Books.Cash)">@Money.Format(career.Books.Cash)</span>
+            <span class="kpi__sub">Opened with @Money.Format(career.Books.OpeningCash) on @career.Books.OpenedOn.ToString("d MMM yyyy")</span>
+        </div>
+        <div class="kpi">
+            <span class="kpi__key">At this rate</span>
+            @if (recent.Count == 0)
+            {
+                <span class="kpi__val muted">—</span>
+                <span class="kpi__sub">Run a show to see what one makes.</span>
+            }
+            else if (runway is null)
+            {
+                <span class="kpi__val grade--great">Making money</span>
+                <span class="kpi__sub">@Money.Signed(dailyNet * 30) a month, from your last @recent.Count show@(recent.Count == 1 ? "" : "s")</span>
+            }
+            else
+            {
+                <span class="kpi__val @(runway < 90 ? "grade--poor" : "gold")">@(runway == 0 ? "Out of money" : runway < 60 ? $"{runway} days" : $"{runway / 30} months")</span>
+                <span class="kpi__sub">before the cash runs out, from your last @recent.Count show@(recent.Count == 1 ? "" : "s")</span>
+            }
+        </div>
+        <div class="kpi">
+            <span class="kpi__key">A typical show</span>
+            <span class="kpi__val @Money.Tone(typical)">@(recent.Count == 0 ? "—" : Money.Signed(typical))</span>
+            <span class="kpi__sub">before the office's costs</span>
+        </div>
+        <div class="kpi">
+            <span class="kpi__key">Fixed costs</span>
+            <span class="kpi__val">@Money.Format(daily) a day</span>
+            <span class="kpi__sub">the office@(career.DailyPayroll > 0 ? " and the guarantees" : ""), show or no show</span>
+        </div>
+    </section>
+
+    <div class="layout">
+        <div class="layout__main">
+            <section class="panel">
+                <div class="panel__title">Cash after each show</div>
+                @if (shows.Count == 0)
+                {
+                    <div class="small muted">No shows run yet.</div>
+                }
+                else
+                {
+                    var points = shows.TakeLast(11).Select(s => (Label: s.Date.ToString("d MMM"), Cash: s.Result!.Finances!.CashAfter))
+                        .Append((Label: "Now", Cash: career.Books.Cash)).ToList();
+                    var top = Math.Max(1m, points.Max(p => Math.Abs(p.Cash)));
+                    <div class="bars" role="img" aria-label="@string.Join(", ", points.Select(p => $"{p.Label}: {Money.Format(p.Cash)}"))">
+                        @foreach (var p in points)
+                        {
+                            <div class="bars__col">
+                                <span class="bars__val @(p.Cash < 0 ? "grade--poor" : "")">@Money.Format(p.Cash)</span>
+                                <span class="bars__bar @(p.Cash < career.Books.OpeningCash / 2 ? "is-low" : "")" style="height:@(Math.Max(2, (int)(Math.Abs(p.Cash) / top * 140)))px"></span>
+                            </div>
+                        }
+                    </div>
+                    <div class="bars__labels">
+                        @foreach (var p in points)
+                        {
+                            <span>@p.Label</span>
+                        }
+                    </div>
+                }
+            </section>
+
+            <section class="panel">
+                <div class="panel__title">Show by show</div>
+                @if (shows.Count == 0)
+                {
+                    <div class="small muted">No shows run yet.</div>
+                }
+                else
+                {
+                    <div class="table-wrap">
+                        <table class="data">
+                            <thead>
+                                <tr>
+                                    <th>Show</th>
+                                    <th class="num">House</th>
+                                    <th class="num col-wide">Tickets</th>
+                                    <th class="num col-wide">Merchandise</th>
+                                    @if (shows.Any(s => s.Result!.Finances!.MediaRights > 0))
+                                    {
+                                        <th class="num col-wide">Television</th>
+                                    }
+                                    <th class="num col-wide">Fees</th>
+                                    <th class="num col-wide">Running it</th>
+                                    <th class="num">Result</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var show in shows.AsEnumerable().Reverse().Take(20))
+                                {
+                                    var f = show.Result!.Finances!;
+                                    var s = show;
+                                    <tr>
+                                        <td><button class="namelink" @onclick="() => State.OpenShow(s)"><strong>@show.Name</strong></button> <span class="small muted">@show.Date.ToString("d MMM")</span></td>
+                                        <td class="num">@(f.HadCard ? Money.Percent(f.Fill) : "—")</td>
+                                        <td class="num col-wide">@Money.Format(f.Gate + (f.Road?.Gate ?? 0))</td>
+                                        <td class="num col-wide">@Money.Format(f.Merchandise + (f.Road?.Merchandise ?? 0))</td>
+                                        @if (shows.Any(x => x.Result!.Finances!.MediaRights > 0))
+                                        {
+                                            <td class="num col-wide">@Money.Format(f.MediaRights)</td>
+                                        }
+                                        <td class="num col-wide">@Money.Signed(-(f.Talent + (f.Road?.Talent ?? 0)))</td>
+                                        <td class="num col-wide">@Money.Signed(-(f.Operations + f.Production + (f.Road?.Operations ?? 0)))</td>
+                                        <td class="num @Money.Tone(f.Net)"><strong>@Money.Signed(f.Net)</strong></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </section>
+        </div>
+
+        <aside class="layout__side">
+            <section class="panel">
+                <div class="panel__title">Where it went</div>
+                <div class="small muted">Since the books opened.</div>
+                @{
+                    decimal tickets = shows.Sum(s => s.Result!.Finances!.Gate + (s.Result!.Finances!.Road?.Gate ?? 0));
+                    decimal merch = shows.Sum(s => s.Result!.Finances!.Merchandise + (s.Result!.Finances!.Road?.Merchandise ?? 0));
+                    decimal rights = shows.Sum(s => s.Result!.Finances!.MediaRights);
+                    decimal fees = shows.Sum(s => s.Result!.Finances!.Talent + (s.Result!.Finances!.Road?.Talent ?? 0));
+                    decimal running = shows.Sum(s => s.Result!.Finances!.Operations + s.Result!.Finances!.Production + (s.Result!.Finances!.Road?.Operations ?? 0));
+                    decimal change = career.Books.Cash - career.Books.OpeningCash;
+                    decimal other = change - (tickets + merch + rights - fees - running - career.Books.Overheads - career.Books.Payroll);
+                }
+                <div class="kv mt"><span>Tickets</span><span class="tabnum grade--great">@Money.Signed(tickets)</span></div>
+                <div class="kv"><span>Merchandise</span><span class="tabnum grade--great">@Money.Signed(merch)</span></div>
+                @if (rights > 0)
+                {
+                    <div class="kv"><span>Television</span><span class="tabnum grade--great">@Money.Signed(rights)</span></div>
+                }
+                <div class="kv"><span>Wrestlers' fees</span><span class="tabnum">@Money.Signed(-fees)</span></div>
+                <div class="kv"><span>Running the shows</span><span class="tabnum">@Money.Signed(-running)</span></div>
+                <div class="kv"><span>The office</span><span class="tabnum">@Money.Signed(-career.Books.Overheads)</span></div>
+                @if (career.Books.Payroll > 0)
+                {
+                    <div class="kv"><span>Guarantees</span><span class="tabnum">@Money.Signed(-career.Books.Payroll)</span></div>
+                }
+                @if (Math.Abs(other) >= 1)
+                {
+                    <div class="kv"><span>Releases and other</span><span class="tabnum">@Money.Signed(other)</span></div>
+                }
+                <div class="kv"><strong>Net</strong><strong class="tabnum @Money.Tone(change)">@Money.Signed(change)</strong></div>
+            </section>
+
+            <section class="panel">
+                <div class="panel__title">Standing</div>
+                <div class="kv"><span>Reputation</span><span class="tabnum">@career.Books.Reputation.ToString("F1")</span></div>
+                <div class="small muted">What the next card sells on. Good shows raise it, bad ones lower it.</div>
+                <div class="kv mt"><span>Level</span><span>@career.Promotion.TierLabel</span></div>
+                <div class="small muted">Promotions do not move between levels yet.</div>
+            </section>
+        </aside>
+    </div>
+}
+
+@code {
+    [Parameter] public BusinessView View { get; set; }
+
+    /// <summary>How often the promotion runs, from the next sixty days of its calendar, else its last sixty.</summary>
+    private static double ShowsPerDay(Career career)
+    {
+        var today = career.CurrentDate;
+        int ahead = career.Upcoming.Count(s => s.Date <= today.AddDays(60) && !s.IsLoopOnly);
+        if (ahead > 0) return ahead / 60.0;
+        int behind = career.Completed.Count(s => s.Date >= today.AddDays(-60));
+        return behind / 60.0;
+    }
+}

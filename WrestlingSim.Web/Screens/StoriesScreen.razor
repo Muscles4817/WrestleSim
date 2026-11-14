@@ -1,0 +1,167 @@
+@*
+    Stories: every live feud with what it needs next, the belts, the standing teams, and what
+    the crowd is tiring of. The detail screens for feuds and titles are the tabs beside this.
+
+    The advice on each feud is read from the same numbers the engine uses (heat, how many
+    times the crowd has seen the match-up, when it last moved), so "ready to pay off" means the
+    rematch will sell, not that a rule says three matches make a feud.
+*@
+@inherits StateComponent
+
+@if (State.Career is not { } career)
+{
+    <div class="empty">No career open.</div>
+}
+else
+{
+    var today = career.CurrentDate;
+    var feuds = State.FeudBook.All.ToList();
+
+    <div class="layout">
+        <div class="layout__main">
+            <div class="panel__title" style="border: 0; margin: 0; padding: 0">Feuds</div>
+            @if (feuds.Count == 0)
+            {
+                <div class="panel">
+                    <div class="small muted">
+                        No live feuds. Book a segment on your next show: a betrayal or a beatdown
+                        generates the most heat, and the rivalry will show up here.
+                    </div>
+                    @if (career.NextShow is { } next)
+                    {
+                        <div class="row mt"><button class="btn btn--primary" @onclick="() => State.OpenShow(next)">Open @next.Name</button></div>
+                    }
+                </div>
+            }
+            @foreach (var feud in feuds)
+            {
+                var met = feud.MeetingsRemembered(today);
+                var lastMoved = new[] { feud.LastMatchDate, feud.LastAdvanced }.Where(d => d is not null).Max();
+                int idle = lastMoved is { } d ? today.DayNumber - d.DayNumber : -1;
+                var verdict = Advice(feud, met, idle);
+                <div class="feudcard">
+                    <div class="feudcard__top">
+                        <span class="feudcard__names">@string.Join(" vs ", feud.CampNames)</span>
+                        <span class="badge @FeudUpdates.IntensityBadge(feud.Intensity)">@feud.Intensity</span>
+                    </div>
+                    <Meter Label="Heat" Value="@feud.Heat" Max="50" ValueText="@($"{feud.Heat:F0} / 50")"
+                           Variant="@(feud.Intensity >= FeudIntensity.Hot ? "heel" : "gold")" />
+                    <div class="feudcard__facts">
+                        <div><span>So far</span><span>@feud.MatchCount match@(feud.MatchCount == 1 ? "" : "es")@(feud.History.Count > 0 ? $", {feud.History.Count} moment{(feud.History.Count == 1 ? "" : "s")}" : "")</span></div>
+                        <div><span>The match-up</span><span class="@(met >= 2.5 ? "grade--poor" : met < 0.5 ? "grade--great" : "")">@Freshness(met)</span></div>
+                        <div><span>Last moved</span><span>@(idle < 0 ? "Not yet" : idle == 0 ? "Today" : $"{idle} days ago")</span></div>
+                    </div>
+                    <div class="feudcard__foot">
+                        <span class="small muted">@verdict.Advice</span>
+                        @if (verdict.Act && career.NextShow is { } next)
+                        {
+                            <button class="btn btn--sm" @onclick="() => State.OpenShow(next)">Book it on @next.Name</button>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+        <aside class="layout__side">
+            <section class="panel">
+                <div class="panel__title">
+                    Titles
+                    <span class="spacer"></span>
+                    <button class="btn btn--sm btn--ghost" @onclick="() => State.Go(Screen.Titles)">Manage</button>
+                </div>
+                @foreach (var title in career.Titles.ByPrestige)
+                {
+                    <div class="stack" style="padding: 8px 0; border-top: 1px solid var(--line-soft)">
+                        <div class="kv" style="padding: 0"><strong style="color: var(--ink)">@title.Name</strong><span class="tabnum gold nowrap">Prestige @title.Prestige.ToString("F0")</span></div>
+                        @if (title.CurrentReign is { } reign)
+                        {
+                            <span>
+                                @if (reign.Champions.Count == 1)
+                                {
+                                    <button class="namelink" @onclick="() => State.OpenProfile(reign.Champion)">@reign.ChampionName</button>
+                                }
+                                else
+                                {
+                                    @reign.ChampionName
+                                }
+                                <span class="muted"> · @reign.LengthLabel(today) · @reign.Defences defence@(reign.Defences == 1 ? "" : "s")</span>
+                            </span>
+                            @if (reign.LastDefended is { } last && today.DayNumber - last.DayNumber > 60 || reign.LastDefended is null && reign.DaysHeld(today) > 60)
+                            {
+                                <span class="small grade--poor">Not defended in over two months. A title nobody fights for loses its value.</span>
+                            }
+                        }
+                        else
+                        {
+                            <span class="small grade--poor">Vacant. A vacant title loses value every week; crown somebody.</span>
+                        }
+                    </div>
+                }
+                @if (career.Titles.Dilution < 1)
+                {
+                    <div class="small muted mt">You have more belts than your audience has room for. Each is worth @((100 - career.Titles.Dilution * 100).ToString("F0"))% less than it has earned.</div>
+                }
+            </section>
+
+            @if (career.Teams.Any(t => t.IsActive))
+            {
+                <section class="panel">
+                    <div class="panel__title">Tag teams</div>
+                    @foreach (var team in career.Teams.Where(t => t.IsActive).OrderByDescending(t => t.Chemistry))
+                    {
+                        <div class="kv">
+                            <span>@team.Name<div class="small muted">@string.Join(" and ", team.Members.Select(m => m.RingName))</div></span>
+                            <span class="small">@team.MatchesTogether match@(team.MatchesTogether == 1 ? "" : "es") together</span>
+                        </div>
+                    }
+                </section>
+            }
+
+            <section class="panel">
+                <div class="panel__title">Your crowd</div>
+                <div class="small muted">What the people who come to your shows have had enough of.</div>
+                <div class="kv mt">
+                    <span>The shows as a whole</span>
+                    <span class="@(career.Audience.ShowSameness > 30 ? "grade--poor" : "grade--great")">@(career.Audience.ShowSameness > 30 ? "Seeing the same show" : "Fresh")</span>
+                </div>
+                @{ var tired = career.Contracts.Select(c => career.FindWrestler(c.WrestlerId)).OfType<Wrestler>()
+                       .Select(w => (Wrestler: w, Reading: AudienceModel.Reading(career.Audience, w)))
+                       .Where(x => x.Reading is not null).ToList(); }
+                @foreach (var t in tired)
+                {
+                    var who = t.Wrestler;
+                    <div class="kv">
+                        <span><button class="namelink" @onclick="() => State.OpenProfile(who)">@who.RingName</button></span>
+                        <span class="small gold">@t.Reading</span>
+                    </div>
+                }
+                @if (tired.Count == 0)
+                {
+                    <div class="kv"><span>Your wrestlers</span><span class="grade--great">Nobody is wearing thin</span></div>
+                }
+            </section>
+        </aside>
+    </div>
+}
+
+@code {
+    // Comparisons, not a relational switch: "< 0.5" inside a .razor code block is read as a tag.
+    private static string Freshness(double met) =>
+        met >= 2.5 ? $"Seen {Math.Round(met):F0} times. Stale"
+        : met >= 1.5 ? "Met twice. The third should settle it"
+        : met >= 0.5 ? "Met once. A rematch still sells"
+        : "Never met. A first meeting sells";
+
+    private static (string Advice, bool Act) Advice(Feud feud, double met, int idle)
+    {
+        if (feud.Intensity >= FeudIntensity.Hot && met >= 1.5 && met < 2.5)
+            return ("Ready to pay off. The deciding match is the one they want.", true);
+        if (met >= 2.5)
+            return ("Change it or end it. Another straight rematch will cost you.", false);
+        if (idle > 21)
+            return ("Going cold. A segment would keep it alive.", true);
+        if (feud.Intensity >= FeudIntensity.Hot)
+            return ("Hot. A match between them now would draw.", true);
+        return ("Building. Keep feeding it on your shows.", true);
+    }
+}

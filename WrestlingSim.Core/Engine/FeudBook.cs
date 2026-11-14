@@ -13,6 +13,13 @@ namespace WrestlingSim.Engine
     {
         private readonly Dictionary<string, Feud> _feuds = new();
 
+        // The stories that put each pair of people on opposite sides, in the order they were
+        // opened, under both orderings of the pair. A feud's camps are fixed when it is
+        // created, so this never goes out of date. It is here because `Find` used to walk every
+        // feud in the book for any pair that had not met, and a promotion planning ahead asks
+        // about hundreds of such pairs a week against a book that only grows.
+        private readonly Dictionary<(Wrestler, Wrestler), List<Feud>> _opposing = new();
+
         /// <summary>Every feud that has accumulated any heat at all, hottest first.</summary>
         public IReadOnlyList<Feud> All =>
             _feuds.Values
@@ -43,18 +50,26 @@ namespace WrestlingSim.Engine
         /// </summary>
         public Feud? Find(Wrestler a, Wrestler b)
         {
-            if (_feuds.TryGetValue(Key(a, b), out var exact)) return exact;
 
             // `_feuds.Values`, not `All`: `All` hides feuds below Cold, and the key lookup
             // this scan replaces did not. Searching the live ones only would have made
             // `Find` blind to a dormant triangle while still finding a dormant pairing —
             // the same question answered two different ways depending on how the story was
             // shaped, which is not a distinction anything meant to draw.
-            return _feuds.Values
-                         .Where(f => f.Opposes(a, b))
-                         .OrderByDescending(f => f.Intensity)
-                         .ThenByDescending(f => f.Heat)
-                         .FirstOrDefault();
+            if (!_opposing.TryGetValue((a, b), out var theirs)) return null;
+
+            // Their own rivalry first, found here rather than by building its key: the key is
+            // a sorted, joined string, and this is asked far too often to build one each time.
+            foreach (var f in theirs)
+                if (f.Camps.Count == 2 && f.Camps[0].Count == 1 && f.Camps[1].Count == 1) return f;
+
+            // Otherwise the most intense, then the hottest; the earliest opened on a tie.
+            Feud? best = null;
+            foreach (var f in theirs)
+                if (best is null || f.Intensity > best.Intensity
+                    || (f.Intensity == best.Intensity && f.Heat > best.Heat))
+                    best = f;
+            return best;
         }
 
         /// <summary>
@@ -110,6 +125,15 @@ namespace WrestlingSim.Engine
                 Intensity = FeudIntensity.None
             };
             _feuds[key] = feud;
+            for (int i = 0; i < feud.Camps.Count; i++)
+                for (int j = 0; j < feud.Camps.Count; j++)
+                    if (i != j)
+                        foreach (var a in feud.Camps[i])
+                            foreach (var b in feud.Camps[j])
+                            {
+                                if (!_opposing.TryGetValue((a, b), out var list)) _opposing[(a, b)] = list = [];
+                                if (!list.Contains(feud)) list.Add(feud);
+                            }
             return feud;
         }
 

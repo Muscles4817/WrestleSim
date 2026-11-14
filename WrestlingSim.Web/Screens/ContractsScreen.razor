@@ -1,15 +1,11 @@
 @*
-    Who the promotion has, on what terms, and who it could have. docs/wrestling-reference/10,
-    11 and 13.
+    Contracts and offers: every deal the promotion has, what is running out, who is bidding for
+    whom, and the offers the player has lodged. The market that used to share this screen is the
+    talent table's "The market" view now; this one is about the deals themselves.
 
-    Two halves of one question. "Yours" is the roster — guarantees at a television tier,
-    regulars below it. "The market" is everybody else in the world, still bookable by the night
-    at their asking price; at a television tier this is also where you sign them.
-
-    The number this screen leads with on a contract is the one the booker is actually deciding
-    on: what the deal costs against what they would ask today. A wrestler who has got hotter
-    since signing is a bargain until the deal runs out — doc 11 §7.1 — and that gap is the whole
-    value of having signed them.
+    The number a guaranteed deal leads with is what it costs against what they would ask
+    today: a wrestler who has got hotter since signing is a bargain until the deal runs out
+    (doc 11 §7.1), and that gap is the whole value of having signed them.
 *@
 @inherits StateComponent
 
@@ -19,313 +15,195 @@
 }
 else
 {
-    var signing = career.CanSign;
+    var today = career.CurrentDate;
+    var expiring = career.ExpiringWithin(TalentMarket.ExpiryWarningDays).Where(c => c.IsGuaranteed).ToList();
+    var theirBids = career.Contracts.Where(c => c.IsGuaranteed)
+        .Select(c => (Contract: c, Wrestler: career.FindWrestler(c.WrestlerId)))
+        .Where(x => x.Wrestler is not null && career.BestRivalBid(x.Wrestler!) is not null).ToList();
+    var myBids = career.Bids.Where(b => b.Bidder == Career.PlayerId).ToList();
 
-    <div class="screen__head">
-        <div class="screen__eyebrow">
-            @if (signing)
-            {
-                <text>@career.Contracts.Count signed · payroll @Money.Format(career.DailyPayroll) a day</text>
-            }
-            else
-            {
-                <text>@career.Contracts.Count regulars · everybody works by the night</text>
-            }
+    @if (offering is not null)
+    {
+        <OfferPanel Wrestler="offering" OnClose="() => offering = null" />
+    }
+
+    <section class="kpis">
+        <div class="kpi">
+            <span class="kpi__key">@(career.CanSign ? "Under contract" : "Regulars")</span>
+            <span class="kpi__val">@career.Contracts.Count</span>
+            <span class="kpi__sub">@(career.CanSign ? $"{Money.Format(career.DailyPayroll)} a day in guarantees" : "Paid by the night when booked")</span>
         </div>
-        <h1 class="screen__title">Contracts</h1>
-    </div>
+        <div class="kpi">
+            <span class="kpi__key">Running out</span>
+            <span class="kpi__val @(expiring.Count > 0 ? "gold" : "")">@expiring.Count</span>
+            <span class="kpi__sub">within @TalentMarket.ExpiryWarningDays days</span>
+        </div>
+        <div class="kpi">
+            <span class="kpi__key">Rivals bidding for yours</span>
+            <span class="kpi__val @(theirBids.Count > 0 ? "grade--poor" : "")">@theirBids.Count</span>
+            <span class="kpi__sub">match a bid or lose them at expiry</span>
+        </div>
+        <div class="kpi">
+            <span class="kpi__key">Your lodged offers</span>
+            <span class="kpi__val">@myBids.Count</span>
+            <span class="kpi__sub">for people signed elsewhere</span>
+        </div>
+    </section>
 
-    @if (!signing)
+    @if (!career.CanSign)
     {
         <div class="notice notice--advice">
-            Below television nobody is signed — doc 11's indie arrangement. Your regulars are who
-            you book most; anybody else in the world can be booked for a night at their price.
-            Television brings guarantees.
+            Below television nobody is signed. Your regulars are the people you book most, paid by the night;
+            anybody else who is free can be booked at their price. Guaranteed contracts come with television.
         </div>
     }
 
-    @if (signing && career.ExpiringWithin(TalentMarket.ExpiryWarningDays).ToList() is { Count: > 0 } expiring)
-    {
-        <div class="notice notice--warn mt">
-            <strong>@expiring.Count deal@(expiring.Count == 1 ? "" : "s") run@(expiring.Count == 1 ? "s" : "") out within @TalentMarket.ExpiryWarningDays days.</strong>
-            Re-sign them or they go to the market — still bookable by the night, at their price.
-            @foreach (var c in expiring)
+    <div class="layout mt">
+        <div class="layout__main">
+            @if (theirBids.Count > 0 || expiring.Count > 0)
             {
-                var w = career.FindWrestler(c.WrestlerId);
-                if (w is null) continue;
-                <div>
-                    @w.RingName — @c.End!.Value.ToString("d MMM")
-                    · asks @Money.Format(career.GuaranteeAsk(w, offerYears)) a year now
-                    @if (career.BestRivalBid(w) is { } rivalBid)
+                <section class="panel">
+                    <div class="panel__title">Needs an answer</div>
+                    @foreach (var (c, w) in theirBids)
                     {
-                        <strong class="grade--poor">
-                            · @(career.Rival(rivalBid.Bidder)?.Name ?? "A rival") has offered @Money.Format(rivalBid.Annual) — match it or lose them
-                        </strong>
+                        var who = w!;
+                        var bid = career.BestRivalBid(who)!;
+                        <div class="need">
+                            <span class="need__kind need__kind--urgent">Bid</span>
+                            <span class="need__text">@(career.Rival(bid.Bidder)?.Name ?? "A rival") has offered <button class="namelink" @onclick="() => State.OpenProfile(who)">@who.RingName</button> @Money.Format(bid.Annual) a year. Their deal with you ends @c.End!.Value.ToString("d MMM").</span>
+                            <button class="btn btn--sm btn--primary need__act" @onclick="() => offering = who">Match it</button>
+                        </div>
                     }
-                    <button class="btn btn--sm btn--ghost" @onclick="() => Offer(w)">Re-sign</button>
-                </div>
+                    @foreach (var c in expiring.Where(c => theirBids.All(b => b.Contract != c)))
+                    {
+                        if (career.FindWrestler(c.WrestlerId) is not { } w) continue;
+                        var who = w;
+                        <div class="need">
+                            <span class="need__kind need__kind--do">Expiring</span>
+                            <span class="need__text"><button class="namelink" @onclick="() => State.OpenProfile(who)">@w.RingName</button>'s deal ends @c.End!.Value.ToString("d MMM"). They would ask @Money.Format(career.GuaranteeAsk(w, 3)) a year on three.</span>
+                            <button class="btn btn--sm need__act" @onclick="() => offering = who">Re-sign</button>
+                        </div>
+                    }
+                </section>
             }
-        </div>
-    }
 
-    @if (offering is { } who)
-    {
-        var ask = career.GuaranteeAsk(who, offerYears);
-        var competing = career.BestRivalBid(who);
-        var holder = career.SignedTo(who);
-        <div class="panel mt offer">
-            <div class="panel__title">
-                Offer — @who.RingName
-                <span class="spacer"></span>
-                <button class="btn btn--sm btn--ghost" @onclick="() => offering = null">Close</button>
-            </div>
-            <div class="small muted">
-                Over @who.OvernessDisplay · @Money.Format(career.PerDateAsk(who)) a night on the open market.
-                A guarantee covers every appearance; book them more than @TalentMarket.DatesInAGuarantee nights a
-                year and it is the cheaper way to pay them — and the rate is fixed for the term, however hot they get.
-            </div>
-            <div class="chips mt">
-                @for (int y = TalentMarket.MinTermYears; y <= TalentMarket.MaxTermYears; y++)
+            <section class="panel">
+                <div class="panel__title">Your deals</div>
+                @{ var deals = career.Contracts.Select(c => (Contract: c, Wrestler: career.FindWrestler(c.WrestlerId)))
+                       .Where(x => x.Wrestler is not null)
+                       .OrderBy(x => x.Contract.End ?? DateOnly.MaxValue).ThenByDescending(x => x.Wrestler!.EffectiveOverness).ToList(); }
+                @if (deals.Count == 0)
                 {
-                    var years = y;
-                    <button class="chip @(offerYears == years ? "is-active" : "")" @onclick="() => SetYears(who, years)">
-                        @years yr — @Money.Format(career.GuaranteeAsk(who, years))
-                    </button>
-                }
-            </div>
-            <div class="row mt">
-                <label class="field">
-                    <span class="field__label">A year</span>
-                    <input class="input tabnum" type="number" step="1000" min="0" @bind="offerAnnual" />
-                </label>
-                <span class="spacer"></span>
-                <button class="btn btn--primary" @onclick="() => Sign(who)">Offer @Money.Format(offerAnnual) × @offerYears yr</button>
-            </div>
-            <div class="small muted mt">
-                Asking @Money.Format(ask) a year for @offerYears year@(offerYears == 1 ? "" : "s").
-                @if (holder is not null)
-                {
-                    <text>Signed to @holder.Name until @holder.ContractOf(who)!.End!.Value.ToString("d MMM yyyy") — an offer now is lodged, and they choose between it and @(holder.Name)'s when that deal ends.</text>
-                }
-                else if (competing is not null)
-                {
-                    <strong class="grade--poor">@(career.Rival(competing.Bidder)?.Name) has offered @Money.Format(competing.Annual) a year. Match it or lose them when the deal ends.</strong>
+                    <div class="small muted">Nobody yet. Find people in <button class="namelink gold" @onclick="() => State.GoTalent(TalentView.Market)">the market</button>.</div>
                 }
                 else
                 {
-                    <text>Nobody signs for less — and with no rival bidding, nobody holds out for more.</text>
+                    <div class="table-wrap">
+                        <table class="data">
+                            <thead>
+                                <tr>
+                                    <th>Wrestler</th>
+                                    <th class="num">Popularity</th>
+                                    <th>Deal</th>
+                                    @if (career.CanSign) { <th class="num col-wide">Would ask today</th> }
+                                    <th><span class="sr-only">Action</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var (c, w) in deals)
+                                {
+                                    var who = w!;
+                                    <tr>
+                                        <td><button class="namecell" @onclick="() => State.OpenProfile(who)"><strong>@who.RingName</strong></button></td>
+                                        <td class="num @who.CardPosition.Tone()">@who.OvernessDisplay</td>
+                                        <td class="small">
+                                            @if (c.IsGuaranteed)
+                                            {
+                                                <text>@Money.Format(c.AnnualGuarantee) a year until @c.End!.Value.ToString("d MMM yyyy")</text>
+                                                @if (c.DaysTolled > 0) { <div class="muted">extended @c.DaysTolled days for injury</div> }
+                                            }
+                                            else
+                                            {
+                                                <text>Regular, @Money.Format(career.PerDateAsk(who)) a night when booked</text>
+                                            }
+                                        </td>
+                                        @if (career.CanSign)
+                                        {
+                                            var now = c.IsGuaranteed ? TalentMarket.WorthToday(who, c, career.WageFactor) : 0m;
+                                            <td class="num small col-wide @(now > c.AnnualGuarantee ? "grade--great" : now < c.AnnualGuarantee ? "grade--poor" : "")">
+                                                @(c.IsGuaranteed ? Money.Format(now) : "—")
+                                            </td>
+                                        }
+                                        <td class="nowrap">
+                                            @if (c.IsGuaranteed)
+                                            {
+                                                var payout = Math.Round(c.DailyCost * Math.Min(TalentMarket.ReleasePayoutDays, c.DaysLeft(today) ?? 0));
+                                                <button class="btn btn--sm" @onclick="() => offering = who">Re-sign</button>
+                                                <button class="btn btn--sm btn--ghost" @onclick="() => State.ReleaseAsync(who)">Release (@Money.Format(payout))</button>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn--sm btn--ghost" @onclick="() => State.ReleaseAsync(who)">Drop</button>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    @if (career.CanSign)
+                    {
+                        <div class="small muted mt">"Would ask today" in green means they have got hotter since signing: a bargain while the deal lasts. Releasing pays out @TalentMarket.ReleasePayoutDays days and starts a non-compete.</div>
+                    }
                 }
-            </div>
-            @if (refusal is not null)
-            {
-                <div class="notice @(lodged ? "notice--advice" : "notice--error") mt">@refusal</div>
-            }
+            </section>
         </div>
-    }
 
-    <div class="searchbar mt">
-        <input class="input" type="search" placeholder="Search…"
-               value="@query" @oninput="e => query = e.Value?.ToString() ?? string.Empty" />
-        <div class="chips">
-            <button class="chip @(!market ? "is-active" : "")" @onclick="() => market = false">Yours</button>
-            <button class="chip @(market ? "is-active" : "")" @onclick="() => market = true">The market</button>
-        </div>
-    </div>
-
-    <div class="panel">
-        @if (!market)
-        {
-            var rows = career.Contracts
-                .Select(c => (Contract: c, Wrestler: career.FindWrestler(c.WrestlerId)))
-                .Where(x => x.Wrestler is not null && Matches(x.Wrestler!))
-                .Select(x => (x.Contract, Wrestler: x.Wrestler!))
-                .OrderByDescending(x => x.Contract.AnnualGuarantee)
-                .ThenByDescending(x => x.Wrestler!.EffectiveOverness)
-                .ToList();
-
-            @if (rows.Count == 0)
-            {
-                <div class="empty">Nobody here yet. Sign somebody from the market.</div>
-            }
-            @foreach (var (c, w) in rows)
-            {
-                <div class="editor-row">
-                    <div class="editor-row__n"><Portrait Wrestler="@w" /></div>
-                    <div>
-                        <div class="editor-row__name">
-                            @w.RingName
-                            <span class="tabnum small @w.CardPosition.Tone()">@w.OvernessDisplay</span>
-                        </div>
-                        <div class="editor-row__sub">
-                            @if (c.IsGuaranteed)
-                            {
-                                var now = TalentMarket.WorthToday(w, c, career.WageFactor);
-                                <text>@Money.Format(c.AnnualGuarantee) a year · until @c.End!.Value.ToString("d MMM yyyy")</text>
-                                @if (c.DaysTolled > 0) { <text> · extended @c.DaysTolled days for injury</text> }
-                                <br />
-                                <span class="@(now > c.AnnualGuarantee ? "grade--great" : now < c.AnnualGuarantee ? "grade--poor" : "")">
-                                    Would ask @Money.Format(now) today
-                                    @(now > c.AnnualGuarantee ? "— a bargain while it lasts" : now < c.AnnualGuarantee ? "— paying over the odds" : "")
-                                </span>
-                            }
-                            else
-                            {
-                                <text>Regular · @Money.Format(career.PerDateAsk(w)) a night when booked</text>
-                            }
-                        </div>
+        <aside class="layout__side">
+            <section class="panel">
+                <div class="panel__title">Your lodged offers</div>
+                @if (myBids.Count == 0)
+                {
+                    <div class="small muted">None. You can offer for somebody signed elsewhere in the last @TalentMarket.ExpiryWarningDays days of their deal.</div>
+                }
+                @foreach (var bid in myBids)
+                {
+                    if (career.FindWrestler(bid.WrestlerId) is not { } w) continue;
+                    var who = w;
+                    var holder = career.SignedTo(w);
+                    <div class="kv">
+                        <span><button class="namelink" @onclick="() => State.OpenProfile(who)">@w.RingName</button><div class="small muted">@(holder is null ? "" : $"decides when {holder.Name}'s deal ends, {holder.ContractOf(w)?.End:d MMM}")</div></span>
+                        <span class="tabnum">@Money.Format(bid.Annual) × @bid.Years</span>
                     </div>
-                    <div class="editor-row__tools">
-                        @if (c.IsGuaranteed)
-                        {
-                            <button class="btn btn--sm" @onclick="() => Offer(w)">Re-sign</button>
-                            var payout = Math.Round(c.DailyCost * Math.Min(TalentMarket.ReleasePayoutDays, c.DaysLeft(career.CurrentDate) ?? 0));
-                            <button class="btn btn--sm btn--ghost" title="Pays out @Money.Format(payout)" @onclick="() => Release(w)">
-                                Release (@Money.Format(payout))
-                            </button>
-                        }
-                        else
-                        {
-                            <button class="btn btn--sm btn--ghost" @onclick="() => Release(w)">Drop</button>
-                        }
-                    </div>
-                </div>
-            }
-        }
-        else
-        {
-            var free = career.Roster
-                .Where(w => career.ContractOf(w) is null && Matches(w))
-                .OrderBy(w => career.Unavailable(w) is null ? 0 : 1)
-                .ThenByDescending(w => w.EffectiveOverness)
-                .ToList();
+                }
+            </section>
 
-            @if (free.Count == 0)
-            {
-                <div class="empty">Nobody on the market matches.</div>
-            }
-            @foreach (var w in free)
-            {
-                <div class="editor-row">
-                    <div class="editor-row__n"><Portrait Wrestler="@w" /></div>
-                    <div>
-                        <div class="editor-row__name">
-                            @w.RingName
-                            <span class="tabnum small @w.CardPosition.Tone()">@w.OvernessDisplay</span>
-                            <Trend Momentum="w.Momentum" ShowLabel="false" />
-                        </div>
-                        <div class="editor-row__sub">
-                            @if (career.SignedTo(w) is { } holderOf)
+            <section class="panel">
+                <div class="panel__title">Lately</div>
+                @if (career.ContractLog.Count == 0)
+                {
+                    <div class="small muted">Nothing yet.</div>
+                }
+                @foreach (var e in career.ContractLog.AsEnumerable().Reverse().Take(12))
+                {
+                    var who = career.FindWrestler(e.WrestlerId);
+                    <div class="newsline">
+                        <span>@e.Date.ToString("d MMM")</span>
+                        <span>
+                            @if (who is not null)
                             {
-                                var theirs = holderOf.ContractOf(w)!;
-                                <span class="badge badge--sm badge--muted">@holderOf.Name</span>
-                                <text> until @theirs.End!.Value.ToString("d MMM yyyy")</text>
-                                @if (career.PlayerBid(w) is { } mine)
-                                {
-                                    <text> · your offer of @Money.Format(mine.Annual) is lodged</text>
-                                }
+                                <button class="namelink" style="font-weight: 600" @onclick="() => State.OpenProfile(who)">@who.RingName</button>
                             }
-                            else if (career.NonCompeteOf(w) is { } nc)
-                            {
-                                <span class="badge badge--sm badge--muted">non-compete</span>
-                                <text> until @nc.Until.ToString("d MMM")</text>
-                            }
-                            else
-                            {
-                                @Money.Format(career.PerDateAsk(w)) <text> a night</text>
-                                @if (signing)
-                                {
-                                    <text> · @Money.Format(career.GuaranteeAsk(w, 3)) a year on three</text>
-                                }
-                            }
-                        </div>
+                            else { @e.WrestlerId }
+                            @(" " + e.What)
+                        </span>
                     </div>
-                    <div class="editor-row__tools">
-                        @if (career.NonCompeteOf(w) is not null)
-                        {
-                        }
-                        else if (career.SignedTo(w) is { } h)
-                        {
-                            @if (signing && (h.ContractOf(w)!.DaysLeft(career.CurrentDate) ?? int.MaxValue) <= TalentMarket.ExpiryWarningDays)
-                            {
-                                <button class="btn btn--sm btn--primary" @onclick="() => Offer(w)">Make an offer</button>
-                            }
-                        }
-                        else if (signing)
-                        {
-                            <button class="btn btn--sm btn--primary" @onclick="() => Offer(w)">Make an offer</button>
-                        }
-                        else
-                        {
-                            <button class="btn btn--sm" @onclick="() => State.MakeRegularAsync(w)">Make a regular</button>
-                        }
-                    </div>
-                </div>
-            }
-        }
-    </div>
-
-    @if (career.ContractLog.Count > 0)
-    {
-        <div class="panel">
-            <div class="panel__title">Lately</div>
-            @foreach (var e in career.ContractLog.AsEnumerable().Reverse().Take(8))
-            {
-                <div class="small" style="padding:3px 0">
-                    <span class="muted tabnum">@e.Date.ToString("d MMM")</span>
-                    @(career.FindWrestler(e.WrestlerId)?.RingName ?? e.WrestlerId) — @e.What
-                </div>
-            }
-        </div>
-    }
-
-    <div class="wizard-bar">
-        <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Roster)">← Roster</button>
-        <span class="wizard-bar__spacer"></span>
-        <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Dashboard)">Dashboard</button>
+                }
+            </section>
+        </aside>
     </div>
 }
 
 @code {
-    private string query = "";
-    private bool market;
     private Wrestler? offering;
-    private int offerYears = 3;
-    private decimal offerAnnual;
-    private string? refusal;
-    private bool lodged;
-
-    private bool Matches(Wrestler w) =>
-        string.IsNullOrWhiteSpace(query)
-        || w.RingName.Contains(query, StringComparison.OrdinalIgnoreCase)
-        || w.RealName.Contains(query, StringComparison.OrdinalIgnoreCase);
-
-    private void Offer(Wrestler w)
-    {
-        offering = w;
-        refusal = null;
-        SetYears(w, offerYears);
-    }
-
-    private void SetYears(Wrestler w, int years)
-    {
-        offerYears = years;
-        var career = State.Career!;
-        offerAnnual = Math.Max(career.GuaranteeAsk(w, years), career.BestRivalBid(w)?.Annual ?? 0m);
-        refusal = null;
-        lodged = false;
-    }
-
-    private async Task Sign(Wrestler w)
-    {
-        var (accepted, pending, note) = await State.SignAsync(w, offerAnnual, offerYears);
-        refusal = note;
-        lodged = pending;
-        if (accepted && !pending) offering = null;
-    }
-
-    private async Task Release(Wrestler w)
-    {
-        await State.ReleaseAsync(w);
-        if (offering == w) offering = null;
-    }
 }

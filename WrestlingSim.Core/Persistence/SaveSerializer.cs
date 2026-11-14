@@ -126,6 +126,17 @@ namespace WrestlingSim.Persistence
                 Titles      = ToDto(r.Titles),
                 NextShow    = Iso(r.NextShow),
                 Folded      = r.Folded is { } f ? Iso(f) : null,
+                Objective   = r.Objective,
+                Disposition = r.Disposition,
+                Favourites  = r.Favourites.Count > 0 ? new List<string>(r.Favourites) : null,
+                QuietAs     = r.QuietAs,
+                QuietSince  = r.QuietSince is { } q ? Iso(q) : null,
+                Decisions   = r.Decisions.Select(d => new RivalDecisionDto
+                {
+                    Date = Iso(d.Date), Move = d.Move, WrestlerId = d.WrestlerId, Annual = d.Annual,
+                    Reason = d.Reason, Score = d.Score, Terms = new(d.Terms), Believed = d.Believed,
+                    Rejected = new List<string>(d.Rejected)
+                }).ToList(),
                 Nights      = r.Nights.Select(n => new RivalNightDto
                 {
                     Date = Iso(n.Date), Type = n.Type, Rating = n.Rating, Attendance = n.Attendance,
@@ -572,6 +583,17 @@ namespace WrestlingSim.Persistence
                                                .Select(c => FromDto(c, byId[c.WrestlerId].Id)).ToList(),
                         NextShow  = ParseDate(r.NextShow),
                         Folded    = string.IsNullOrEmpty(r.Folded) ? null : ParseDate(r.Folded),
+                        Objective   = r.Objective,
+                        Disposition = r.Disposition,
+                        Favourites  = r.Favourites?.Where(byId.ContainsKey).Select(id => byId[id].Id).ToList() ?? [],
+                        QuietAs     = r.QuietAs,
+                        QuietSince  = string.IsNullOrEmpty(r.QuietSince) ? null : ParseDate(r.QuietSince),
+                        Decisions   = r.Decisions?.Where(d => byId.ContainsKey(d.WrestlerId)).Select(d => new RivalDecision
+                        {
+                            Date = ParseDate(d.Date), Move = d.Move, WrestlerId = byId[d.WrestlerId].Id, Annual = d.Annual,
+                            Reason = d.Reason, Score = d.Score, Terms = new(d.Terms), Believed = d.Believed,
+                            Rejected = new List<string>(d.Rejected)
+                        }).ToList() ?? [],
                         Nights    = r.Nights.Select(n => new RivalNight
                         {
                             Date = ParseDate(n.Date), Type = n.Type, Rating = n.Rating, Attendance = n.Attendance,

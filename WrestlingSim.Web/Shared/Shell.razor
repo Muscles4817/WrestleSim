@@ -2,35 +2,104 @@
 @inject GameState State
 @inject ViewScroll Scroll
 
-<div class="shell">
-    <header class="topbar">
-        <button class="brand" @onclick="Home" title="@(State.InCareer ? "Dashboard" : "Main menu")">
-            <Icon Name="star" Class="brand__star" />
-            <span class="brand__name">@(State.InCareer ? State.Career!.Promotion.Name : "Wrestling Sim")</span>
-            <span class="brand__sub">
-                @(State.InCareer
-                    ? State.Career!.CurrentDate.ToString("d MMM yyyy")
-                    : State.Mode == AppMode.Exhibition ? "Exhibition" : "Booking System")
-            </span>
-        </button>
+<div class="shell @(State.Mode == AppMode.Exhibition ? "shell--exhibition" : "")">
+    @if (State.Mode == AppMode.Career && State.Career is { } career && ShowNav)
+    {
+        <header class="frame">
+            <div class="frame__bar">
+                <button class="frame__brand" @onclick="Home" title="Home">
+                    <span class="frame__name">@career.Promotion.Name</span>
+                    <span class="frame__tier">@career.Promotion.TierLabel</span>
+                </button>
 
-        @if (ShowNav)
-        {
-            <nav class="nav">
-                @foreach (var (screen, label, _) in NavItems)
-                {
-                    <button class="nav__item @(State.Current == screen ? "is-active" : "")"
-                            @onclick="() => State.Go(screen)">
-                        @label
-                        @if (screen == Screen.Feuds && State.ActiveFeudCount > 0)
-                        {
-                            <span class="nav__count">@State.ActiveFeudCount</span>
-                        }
+                <div class="frame__clock">
+                    <span class="frame__date">@career.CurrentDate.ToString("ddd d MMM yyyy")</span>
+                    <span class="frame__next">@NextLine(career)</span>
+                </div>
+
+                <div class="frame__advance">
+                    @if (career.Due.FirstOrDefault() is { } due)
+                    {
+                        <button class="btn btn--primary" @onclick="() => State.OpenShow(due)">
+                            @(due.IsBooked ? $"Run {due.Name}" : $"Book {due.Name}")
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="btn btn--sm" @onclick="() => State.AdvanceAsync(1)">+1 day</button>
+                        <button class="btn btn--sm" @onclick="() => State.AdvanceAsync(7)">+1 week</button>
+                        <button class="btn btn--sm btn--primary" disabled="@(career.NextShow is null)"
+                                @onclick="State.AdvanceToNextShowAsync">To next show</button>
+                    }
+                </div>
+
+                <div class="frame__money">
+                    <button class="frame__figure" @onclick="() => State.Go(Screen.Business)" title="Business">
+                        <span class="frame__key">Cash</span>
+                        <span class="frame__val tabnum @(career.Books.InTheRed ? "grade--poor" : "grade--great")">@Money.Format(career.Books.Cash)</span>
                     </button>
+                    <div class="frame__figure">
+                        <span class="frame__key">Reputation</span>
+                        <span class="frame__val tabnum">@career.Books.Reputation.ToString("F0")</span>
+                    </div>
+                </div>
+
+                <div class="frame__menuwrap">
+                    <button class="btn btn--sm btn--ghost" aria-expanded="@menuOpen" @onclick="() => menuOpen = !menuOpen">Menu</button>
+                    @if (menuOpen)
+                    {
+                        <div class="frame__menu" role="menu">
+                            <button role="menuitem" @onclick="SaveNow">Save now</button>
+                            <button role="menuitem" @onclick="Export">Export save</button>
+                            <button role="menuitem" @onclick="Exit">Save and exit</button>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <nav class="gnav" aria-label="Main">
+                @foreach (var (group, label, _) in Navigation.Groups)
+                {
+                    var g = group;
+                    <button class="gnav__item @(CurrentGroup == g ? "is-active" : "")"
+                            aria-current="@(CurrentGroup == g ? "page" : null)"
+                            @onclick="() => Navigation.Open(State, g)">@label</button>
                 }
             </nav>
-        }
-    </header>
+        </header>
+    }
+    else if (State.Mode == AppMode.Exhibition && ShowNav)
+    {
+        <header class="frame frame--exhibition">
+            <div class="frame__bar">
+                <button class="frame__brand" @onclick="() => State.Go(Screen.Exhibition)" title="Exhibition start">
+                    <span class="frame__name">Exhibition</span>
+                    <span class="frame__tier">Sandbox · nothing here is saved</span>
+                </button>
+                <nav class="gnav gnav--inline" aria-label="Exhibition">
+                    @foreach (var (screen, label, _) in Navigation.Exhibition)
+                    {
+                        var target = screen;
+                        <button class="gnav__item @(IsExhibitionTab(target) ? "is-active" : "")"
+                                aria-current="@(IsExhibitionTab(target) ? "page" : null)"
+                                @onclick="() => OpenExhibition(target)">@label</button>
+                    }
+                </nav>
+                <button class="btn btn--sm" @onclick="Exit">Leave exhibition</button>
+            </div>
+        </header>
+    }
+    else
+    {
+        <header class="frame frame--plain">
+            <div class="frame__bar">
+                <button class="frame__brand" @onclick="Home">
+                    <Icon Name="star" Class="brand__star" />
+                    <span class="frame__name">Wrestling Sim</span>
+                </button>
+            </div>
+        </header>
+    }
 
     <main class="main @(Wide ? "main--wide" : "")">
         @if (!State.Loaded)
@@ -46,6 +115,34 @@
         }
         else
         {
+            @if (State.Mode == AppMode.Career && State.Career is not null && State.SaveMessage is { } message)
+            {
+                <div class="notice notice--warn">
+                    @message
+                    <span class="spacer"></span>
+                    <button class="btn btn--sm btn--ghost" @onclick="State.ClearMessage">Dismiss</button>
+                </div>
+            }
+
+            @if (State.Mode == AppMode.Career && Navigation.TabsOf(CurrentGroup, State) is { Count: > 1 } tabs)
+            {
+                <nav class="subnav" aria-label="@CurrentGroup">
+                    @foreach (var tab in tabs)
+                    {
+                        var t = tab;
+                        <button class="subnav__item @(t.IsActive(State) ? "is-active" : "")"
+                                aria-current="@(t.IsActive(State) ? "page" : null)"
+                                @onclick="() => t.Open(State)">
+                            @t.Label
+                            @if (t.Count is { } n)
+                            {
+                                <span class="subnav__count">@n</span>
+                            }
+                        </button>
+                    }
+                </nav>
+            }
+
             @switch (State.Current)
             {
                 // Outside a save
@@ -59,9 +156,15 @@
                 case Screen.Brands:     <BrandsScreen />;    break;
                 case Screen.BookShow:   <BookShowScreen />;  break;
                 case Screen.Titles:     <TitlesScreen />;    break;
+                case Screen.Stories:    <StoriesScreen />;   break;
+                case Screen.Rival:      <RivalScreen />;     break;
+                case Screen.News:       <NewsScreen />;      break;
+                case Screen.Business:   <BusinessScreen View="BusinessView.Money" />;      break;
+                case Screen.Television: <BusinessScreen View="BusinessView.Television" />; break;
 
                 // Shared between career and exhibition
-                case Screen.Roster:     <RosterScreen />;    break;
+                case Screen.Roster:     <TalentScreen />;    break;
+                case Screen.Profile:    <ProfileScreen />;   break;
                 case Screen.Contracts:  <ContractsScreen />; break;
                 case Screen.Rivals:     <RivalsScreen />;    break;
                 case Screen.Feuds:      <FeudsScreen />;     break;
@@ -76,21 +179,48 @@
         }
     </main>
 
-    @* On phones the top nav is hidden and navigation moves to the thumb zone. *@
-    @if (ShowNav)
+    @* On phones the top navigation moves to the thumb zone. Five tabs fit; the rest of the
+       groups and the save controls go under More. *@
+    @if (ShowNav && State.Mode == AppMode.Career)
     {
         <nav class="tabbar" aria-label="Main">
-            @foreach (var (screen, label, glyph) in NavItems)
+            @foreach (var (group, label, glyph) in Navigation.Groups.Take(4))
             {
-                <button class="tabbar__item @(State.Current == screen ? "is-active" : "")"
-                        aria-current="@(State.Current == screen ? "page" : null)"
-                        @onclick="() => State.Go(screen)">
+                var g = group;
+                <button class="tabbar__item @(CurrentGroup == g && !moreOpen ? "is-active" : "")"
+                        aria-current="@(CurrentGroup == g ? "page" : null)"
+                        @onclick="() => { moreOpen = false; Navigation.Open(State, g); }">
                     <span class="tabbar__glyph"><Icon Name="@glyph" /></span>
                     <span>@label</span>
-                    @if (screen == Screen.Feuds && State.ActiveFeudCount > 0)
-                    {
-                        <span class="tabbar__badge">@State.ActiveFeudCount</span>
-                    }
+                </button>
+            }
+            <button class="tabbar__item @(moreOpen || CurrentGroup is NavGroup.World or NavGroup.Business ? "is-active" : "")"
+                    aria-expanded="@moreOpen" @onclick="() => moreOpen = !moreOpen">
+                <span class="tabbar__glyph"><Icon Name="dice" /></span>
+                <span>More</span>
+            </button>
+        </nav>
+        @if (moreOpen)
+        {
+            <div class="moresheet" role="dialog" aria-label="More">
+                <button class="moresheet__item" @onclick="() => { moreOpen = false; Navigation.Open(State, NavGroup.World); }">World</button>
+                <button class="moresheet__item" @onclick="() => { moreOpen = false; Navigation.Open(State, NavGroup.Business); }">Business</button>
+                <button class="moresheet__item" @onclick="SaveNow">Save now</button>
+                <button class="moresheet__item" @onclick="Export">Export save</button>
+                <button class="moresheet__item" @onclick="Exit">Save and exit</button>
+            </div>
+        }
+    }
+    else if (ShowNav && State.Mode == AppMode.Exhibition)
+    {
+        <nav class="tabbar" aria-label="Exhibition">
+            @foreach (var (screen, label, glyph) in Navigation.Exhibition.Where(e => e.Screen is not (Screen.Rumble or Screen.Feuds)))
+            {
+                var target = screen;
+                <button class="tabbar__item @(IsExhibitionTab(target) ? "is-active" : "")"
+                        @onclick="() => OpenExhibition(target)">
+                    <span class="tabbar__glyph"><Icon Name="@glyph" /></span>
+                    <span>@label</span>
                 </button>
             }
         </nav>
@@ -108,34 +238,19 @@
     /// month of dates. Those were the ones cramming two columns of information into one.
     /// </summary>
     private static readonly HashSet<Screen> WideScreens =
-        [Screen.BookShow, Screen.Show, Screen.Roster, Screen.Contracts, Screen.Calendar, Screen.Brands];
+        [Screen.BookShow, Screen.Show, Screen.Roster, Screen.Contracts, Screen.Calendar, Screen.Brands,
+         Screen.Profile, Screen.Rivals, Screen.Rival, Screen.Business, Screen.Television, Screen.Stories, Screen.Dashboard];
 
     private bool Wide => WideScreens.Contains(State.Current);
 
-    private static readonly (Screen Screen, string Label, string Glyph)[] CareerNav =
-    [
-        (Screen.Dashboard, "Home",     "home"),
-        (Screen.Calendar,  "Calendar", "calendar"),
-        (Screen.Shows,     "Shows",    "tv"),
-        (Screen.Brands,    "Brands",   "brands"),
-        (Screen.Roster,    "Roster",   "roster"),
-        (Screen.Titles,    "Titles",   "trophy"),
-        (Screen.Feuds,     "Feuds",    "fire"),
-    ];
+    private bool menuOpen;
+    private bool moreOpen;
 
-    private static readonly (Screen Screen, string Label, string Glyph)[] ExhibitionNav =
-    [
-        (Screen.Match,   "Match",   "star"),
-        (Screen.Segment, "Segment", "mic"),
-        (Screen.Show,    "Show",    "card"),
-        (Screen.Roster,  "Roster",  "roster"),
-        (Screen.Feuds,   "Feuds",   "fire"),
-    ];
+    private NavGroup CurrentGroup => Navigation.GroupOf(State.Current);
 
     /// <summary>
-    /// The landing screens deliberately have no nav: there is nowhere to go until you are
-    /// inside a save or inside exhibition mode, and showing a disabled bar would imply
-    /// otherwise.
+    /// The landing screens have no navigation: there is nowhere to go until you are inside a
+    /// save or inside exhibition.
     /// </summary>
     private bool ShowNav =>
         State.Loaded
@@ -143,13 +258,31 @@
         && State.Roster.Count >= 2
         && State.Mode != AppMode.Landing;
 
-    private (Screen, string, string)[] NavItems =>
-        State.Mode == AppMode.Career ? CareerNav : ExhibitionNav;
+    private static string NextLine(Career career)
+    {
+        if (career.Due.FirstOrDefault() is { } due) return $"{due.Name} is today. Time is held until it runs.";
+        if (career.NextShow is not { } next) return "Nothing on the calendar";
+        int days = career.DaysUntil(next);
+        return days == 1 ? $"{next.Name} tomorrow" : $"{next.Name} in {days} days";
+    }
+
+    private bool IsExhibitionTab(Screen screen) =>
+        State.Current == screen || (screen == Screen.Roster && State.Current == Screen.Profile);
+
+    private void OpenExhibition(Screen screen)
+    {
+        if (screen == Screen.Roster) State.GoTalent(TalentView.Everyone);
+        else State.Go(screen);
+    }
 
     private void Home() =>
         State.Go(State.InCareer ? Screen.Dashboard
                 : State.Mode == AppMode.Exhibition ? Screen.Exhibition
                 : Screen.Landing);
+
+    private async Task SaveNow() { menuOpen = moreOpen = false; await State.SaveAsync(); }
+    private async Task Export() { menuOpen = moreOpen = false; await State.ExportAsync(); }
+    private async Task Exit() { menuOpen = moreOpen = false; await State.ExitToLandingAsync(); }
 
     protected override async Task OnInitializedAsync()
     {
