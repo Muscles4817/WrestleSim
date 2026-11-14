@@ -96,6 +96,26 @@ Kept here as they are made, so the sections below can be read against them.
   leave, and can be poached.
 - **The player sees the traits**, as words that sharpen the longer somebody has worked for them.
 
+**14 Nov — careers, arriving and leaving (Parts 2 and 3).** The owner accepted the proposals:
+
+- Potential is shown as words, not numbers, sharpening the longer somebody works for you and
+  the better the scouting.
+- Development comes through booking (who works with whom, how often), and a television-level
+  promotion can also run a developmental brand where young wrestlers improve faster. Trainers
+  and facilities as a system of their own are later.
+- Charisma develops a little; the gimmick is what really moves how somebody connects.
+- A yearly class of rookies, sized to keep the population steady, starting in their home
+  region's small promotions.
+- Retirement becomes likelier with age, injuries and having nowhere to work, often through a
+  part-time stage first. Returns come later, not in the first build.
+- Real wrestlers retire on the simulation's schedule by default, with a switch at career start
+  to hold real people in place for a set number of years.
+- Retired wrestlers stay in the world as names, so records and title histories still read.
+
+**14 Nov — the interface.** Rebuilt around a career frame and six groups (#98,
+`docs/ui-record.md`). The profile, the talent table and the new-career screen are where traits,
+potential, contentment, regions and world size will show when they are built.
+
 ## 1. The rule this plan follows
 
 > **Anything that can happen to a wrestler or a promotion happens the same way whoever is
