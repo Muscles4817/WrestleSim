@@ -2453,3 +2453,6 @@ tr.is-muted td { opacity: .55; }
   .kpis .kpi__val { font-size: 24px; }
   .kpis .kpi__sub { font-size: 12px; }
 }
+.only-narrow-block { display: none; }
+@media (max-width: 820px) { .only-narrow-block { display: block; } }
+.actions { display: inline-flex; flex-wrap: wrap; gap: 6px; }

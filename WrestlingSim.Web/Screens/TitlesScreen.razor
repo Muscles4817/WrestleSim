@@ -36,7 +36,7 @@ else
         <div class="kpi">
             <span class="kpi__key">Attention</span>
             <span class="kpi__val @(registry.Dilution < 1 ? "grade--poor" : "")">@Shown.Percent(registry.Demand / TitleRegistry.AttentionCapacity)</span>
-            <span class="kpi__sub">@(registry.Dilution < 1 ? "over-committed" : "of what the audience can follow")</span>
+            <span class="kpi__sub">@(registry.Dilution < 1 ? "over-committed: every belt is losing value" : registry.SpareAttention <= 0.5 ? "full — a new belt would dilute the rest" : "room for another belt")</span>
         </div>
     </section>
 
@@ -87,7 +87,12 @@ else
                     {
                         <div class="notice notice--warn">
                             <strong>Vacant.</strong> An undefended belt is a prop — it loses value every day
-                            nobody is chasing it. Book a match for it.
+                            nobody is chasing it.
+                            <span class="spacer"></span>
+                            @if (career.NextShow is { } next)
+                            {
+                                <button class="btn btn--sm btn--primary" @onclick="() => State.OpenShow(next)">Book a match for it on @next.Name</button>
+                            }
                         </div>
                     }
 
@@ -135,9 +140,12 @@ else
                        ValueText="@AttentionText(registry)"
                        Variant="@(registry.Dilution < 1 ? "heel" : "gold")" />
                 <p class="small muted mt">
-                    Attention is finite and is divided among the belts. Every title keeps
-                    <strong>@Shown.Percent(registry.Dilution)</strong> of what it has earned; the rest is lost
-                    to the audience being asked to care about @registry.Active.Count championship@(registry.Active.Count == 1 ? "" : "s") at once.
+                    The audience can only follow so many championships. While the belts fit, each keeps all it
+                    has earned; past that, every one is worth less.
+                    @if (registry.Dilution < 1)
+                    {
+                        <text>Right now each keeps <strong>@Shown.Percent(registry.Dilution)</strong> of what it has earned.</text>
+                    }
                 </p>
                 @if (registry.Dilution < 1)
                 {

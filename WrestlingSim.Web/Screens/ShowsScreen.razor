@@ -20,22 +20,37 @@ else
         <div class="kpi">
             <span class="kpi__key">The next 30 days</span>
             <span class="kpi__val">@month.Count</span>
-            <span class="kpi__sub">@month.Sum(sh => sh.RuntimeMinutes) minutes to fill</span>
+            <span class="kpi__sub">@month.Sum(sh => sh.RuntimeMinutes).ToString("N0") minutes to fill</span>
         </div>
         <div class="kpi">
             <span class="kpi__key">Next show</span>
             <span class="kpi__val">@(next?.Date.ToString("d MMM") ?? "—")</span>
             <span class="kpi__sub">@(next?.Name ?? "Nothing scheduled")</span>
         </div>
+        @{ var unbooked = career.Shows.Count(sh => !sh.HasRun && sh.Date >= career.CurrentDate && sh.Date < career.CurrentDate.AddDays(14) && sh.Card.Count == 0); }
         <div class="kpi">
-            <span class="kpi__key">Television</span>
-            <span class="kpi__val">@(career.Promotion.HasTelevision ? "Yes" : "No")</span>
-            <span class="kpi__sub">@(career.Promotion.HasTelevision ? "a weekly slot" : "Established and above")</span>
+            <span class="kpi__key">Not booked yet</span>
+            <span class="kpi__val @(unbooked > 0 ? "gold" : "")">@unbooked</span>
+            <span class="kpi__sub">in the next two weeks</span>
         </div>
     </section>
 
     <div class="layout">
         <div class="layout__main">
+            @if (adding is { } draft)
+            {
+                <section class="panel">
+                    <div class="panel__title">A new show <span class="spacer"></span><span class="small muted">nothing is added until you save it</span></div>
+                    <ShowDefinitionEditor Definition="draft" Promotion="career.Promotion" OnChanged="StateHasChanged" />
+                    <div class="row mt">
+                        <span class="small muted">Saving puts its dates on the calendar from today.</span>
+                        <span class="spacer"></span>
+                        <button class="btn btn--sm btn--ghost" @onclick="() => adding = null">Cancel</button>
+                        <button class="btn btn--sm btn--primary" @onclick="SaveNew">Add it</button>
+                    </div>
+                </section>
+            }
+
             <section class="panel">
                 <div class="panel__title">Standing shows <span class="spacer"></span><span class="small muted">each one fills the calendar forward from today</span></div>
 
@@ -57,8 +72,8 @@ else
                                     <th class="num col-wide">Length</th>
                                     @if (career.Brands.Active) { <th class="col-wide">Brand</th> }
                                     <th>Next</th>
-                                    <th class="num col-wide">Upcoming</th>
-                                    <th><span class="sr-only">Actions</span></th>
+                                    <th class="num col-wide">On the calendar</th>
+                                    <th class="col-wide"><span class="sr-only">Actions</span></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -74,6 +89,7 @@ else
                                                 @if (!definition.Active) { <span class="badge badge--muted">Retired</span> }
                                                 <span class="muted only-narrow"> · @definition.RecurrenceLabel</span>
                                             </div>
+                                            <div class="only-narrow-block mt">@Actions(definition)</div>
                                         </td>
                                         <td class="small col-wide">
                                             @definition.RecurrenceLabel
@@ -104,19 +120,7 @@ else
                                             else { <span class="muted">—</span> }
                                         </td>
                                         <td class="num small col-wide">@upcoming.Count</td>
-                                        <td class="nowrap">
-                                            <button class="btn btn--sm" @onclick="() => editing = editing == definition.Id ? null : definition.Id">Edit</button>
-                                            @if (definition.Active)
-                                            {
-                                                <button class="btn btn--sm btn--ghost" @onclick="() => State.RetireShowDefinitionAsync(definition)">Retire</button>
-                                            }
-                                            else
-                                            {
-                                                <button class="btn btn--sm btn--ghost" @onclick="() => State.ReviveShowDefinitionAsync(definition)">Reinstate</button>
-                                            }
-                                            <button class="btn btn--icon btn--danger" title="Delete this show" aria-label="Delete @definition.Name"
-                                                    @onclick="() => confirmingDelete = definition.Id"><Icon Name="close" /></button>
-                                        </td>
+                                        <td class="nowrap col-wide">@Actions(definition)</td>
                                     </tr>
                                     @if (confirmingDelete == definition.Id)
                                     {
@@ -150,6 +154,7 @@ else
                             </tbody>
                         </table>
                     </div>
+                    <div class="small muted mt">Retire stops new dates being added and keeps the ones already on the calendar. Delete takes off every future date that is not booked yet.</div>
                 }
             </section>
         </div>
@@ -183,20 +188,52 @@ else
     private static int Upcoming(Career career, ShowDefinition definition) =>
         career.Shows.Count(s => s.DefinitionId == definition.Id && !s.HasRun && s.Date >= career.CurrentDate);
 
-    private async Task Add(Career career, ShowType type)
+    /// <summary>A show being set up, not yet on the career (UX review, 15 Nov: adding saved at once, on a Monday that was already taken).</summary>
+    private ShowDefinition? adding;
+
+    private void Add(Career career, ShowType type)
     {
-        var definition = new ShowDefinition
+        adding = new ShowDefinition
         {
             Name       = Label(type),
             Type       = type,
             Recurrence = type == ShowType.PremiumEvent ? RecurrenceKind.Monthly : RecurrenceKind.Weekly,
-            Day        = type == ShowType.PremiumEvent ? DayOfWeek.Saturday : DayOfWeek.Monday,
+            Day        = type == ShowType.PremiumEvent ? DayOfWeek.Saturday : FreeDay(career),
             Ordinal    = WeekOrdinal.Last
         };
-
-        await State.AddShowDefinitionAsync(definition);
-        editing = definition.Id;
+        editing = null;
     }
+
+    private async Task SaveNew()
+    {
+        if (adding is not { } d) return;
+        adding = null;
+        await State.AddShowDefinitionAsync(d);
+    }
+
+    /// <summary>A weekday no weekly show already runs on.</summary>
+    private static DayOfWeek FreeDay(Career career)
+    {
+        var taken = career.ShowDefinitions.Where(d => d.Active && d.Recurrence == RecurrenceKind.Weekly).Select(d => d.Day).ToHashSet();
+        foreach (var day in new[] { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday,
+                                    DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday })
+            if (!taken.Contains(day)) return day;
+        return DayOfWeek.Monday;
+    }
+
+    private RenderFragment Actions(ShowDefinition definition) => @<span class="actions">
+        <button class="btn btn--sm" @onclick="() => editing = editing == definition.Id ? null : definition.Id">Edit</button>
+        @if (definition.Active)
+        {
+            <button class="btn btn--sm btn--ghost" title="Stops new dates being added; dates already on the calendar stay"
+                    @onclick="() => State.RetireShowDefinitionAsync(definition)">Retire</button>
+        }
+        else
+        {
+            <button class="btn btn--sm btn--ghost" @onclick="() => State.ReviveShowDefinitionAsync(definition)">Reinstate</button>
+        }
+        <button class="btn btn--sm btn--danger" @onclick="() => confirmingDelete = definition.Id">Delete</button>
+    </span>;
 
     private async Task Save(ShowDefinition definition)
     {
