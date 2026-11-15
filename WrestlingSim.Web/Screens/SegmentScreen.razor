@@ -2,8 +2,9 @@
 
 @if (result is null)
 {
-    <div class="screen__head">
-        <h1 class="screen__title">Book a Segment</h1>
+    <div class="pagehead">
+        <h1 class="pagehead__title">Book a segment</h1>
+        <p class="pagehead__lede">A promo, an angle or a beat-down: what kind, who is in it, and what they do.</p>
     </div>
 
     <SegmentBuilder OnDone="Run" OnCancel="@(() => State.Go(Screen.Exhibition))" ConfirmLabel="Run the segment ★" />

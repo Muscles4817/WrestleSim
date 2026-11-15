@@ -1,9 +1,28 @@
 @inject GameState State
 
-<div class="screen__head">
-    <div class="screen__eyebrow">@(feuds.Count) active</div>
-    <h1 class="screen__title">Feud Book</h1>
-</div>
+@{
+    var ready = feuds.Where(f => f.WorthBlowingOff).ToList();
+    var stale = feuds.Where(f => Familiarity(f) < 0.8).ToList();
+    var hottest = feuds.OrderByDescending(f => f.Heat).FirstOrDefault();
+}
+
+<section class="kpis">
+    <div class="kpi">
+        <span class="kpi__key">Active feuds</span>
+        <span class="kpi__val">@feuds.Count</span>
+        <span class="kpi__sub">@(hottest is null ? "none yet" : $"hottest: {string.Join(" vs ", hottest.CampNames)}")</span>
+    </div>
+    <div class="kpi">
+        <span class="kpi__key">Ready for a blow-off</span>
+        <span class="kpi__val @(ready.Count > 0 ? "gold" : "")">@ready.Count</span>
+        <span class="kpi__sub">hot enough to pay off on a big night</span>
+    </div>
+    <div class="kpi">
+        <span class="kpi__key">Wearing thin</span>
+        <span class="kpi__val @(stale.Count > 0 ? "grade--poor" : "")">@stale.Count</span>
+        <span class="kpi__sub">a rematch would draw under 80%</span>
+    </div>
+</section>
 
 @if (feuds.Count == 0)
 {
@@ -11,75 +30,76 @@
         <div class="empty__mark"><Icon Name="fire" /></div>
         <p><strong>No feuds yet.</strong></p>
         <p class="small">A betrayal or a weapon shot generates the most heat of anything you can book.</p>
-        <button class="btn btn--primary mt" @onclick="() => State.Go(Screen.Segment)">Book a segment</button>
+        <button class="btn btn--primary mt" @onclick="BookAngle">@(State.InCareer ? "Book an angle on the next show" : "Book a segment")</button>
     </div>
 }
 else
 {
-    <div class="stack">
-        @foreach (var feud in feuds)
-        {
-            <div class="panel">
-                <div class="panel__title">
-                    @feud.WrestlerA.RingName vs @feud.WrestlerB.RingName
-                    <span class="spacer"></span>
-                    <span class="badge @FeudUpdates.IntensityBadge(feud.Intensity)">@feud.Intensity</span>
-                </div>
-
-                <Meter Label="Heat" Value="@feud.Heat" Max="50" ValueText="@($"{feud.Heat:F0} / 50")" />
-
-                <div class="row mt small">
-                    <span class="muted">Matches</span> <strong>@feud.MatchCount</strong>
-                    <span class="faint">•</span>
-                    <span class="muted">Next one draws</span>
-                    <strong class="@(Familiarity(feud) < 0.8 ? "gold" : "")">@((int)Math.Round(Familiarity(feud) * 100))%</strong>
-                    <span class="faint">•</span>
-                    <span class="muted">Starting crowd bonus</span> <strong>+@feud.StartingEnergyBonus</strong>
-                    @if (feud.HeatToNextTier is > 0 and var toNext)
-                    {
-                        <span class="faint">•</span>
-                        <span class="muted">@toNext.ToString("F0") heat to next tier</span>
-                    }
-                </div>
-
-                @if (feud.History.Count > 0)
+    <div class="layout">
+        <div class="layout__main">
+            <div class="feudgrid">
+                @foreach (var feud in feuds.OrderByDescending(f => f.Heat))
                 {
-                    <div class="badge-row mt">
-                        @foreach (var tag in feud.History)
-                        {
-                            <span class="badge badge--cyan">@tag</span>
-                        }
-                    </div>
-                }
-                else
-                {
-                    <div class="small faint mt">No history tags yet.</div>
-                }
-
-                @{
+                    var fresh = Familiarity(feud);
                     var unlocked = UnlockedBeats(feud).ToList();
-                }
-                @if (unlocked.Count > 0)
-                {
-                    <div class="notice notice--tip mt">
-                        <strong>Unlocked beats:</strong> @string.Join(", ", unlocked)
-                    </div>
-                }
+                    <section class="panel">
+                        <div class="panel__title">
+                            <span class="feudcard__names">@string.Join(" vs ", feud.CampNames)</span>
+                            <span class="spacer"></span>
+                            <span class="badge @FeudUpdates.IntensityBadge(feud.Intensity)">@feud.Intensity</span>
+                        </div>
 
-                <div class="row mt">
-                    <button class="btn btn--sm btn--primary" @onclick="() => BookBlowoff(feud)">
-                        @(State.InCareer ? "Put it on the card →" : "Book the blow-off →")
-                    </button>
-                    <button class="btn btn--sm btn--ghost" @onclick="() => State.Go(Screen.Segment)">Add another angle</button>
-                </div>
+                        <Meter Label="Heat" Value="@feud.Heat" Max="50" ValueText="@($"{Shown.Whole(feud.Heat)} of 50")" />
+
+                        <div class="kv small mt"><span>Matches between them</span><span>@feud.MatchCount</span></div>
+                        <div class="kv small">
+                            <span>A rematch would draw</span>
+                            <span class="@(fresh < 0.8 ? "grade--poor" : "")">@Shown.Percent(fresh) of the first</span>
+                        </div>
+                        @if (feud.HeatToNextTier is > 0 and var toNext)
+                        {
+                            <div class="kv small"><span>To the next level</span><span>@Shown.Whole(toNext) more heat</span></div>
+                        }
+                        @if (feud.WorthBlowingOff)
+                        {
+                            <div class="small gold mt">Hot enough to pay off. Blow it off on a big night before it cools.</div>
+                        }
+
+                        @if (feud.History.Count > 0)
+                        {
+                            <div class="badge-row mt">
+                                @foreach (var tag in feud.History)
+                                {
+                                    <span class="badge badge--cyan">@tag.Label()</span>
+                                }
+                            </div>
+                        }
+                        @if (unlocked.Count > 0)
+                        {
+                            <div class="small muted mt">Opens up in a match: @string.Join(", ", unlocked).</div>
+                        }
+
+                        <div class="row mt">
+                            <button class="btn btn--sm btn--primary" @onclick="() => BookBlowoff(feud)">
+                                @(State.InCareer ? "Put it on the card" : "Book the blow-off")
+                            </button>
+                            <button class="btn btn--sm btn--ghost" @onclick="BookAngle">Add an angle</button>
+                        </div>
+                    </section>
+                }
             </div>
-        }
+        </div>
+
+        <aside class="layout__side">
+            <section class="panel">
+                <div class="panel__title">How a feud works</div>
+                <p class="small">Every match and angle between the same people adds heat; heat lifts the crowd at the bell and the gate.</p>
+                <p class="small">Each meeting wears the match-up down — the third or fourth rematch draws a good deal less than the first. Rest it, add a stipulation, or blow it off.</p>
+                <p class="small muted">Betrayals, injuries, stolen belts and family or managers getting involved are remembered, and some of them open up beats you could not book before.</p>
+            </section>
+        </aside>
     </div>
 }
-
-<div class="row mt">
-    <button class="btn btn--ghost" @onclick="() => State.Go(State.HomeScreen)">← @(State.InCareer ? "Home" : "Exhibition start")</button>
-</div>
 
 @code {
     private List<Feud> feuds = new();
@@ -95,6 +115,14 @@ else
     /// It still cannot pre-fill the builder (the card screen owns that state), but it now
     /// at least lands on the show being booked, which is where a blow-off goes.
     /// </summary>
+    /// <summary>An angle goes on the next show in a career; in an exhibition, the segment builder.</summary>
+    private void BookAngle()
+    {
+        if (State.InCareer && State.Career?.NextShow is { } next) State.OpenShow(next);
+        else if (State.InCareer) State.Go(Screen.Calendar);
+        else State.Go(Screen.Segment);
+    }
+
     private void BookBlowoff(Feud feud)
     {
         // The next show that has not run is where a blow-off goes. Falling back to the

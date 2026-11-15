@@ -7,139 +7,172 @@
 }
 else
 {
-    <div class="screen__head">
-        <h1 class="screen__title">Your shows</h1>
-    </div>
+    var active = career.ShowDefinitions.Where(d => d.Active).ToList();
+    var month = career.Shows.Where(sh => !sh.HasRun && sh.Date >= career.CurrentDate && sh.Date < career.CurrentDate.AddDays(30)).ToList();
+    var next = career.Shows.Where(sh => !sh.HasRun && sh.Date >= career.CurrentDate).OrderBy(sh => sh.Date).FirstOrDefault();
 
-    @if (!career.Promotion.HasTelevision)
-    {
-        <div class="notice notice--info">
-            <strong>@career.Promotion.TierLabel has no television.</strong>
-            Reach Established and a weekly slot becomes available.
+    <section class="kpis">
+        <div class="kpi">
+            <span class="kpi__key">Standing shows</span>
+            <span class="kpi__val">@active.Count</span>
+            <span class="kpi__sub">@(career.ShowDefinitions.Count - active.Count) retired</span>
         </div>
-    }
+        <div class="kpi">
+            <span class="kpi__key">The next 30 days</span>
+            <span class="kpi__val">@month.Count</span>
+            <span class="kpi__sub">@month.Sum(sh => sh.RuntimeMinutes) minutes to fill</span>
+        </div>
+        <div class="kpi">
+            <span class="kpi__key">Next show</span>
+            <span class="kpi__val">@(next?.Date.ToString("d MMM") ?? "—")</span>
+            <span class="kpi__sub">@(next?.Name ?? "Nothing scheduled")</span>
+        </div>
+        <div class="kpi">
+            <span class="kpi__key">Television</span>
+            <span class="kpi__val">@(career.Promotion.HasTelevision ? "Yes" : "No")</span>
+            <span class="kpi__sub">@(career.Promotion.HasTelevision ? "a weekly slot" : "Established and above")</span>
+        </div>
+    </section>
 
-    @foreach (var definition in career.ShowDefinitions)
-    {
-        <div class="panel @(definition.Active ? "" : "is-retired")">
-            <div class="panel__title">
-                @(string.IsNullOrWhiteSpace(definition.Name) ? "Untitled show" : definition.Name)
-                @if (!definition.Active)
+    <div class="layout">
+        <div class="layout__main">
+            <section class="panel">
+                <div class="panel__title">Standing shows <span class="spacer"></span><span class="small muted">each one fills the calendar forward from today</span></div>
+
+                @if (career.ShowDefinitions.Count == 0)
                 {
-                    <span class="badge badge--muted">Retired</span>
+                    <div class="empty">
+                        <div class="empty__mark"><Icon Name="clock" /></div>
+                        No standing shows. Add one and it will fill the calendar forward from today.
+                    </div>
                 }
-                <span class="spacer"></span>
-                <span class="small muted">@Upcoming(career, definition) upcoming</span>
-            </div>
+                else
+                {
+                    <div class="table-wrap">
+                        <table class="data">
+                            <thead>
+                                <tr>
+                                    <th>Show</th>
+                                    <th class="col-wide">When</th>
+                                    <th class="num col-wide">Length</th>
+                                    @if (career.Brands.Active) { <th class="col-wide">Brand</th> }
+                                    <th>Next</th>
+                                    <th class="num col-wide">Upcoming</th>
+                                    <th><span class="sr-only">Actions</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var definition in career.ShowDefinitions)
+                                {
+                                    var upcoming = career.Shows.Where(sh => sh.DefinitionId == definition.Id && !sh.HasRun && sh.Date >= career.CurrentDate)
+                                                               .OrderBy(sh => sh.Date).ToList();
+                                    <tr class="@(definition.Active ? "" : "is-muted")">
+                                        <td>
+                                            <strong>@(string.IsNullOrWhiteSpace(definition.Name) ? "Untitled show" : definition.Name)</strong>
+                                            <div class="small">
+                                                <span class="badge @(definition.Type == ShowType.PremiumEvent ? "badge--gold" : "badge--cyan")">@Label(definition.Type)</span>
+                                                @if (!definition.Active) { <span class="badge badge--muted">Retired</span> }
+                                                <span class="muted only-narrow"> · @definition.RecurrenceLabel</span>
+                                            </div>
+                                        </td>
+                                        <td class="small col-wide">
+                                            @definition.RecurrenceLabel
+                                            @if (!string.IsNullOrWhiteSpace(definition.Venue)) { <div class="muted">@definition.Venue</div> }
+                                        </td>
+                                        <td class="num small col-wide nowrap">@(definition.RuntimeMinutes ?? career.Promotion.DefaultRuntimeFor(definition.Type)) min</td>
+                                        @if (career.Brands.Active)
+                                        {
+                                            @* A brand needs its own television to be a brand at all — doc 22 §1.
+                                               Leaving a date company-wide is the inter-brand event of §3.4. *@
+                                            <td class="col-wide">
+                                                <select class="input input--sm" aria-label="Brand for @definition.Name"
+                                                        value="@(definition.BrandId ?? "")"
+                                                        @onchange="e => State.SetShowBrandAsync(definition, string.IsNullOrEmpty(e.Value?.ToString()) ? null : e.Value!.ToString())">
+                                                    @foreach (var brand in career.Brands.Brands)
+                                                    {
+                                                        <option value="@brand.Id">@brand.Name</option>
+                                                    }
+                                                    <option value="">Both brands</option>
+                                                </select>
+                                            </td>
+                                        }
+                                        <td class="small nowrap">
+                                            @if (upcoming.FirstOrDefault() is { } first)
+                                            {
+                                                <button class="namelink" @onclick="() => State.OpenShow(first)">@first.Date.ToString("ddd d MMM")</button>
+                                            }
+                                            else { <span class="muted">—</span> }
+                                        </td>
+                                        <td class="num small col-wide">@upcoming.Count</td>
+                                        <td class="nowrap">
+                                            <button class="btn btn--sm" @onclick="() => editing = editing == definition.Id ? null : definition.Id">Edit</button>
+                                            @if (definition.Active)
+                                            {
+                                                <button class="btn btn--sm btn--ghost" @onclick="() => State.RetireShowDefinitionAsync(definition)">Retire</button>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn--sm btn--ghost" @onclick="() => State.ReviveShowDefinitionAsync(definition)">Reinstate</button>
+                                            }
+                                            <button class="btn btn--icon btn--danger" title="Delete this show" aria-label="Delete @definition.Name"
+                                                    @onclick="() => confirmingDelete = definition.Id"><Icon Name="close" /></button>
+                                        </td>
+                                    </tr>
+                                    @if (confirmingDelete == definition.Id)
+                                    {
+                                        <tr>
+                                            <td colspan="7">
+                                                <div class="notice notice--warn">
+                                                    Delete <strong>@definition.Name</strong>? Future dates that are not booked yet
+                                                    come off the calendar. Shows you have already booked or run stay.
+                                                    <span class="spacer"></span>
+                                                    <button class="btn btn--sm btn--danger" @onclick="() => Delete(definition)">Delete</button>
+                                                    <button class="btn btn--sm btn--ghost" @onclick="() => confirmingDelete = null">Cancel</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                    @if (editing == definition.Id)
+                                    {
+                                        <tr>
+                                            <td colspan="7">
+                                                <ShowDefinitionEditor Definition="definition" Promotion="career.Promotion" OnChanged="StateHasChanged" />
+                                                <div class="row mt">
+                                                    <span class="small muted">Saving moves every future date that has not been booked yet.</span>
+                                                    <span class="spacer"></span>
+                                                    <button class="btn btn--sm btn--ghost" @onclick="() => editing = null">Cancel</button>
+                                                    <button class="btn btn--sm btn--primary" @onclick="() => Save(definition)">Save changes</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </section>
+        </div>
 
-            @if (editing == definition.Id)
-            {
-                <ShowDefinitionEditor Definition="definition" Promotion="career.Promotion"
-                                      OnChanged="StateHasChanged" />
-                <div class="row mt">
-                    <span class="small muted">
-                        Saving moves every future date that has not been booked yet.
-                    </span>
-                    <span class="spacer"></span>
-                    <button class="btn btn--sm btn--ghost" @onclick="() => editing = null">Cancel</button>
-                    <button class="btn btn--sm btn--primary" @onclick="() => Save(definition)">Save changes</button>
-                </div>
-            }
-            else
-            {
-                <div class="row small">
-                    <span class="badge @(definition.Type == ShowType.PremiumEvent ? "badge--gold" : "badge--cyan")">
-                        @Label(definition.Type)
-                    </span>
-                    @if (career.Brands.Active)
-                    {
-                        <span class="badge @(career.BrandOfShow(definition) is null ? "badge--muted" : "badge--face")">
-                            @(career.BrandOfShow(definition)?.Name ?? "Company-wide")
+        <aside class="layout__side">
+            <section class="panel">
+                <div class="panel__title">Add a show</div>
+                @if (!career.Promotion.HasTelevision)
+                {
+                    <p class="small muted">@career.Promotion.TierLabel has no television: reach Established and a weekly slot becomes available.</p>
+                }
+                @foreach (var type in career.Promotion.AvailableShowTypes)
+                {
+                    <div class="kv">
+                        <span>
+                            <strong style="color: var(--ink)">@Label(type)</strong>
+                            <div class="small muted">@Explain(type)</div>
                         </span>
-                    }
-                    <span class="muted">
-                        @definition.RecurrenceLabel
-                        · @(definition.RuntimeMinutes ?? career.Promotion.DefaultRuntimeFor(definition.Type)) min
-                        @if (!string.IsNullOrWhiteSpace(definition.Venue)) { <text> · @definition.Venue</text> }
-                    </span>
-                    <span class="spacer"></span>
-
-                    <button class="btn btn--sm" @onclick="() => editing = definition.Id">Edit</button>
-
-                    @if (definition.Active)
-                    {
-                        <button class="btn btn--sm btn--ghost" @onclick="() => State.RetireShowDefinitionAsync(definition)">
-                            Retire
-                        </button>
-                    }
-                    else
-                    {
-                        <button class="btn btn--sm btn--ghost" @onclick="() => State.ReviveShowDefinitionAsync(definition)">
-                            Reinstate
-                        </button>
-                    }
-
-                    <button class="btn btn--icon btn--danger" title="Delete this show"
-                            @onclick="() => confirmingDelete = definition.Id"><Icon Name="close" /></button>
-                </div>
-
-                @if (career.Brands.Active)
-                {
-                    @* A brand needs its own television to be a brand at all — doc 22 §1.
-                       Leaving a date company-wide is the inter-brand event of §3.4, the one
-                       show where nobody is crossing over because there is no line to cross. *@
-                    <div class="row small mt">
-                        <span class="muted">Runs on:</span>
-                        @foreach (var brand in career.Brands.Brands)
-                        {
-                            <button class="btn btn--sm @(definition.BrandId == brand.Id ? "btn--primary" : "btn--ghost")"
-                                    @onclick="() => State.SetShowBrandAsync(definition, brand.Id)">
-                                @brand.Name
-                            </button>
-                        }
-                        <button class="btn btn--sm @(definition.BrandId is null ? "btn--primary" : "btn--ghost")"
-                                @onclick="() => State.SetShowBrandAsync(definition, null)">
-                            Both brands
-                        </button>
+                        <button class="btn btn--sm" @onclick="() => Add(career, type)">Add</button>
                     </div>
                 }
-
-                @if (confirmingDelete == definition.Id)
-                {
-                    <div class="notice notice--warn mt">
-                        Delete <strong>@definition.Name</strong>? Future dates that are not booked yet
-                        come off the calendar. Shows you have already booked or run stay.
-                        <span class="spacer"></span>
-                        <button class="btn btn--sm btn--danger" @onclick="() => Delete(definition)">Delete</button>
-                        <button class="btn btn--sm btn--ghost" @onclick="() => confirmingDelete = null">Cancel</button>
-                    </div>
-                }
-            }
-        </div>
-    }
-
-    @if (career.ShowDefinitions.Count == 0)
-    {
-        <div class="empty">
-            <div class="empty__mark"><Icon Name="clock" /></div>
-            No standing shows. Add one and it will fill the calendar forward from today.
-        </div>
-    }
-
-    <div class="panel">
-        <div class="panel__title">Add a show</div>
-        <div class="row">
-            @foreach (var type in career.Promotion.AvailableShowTypes)
-            {
-                <button class="btn" @onclick="() => Add(career, type)">+ @Label(type)</button>
-            }
-        </div>
-    </div>
-
-    <div class="wizard-bar">
-        <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Dashboard)">← Home</button>
-        <span class="wizard-bar__spacer"></span>
-        <button class="btn btn--sm btn--ghost" @onclick="() => State.Go(Screen.Calendar)">Calendar →</button>
+            </section>
+        </aside>
     </div>
 }
 
@@ -176,6 +209,14 @@ else
         confirmingDelete = null;
         await State.DeleteShowDefinitionAsync(definition);
     }
+
+    private static string Explain(ShowType type) => type switch
+    {
+        ShowType.Television   => "The weekly episode: rights money, and where the audience meets your roster.",
+        ShowType.PremiumEvent => "The big night. Scarcity is what makes it big — one a month at most.",
+        ShowType.HouseShow    => "Untelevised. The gate pays, and a run of towns keeps people sharp.",
+        _                     => ""
+    };
 
     private static string Label(ShowType type) => type switch
     {

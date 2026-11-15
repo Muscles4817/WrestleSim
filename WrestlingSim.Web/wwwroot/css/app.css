@@ -2423,3 +2423,33 @@ table.data tr.is-mine td { background: rgba(245, 185, 59, .06); }
 .devrow__now { font-variant-numeric: tabular-nums; text-align: right; }
 .devrow__change { font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; }
 .devrow__words { grid-column: 1 / -1; color: var(--muted); }
+
+/* ── Old screens brought into the frame (Nov 2026) ───────────────────────── */
+tr.is-muted td { opacity: .55; }
+.only-narrow { display: none; }
+@media (max-width: 820px) { .only-narrow { display: inline; } }
+.input--sm { padding: 5px 8px; font-size: 13px; min-height: 0; width: auto; }
+.belt__head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+.belt__name { font-family: var(--display, inherit); font-size: 20px; color: var(--ink); line-height: 1.1; margin-bottom: 4px; }
+.belt__prestige { text-align: right; display: grid; justify-items: end; }
+.belt__prestige b { font-size: 28px; line-height: 1; color: var(--gold); font-variant-numeric: tabular-nums; }
+.belt__prestige span { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.belt__prestige small { color: var(--muted); }
+.belt__bar { height: 6px; border-radius: 3px; background: var(--line); margin: 12px 0; overflow: hidden; }
+.belt__bar i { display: block; height: 100%; background: var(--gold); }
+.belt__champ { font-weight: 600; text-align: right; }
+.belt__lineage summary { cursor: pointer; color: var(--ink-2); }
+.belt__lineage[open] { flex-basis: 100%; }
+.feudgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; }
+.feudgrid > .panel { margin: 0; }
+/* A builder's page heading: what it is, in one line, without the giant display title. */
+.pagehead { margin-bottom: 18px; }
+.pagehead__title { font-family: var(--display); font-size: clamp(26px, 3.2vw, 34px); line-height: 1; text-transform: uppercase; letter-spacing: .01em; }
+.pagehead__lede { color: var(--muted); margin-top: 6px; max-width: 70ch; }
+/* Key figures two to a row on a phone: one a row put four of them a whole screen above the content. */
+@media (max-width: 560px) {
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .kpis .kpi { padding: 12px; }
+  .kpis .kpi__val { font-size: 24px; }
+  .kpis .kpi__sub { font-size: 12px; }
+}

@@ -44,7 +44,7 @@
                                 <span class="badge-row" style="margin-top:6px">
                                     @foreach (var tag in t.HistoryTags)
                                     {
-                                        <span class="badge badge--cyan">@tag</span>
+                                        <span class="badge badge--cyan">@tag.Label()</span>
                                     }
                                 </span>
                             }
@@ -253,10 +253,10 @@
         @if (segment.HistoryTags.Count > 0)
         {
             <div class="row mt small">
-                <span class="muted">Stamps:</span>
+                <span class="muted">Marks the feud with:</span>
                 @foreach (var tag in segment.HistoryTags)
                 {
-                    <span class="badge badge--cyan">@tag</span>
+                    <span class="badge badge--cyan">@tag.Label()</span>
                 }
             </div>
         }

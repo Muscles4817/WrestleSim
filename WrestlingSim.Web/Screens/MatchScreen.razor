@@ -3,8 +3,9 @@
 
 @if (result is null)
 {
-    <div class="screen__head">
-        <h1 class="screen__title">Book a Match</h1>
+    <div class="pagehead">
+        <h1 class="pagehead__title">Book a match</h1>
+        <p class="pagehead__lede">Who is in it, what it is about, how long, how it ends. Nothing in an exhibition is saved.</p>
     </div>
 
     <MatchBuilder OnDone="Run" OnCancel="@(() => State.Go(Screen.Exhibition))" ConfirmLabel="Run the match ★" />

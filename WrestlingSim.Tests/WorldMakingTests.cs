@@ -205,5 +205,20 @@ namespace WrestlingSim.Tests
                 Assert.True(over[over.Count / 2] < (lo + hi) / 2);
             }
         }
+
+        [Fact]
+        public void ThePlayersRosterIsTheirOwnPeople_NotTheWorld_AndADraftOnlyDealsWithThem()
+        {
+            var career = Made(WorldSource.Database);
+            var mine = career.PlayerRoster;
+
+            Assert.NotEmpty(mine);
+            Assert.True(mine.Count < career.Roster.Count / 4);
+            Assert.All(mine, w => Assert.NotNull(career.ContractOf(w)));
+
+            career.BeginSplit([new Brand { Name = "Red" }, new Brand { Name = "Blue" }]);
+            var board = DraftBoard.Create(career, seed: 1);
+            Assert.All(board.Available, w => Assert.Contains(w, mine));
+        }
     }
 }

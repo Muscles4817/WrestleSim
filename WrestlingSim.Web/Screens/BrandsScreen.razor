@@ -45,7 +45,7 @@ else if (mode == Mode.Wizard)
 
         <div class="panel">
             <div class="panel__title">Roster depth</div>
-            @{ var depth = BrandIntegrity.Depth(career.Roster, draftBrands.Count); }
+            @{ var depth = BrandIntegrity.Depth(career.PlayerRoster, draftBrands.Count); }
             <div class="score-hero">
                 <div>
                     <div class="score-hero__label">Under contract</div>
@@ -180,9 +180,24 @@ else if (mode == Mode.Wizard)
 else if (!career.Brands.Active)
 {
     @* ── One roster ──────────────────────────────────────────────────────── *@
-    <div class="screen__head">
-        <h1 class="screen__title">Brands</h1>
-    </div>
+    var mine = career.PlayerRoster;
+    <section class="kpis">
+        <div class="kpi">
+            <span class="kpi__key">Your roster</span>
+            <span class="kpi__val">@mine.Count</span>
+            <span class="kpi__sub">one roster, every show</span>
+        </div>
+        <div class="kpi">
+            <span class="kpi__key">Split in two</span>
+            <span class="kpi__val">@(mine.Count / 2)</span>
+            <span class="kpi__sub">a brand</span>
+        </div>
+        <div class="kpi">
+            <span class="kpi__key">A split would start at</span>
+            <span class="kpi__val @(career.Brands.Ceiling < 100 ? "gold" : "")">@Shown.Whole(career.Brands.Ceiling)</span>
+            <span class="kpi__sub">integrity, out of 100</span>
+        </div>
+    </section>
 
     @if (career.Brands.Ceiling < 100)
     {
@@ -195,6 +210,8 @@ else if (!career.Brands.Active)
         </div>
     }
 
+    <div class="layout">
+    <div class="layout__main">
     <div class="panel">
         <div class="panel__title">What a split gets you</div>
         <ul class="small">
@@ -210,8 +227,10 @@ else if (!career.Brands.Active)
         </ul>
     </div>
 
+    </div>
+    <aside class="layout__side">
     <div class="panel">
-        <div class="panel__title">Can this roster carry it</div>
+        <div class="panel__title">Can your roster carry it</div>
         @if (Depth(career, 2) is { IsThin: true } depth)
         {
             <div class="notice notice--warn">
@@ -224,15 +243,12 @@ else if (!career.Brands.Active)
         else
         {
             <div class="notice notice--info">
-                @career.Roster.Count under contract, about @(career.Roster.Count / 2) a brand. Deep enough.
+                @career.PlayerRoster.Count under contract, about @(career.PlayerRoster.Count / 2) a brand. Deep enough.
             </div>
         }
+        <button class="btn btn--primary mt" @onclick="OpenWizard">Split the roster</button>
     </div>
-
-    <div class="wizard-bar">
-        <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Dashboard)">← Home</button>
-        <span class="wizard-bar__spacer"></span>
-        <button class="btn btn--primary" @onclick="OpenWizard">Split the roster ◫</button>
+    </aside>
     </div>
 }
 else
@@ -240,13 +256,28 @@ else
     @* ── The split, running ──────────────────────────────────────────────── *@
     var split = career.Brands;
 
-    <div class="screen__head">
-        <div class="screen__eyebrow">
-            Split since @(split.StartedOn?.ToString("d MMM yyyy") ?? "—")
-            · @split.CrossoverCount crossover@(split.CrossoverCount == 1 ? "" : "s")
+    <section class="kpis">
+        <div class="kpi">
+            <span class="kpi__key">Split integrity</span>
+            <span class="kpi__val">@Shown.Whole(split.Integrity)</span>
+            <span class="kpi__sub">@BrandIntegrity.Phase(split.Integrity) · ceiling @Shown.Whole(split.Ceiling)</span>
         </div>
-        <h1 class="screen__title">Brands</h1>
-    </div>
+        <div class="kpi">
+            <span class="kpi__key">Star-making</span>
+            <span class="kpi__val">@Shown.Percent(BrandIntegrity.StarMakingFactor(split.Integrity))</span>
+            <span class="kpi__sub">of a brand win the winner keeps</span>
+        </div>
+        <div class="kpi">
+            <span class="kpi__key">Crossovers</span>
+            <span class="kpi__val">@split.CrossoverCount</span>
+            <span class="kpi__sub">since @(split.StartedOn?.ToString("d MMM yyyy") ?? "—")</span>
+        </div>
+        <div class="kpi">
+            <span class="kpi__key">Next draft</span>
+            <span class="kpi__val @(Draft.IsDue(split, career.CurrentDate) ? "gold" : "")">@(Draft.IsDue(split, career.CurrentDate) ? "Due" : Draft.DueOn(split)?.ToString("MMM yyyy") ?? "—")</span>
+            <span class="kpi__sub">annual is right</span>
+        </div>
+    </section>
 
     @if (State.LastDraft is { } report)
     {
@@ -282,24 +313,8 @@ else
 
         <p class="small muted mt">@BrandIntegrity.PhaseNote(split.Integrity)</p>
 
-        <div class="score-hero">
-            <div>
-                <div class="score-hero__label">Ceiling</div>
-                <div class="score-hero__main">@Shown.Whole(split.Ceiling)</div>
-            </div>
-            <div>
-                <div class="score-hero__label">Star-making</div>
-                <div class="score-hero__main">
-                    @((BrandIntegrity.StarMakingFactor(split.Integrity) * 100).ToString("F0"))<span class="muted">%</span>
-                </div>
-            </div>
-            <div>
-                <div class="score-hero__label">Exclusivity worth</div>
-                <div class="score-hero__main">
-                    +@Shown.Whole(BrandIntegrity.ExclusivityBonus(split.Integrity) * 100)<span class="muted">%</span>
-                </div>
-            </div>
-        </div>
+        <div class="kv small mt"><span>Ceiling a draft can restore to</span><span>@Shown.Whole(split.Ceiling)</span></div>
+        <div class="kv small"><span>A show kept to its own brand is worth</span><span>+@Shown.Whole(BrandIntegrity.ExclusivityBonus(split.Integrity) * 100)%</span></div>
 
         <p class="small muted mt">
             The ceiling is what a draft can restore integrity to. It falls a little with every
@@ -327,7 +342,7 @@ else
                         Last held @(split.LastDraftOn?.ToString("d MMM yyyy") ?? "never")
                         · next due @due.ToString("d MMM yyyy")
                         · a draft today would restore
-                        @((Draft.RepairShare(Draft.DaysSince(split, career.CurrentDate)) * 100).ToString("F0"))%
+                        @Shown.Percent(Draft.RepairShare(Draft.DaysSince(split, career.CurrentDate)))
                         of the @Shown.Whole(split.Ceiling - split.Integrity) integrity you are down.
                     </text>
                 }
@@ -509,9 +524,8 @@ else
         }
     </div>
 
-    <div class="wizard-bar">
-        <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Dashboard)">← Home</button>
-        <span class="wizard-bar__spacer"></span>
+    <div class="row mt">
+        <span class="spacer"></span>
         @if (confirmingEnd)
         {
             <span class="small muted">Both rosters merge back. The erosion stays on the books.</span>
@@ -527,11 +541,11 @@ else
 
 @code {
     private static SplitDepthReport Depth(Career career, int brandCount) =>
-        BrandIntegrity.Depth(career.Roster, brandCount);
+        BrandIntegrity.Depth(career.PlayerRoster, brandCount);
 
     /// <summary>Free agents, most over first. Nobody's brand, so nobody's crossover.</summary>
     private static List<Wrestler> Unassigned(Career career) =>
-        career.Brands.Unassigned(career.Roster).OrderByDescending(w => w.EffectiveOverness).ToList();
+        career.Brands.Unassigned(career.PlayerRoster).OrderByDescending(w => w.EffectiveOverness).ToList();
 
     private enum Mode { Overview, Wizard }
 
@@ -634,7 +648,7 @@ else
     {
         if (State.Career is not { } career) return;
 
-        var board = DraftBoard.Create(draftBrands, career.Roster, career.Brands);
+        var board = DraftBoard.Create(draftBrands, career.PlayerRoster, career.Brands);
         board.AutoComplete();
 
         wizardAssignment.Clear();

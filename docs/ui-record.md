@@ -112,3 +112,34 @@ out rather than faked:
 
 Also not redesigned: the match, segment and battle royal builders, the titles, feuds, shows and
 brands detail screens. They sit in the new frame and work as before.
+*Since redesigned (15 Nov), below — except the inside of the match builder, which keeps its steps
+and keyboard handling as they were (CLAUDE.md records three rounds of breakage there).*
+
+## The old screens brought into the frame (15 Nov)
+
+Every page now has one width (the wide layout), no giant display heading above the tab row that
+already names it, and no "← Home" button at the bottom duplicating the navigation.
+
+- **Your shows**: key figures (standing shows, the next thirty days and the minutes to fill, the
+  next show, television), one table of standing shows with when, length, the brand when split,
+  the next date (opens that show) and how many are coming; edit and delete open in place under
+  the row. Adding a show is the side column, each type with a line on what it is for.
+- **Titles**: key figures (belts, vacant, not defended lately, attention committed); each belt a
+  compact card leading with its champion (linked) or that it is vacant, a prestige bar and word,
+  the reign and when it was last defended, its history folded away; Vacate and Retire as quiet
+  buttons. The attention pool, introducing a title and retired belts are the side column. Names
+  drop the promotion's own name in front of them.
+- **Feuds**: key figures (active, ready for a blow-off, wearing thin), a grid of feud cards with
+  heat, what a rematch would draw, heat to the next level, the history in words ("Personal
+  insult", not `PersonalInsult`), and what it opens up; a short guide in the side column.
+- **Brands**: key figures and a main/side layout in both the single-roster and split views; the
+  split's integrity, star-making, crossovers and next draft as figures rather than a hero block.
+  **A real defect fixed:** the brand wizard, its depth check, the unassigned list and the draft
+  read `Career.Roster` as the player's roster — true with ninety wrestlers, but since Part 1 the
+  roster is the whole world, so a split would have drafted rivals' wrestlers onto the player's
+  brands and said "500 under contract". They now read `Career.PlayerRoster`.
+- **Builders** (match, segment, battle royal, exhibition show): a smaller page heading with one
+  line on what it does. The segment builder's hints no longer print engine multipliers ("×0.85")
+  or internal tag names ("Stamps ChampionshipRivalry"); they say it in words.
+- **Phones**: key figures two to a row everywhere, instead of one a row filling the first screen.
+
