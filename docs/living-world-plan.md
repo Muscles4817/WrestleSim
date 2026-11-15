@@ -468,6 +468,19 @@ television companies change their rosters every week — that one is behaviour, 
 and is not hidden. Not done, written down: ahead-of-time compilation of the browser build, a
 cheaper planner, the indie economy (Part 8).
 
+*Since (15 Nov, same branch):* the television churn was the planner acting on gains inside its
+own error — signing a cheap unknown most weeks for a third of a rating point. A move must now
+clear the forecast's resolution in the promotion's own weights (`World.Resolution`: half a rating
+point and its equivalents); twelve weeks of a small world went from 26 signings to 9, all real
+names or favourites, and a year grows rosters modestly (Established 30 to about 40) with no
+releases yet (Parts 6–7). A quiet promotion now wakes early only when the market gets better
+(`BestOnOffer`, `Better`), and an indie re-thinks its bookings when it loses a headliner it
+decided its month around (`LostHeadliner`) rather than any regular. Browser, eight weeks: small
+0.3–1.7 s (inside budget), medium 1.5–4.6 s (about 2.7), full 7.6–12 s (about 9). Natively a full
+week is about 1.5 s on one core, so the remaining gap is the browser's interpreter; the owner has
+chosen to try a native build for playtesting (a local program serving the same interface), after
+other work.
+
 Open:
 
 10. Should a rival's show ever be worked beat by beat — when the player chooses to watch one,
