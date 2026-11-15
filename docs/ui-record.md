@@ -94,14 +94,21 @@ These were drawn from the living-world plan and the game does not model them, so
 out rather than faked:
 
 - Personality traits, contentment ("how she feels"), potential and the scouting outlook.
+  *Since built (15 Nov, Part 2): potential and learning speed in words on the profile ("Where they
+  are going"). Traits and contentment are Part 6, not built.*
 - Regions: no region column, filter or calendar marks.
+  *Since built (Part 1): a region filter and the region in each talent row and on the profile. No
+  calendar marks.*
 - Choosing a generated world, a custom database, or the world's size at career start.
+  *Since built (Part 1), except the custom database.*
 - A rival's offer that the wrestler weighs and decides on; rivals sign the player's regulars
   outright, and the news says so.
 - "Talk to her": there is no conversation with a wrestler.
 - What it would take to get television: promotions do not move between levels yet.
 - Condition for wrestlers who work elsewhere: rival shows do not wear anybody out or keep them
   sharp yet, so everybody there read "ring rusty". Shown as nothing instead.
+  *Since Part 4 (#102) rival shows do wear people out and keep them sharp, so this could now be
+  shown; the profile still shows nothing.*
 
 Also not redesigned: the match, segment and battle royal builders, the titles, feuds, shows and
 brands detail screens. They sit in the new frame and work as before.
