@@ -45,7 +45,7 @@ else if (mode == Mode.Wizard)
 
         <div class="panel">
             <div class="panel__title">Roster depth</div>
-            @{ var depth = BrandIntegrity.Depth(career.Roster, draftBrands.Count); }
+            @{ var depth = BrandIntegrity.Depth(career.PlayerRoster, draftBrands.Count); }
             <div class="score-hero">
                 <div>
                     <div class="score-hero__label">Under contract</div>
@@ -129,13 +129,13 @@ else if (mode == Mode.Wizard)
                     <div class="editor-row__tools">
                         @foreach (var brand in draftBrands)
                         {
-                            <button class="btn btn--sm @(definition.BrandId == brand.Id ? "btn--primary" : "btn--ghost")"
-                                    @onclick="() => definition.BrandId = brand.Id">
+                            <button class="btn btn--sm @(DraftBrandOf(definition) == brand.Id ? "btn--primary" : "btn--ghost")"
+                                    @onclick="() => AssignShow(definition, brand.Id)">
                                 @ShortName(brand)
                             </button>
                         }
-                        <button class="btn btn--sm @(definition.BrandId is null ? "btn--primary" : "btn--ghost")"
-                                @onclick="() => definition.BrandId = null">
+                        <button class="btn btn--sm @(DraftBrandOf(definition) is null ? "btn--primary" : "btn--ghost")"
+                                @onclick="() => AssignShow(definition, null)">
                             Both
                         </button>
                     </div>
@@ -153,7 +153,7 @@ else if (mode == Mode.Wizard)
             @foreach (var brand in draftBrands.Where(b => !HasShow(career, b)))
             {
                 <div class="notice notice--warn mt">
-                    <strong>@brand.Name has no show of its own.</strong>
+                    <strong>@brand.Name has no @(career.Promotion.HasTelevision ? "television" : "show") of its own.</strong>
                     A brand without its own television is a roster with nowhere to appear.
                     <span class="spacer"></span>
                     <button class="btn btn--sm btn--primary" @onclick="() => GiveAShow(career, brand)">
@@ -173,16 +173,46 @@ else if (mode == Mode.Wizard)
         }
         else
         {
-            <button class="btn btn--primary" @onclick="Confirm">Split the roster ◫</button>
+            var showless = draftBrands.Where(b => !HasShow(career, b)).ToList();
+            @if (showless.Count > 0 && !confirmingShowless)
+            {
+                <span class="small muted">@string.Join(" and ", showless.Select(b => b.Name)) @(showless.Count == 1 ? "has" : "have") no show of its own.</span>
+                <button class="btn btn--primary" @onclick="() => confirmingShowless = true">Split the roster</button>
+            }
+            else if (showless.Count > 0)
+            {
+                <span class="small muted">A brand with no show is a roster with nowhere to appear. Split anyway?</span>
+                <button class="btn btn--ghost" @onclick="() => confirmingShowless = false">Not yet</button>
+                <button class="btn btn--primary" @onclick="Confirm">Split anyway</button>
+            }
+            else
+            {
+                <button class="btn btn--primary" @onclick="Confirm">Split the roster</button>
+            }
         }
     </div>
 }
 else if (!career.Brands.Active)
 {
     @* ── One roster ──────────────────────────────────────────────────────── *@
-    <div class="screen__head">
-        <h1 class="screen__title">Brands</h1>
-    </div>
+    var mine = career.PlayerRoster;
+    <section class="kpis">
+        <div class="kpi">
+            <span class="kpi__key">Your roster</span>
+            <span class="kpi__val">@mine.Count</span>
+            <span class="kpi__sub">one roster, every show</span>
+        </div>
+        <div class="kpi">
+            <span class="kpi__key">Split in two</span>
+            <span class="kpi__val">@(mine.Count / 2)</span>
+            <span class="kpi__sub">a brand</span>
+        </div>
+        <div class="kpi">
+            <span class="kpi__key">A split would start at</span>
+            <span class="kpi__val @(career.Brands.Ceiling < 100 ? "gold" : "")">@Shown.Whole(career.Brands.Ceiling)</span>
+            <span class="kpi__sub">how separate the brands feel, out of 100 — crossovers wear it down</span>
+        </div>
+    </section>
 
     @if (career.Brands.Ceiling < 100)
     {
@@ -195,6 +225,8 @@ else if (!career.Brands.Active)
         </div>
     }
 
+    <div class="layout">
+    <div class="layout__main">
     <div class="panel">
         <div class="panel__title">What a split gets you</div>
         <ul class="small">
@@ -210,8 +242,10 @@ else if (!career.Brands.Active)
         </ul>
     </div>
 
+    </div>
+    <aside class="layout__side">
     <div class="panel">
-        <div class="panel__title">Can this roster carry it</div>
+        <div class="panel__title">Can your roster carry it</div>
         @if (Depth(career, 2) is { IsThin: true } depth)
         {
             <div class="notice notice--warn">
@@ -224,15 +258,12 @@ else if (!career.Brands.Active)
         else
         {
             <div class="notice notice--info">
-                @career.Roster.Count under contract, about @(career.Roster.Count / 2) a brand. Deep enough.
+                @career.PlayerRoster.Count under contract, about @(career.PlayerRoster.Count / 2) a brand. Deep enough.
             </div>
         }
+        <button class="btn btn--primary mt" @onclick="OpenWizard">Split the roster</button>
     </div>
-
-    <div class="wizard-bar">
-        <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Dashboard)">← Home</button>
-        <span class="wizard-bar__spacer"></span>
-        <button class="btn btn--primary" @onclick="OpenWizard">Split the roster ◫</button>
+    </aside>
     </div>
 }
 else
@@ -240,13 +271,28 @@ else
     @* ── The split, running ──────────────────────────────────────────────── *@
     var split = career.Brands;
 
-    <div class="screen__head">
-        <div class="screen__eyebrow">
-            Split since @(split.StartedOn?.ToString("d MMM yyyy") ?? "—")
-            · @split.CrossoverCount crossover@(split.CrossoverCount == 1 ? "" : "s")
+    <section class="kpis">
+        <div class="kpi">
+            <span class="kpi__key">Split integrity</span>
+            <span class="kpi__val">@Shown.Whole(split.Integrity)</span>
+            <span class="kpi__sub">@BrandIntegrity.Phase(split.Integrity) · ceiling @Shown.Whole(split.Ceiling)</span>
         </div>
-        <h1 class="screen__title">Brands</h1>
-    </div>
+        <div class="kpi">
+            <span class="kpi__key">Star-making</span>
+            <span class="kpi__val">@Shown.Percent(BrandIntegrity.StarMakingFactor(split.Integrity))</span>
+            <span class="kpi__sub">of a brand win the winner keeps</span>
+        </div>
+        <div class="kpi">
+            <span class="kpi__key">Crossovers</span>
+            <span class="kpi__val">@split.CrossoverCount</span>
+            <span class="kpi__sub">since @(split.StartedOn?.ToString("d MMM yyyy") ?? "—")</span>
+        </div>
+        <div class="kpi">
+            <span class="kpi__key">Next draft</span>
+            <span class="kpi__val @(Draft.IsDue(split, career.CurrentDate) ? "gold" : "")">@(Draft.IsDue(split, career.CurrentDate) ? "Due" : Draft.DueOn(split)?.ToString("MMM yyyy") ?? "—")</span>
+            <span class="kpi__sub">annual is right</span>
+        </div>
+    </section>
 
     @if (State.LastDraft is { } report)
     {
@@ -282,24 +328,8 @@ else
 
         <p class="small muted mt">@BrandIntegrity.PhaseNote(split.Integrity)</p>
 
-        <div class="score-hero">
-            <div>
-                <div class="score-hero__label">Ceiling</div>
-                <div class="score-hero__main">@Shown.Whole(split.Ceiling)</div>
-            </div>
-            <div>
-                <div class="score-hero__label">Star-making</div>
-                <div class="score-hero__main">
-                    @((BrandIntegrity.StarMakingFactor(split.Integrity) * 100).ToString("F0"))<span class="muted">%</span>
-                </div>
-            </div>
-            <div>
-                <div class="score-hero__label">Exclusivity worth</div>
-                <div class="score-hero__main">
-                    +@Shown.Whole(BrandIntegrity.ExclusivityBonus(split.Integrity) * 100)<span class="muted">%</span>
-                </div>
-            </div>
-        </div>
+        <div class="kv small mt"><span>Ceiling a draft can restore to</span><span>@Shown.Whole(split.Ceiling)</span></div>
+        <div class="kv small"><span>A show kept to its own brand is worth</span><span>+@Shown.Whole(BrandIntegrity.ExclusivityBonus(split.Integrity) * 100)%</span></div>
 
         <p class="small muted mt">
             The ceiling is what a draft can restore integrity to. It falls a little with every
@@ -321,19 +351,23 @@ else
         </div>
         <div class="row small">
             <span class="muted">
-                @if (Draft.DueOn(split) is { } due)
+                @if (split.Integrity >= split.Ceiling - 0.5)
+                {
+                    <text>Nothing to repair yet: integrity is at its ceiling. A draft resets every pairing at once — worth it once a year, not before.</text>
+                }
+                else if (Draft.DueOn(split) is { } due)
                 {
                     <text>
                         Last held @(split.LastDraftOn?.ToString("d MMM yyyy") ?? "never")
                         · next due @due.ToString("d MMM yyyy")
                         · a draft today would restore
-                        @((Draft.RepairShare(Draft.DaysSince(split, career.CurrentDate)) * 100).ToString("F0"))%
+                        @Shown.Percent(Draft.RepairShare(Draft.DaysSince(split, career.CurrentDate)))
                         of the @Shown.Whole(split.Ceiling - split.Integrity) integrity you are down.
                     </text>
                 }
             </span>
             <span class="spacer"></span>
-            <button class="btn btn--sm btn--primary" @onclick="() => State.StartDraft()">Hold a draft</button>
+            <button class="btn btn--sm @(Draft.IsDue(split, career.CurrentDate) ? "btn--primary" : "btn--ghost")" @onclick="() => State.StartDraft()">Hold a draft</button>
         </div>
         <p class="small muted mt">
             Annual is right. It refreshes every roster and every possible pairing at once, ends
@@ -509,9 +543,8 @@ else
         }
     </div>
 
-    <div class="wizard-bar">
-        <button class="btn btn--ghost" @onclick="() => State.Go(Screen.Dashboard)">← Home</button>
-        <span class="wizard-bar__spacer"></span>
+    <div class="row mt">
+        <span class="spacer"></span>
         @if (confirmingEnd)
         {
             <span class="small muted">Both rosters merge back. The erosion stays on the books.</span>
@@ -527,17 +560,37 @@ else
 
 @code {
     private static SplitDepthReport Depth(Career career, int brandCount) =>
-        BrandIntegrity.Depth(career.Roster, brandCount);
+        BrandIntegrity.Depth(career.PlayerRoster, brandCount);
 
     /// <summary>Free agents, most over first. Nobody's brand, so nobody's crossover.</summary>
     private static List<Wrestler> Unassigned(Career career) =>
-        career.Brands.Unassigned(career.Roster).OrderByDescending(w => w.EffectiveOverness).ToList();
+        career.Brands.Unassigned(career.PlayerRoster).OrderByDescending(w => w.EffectiveOverness).ToList();
 
     private enum Mode { Overview, Wizard }
 
     private Mode mode = Mode.Overview;
     private int step;
     private bool confirmingEnd;
+    private bool confirmingShowless;
+
+    /// <summary>
+    /// Step 3's choices for the career's existing shows, held here until the split is confirmed:
+    /// they used to be written straight onto the live show definitions, so a split abandoned at
+    /// step 3 left a show tied to a brand that was never made (found by UX review, 15 Nov).
+    /// The wizard's own new shows are drafts already and carry theirs.
+    /// </summary>
+    private readonly Dictionary<string, string?> showAssignment = new();
+
+    private string? DraftBrandOf(ShowDefinition d) =>
+        newDefinitions.Contains(d) ? d.BrandId
+        : showAssignment.TryGetValue(d.Id, out var id) ? id : null;
+
+    private void AssignShow(ShowDefinition d, string? brandId)
+    {
+        if (newDefinitions.Contains(d)) d.BrandId = brandId;
+        else showAssignment[d.Id] = brandId;
+        confirmingShowless = false;
+    }
 
     private readonly HashSet<string> expanded = new();
 
@@ -556,9 +609,13 @@ else
     /// </summary>
     private readonly List<ShowDefinition> newDefinitions = new();
 
-    private bool HasShow(Career career, Brand brand) =>
-        career.ShowDefinitions.Any(d => d.Active && d.BrandId == brand.Id)
-        || newDefinitions.Any(d => d.BrandId == brand.Id);
+    /// <summary>A show of its own that counts: television, where the promotion has it.</summary>
+    private bool HasShow(Career career, Brand brand)
+    {
+        bool Counts(ShowDefinition d) => !career.Promotion.HasTelevision || d.Type == ShowType.Television;
+        return career.ShowDefinitions.Any(d => d.Active && DraftBrandOf(d) == brand.Id && Counts(d))
+            || newDefinitions.Any(d => d.BrandId == brand.Id && Counts(d));
+    }
 
     /// <summary>
     /// A brand needs its own television to be a brand at all
@@ -598,14 +655,32 @@ else
 
     private void OpenWizard()
     {
+        // Named after the nights the promotion's weekly shows already run, and each handed its
+        // show, so the suggestion matches the calendar. The defaults used to be "Monday Night"
+        // and "Friday Night" whatever the shows were, with every show left on both brands
+        // (found by UX review, 15 Nov).
+        // Television shows only, where the promotion has television: a brand needs its own
+        // television to be a brand, and the first version handed one brand the untelevised
+        // house show (found by UX review, 15 Nov).
+        bool tv = State.Career?.Promotion.HasTelevision == true;
+        var weekly = State.Career?.ShowDefinitions
+            .Where(d => d.Active && d.Recurrence == RecurrenceKind.Weekly && d.Type != ShowType.PremiumEvent
+                     && (!tv || d.Type == ShowType.Television))
+            .OrderBy(d => d.Type == ShowType.Television ? 0 : 1).ThenBy(d => d.Day)
+            .GroupBy(d => d.Day).Select(g => g.First()).Take(2).ToList() ?? [];
+        var nights = weekly.Select(d => d.Day).Concat(new[] { DayOfWeek.Monday, DayOfWeek.Friday }.Where(d => weekly.All(w => w.Day != d)))
+            .Take(2).ToList();
         draftBrands =
         [
-            new Brand { Name = "Monday Night", Colour = "#d4af37" },
-            new Brand { Name = "Friday Night", Colour = "#4fc3f7" }
+            new Brand { Name = $"{nights[0]} Night", Colour = "#d4af37" },
+            new Brand { Name = $"{nights[1]} Night", Colour = "#4fc3f7" }
         ];
 
         wizardAssignment.Clear();
         newDefinitions.Clear();
+        showAssignment.Clear();
+        confirmingShowless = false;
+        for (int i = 0; i < weekly.Count; i++) showAssignment[weekly[i].Id] = draftBrands[i].Id;
         step = 0;
         mode = Mode.Wizard;
     }
@@ -634,7 +709,7 @@ else
     {
         if (State.Career is not { } career) return;
 
-        var board = DraftBoard.Create(draftBrands, career.Roster, career.Brands);
+        var board = DraftBoard.Create(draftBrands, career.PlayerRoster, career.Brands);
         board.AutoComplete();
 
         wizardAssignment.Clear();
@@ -665,10 +740,10 @@ else
         foreach (var definition in newDefinitions)
             await State.AddShowDefinitionAsync(definition);
 
-        // Show definitions were assigned in place during step 3; push those onto the dates
-        // already sitting on the calendar.
-        foreach (var definition in career.ShowDefinitions)
-            await State.SetShowBrandAsync(definition, definition.BrandId);
+        // Step 3's choices go onto the live shows only now, and onto the dates already on the calendar.
+        foreach (var definition in career.ShowDefinitions.Where(d => !newDefinitions.Contains(d)))
+            await State.SetShowBrandAsync(definition, showAssignment.TryGetValue(definition.Id, out var id) ? id : null);
+        showAssignment.Clear();
 
         newDefinitions.Clear();
 
@@ -687,9 +762,11 @@ else
         if (!expanded.Remove(id)) expanded.Add(id);
     }
 
-    /// <summary>First word of a brand name, for buttons that have room for one.</summary>
-    private static string ShortName(Brand brand) =>
-        brand.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? brand.Name;
+    /// <summary>
+    /// A brand's name on a button. The whole name: the first word alone made "WWE Raw" and
+    /// "WWE SmackDown" two identical buttons (found by UX review, 15 Nov).
+    /// </summary>
+    private static string ShortName(Brand brand) => brand.Name;
 
     private static string IntegrityBadge(double integrity) => integrity switch
     {

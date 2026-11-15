@@ -472,7 +472,23 @@ namespace WrestlingSim.Models.World
         }
 
         public IEnumerable<Wrestler> RosterByOverness =>
-            Roster.OrderByDescending(w => w.EffectiveOverness);
+            PlayerRoster.OrderByDescending(w => w.EffectiveOverness);
+
+        /// <summary>
+        /// The player's own people: everybody with a deal or an arrangement with the player's
+        /// promotion who has not retired. Not <see cref="Roster"/>, which since Part 1 is the
+        /// whole world — the brand split, its depth check and the draft read Roster as "yours",
+        /// which was true with ninety wrestlers and four promotions and handed rivals' wrestlers
+        /// to the player's brands once the world held thousands (found 15 Nov).
+        /// </summary>
+        public List<Wrestler> PlayerRoster
+        {
+            get
+            {
+                var mine = Contracts.Select(c => c.WrestlerId).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                return Roster.Where(w => !w.IsRetired && mine.Contains(w.Id)).ToList();
+            }
+        }
 
         // ── Title queries ────────────────────────────────────────────────────
 

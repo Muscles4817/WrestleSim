@@ -20,33 +20,34 @@
 }
 else if (mode == Mode.AddMatch)
 {
-    <div class="screen__head">
+    <div class="pagehead">
         <div class="screen__eyebrow">Adding to @show.Name</div>
-        <h1 class="screen__title">Add a Match</h1>
+        <h1 class="pagehead__title">Add a match</h1>
     </div>
     <MatchBuilder OnDone="AddMatch" OnCancel="@(() => mode = Mode.Card)" ConfirmLabel="Add to card +" />
 }
 else if (mode == Mode.AddSegment)
 {
-    <div class="screen__head">
+    <div class="pagehead">
         <div class="screen__eyebrow">Adding to @show.Name</div>
-        <h1 class="screen__title">Add a Segment</h1>
+        <h1 class="pagehead__title">Add a segment</h1>
     </div>
     <SegmentBuilder OnDone="AddSegment" OnCancel="@(() => mode = Mode.Card)" ConfirmLabel="Add to card +" />
 }
 else if (mode == Mode.AddRumble)
 {
-    <div class="screen__head">
+    <div class="pagehead">
         <div class="screen__eyebrow">Adding to @show.Name</div>
-        <h1 class="screen__title">Add a Battle Royal</h1>
+        <h1 class="pagehead__title">Add a battle royal</h1>
     </div>
     <RumbleBuilder OnDone="AddRumble" OnCancel="@(() => mode = Mode.Card)" ConfirmLabel="Add to card +" />
 }
 else
 {
     @* ── Card sheet ───────────────────────────────────────────────────── *@
-    <div class="screen__head">
-        <h1 class="screen__title">Book a Show</h1>
+    <div class="pagehead">
+        <h1 class="pagehead__title">Book a show</h1>
+        <p class="pagehead__lede">A whole card in the sandbox: matches, segments and battle royals in running order. Nothing here is saved.</p>
     </div>
 
     <div class="panel">
@@ -57,7 +58,7 @@ else
                 <input class="input" @bind="show.Name" placeholder="Unnamed Show" />
             </div>
             <div class="field">
-                <span class="field__label">Location</span>
+                <span class="field__label">Venue</span>
                 <input class="input" @bind="show.Location" placeholder="Unknown Arena" />
             </div>
             <div class="field">
@@ -78,7 +79,7 @@ else
         {
             <div class="empty">
                 <div class="empty__mark"><Icon Name="card" /></div>
-                Nothing booked yet. Add a match or a segment below.
+                Nothing booked yet. Add a match, a segment or a battle royal below.
             </div>
         }
 

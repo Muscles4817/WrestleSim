@@ -94,14 +94,72 @@ These were drawn from the living-world plan and the game does not model them, so
 out rather than faked:
 
 - Personality traits, contentment ("how she feels"), potential and the scouting outlook.
+  *Since built (15 Nov, Part 2): potential and learning speed in words on the profile ("Where they
+  are going"). Traits and contentment are Part 6, not built.*
 - Regions: no region column, filter or calendar marks.
+  *Since built (Part 1): a region filter and the region in each talent row and on the profile. No
+  calendar marks.*
 - Choosing a generated world, a custom database, or the world's size at career start.
+  *Since built (Part 1), except the custom database.*
 - A rival's offer that the wrestler weighs and decides on; rivals sign the player's regulars
   outright, and the news says so.
 - "Talk to her": there is no conversation with a wrestler.
 - What it would take to get television: promotions do not move between levels yet.
 - Condition for wrestlers who work elsewhere: rival shows do not wear anybody out or keep them
   sharp yet, so everybody there read "ring rusty". Shown as nothing instead.
+  *Since Part 4 (#102) rival shows do wear people out and keep them sharp, so this could now be
+  shown; the profile still shows nothing.*
 
 Also not redesigned: the match, segment and battle royal builders, the titles, feuds, shows and
 brands detail screens. They sit in the new frame and work as before.
+*Since redesigned (15 Nov), below — except the inside of the match builder, which keeps its steps
+and keyboard handling as they were (CLAUDE.md records three rounds of breakage there).*
+
+## The old screens brought into the frame (15 Nov)
+
+Every page now has one width (the wide layout), no giant display heading above the tab row that
+already names it, and no "← Home" button at the bottom duplicating the navigation.
+
+- **Your shows**: key figures (standing shows, the next thirty days and the minutes to fill, the
+  next show, television), one table of standing shows with when, length, the brand when split,
+  the next date (opens that show) and how many are coming; edit and delete open in place under
+  the row. Adding a show is the side column, each type with a line on what it is for.
+- **Titles**: key figures (belts, vacant, not defended lately, attention committed); each belt a
+  compact card leading with its champion (linked) or that it is vacant, a prestige bar and word,
+  the reign and when it was last defended, its history folded away; Vacate and Retire as quiet
+  buttons. The attention pool, introducing a title and retired belts are the side column. Names
+  drop the promotion's own name in front of them.
+- **Feuds**: key figures (active, ready for a blow-off, wearing thin), a grid of feud cards with
+  heat, what a rematch would draw, heat to the next level, the history in words ("Personal
+  insult", not `PersonalInsult`), and what it opens up; a short guide in the side column.
+- **Brands**: key figures and a main/side layout in both the single-roster and split views; the
+  split's integrity, star-making, crossovers and next draft as figures rather than a hero block.
+  **A real defect fixed:** the brand wizard, its depth check, the unassigned list and the draft
+  read `Career.Roster` as the player's roster — true with ninety wrestlers, but since Part 1 the
+  roster is the whole world, so a split would have drafted rivals' wrestlers onto the player's
+  brands and said "500 under contract". They now read `Career.PlayerRoster`.
+- **Builders** (match, segment, battle royal, exhibition show): a smaller page heading with one
+  line on what it does. The segment builder's hints no longer print engine multipliers ("×0.85")
+  or internal tag names ("Stamps ChampionshipRivalry"); they say it in words.
+- **Phones**: key figures two to a row everywhere, instead of one a row filling the first screen.
+
+**Two UX review rounds** (an independent agent, desktop and phone, in the running build) found and
+these were fixed — several of them older behaviour these screens inherited:
+
+- Split wizard: brand buttons showed only the first word (two brands sharing one were identical);
+  step 3's show choices were written onto the live shows, so an abandoned split left a show tied
+  to a brand that was never made; default brand names ignored the promotion's own nights, and could
+  hand a brand the untelevised house show; splitting with a brand that has no television now asks
+  first. Right after a split, the draft no longer offers to "restore 20% of the 0 you are down".
+- Your shows: **Edit then Cancel did not cancel** — the editor writes into the live show, and the
+  next re-sync put the show on its old night and its new one; Cancel now restores it. Adding a
+  show saved at once on a night already taken; it is now a draft until saved, on a free night,
+  with a warning when it clashes. On a phone the actions, the next date and the brand control sit
+  under the show's name, and Add brings the new-show panel into view.
+- Titles: a vacant belt opens the next show to book a match for it; the attention figure says
+  whether there is room for another belt.
+
+Logged, not done (found in review, outside this change): the Titles button opens the show but does
+not preselect the belt as the stake; the suggested card names belts with the promotion's name in
+front; on the Calendar at 1440 wide the weekend column runs under the side panel.
+

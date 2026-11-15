@@ -44,7 +44,7 @@ namespace WrestlingSim.Engine
                 Location         = SegmentLocation.Backstage,
                 ParticipantRoles = ["Interviewee", "Interrupter"],
                 HistoryTags      = [FeudHistoryTag.PersonalInsult],
-                BookerTip        = "Backstage reaches a smaller crowd (×0.85) but reliably escalates a feud.",
+                BookerTip        = "Backstage reaches fewer people — about 15% less — but reliably escalates a feud.",
                 Tags             = ["Feud", "Physical"],
                 Build            = (p, d) => SegmentFactory.CreateBackstageInterview(p[0], p[1])
             },
@@ -78,7 +78,7 @@ namespace WrestlingSim.Engine
                 Location         = SegmentLocation.Ring,
                 ParticipantRoles = ["Challenger", "Champion"],
                 HistoryTags      = [FeudHistoryTag.PersonalInsult, FeudHistoryTag.ChampionshipRivalry],
-                BookerTip        = "Longest segment on the card. Stamps ChampionshipRivalry — save it for a title feud.",
+                BookerTip        = "Longest segment on the card. Marks the feud as a championship rivalry — save it for a title feud.",
                 Tags             = ["Feud", "Title"],
                 Build            = (p, d) => SegmentFactory.CreateContractSigning(p[0], p[1], endsInBrawl: true)
             },
@@ -105,7 +105,7 @@ namespace WrestlingSim.Engine
                 Type             = SegmentType.SurpriseReturn,
                 Location         = SegmentLocation.Ring,
                 ParticipantRoles = ["Returning wrestler", "Victim"],
-                BookerTip        = "Unscripted, so it carries botch risk — but the ×1.15 raw bonus is worth it.",
+                BookerTip        = "Unscripted, so it can go wrong — but the 15% lift is worth it.",
                 Tags             = ["Shock", "Physical"],
                 Build            = (p, d) => SegmentFactory.CreateSurpriseReturn(p[0], p[1])
             },
@@ -119,7 +119,7 @@ namespace WrestlingSim.Engine
                 Location         = SegmentLocation.Ring,
                 ParticipantRoles = ["Betrayer", "Victim"],
                 HistoryTags      = [FeudHistoryTag.Betrayal],
-                BookerTip        = "The most heat of any single segment. Stamps Betrayal for later Revenge Spot payoffs.",
+                BookerTip        = "The most heat of any single segment. Marks the feud with a betrayal, which a later revenge spot pays off.",
                 Tags             = ["Turn", "Feud", "Emotional"],
                 Build            = (p, d) => SegmentFactory.CreateBetrayal(p[0], p[1])
             },
@@ -152,7 +152,7 @@ namespace WrestlingSim.Engine
                 AllowsExtraParticipants = true,
                 ExtraParticipantRole    = "Faction member",
                 HistoryTags             = [FeudHistoryTag.FactionConflict],
-                BookerTip               = "Stamps FactionConflict. Heat is split across pairings, so bigger is not always better.",
+                BookerTip               = "Marks the feud as a faction conflict. Heat is split across the pairings, so bigger is not always better.",
                 Tags                    = ["Physical", "Faction"],
                 Build                   = (p, d) => SegmentFactory.CreateFactionDominance(p.Skip(1).ToList(), p[0])
             },
@@ -165,7 +165,7 @@ namespace WrestlingSim.Engine
                 Type             = SegmentType.Brawl,
                 Location         = SegmentLocation.Crowd,
                 ParticipantRoles = ["Wrestler A", "Wrestler B"],
-                BookerTip        = "Crowd location gives the best reaction multiplier (×1.10) of any setting.",
+                BookerTip        = "Out in the crowd gets the biggest reaction of any setting — about 10% more.",
                 Tags             = ["Physical", "Chaos"],
                 Build            = (p, d) => SegmentFactory.CreateCrowdBrawl(p[0], p[1])
             },
@@ -184,7 +184,7 @@ namespace WrestlingSim.Engine
                 ExtraParticipantRole    = "Affected wrestler",
                 HistoryTags             = [FeudHistoryTag.ManagerConflict],
                 UsesDialogue            = true,
-                BookerTip               = "Stamps ManagerConflict, which is one of the two tags that unlock the Outside Party beat.",
+                BookerTip               = "Marks the feud with a manager conflict, one of the two things that open up the outside-party beat.",
                 Tags                    = ["Authority", "Feud"],
                 Build                   = (p, d) => SegmentFactory.CreateGMAnnouncement(
                                                 p[0],

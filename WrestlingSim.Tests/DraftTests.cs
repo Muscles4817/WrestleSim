@@ -26,6 +26,10 @@ namespace WrestlingSim.Tests
                     .ToList()
             };
 
+            // Every one of them is the player's: a draft is of the player's own roster.
+            foreach (var w in career.Roster)
+                career.Contracts.Add(new Contract { WrestlerId = w.Id, Kind = ContractKind.Regular, Start = start });
+
             red  = new Brand { Name = "Red" };
             blue = new Brand { Name = "Blue" };
             career.BeginSplit([red, blue]);

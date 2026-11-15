@@ -239,7 +239,9 @@
     /// </summary>
     private static readonly HashSet<Screen> WideScreens =
         [Screen.BookShow, Screen.Show, Screen.Roster, Screen.Contracts, Screen.Calendar, Screen.Brands,
-         Screen.Profile, Screen.Rivals, Screen.Rival, Screen.Business, Screen.Television, Screen.Stories, Screen.Dashboard];
+         Screen.Profile, Screen.Rivals, Screen.Rival, Screen.Business, Screen.Television, Screen.Stories, Screen.Dashboard,
+         // The old screens, brought into the frame (Nov 2026): one width for every page.
+         Screen.Shows, Screen.Titles, Screen.Feuds, Screen.Match, Screen.Segment, Screen.Rumble, Screen.News];
 
     private bool Wide => WideScreens.Contains(State.Current);
 

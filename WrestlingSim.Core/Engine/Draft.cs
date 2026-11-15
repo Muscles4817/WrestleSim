@@ -91,7 +91,7 @@ namespace WrestlingSim.Engine
         }
 
         public static DraftBoard Create(Career career, int? seed = null) =>
-            Create(career.Brands.Brands, career.Roster, career.Brands, seed);
+            Create(career.Brands.Brands, career.PlayerRoster, career.Brands, seed);
 
         /// <summary>
         /// A board over an arbitrary set of brands. The split is read only for where people

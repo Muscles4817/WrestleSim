@@ -12,214 +12,211 @@ else
     var registry = career.Titles;
     var today = career.CurrentDate;
 
-    <div class="screen__head">
-        <div class="screen__eyebrow">@career.Promotion.Name</div>
-        <h1 class="screen__title">Championships</h1>
-    </div>
+    var vacant = registry.Active.Where(t => t.CurrentReign is null).ToList();
+    var neglected = registry.Active.Where(t => t.CurrentReign is { } r
+        && today.DayNumber - (r.LastDefended ?? r.Won).DayNumber > TitleEconomy.DefenceGraceDays).ToList();
+    var top = registry.ByPrestige.FirstOrDefault();
 
-    @* ── The fixed pool ──────────────────────────────────────────────────── *@
-    <div class="panel">
-        <div class="panel__title">
-            The audience's attention
-            <span class="spacer"></span>
-            <span class="small muted">
-                @Shown.Percent(registry.Demand / TitleRegistry.AttentionCapacity) committed
-            </span>
+    <section class="kpis">
+        <div class="kpi">
+            <span class="kpi__key">Belts</span>
+            <span class="kpi__val">@registry.Active.Count</span>
+            <span class="kpi__sub">@registry.Retired.Count retired</span>
         </div>
+        <div class="kpi">
+            <span class="kpi__key">Vacant</span>
+            <span class="kpi__val @(vacant.Count > 0 ? "gold" : "")">@vacant.Count</span>
+            <span class="kpi__sub">a vacant belt loses value daily</span>
+        </div>
+        <div class="kpi">
+            <span class="kpi__key">Not defended lately</span>
+            <span class="kpi__val @(neglected.Count > 0 ? "grade--poor" : "")">@neglected.Count</span>
+            <span class="kpi__sub">over @TitleEconomy.DefenceGraceDays days</span>
+        </div>
+        <div class="kpi">
+            <span class="kpi__key">Attention</span>
+            <span class="kpi__val @(registry.Dilution < 1 ? "grade--poor" : "")">@Shown.Percent(registry.Demand / TitleRegistry.AttentionCapacity)</span>
+            <span class="kpi__sub">@(registry.Dilution < 1 ? "over-committed: every belt is losing value" : registry.SpareAttention <= 0.5 ? "full — a new belt would dilute the rest" : "room for another belt")</span>
+        </div>
+    </section>
 
-        <Meter Label="Attention" Value="@registry.Demand" Max="@TitleRegistry.AttentionCapacity"
-               ValueText="@AttentionText(registry)"
-               Variant="@(registry.Dilution < 1 ? "heel" : "gold")" />
-
-        <p class="small muted mt">
-            Attention is finite and is divided among the belts. Every title keeps
-            <strong>@((registry.Dilution * 100).ToString("F0"))%</strong> of what it has earned;
-            the rest is lost to the fact that the audience is being asked to care about
-            @registry.Active.Count championship@(registry.Active.Count == 1 ? "" : "s") at once.
-        </p>
-
-        @if (registry.Dilution < 1)
-        {
-            <div class="notice notice--warn mt">
-                <strong>The slate is over-committed.</strong>
-                Every belt is worth @((100 - registry.Dilution * 100).ToString("F0"))% less than it
-                has earned. Retiring one gives that back to the others.
-            </div>
-        }
-    </div>
-
-    @* ── Active titles ───────────────────────────────────────────────────── *@
-    @foreach (var title in registry.ByPrestige)
-    {
-        <div class="panel">
-            <div class="panel__title">
-                @title.Name
-                <span class="badge badge--gold">@title.TierLabel</span>
-                @if (title.IsTagTitle) { <span class="badge">tag team</span> }
-                <span class="spacer"></span>
-                <span class="small muted">@(title.Division == Division.Womens ? "Women's" : "Men's") division</span>
-            </div>
-
-            <div class="score-hero">
-                <div>
-                    <div class="score-hero__label">Prestige</div>
-                    <div class="score-hero__main">@Shown.Whole(title.Prestige) <span class="muted">/ 100</span></div>
-                </div>
-                <div>
-                    <div class="score-hero__label">Earned</div>
-                    <div class="score-hero__main">@Shown.Whole(title.Standing)</div>
-                </div>
-                <div>
-                    <div class="score-hero__label">Reigns</div>
-                    <div class="score-hero__main">@title.ReignCount</div>
-                </div>
-            </div>
-
-            <p class="small muted mt">@title.PrestigeLabel.</p>
-
-            @if (title.CurrentReign is { } reign)
+    <div class="layout">
+        <div class="layout__main">
+            @foreach (var title in registry.ByPrestige)
             {
-                <div class="editor-row">
-                    <div class="editor-row__n">@reign.ReignNumber</div>
-                    <div>
-                        <div class="editor-row__name">@reign.ChampionName</div>
-                        <div class="editor-row__sub">
-                            Champion since @reign.Won.ToString("d MMM yyyy") ·
-                            @reign.LengthLabel(today) ·
-                            @reign.Defences defence@(reign.Defences == 1 ? "" : "s")
-                        </div>
-                        <div class="editor-row__sub">@DefenceStatus(title, today)</div>
-                    </div>
-                    <div class="editor-row__tools">
-                        <button class="btn btn--sm btn--danger" @onclick="() => Vacate(title)">
-                            Vacate
-                        </button>
-                    </div>
-                </div>
-            }
-            else
-            {
-                <div class="notice notice--warn">
-                    <strong>Vacant.</strong> An undefended belt is a prop — it loses value every
-                    day nobody is chasing it. Book a match for it.
-                </div>
-            }
-
-            @if (title.Lineage.Count > 0)
-            {
-                <div class="group-label mt">Lineage</div>
-                @foreach (var past in title.Lineage.AsEnumerable().Reverse())
-                {
-                    <div class="editor-row">
-                        <div class="editor-row__n">@past.ReignNumber</div>
+                var reign = title.CurrentReign;
+                <section class="panel belt">
+                    <div class="belt__head">
                         <div>
-                            <div class="editor-row__name">@past.ChampionName</div>
-                            <div class="editor-row__sub">
-                                @past.Won.ToString("d MMM yyyy") –
-                                @(past.Lost is { } lost ? lost.ToString("d MMM yyyy") : "present") ·
-                                @past.LengthLabel(today) ·
-                                @past.Defences defence@(past.Defences == 1 ? "" : "s")
-                                @if (past.Vacated) { <text> · vacated</text> }
+                            <div class="belt__name">@ShortName(title.Name, career.Promotion.Name)</div>
+                            <div class="small muted">
+                                <span class="badge badge--gold">@title.TierLabel</span>
+                                @if (title.IsTagTitle) { <span class="badge">@(title.SideSize == 3 ? "Trios" : "Tag team")</span> }
+                                @(title.Division == Division.Womens ? "Women's division" : "Men's division")
+                                · @title.ReignCount reign@(title.ReignCount == 1 ? "" : "s")
                             </div>
-                            @if (!string.IsNullOrWhiteSpace(past.WonAt))
+                        </div>
+                        <div class="belt__prestige">
+                            <b>@Shown.Whole(title.Prestige)</b>
+                            <span>prestige</span>
+                            <small>@title.PrestigeLabel</small>
+                        </div>
+                    </div>
+
+                    <div class="belt__bar" aria-hidden="true"><i style="width:@Math.Clamp(title.Prestige, 0, 100)%"></i></div>
+
+                    @if (reign is not null)
+                    {
+                        var status = DefenceStatus(title, today);
+                        <div class="kv">
+                            <span>
+                                Champion
+                                <div class="small muted">since @reign.Won.ToString("d MMM yyyy") · @reign.LengthLabel(today) · @reign.Defences defence@(reign.Defences == 1 ? "" : "s")</div>
+                            </span>
+                            <span class="belt__champ">
+                                @foreach (var (champ, n) in reign.Champions.Select((c, n) => (c, n)))
+                                {
+                                    @if (n > 0) { <text> &amp; </text> }
+                                    <button class="namelink" @onclick="() => State.OpenProfile(champ)">@champ.RingName</button>
+                                }
+                            </span>
+                        </div>
+                        <div class="small @(status.StartsWith("Not defended") ? "grade--poor" : "muted")">@status</div>
+                    }
+                    else
+                    {
+                        <div class="notice notice--warn">
+                            <strong>Vacant.</strong> An undefended belt is a prop — it loses value every day
+                            nobody is chasing it.
+                            <span class="spacer"></span>
+                            @if (career.NextShow is { } next)
                             {
-                                <div class="editor-row__sub">Won at @past.WonAt</div>
+                                <button class="btn btn--sm btn--primary" @onclick="() => State.OpenShow(next)">Open @next.Name to book it</button>
                             }
                         </div>
+                    }
+
+                    <div class="row mt">
+                        @if (title.Lineage.Count > 0)
+                        {
+                            <details class="belt__lineage">
+                                <summary class="small">History — @title.Lineage.Count reign@(title.Lineage.Count == 1 ? "" : "s")</summary>
+                                @foreach (var past in title.Lineage.AsEnumerable().Reverse())
+                                {
+                                    <div class="kv small">
+                                        <span>
+                                            <strong>@past.ReignNumber.</strong> @past.ChampionName
+                                            @if (!string.IsNullOrWhiteSpace(past.WonAt)) { <span class="muted"> · won at @past.WonAt</span> }
+                                        </span>
+                                        <span class="muted nowrap">
+                                            @past.Won.ToString("MMM yyyy")–@(past.Lost is { } lost ? lost.ToString("MMM yyyy") : "now")
+                                            · @past.Defences def.@(past.Vacated ? " · vacated" : "")
+                                        </span>
+                                    </div>
+                                }
+                            </details>
+                        }
+                        <span class="spacer"></span>
+                        <span class="small muted">claims @Shown.Percent(title.AttentionClaim / TitleRegistry.AttentionCapacity) of attention</span>
+                        @if (reign is not null)
+                        {
+                            <button class="btn btn--sm btn--ghost" @onclick="() => Vacate(title)">Vacate</button>
+                        }
+                        <button class="btn btn--sm btn--ghost" @onclick="() => State.RetireTitleAsync(title)">Retire</button>
+                    </div>
+                </section>
+            }
+            @if (registry.Active.Count == 0)
+            {
+                <div class="empty"><div class="empty__mark"><Icon Name="trophy" /></div>No active titles. Introduce one, or revive a retired belt.</div>
+            }
+        </div>
+
+        <aside class="layout__side">
+            @* ── The fixed pool ── *@
+            <section class="panel">
+                <div class="panel__title">The audience's attention</div>
+                <Meter Label="Committed" Value="@registry.Demand" Max="@TitleRegistry.AttentionCapacity"
+                       ValueText="@AttentionText(registry)"
+                       Variant="@(registry.Dilution < 1 ? "heel" : "gold")" />
+                <p class="small muted mt">
+                    The audience can only follow so many championships. While the belts fit, each keeps all it
+                    has earned; past that, every one is worth less.
+                    @if (registry.Dilution < 1)
+                    {
+                        <text>Right now each keeps <strong>@Shown.Percent(registry.Dilution)</strong> of what it has earned.</text>
+                    }
+                </p>
+                @if (registry.Dilution < 1)
+                {
+                    <div class="notice notice--warn mt">
+                        <strong>Over-committed.</strong> Every belt is worth @Shown.Percent(1 - registry.Dilution) less
+                        than it has earned. Retiring one gives that back to the others.
                     </div>
                 }
-            }
+            </section>
 
-            <div class="row mt">
-                <span class="small muted">
-                    Claims @Shown.Percent(title.AttentionClaim / TitleRegistry.AttentionCapacity) of the attention pool.
-                </span>
-                <span class="spacer"></span>
-                <button class="btn btn--sm btn--danger" @onclick="() => State.RetireTitleAsync(title)">
-                    Retire this title
-                </button>
-            </div>
-        </div>
-    }
-
-    @* ── Retired ─────────────────────────────────────────────────────────── *@
-    @if (registry.Retired.Count > 0)
-    {
-        <div class="panel">
-            <div class="panel__title">Retired</div>
-            <p class="small muted">
-                The lineage survives. Reviving a belt brings its history back with it —
-                which is worth more than any new title you could design.
-            </p>
-            @foreach (var title in registry.Retired)
-            {
-                <div class="editor-row">
-                    <div class="editor-row__n">—</div>
-                    <div>
-                        <div class="editor-row__name">@title.Name</div>
-                        <div class="editor-row__sub">
-                            @title.TierLabel · @title.ReignCount reign@(title.ReignCount == 1 ? "" : "s") ·
-                            retired @(title.RetiredOn?.ToString("d MMM yyyy") ?? "—")
-                        </div>
+            @* ── Create ── *@
+            <section class="panel">
+                <div class="panel__title">Introduce a title</div>
+                <div class="field">
+                    <label class="field__label" for="title-name">Name</label>
+                    <input id="title-name" class="input" @bind="newName" @bind:event="oninput" maxlength="60" placeholder="e.g. Hardcore Championship" />
+                </div>
+                <div class="fields mt">
+                    <div class="field">
+                        <label class="field__label" for="title-tier">Tier</label>
+                        <select id="title-tier" class="select" @bind="newTier">
+                            @foreach (var t in Enum.GetValues<TitleTier>())
+                            {
+                                <option value="@t">@TierLabel(t)</option>
+                            }
+                        </select>
                     </div>
-                    <div class="editor-row__tools">
-                        <button class="btn btn--sm" @onclick="() => State.ReviveTitleAsync(title)">Revive</button>
+                    <div class="field">
+                        <label class="field__label" for="title-division">Division</label>
+                        <select id="title-division" class="select" @bind="newDivision">
+                            <option value="@Division.Mens">Men's</option>
+                            <option value="@Division.Womens">Women's</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label class="field__label" for="title-side">Contested by</label>
+                        <select id="title-side" class="select" @bind="newSideSize">
+                            <option value="1">One wrestler</option>
+                            <option value="2">A tag team</option>
+                            <option value="3">A trio</option>
+                        </select>
                     </div>
                 </div>
-            }
-        </div>
-    }
+                <p class="small muted mt">
+                    <strong>This costs.</strong> A @TierLabel(newTier).ToLowerInvariant() title claims
+                    @Shown.Percent(ClaimOf(newTier) / TitleRegistry.AttentionCapacity) of the attention pool, which would
+                    take @Shown.Percent(registry.DilutionCostOfAdding(newTier)) off every belt you already have, and it starts
+                    at @Title.NewTitleStanding prestige — a new title has no history, and history is most of what a title is worth.
+                </p>
+                <button class="btn btn--primary" disabled="@string.IsNullOrWhiteSpace(newName)" @onclick="Create">Introduce it</button>
+            </section>
 
-    @* ── Create ──────────────────────────────────────────────────────────── *@
-    <div class="panel">
-        <div class="panel__title">Introduce a title</div>
-
-        <div class="fields">
-            <div class="field">
-                <span class="field__label">Name</span>
-                <input class="input" @bind="newName" maxlength="60" placeholder="e.g. Hardcore Championship" />
-            </div>
-            <div class="field">
-                <span class="field__label">Tier</span>
-                <select class="select" @bind="newTier">
-                    @foreach (var t in Enum.GetValues<TitleTier>())
+            @* ── Retired ── *@
+            @if (registry.Retired.Count > 0)
+            {
+                <section class="panel">
+                    <div class="panel__title">Retired belts</div>
+                    <p class="small muted">The lineage survives. Reviving a belt brings its history back — worth more than any new title.</p>
+                    @foreach (var title in registry.Retired)
                     {
-                        <option value="@t">@TierLabel(t)</option>
+                        <div class="kv">
+                            <span>
+                                @ShortName(title.Name, career.Promotion.Name)
+                                <div class="small muted">@title.TierLabel · @title.ReignCount reign@(title.ReignCount == 1 ? "" : "s") · retired @(title.RetiredOn?.ToString("MMM yyyy") ?? "—")</div>
+                            </span>
+                            <button class="btn btn--sm" @onclick="() => State.ReviveTitleAsync(title)">Revive</button>
+                        </div>
                     }
-                </select>
-            </div>
-            <div class="field">
-                <span class="field__label">Division</span>
-                <select class="select" @bind="newDivision">
-                    <option value="@Division.Mens">Men's</option>
-                    <option value="@Division.Womens">Women's</option>
-                </select>
-            </div>
-            <div class="field">
-                <span class="field__label">Contested by</span>
-                <select class="select" @bind="newSideSize">
-                    <option value="1">One wrestler</option>
-                    <option value="2">A tag team</option>
-                    <option value="3">A trio</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="notice notice--warn mt">
-            <strong>This costs.</strong> A @TierLabel(newTier).ToLowerInvariant() title claims
-            @Shown.Percent(ClaimOf(newTier) / TitleRegistry.AttentionCapacity) of the attention pool, which would take
-            @((registry.DilutionCostOfAdding(newTier) * 100).ToString("F0"))% off the prestige of
-            every belt you already have. It also starts with no lineage —
-            standing @Title.NewTitleStanding — because a new title has no history and history
-            is most of what a title is worth.
-        </div>
-
-        <div class="row mt">
-            <button class="btn btn--primary" disabled="@string.IsNullOrWhiteSpace(newName)"
-                    @onclick="Create">
-                Introduce it
-            </button>
-        </div>
+                </section>
+            }
+        </aside>
     </div>
 }
 
@@ -237,6 +234,10 @@ else
         await State.CreateTitleAsync(newName, newTier, newDivision, newSideSize);
         newName = "";
     }
+
+    /// <summary>"Probe Wrestling World Heavyweight Championship" reads as "World Heavyweight Championship" on its own promotion's page.</summary>
+    private static string ShortName(string name, string promotion) =>
+        name.StartsWith(promotion + " ", StringComparison.OrdinalIgnoreCase) ? name[(promotion.Length + 1)..] : name;
 
     /// <summary>Matches the badge on each belt, so the picker and the list agree.</summary>
     private static string TierLabel(TitleTier tier) => tier switch
