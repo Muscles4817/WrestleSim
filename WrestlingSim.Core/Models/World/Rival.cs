@@ -69,6 +69,16 @@ namespace WrestlingSim.Models.World
         /// <summary>The owner's chosen wrestlers, by id. Empty unless somebody chose some.</summary>
         public List<string> Favourites { get; set; } = new();
 
+        /// <summary>
+        /// How well it books, 0–1: how often a night goes the way its direction meant it to
+        /// (Part 5, decided 14 Nov: competence is a property of the promotion). Null takes the
+        /// default for its kind of owner (<see cref="Engine.World.CompetenceOf"/>).
+        /// </summary>
+        public double? Competence { get; set; }
+
+        /// <summary>Who it is building and where its belts are going, decided monthly and kept.</summary>
+        public BookingDirection? Direction { get; set; }
+
         /// <summary>What it decided lately and why, newest last. Capped.</summary>
         public List<RivalDecision> Decisions { get; set; } = new();
 

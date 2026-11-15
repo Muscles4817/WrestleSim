@@ -130,53 +130,30 @@ namespace WrestlingSim.Engine
                 w => rival.ContractOf(w)?.IsGuaranteed == true ? 0m : career.PerDateAsk(w), career.Interest,
                 Response, Freshness);
 
+            // The booker's direction, kept month to month; then who wins each match, and the
+            // match written the way the player's quick path writes one (Part 5).
             var rng = new Random(StableSeed.From(rival.Id, today.DayNumber));
-            var result = new ShowResult { BookedMinutes = show.BookedMinutes, BudgetMinutes = show.RuntimeMinutes };
-            var winners = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            var lines = new List<string>();
-            double total = 0, weights = 0;
-
-            for (int i = 0; i < show.Card.Count; i++)
+            if (rival.Direction is not { } direction || today.DayNumber - direction.Decided.DayNumber >= 28)
+                Direct(career, rival);
+            var matches = show.Card.OfType<BookedMatch>().ToList();
+            for (int i = 0; i < matches.Count; i++)
             {
-                var item = show.Card[i];
-                double itemRating = ExpectedItemRating(rival, item, Response, Freshness);
-
-                if (item is BookedMatch match)
-                {
-                    var sides = match.Plan.Sides;
-
-                    // The favourite — the champion, or the bigger name — wins most nights.
-                    int favourite = match.Plan.TitleAtStake?.Champion is { } champ
-                        ? Math.Max(0, sides.FindIndex(sd => sd.Members.Contains(champ)))
-                        : sides.Select((sd, n) => (n, Top: sd.Members.Max(w => w.EffectiveOverness)))
-                               .OrderByDescending(x => x.Top).First().n;
-                    // A champion is harder to beat than a favourite: belts that change hands every
-                    // other month are worth nothing (doc 21 §4).
-                    double holds = match.Plan.TitleAtStake?.Champion is null ? 0.72 : 0.85;
-                    int win = rng.NextDouble() < holds ? favourite : (favourite + 1 + rng.Next(sides.Count - 1)) % sides.Count;
-                    foreach (var w in sides[win].Members) winners.Add(w.Id);
-
-                    // The match-up is remembered, which is what makes the rematch worth less.
-                    rival.Feuds.GetOrCreate(sides.Select(sd => (IReadOnlyList<Wrestler>)sd.Members).ToList())
-                         .RecordMatch(today);
-
-                    if (match.Plan.TitleAtStake is { } title)
-                    {
-                        var lost = sides[win == 0 ? 1 : 0];
-                        result.TitleUpdates.Add(TitleEconomy.ResolveTitleMatch(
-                            title, sides[win].Members, lost.Members, sides[win].Members[0], lost.Members[0],
-                            FinishWeight.Decisive, itemRating / 20.0, today, rival.Name));
-                    }
-                }
-
-                lines.Add(Describe(item));
-                double weight = item.DurationMinutes * (i == show.Card.Count - 1 ? 1.5 : 1.0);
-                total += itemRating * weight;
-                weights += weight;
+                int winner = Winner(rival, matches[i], type, rng);
+                Write(rival, matches[i], winner, type, mainEvent: i == matches.Count - 1, opener: i == 0 && matches.Count >= 5);
             }
 
-            double rating = weights <= 0 ? 0 : total / weights;
-            rating += (rng.NextDouble() * 2 - 1) * 6;      // a night's variance
+            // **One set of consequences** (Part 4): the night is worked by the same engine and
+            // run through the same show simulator as the player's — popularity from results,
+            // fatigue and sharpness, injuries, feuds, belts, what each wrestler gets better at —
+            // against this promotion's own feuds, belts and audience.
+            var result = new ShowSimulator(rival.Feuds, seed: StableSeed.From(rival.Id, today.DayNumber, "night"),
+                                           titles: rival.Titles, tier: rival.Promotion.Tier, response: Response)
+                .Simulate(show.ToShow());
+            var winners = result.Items.Select(r => r.MatchResult).OfType<Models.MatchPlan.MatchEngineResult>()
+                .SelectMany(m => m.WinningSide).Select(w => w.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var lines = show.Card.Select(Describe).ToList();
+
+            double rating = result.OverallRating;
 
             // What the night did to this audience's patience, and what their patience did to it.
             var crowd = AudienceModel.Observe(rival.Audience, show, novelty, result, winners);
@@ -195,16 +172,8 @@ namespace WrestlingSim.Engine
                 rival.Television?.Episodes.Add(new EpisodeRating { Date = today, Viewers = viewers });
             }
 
-            // On screen somewhere, so not forgotten (doc 17 §4) — the off-screen decay is for
-            // the people nobody is booking.
-            foreach (var w in show.Card.SelectMany(i => i.Wrestlers).Distinct()) w.LastAppearance = today;
-
-            // And what they worked is what they get better at — in their own style, since a
-            // rival's match is not worked beat by beat (Growth).
-            foreach (var item in show.Card)
-                foreach (var w in item.Wrestlers)
-                    if (item is BookedMatch) Growth.RecordMatch(w, item.Wrestlers);
-                    else Growth.RecordTalk(w);
+            // Appearances and what each wrestler worked were recorded by the show simulator, as
+            // for the player's shows.
 
             rival.Nights.Add(new RivalNight
             {
@@ -344,6 +313,12 @@ namespace WrestlingSim.Engine
 
                 var challengers = division.Where(w => w != holder).Take(8).ToList();
                 cut?.See(title.Division, challengers.Count, 8, challengers.Count == 0 ? 0 : Key(challengers[^1]));
+
+                // The booker's plan for the belt comes first: whoever it means to take it next
+                // gets the shot, if they can work tonight (Part 5).
+                if (rival.Direction?.NextChampion.TryGetValue(title.Name, out var planned) == true
+                    && division.FirstOrDefault(w => w.Id == planned && w != holder) is { } next)
+                    challengers = [next];
 
                 var best = challengers
                     .Select(c => AbstractMatch(title, [holder], [c]))

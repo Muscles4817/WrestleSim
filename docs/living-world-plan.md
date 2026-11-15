@@ -414,6 +414,29 @@ Proposal:
   `InjuryRisk` and `FeudBook` calls the player's nights use.
 - The planner's forecast reads the same summary, so it stays honest for free.
 
+**In progress (15 Nov 2026), on the branch, not merged.** Rival nights now run through the
+player's `ShowSimulator` against the rival's own feuds, belts, tier and audience, every match
+written from a brief by `BriefDirector` and worked by the engine; a rival booker
+(`RivalBooker.cs`) keeps a monthly direction (who it is building, who takes each belt next) and
+chooses winners by what each side is worth to it, misjudging more the less competent it is.
+
+Measured over five years of a small real-life world, against the same run on main: the top ten
+held (88 against 91), but the established stars fell from about 90 to about 30 (Cody Rhodes 28,
+Randy Orton 34, Drew McIntyre 33) while a few climbed to 100, and the number at 70 or more halved
+in the first year (10 against 21). A first version, where a less competent booker sent a random
+side over a fifth to a third of the time, was worse; competence now misjudges value instead, so a
+bad call is an upset between near equals.
+
+**What is found, and is the owner's to decide:** popularity can only be redistributed by results
+and its sum is negative under any sensible booker. Beating somebody below you pays nothing;
+losing always costs. The player's game hid this — rival nights changed nobody, and the player
+creates upsets. Nothing builds popularity the way television time, promos and character work do
+in real life. Proposed: exposure builds popularity (appearing, and above all talking, on a show,
+scaled by charisma and the show's reach), with results deciding who gains it, for the player's
+shows and the rivals' alike. Two tests fail on the branch until this is settled:
+`TheForecastIsTheWorldMinusTheNoise` (the forecast's imagined ratings are now 7 off the worked
+ones, against 6) and `ARivalCrownsChampions_AndTheBeltsHoldTheirValue` (a belt at 38).
+
 Open:
 
 10. Should a rival's show ever be worked beat by beat — when the player chooses to watch one,
