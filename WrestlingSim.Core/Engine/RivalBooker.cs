@@ -37,6 +37,13 @@ namespace WrestlingSim.Engine
 
         public static double CompetenceOf(RivalPromotion rival) => rival.Competence ?? CompetenceFor(rival.Motive);
 
+        /// <summary>
+        /// A promotion's own booking competence: its kind of owner's default, give or take a
+        /// little, from its identity — two vanity projects are not equally badly run.
+        /// </summary>
+        public static double DrawCompetence(RivalPromotion rival) =>
+            Math.Round(Math.Clamp(CompetenceFor(rival.Motive) + (new Random(StableSeed.From(rival.Id, "competence")).NextDouble() * 2 - 1) * 0.08, 0.4, 0.97), 2);
+
         /// <summary>How long a reign usually runs before the booker plans its end (doc 21 §4: months, not weeks).</summary>
         public const int ReignBeforeChange = 150;
 
@@ -58,6 +65,16 @@ namespace WrestlingSim.Engine
             var favour = new HashSet<string>(rival.Favourites);
             foreach (var key in d.Rejected.Where(r => today.DayNumber - r.Value.DayNumber > 365).Select(r => r.Key).ToList())
                 d.Rejected.Remove(key);
+
+            // A push the audience has refused is dropped, and not tried again for a year
+            // (doc 17 §9: about a third of sustained pushes are). It is news when it mattered.
+            foreach (var id in d.Pushes.ToList())
+                if (people.FirstOrDefault(w => w.Id == id) is { RejectedSince: not null } refused)
+                {
+                    d.Pushes.Remove(id);
+                    d.Rejected[id] = today;
+                    career.AddNews($"{rival.Name} has backed off {refused.RingName}'s push after the crowd turned on it.");
+                }
 
             bool Eligible(Wrestler w) => !w.IsPartTime && w.Overness < 75 && (w.AgeOn(today) ?? 30) <= 34
                                          && !d.Rejected.ContainsKey(w.Id);

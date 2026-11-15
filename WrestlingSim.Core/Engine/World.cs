@@ -181,6 +181,7 @@ namespace WrestlingSim.Engine
                     NextShow  = on.AddDays(1 + (int)tier % promotion.TypicalShowIntervalDays)
                 };
                 rival.Titles.SeedDefaults(name, on);
+                rival.Competence = DrawCompetence(rival);
                 career.Rivals.Add(rival);
             }
 

@@ -99,6 +99,9 @@ namespace WrestlingSim.Persistence
                     Development    = w.IsGenerated ? null : w.Development,
                     RetiredOn      = w.RetiredOn is { } r ? Iso(r) : null,
                     PartTimeSince  = w.PartTimeSince is { } pt ? Iso(pt) : null,
+                    Favoured       = Math.Round(w.Favoured, 3),
+                    Warmth         = Math.Round(w.Warmth, 1),
+                    RejectedSince  = w.RejectedSince is { } rj ? Iso(rj) : null,
                     Overness       = Math.Round(w.Overness, 3),
                     Momentum       = Math.Round(w.Momentum, 3),
                     LastAppearance = w.LastAppearance is { } seen ? Iso(seen) : null,
@@ -148,6 +151,8 @@ namespace WrestlingSim.Persistence
                 Disposition = r.Disposition,
                 Favourites  = r.Favourites.Count > 0 ? new List<string>(r.Favourites) : null,
                 QuietAs     = r.QuietAs,
+                Direction   = r.Direction,
+                Competence  = r.Competence,
                 QuietSince  = r.QuietSince is { } q ? Iso(q) : null,
                 Decisions   = r.Decisions.Select(d => new RivalDecisionDto
                 {
@@ -560,6 +565,9 @@ namespace WrestlingSim.Persistence
                 if (state.Development is { } dev) w.Development = dev;
                 w.RetiredOn     = string.IsNullOrEmpty(state.RetiredOn) ? null : ParseDate(state.RetiredOn);
                 w.PartTimeSince = string.IsNullOrEmpty(state.PartTimeSince) ? null : ParseDate(state.PartTimeSince);
+                if (state.Favoured is { } fav) w.Favoured = fav;
+                if (state.Warmth is { } warm) w.Warmth = warm;
+                w.RejectedSince = string.IsNullOrEmpty(state.RejectedSince) ? null : ParseDate(state.RejectedSince);
             }
 
             var career = new Career
@@ -630,6 +638,8 @@ namespace WrestlingSim.Persistence
                         Disposition = r.Disposition,
                         Favourites  = r.Favourites?.Where(byId.ContainsKey).Select(id => byId[id].Id).ToList() ?? [],
                         QuietAs     = r.QuietAs,
+                        Direction   = r.Direction,
+                        Competence  = r.Competence,
                         QuietSince  = string.IsNullOrEmpty(r.QuietSince) ? null : ParseDate(r.QuietSince),
                         Decisions   = r.Decisions?.Where(d => byId.ContainsKey(d.WrestlerId)).Select(d => new RivalDecision
                         {

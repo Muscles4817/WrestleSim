@@ -501,8 +501,45 @@ namespace WrestlingSim.Engine
             double overness = ExposureRate * gap * screen * engaged * voice * fresh;
             // The flow: a reaction above the ordinary warms, one below it cools.
             double momentum = (engaged - 0.75) * 4.0 * screen * fresh;
+
+            // Rejection (doc 16 §4.11, doc 17 §9). Somebody who wins nearly everything in front of
+            // a crowd that has not taken to them reads as somebody the promotion is forcing, and
+            // an audience that senses it is being managed resists: being shown cools them instead
+            // of making them better known. Not a dice roll and not a rule about a type of
+            // character — the same signals for the player's people and everybody else's, and
+            // whether it happens depends on whether the crowd warmed to them.
+            if (Rejecting(w))
+            {
+                overness *= 0.3;
+                momentum = Math.Min(momentum, 0) - 2.0 * screen;
+            }
             return new StatusChange(w, overness, momentum,
                 engaged >= 1.1 ? "Seen, and the crowd reacted" : engaged < 0.5 ? "Seen, and the crowd did not care" : "Seen on the show");
+        }
+
+        /// <summary>The threshold of "nearly everything": winning about four times in five lately.</summary>
+        public const double ForcedWinning = 0.78;
+
+        /// <summary>
+        /// A crowd that has not taken to somebody: lately their items have scored this far below
+        /// the rest of the cards they were on. Relative, because an indie crowd is not a cold
+        /// crowd. Measured 15 Nov over five years of a small world: against an absolute line,
+        /// seventeen of the first twenty-three pushes were refused within a year; six points
+        /// under the card refused almost none; two points under refused about twenty of fifty —
+        /// near doc 17 §9's "about a third", which is what it is set against.
+        /// </summary>
+        public const double ColdCrowd = -2;
+
+        public const string RejectionReason = "The crowd is turning on how they are being presented";
+
+        /// <summary>Whether the audience is turning on how this person is being presented.</summary>
+        public static bool Rejecting(Wrestler w) => w.Favoured >= ForcedWinning && w.Warmth < ColdCrowd;
+
+        /// <summary>Records a result and a reaction into the running averages <see cref="Rejecting"/> reads.</summary>
+        public static void Track(Wrestler w, bool? won, double reaction)
+        {
+            if (won is { } win) w.Favoured = 0.8 * w.Favoured + 0.2 * (win ? 1 : 0);
+            w.Warmth = 0.85 * w.Warmth + 0.15 * Math.Clamp(reaction, -100, 100);
         }
 
         /// <summary>
