@@ -24,78 +24,6 @@ namespace WrestlingSim.Tests
     /// </summary>
     public class WorldScaleProbe
     {
-        private static readonly DateOnly Day = new(2025, 1, 6);
-
-        private static List<Wrestler> People(int count)
-        {
-            var all = new List<Wrestler>();
-            var rng = new Random(7);
-            for (int k = 0; all.Count < count; k++)
-                foreach (var w in DataLoaders.LoadEmbeddedWrestlers())
-                {
-                    if (all.Count >= count) break;
-                    if (k > 0)
-                    {
-                        w.RealName += $" {k}";
-                        w.Id = "";
-                        w.Gimmick.Name += $" {k}";
-                        w.Overness = Math.Clamp(w.Overness * (0.25 + 0.6 * rng.NextDouble()), 5, 100);
-                    }
-                    all.Add(w);
-                }
-            return all;
-        }
-
-        private static Career Build(int wrestlers, (PromotionTier Tier, int Count, int Roster)[]? promos)
-        {
-            var career = new Career
-            {
-                Promotion = new Promotion { Name = "Player Wrestling", Tier = PromotionTier.Local },
-                StartDate = Day, CurrentDate = Day, Roster = People(wrestlers)
-            };
-            career.OpenBooks(Day);
-            career.Titles.SeedDefaults(career.Promotion.Name, Day);
-            if (promos is null) { World.Open(career, Day); return career; }
-
-            var motives = Enum.GetValues<FounderMotive>();
-            var taken = new HashSet<string>();
-            int n = 0;
-            var byOver = career.Roster.OrderByDescending(w => w.EffectiveOverness).ThenBy(w => w.Id, StringComparer.Ordinal).ToList();
-            foreach (var (tier, count, size) in promos.OrderByDescending(p => p.Tier))
-                for (int i = 0; i < count; i++, n++)
-                {
-                    var promotion = new Promotion { Name = $"{tier} Promotion {i + 1}", Tier = tier };
-                    var e = BoxOffice.For(tier);
-                    var rival = new RivalPromotion
-                    {
-                        Id = World.RivalId(promotion.Name), Promotion = promotion, Motive = motives[n % motives.Length],
-                        Books = new CareerBooks { Cash = e.OpeningCash, OpeningCash = e.OpeningCash, Reputation = CareerBooks.OpeningReputation, OpenedOn = Day },
-                        Television = promotion.HasTelevision ? Television.Open(tier, Day) : null,
-                        NextShow = Day.AddDays(1 + n % promotion.TypicalShowIntervalDays)
-                    };
-                    rival.Titles.SeedDefaults(promotion.Name, Day);
-                    if (promotion.HasTelevision)
-                    {
-                        int j = 0;
-                        foreach (var w in byOver.Where(w => !taken.Contains(w.Id)).Take(size).ToList())
-                        {
-                            int years = 1 + j++ % 4;
-                            rival.Contracts.Add(new Contract { WrestlerId = w.Id, Kind = ContractKind.Guaranteed, AnnualGuarantee = TalentMarket.GuaranteeAsk(w, years), Start = Day, End = Day.AddYears(years) });
-                            taken.Add(w.Id);
-                        }
-                    }
-                    else
-                    {
-                        var pool = byOver.Where(w => !taken.Contains(w.Id)).ToList();
-                        int start = pool.Count == 0 ? 0 : (n * 37) % pool.Count;
-                        for (int j = 0; j < size && j < pool.Count; j++)
-                            rival.Contracts.Add(new Contract { WrestlerId = pool[(start + j * 3) % pool.Count].Id, Kind = ContractKind.Regular, Start = Day });
-                    }
-                    career.Rivals.Add(rival);
-                }
-            career.OpenRoster(new TierOpeningRoster(), career.Roster.Where(w => !taken.Contains(w.Id)).ToList());
-            return career;
-        }
 
         [Fact]
         public void Scale()
@@ -113,7 +41,7 @@ namespace WrestlingSim.Tests
                 ("6,000 wrestlers, 208 rivals, real rosters", 6000, [(PromotionTier.Global, 2, 200), (PromotionTier.National, 6, 100), (PromotionTier.Established, 10, 50), (PromotionTier.SuperIndie, 40, 25), (PromotionTier.Independent, 150, 16)]),
             };
             var (name, wrestlers, promos) = cases[only];
-            var career = Build(wrestlers, promos);
+            var career = StandInWorld.Build(wrestlers, promos);
             World.ForecastsRun = 0;
             World.ForecastCost = new();
             var sw = Stopwatch.StartNew();

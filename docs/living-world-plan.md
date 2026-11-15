@@ -166,6 +166,23 @@ potential, contentment, regions and world size will show when they are built.
   ~5 MB local storage, which a full-size world outgrows within weeks.
 - **Budget: one simulated week in two seconds or less**, measured in the real browser build.
   Measured before Part 1 lands, and the world sizes on offer are set from the result.
+  - *Measured 15 Nov* (Release build, interpreted WebAssembly in Chromium, stand-in worlds
+    from `StandInWorld.Size`, `Benchmarks.WorldWeek` called from the page):
+
+    | World | Wrestlers / promotions | Built | Week 1 | Weeks 2–4 | Save (gzip in IndexedDB) |
+    |---|---|---|---|---|---|
+    | small | 500 / 15 | 0.4 s | 1.9 s | 0.1, 0.0, 0.3 s | 320 KB raw JSON, written in 0.4 s |
+    | medium | 1,200 / 40 | 0.5 s | **3.1 s** | 0.6, 0.1, 0.3 s | 789 KB, 0.2 s |
+    | full | 3,000 / 92 | 1.0 s | **9.2 s** | 0.6, 0.5 s | 1,734 KB, 0.3 s |
+
+    An ordinary week is inside the budget at every size, with room to spare. The **first** week
+    is not, at medium and full: it is the week every promotion plans from nothing — every free
+    agent is new, every booking pool unchosen. So all three sizes are offered, and the first
+    week's planning is done while the world is being made, behind a progress bar, rather than
+    on the player's first Advance. Two caveats, written here so they are not forgotten: the
+    stand-in worlds do none of what Parts 2–5 add (moving careers, rival shows with
+    consequences), so every figure must be re-measured when those land (Part 8 does that);
+    and a real save of a 90-wrestler career compressed from 211 KB to 23 KB, nine to one.
 - **Build order:** saves and the speed measurement first; then Part 1 (population and world
   choice); Parts 2 and 3 together; Parts 4 and 5 together; Part 8 (harness page) and the
   re-measure of every constant; then Parts 6 and 7.
