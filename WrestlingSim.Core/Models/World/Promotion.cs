@@ -14,6 +14,22 @@ namespace WrestlingSim.Models.World
         public string Name { get; set; } = "New Promotion";
         public PromotionTier Tier { get; set; } = PromotionTier.Independent;
 
+        /// <summary>
+        /// Where it runs. Null means nowhere in particular — a promotion made before regions
+        /// existed, or one the player left unset — and books from anywhere.
+        /// </summary>
+        public Region? Region { get; set; }
+
+        /// <summary>
+        /// Whether it can book this person. A promotion with television books from anywhere;
+        /// below television it books its own region and anybody with no region (living-world
+        /// plan §0A, 13 Nov 2026). What stops an indie booking a wrestler from across the
+        /// country is the cost of getting them there, which a promotion paying by the night
+        /// does not have the money for.
+        /// </summary>
+        public bool CanBook(Wrestler w) =>
+            HasTelevision || Region is not { } home || w.Region is not { } theirs || theirs == home;
+
         // ── Tier-derived constraints ─────────────────────────────────────────
 
         /// <summary>

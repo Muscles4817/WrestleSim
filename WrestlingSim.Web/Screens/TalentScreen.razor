@@ -58,6 +58,19 @@
             }
         </select>
     </div>
+    @if (State.Roster.Any(w => w.Region is not null))
+    {
+        <div class="field">
+            <label class="field__label" for="talent-region">Region</label>
+            <select id="talent-region" class="input" @bind="region">
+                <option value="">Anywhere</option>
+                @foreach (var r in Enum.GetValues<Region>())
+                {
+                    <option value="@r">@r.Short()</option>
+                }
+            </select>
+        </div>
+    }
     <div class="field">
         <label class="field__label" for="talent-age">Age</label>
         <select id="talent-age" class="input" @bind="age">
@@ -162,7 +175,7 @@ else
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var w in rows)
+                    @foreach (var w in rows.Take(shown))
                     {
                         var mine = career?.ContractOf(w);
                         <tr class="@(mine is not null && view != TalentView.Yours ? "is-mine" : "")">
@@ -171,6 +184,8 @@ else
                                     <strong>@w.RingName</strong>
                                     <span class="small muted">
                                         @(w.Gimmick?.Type.ToString() ?? "No gimmick") · @(w.Division == Division.Womens ? "Women's" : "Men's")
+                                        @if (w.Region is { } home) { <text> · @home.Short()</text> }
+                                        @if (w.IsGenerated) { <text> · generated</text> }
                                         @if (State.BrandOf(w) is { } brand) { <text> · @brand.Name</text> }
                                     </span>
                                 </button>
@@ -207,10 +222,21 @@ else
                 </tbody>
             </table>
         </div>
+        @if (rows.Count > shown)
+        {
+            @* A world holds thousands; drawing them all at once stalls the browser. *@
+            <div class="row mt">
+                <span class="small muted">Showing @shown of @rows.Count.</span>
+                <button class="btn btn--sm" @onclick="() => shown += PageSize">Show @Math.Min(PageSize, rows.Count - shown) more</button>
+            </div>
+        }
     </div>
 }
 
 @code {
+    private const int PageSize = 100;
+    private int shown = PageSize;
+    private string region = "";
     private string query = "";
     private string division = "";
     private string style = "";
@@ -240,6 +266,7 @@ else
             .Where(w => division == "" || w.Division.ToString() == division)
             .Where(w => style == "" || w.Style.ToString() == style)
             .Where(w => age == "" || AgeBand(w) == age)
+            .Where(w => region == "" || w.Region?.ToString() == region)
             .Where(w => string.IsNullOrWhiteSpace(query)
                      || (w.RingName?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false)
                      || (w.RealName?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false)
@@ -443,6 +470,10 @@ else
         else if (career.CanSign)
         {
             <button class="btn btn--sm btn--primary" @onclick="() => offering = w">Make an offer</button>
+        }
+        else if (!career.Promotion.CanBook(w))
+        {
+            <span class="small muted">Outside your region</span>
         }
         else
         {

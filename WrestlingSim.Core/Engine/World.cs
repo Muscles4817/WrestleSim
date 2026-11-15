@@ -184,6 +184,17 @@ namespace WrestlingSim.Engine
                 career.Rivals.Add(rival);
             }
 
+            Sign(career, on, tier => TierOpeningRoster.For(tier).Size);
+        }
+
+        /// <summary>
+        /// Everybody's opening roster, the player's included, biggest promotion first: each
+        /// signs within its budget from whoever the promotions above it left. Guarantees are
+        /// exclusive and leave the pool; regulars are not and do not. Below television a
+        /// promotion signs from its own region (<see cref="Promotion.CanBook"/>).
+        /// </summary>
+        private static void Sign(Career career, DateOnly on, Func<PromotionTier, int> sizeFor)
+        {
             var taken = new HashSet<string>(
                 career.Contracts.Where(c => c.IsGuaranteed).Select(c => c.WrestlerId)
                     .Concat(career.Rivals.SelectMany(r => r.Contracts).Where(c => c.IsGuaranteed).Select(c => c.WrestlerId)));
@@ -193,17 +204,18 @@ namespace WrestlingSim.Engine
                 .OrderByDescending(x => x.Tier)
                 .ToList();
 
-            foreach (var (_, rival) in order)
+            foreach (var (tier, rival) in order)
             {
-                var pool = career.Roster.Where(w => !taken.Contains(w.Id)).ToList();
+                var promotion = rival?.Promotion ?? career.Promotion;
+                var pool = career.Roster.Where(w => !taken.Contains(w.Id) && promotion.CanBook(w)).ToList();
                 if (rival is null)
                 {
-                    if (career.Contracts.Count == 0) career.OpenRoster(new TierOpeningRoster(), pool);
+                    if (career.Contracts.Count == 0) career.OpenRoster(new TierOpeningRoster(rosterSize: sizeFor(tier)), pool);
                     foreach (var c in career.Contracts.Where(c => c.IsGuaranteed)) taken.Add(c.WrestlerId);
                 }
                 else
                 {
-                    var source = new TierOpeningRoster(Profile(rival.Motive).OpeningBudget);
+                    var source = new TierOpeningRoster(Profile(rival.Motive).OpeningBudget, sizeFor(tier));
                     rival.Contracts.AddRange(source.Open(rival.Promotion, pool, on));
 
                     // Every owner has somebody they take to, by their own taste.

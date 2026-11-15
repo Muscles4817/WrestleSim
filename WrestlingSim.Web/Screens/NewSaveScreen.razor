@@ -2,6 +2,20 @@
 @inherits StateComponent
 @inject ViewScroll Scroll
 
+@if (State.Preparing is { } job)
+{
+    <div class="preparing" role="status" aria-live="polite">
+        <div class="preparing__box">
+            <div class="preparing__what">@job.What</div>
+            @if (job.Of > 1)
+            {
+                <div class="bar"><div class="bar__fill" style="width:@(100 * job.Done / job.Of)%"></div></div>
+                <div class="small muted tabnum">@job.Done of @job.Of</div>
+            }
+        </div>
+    </div>
+}
+
 <div class="steps">
     @foreach (var (index, label) in StepLabels)
     {
@@ -32,17 +46,58 @@
         </p>
     </div>
 
-    @* The world. One choice today; the panel is here because the choice is coming
-       (docs/living-world-plan.md, Part 1) and the player should know which world they get. *@
+    @* The world (docs/living-world-plan.md, Part 1). A custom database loaded from a file is
+       the third choice in the plan and is not built. *@
     <div class="panel">
         <div class="panel__title">The world</div>
-        <div class="kv">
-            <span><strong style="color: var(--ink)">Real-life roster</strong><div class="small muted">@State.BaseRoster.Count real wrestlers, with four rival promotions</div></span>
-            <span class="badge badge--gold">Selected</span>
+        <div class="picks picks--2">
+            <button class="pick @(source == WorldSource.Database ? "is-selected" : "")" @onclick="() => source = WorldSource.Database">
+                <div class="pick__body">
+                    <div class="pick__name">Real-life roster</div>
+                    <div class="pick__desc">@State.BaseRoster.Count real wrestlers, with generated wrestlers filling out the rest of the world below them.</div>
+                </div>
+            </button>
+            <button class="pick @(source == WorldSource.Generated ? "is-selected" : "")" @onclick="() => source = WorldSource.Generated">
+                <div class="pick__body">
+                    <div class="pick__name">Fully generated</div>
+                    <div class="pick__desc">Nobody real. Every wrestler is made up, drawn from how the real roster is built.</div>
+                </div>
+            </button>
+        </div>
+
+        <div class="fields mt">
+            <div class="field">
+                <label class="field__label" for="world-size">Size</label>
+                <select id="world-size" class="input" @bind="size">
+                    @foreach (var option in Enum.GetValues<WorldSize>())
+                    {
+                        <option value="@option">@option — @WorldShape.Describe(option)@WorldShape.Speed(option)</option>
+                    }
+                </select>
+            </div>
+            <div class="field">
+                <label class="field__label" for="world-region">Your region</label>
+                <select id="world-region" class="input" @bind="region">
+                    @foreach (var option in Enum.GetValues<Region>())
+                    {
+                        <option value="@option">@option.Short()</option>
+                    }
+                </select>
+            </div>
         </div>
         <div class="small muted mt">
-            Fully generated worlds, custom databases and choosing how big the world is are planned
-            but not built yet.
+            @if (tier < PromotionTier.Established)
+            {
+                <text>Without television you book wrestlers from @region.Name() and anybody who works anywhere, like every promotion your size. </text>
+            }
+            else
+            {
+                <text>With television you book from anywhere. </text>
+            }
+            Generated wrestlers are marked as generated. A bigger world takes longer to make, to save and
+            to advance: small runs a week in well under two seconds, medium in about one and a half with
+            some busy weeks over three, and full is slow in the browser for now. Loading your own database
+            is planned but not built.
         </div>
     </div>
 
@@ -217,6 +272,9 @@ else
 
     private string name = "";
     private PromotionTier tier = PromotionTier.Independent;
+    private WorldSource source = WorldSource.Database;
+    private WorldSize size = WorldSize.Small;
+    private Region region = Region.Midwest;
     private DateTime startDate = new(DateTime.Today.Year, 1, 5);
 
     private List<ShowDefinition> shows = new();
@@ -365,7 +423,8 @@ else
     }
 
     private Task Start() =>
-        State.StartCareerAsync(DisplayName, tier, DateOnly.FromDateTime(startDate), shows);
+        State.StartCareerAsync(DisplayName, tier, DateOnly.FromDateTime(startDate), shows,
+            new WorldChoice(size, source, Random.Shared.Next()), region);
 
     private static string Label(ShowType type) => type switch
     {

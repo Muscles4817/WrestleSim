@@ -171,14 +171,21 @@ namespace WrestlingSim.Engine
         /// much money it has. Two weeks with the same answer here are, near enough, the same
         /// week to plan.
         /// </summary>
-        private static int SituationOf(Career career, RivalPromotion rival)
+        internal static int SituationOf(Career career, RivalPromotion rival)
         {
             var parts = rival.Contracts.Select(c => c.WrestlerId).OrderBy(id => id, StringComparer.Ordinal)
                 .Append("|")
-                // The free agents it would look at, not every free agent there is: in a world
-                // of ninety promotions somebody is always coming free somewhere, and nearly
-                // always it is nobody this promotion would have considered.
-                .Concat(Shortlist(career, rival).Select(w => w.Id).OrderBy(id => id, StringComparer.Ordinal))
+                // How good the best of what is on offer is, not who exactly it is. The free
+                // agents it would look at, not every free agent there is — and not by name
+                // either: in a world of thousands the top of the market is dozens of people a
+                // fraction of a point apart, and whenever one of eighteen television companies
+                // signs one of them, the next takes their place. That is not news to anybody
+                // else. Measured 15 Nov at full size: by name, every television promotion's
+                // shortlist "changed" every week and none ever had a quiet one. So: the best
+                // names' popularity in two-point steps, the best workers' skill in tenths, and
+                // the best value in tenths of a doubling. Somebody genuinely better coming free
+                // moves a step; a reshuffle of equals does not.
+                .Concat(Opportunity(career, rival))
                 .Append("|")
                 .Concat(career.ExpiringWithin(TalentMarket.ExpiryWarningDays).Where(c => c.IsGuaranteed).Select(c => c.WrestlerId)
                               .OrderBy(id => id, StringComparer.Ordinal))
@@ -190,11 +197,21 @@ namespace WrestlingSim.Engine
             return hash == 0 ? 1 : hash;
         }
 
+        /// <summary>What is on offer to this promotion, coarsely: see <see cref="SituationOf"/>.</summary>
+        private static IEnumerable<string> Opportunity(Career career, RivalPromotion rival)
+        {
+            var free = FreeAgents(career).Where(w => rival.ContractOf(w) is null).ToList();
+            return free.Take(5).Select(w => "n" + Math.Floor(w.EffectiveOverness / 2))
+                .Concat(BestInTheRing(free).Take(3).Select(w => "r" + Math.Floor(w.RingSkills.GetOverallSkill() * 10)))
+                .Concat(BestValue(career, free).Take(3).Select(w =>
+                    "v" + Math.Floor(10 * Math.Log2(Math.Max(0.001, w.EffectiveOverness / (double)Math.Max(1m, career.PerDateAsk(w)))))));
+        }
+
         /// <summary>
         /// The free agents a promotion looks at: the most over, the best in the ring and the
         /// best value, so that whatever it wants, its best candidate is on the list.
         /// </summary>
-        private static List<Wrestler> Shortlist(Career career, RivalPromotion rival, int names = 5, int others = 3)
+        internal static List<Wrestler> Shortlist(Career career, RivalPromotion rival, int names = 5, int others = 3)
         {
             var free = FreeAgents(career).Where(w => rival.ContractOf(w) is null).ToList();
             return free.Take(names)
@@ -204,10 +221,10 @@ namespace WrestlingSim.Engine
                 .ToList();
         }
 
-        private static IEnumerable<Wrestler> BestInTheRing(IEnumerable<Wrestler> people) =>
+        internal static IEnumerable<Wrestler> BestInTheRing(IEnumerable<Wrestler> people) =>
             people.OrderByDescending(w => w.RingSkills.GetOverallSkill()).ThenBy(w => w.Id, StringComparer.Ordinal);
 
-        private static IEnumerable<Wrestler> BestValue(Career career, IEnumerable<Wrestler> people) =>
+        internal static IEnumerable<Wrestler> BestValue(Career career, IEnumerable<Wrestler> people) =>
             people.OrderByDescending(w => w.EffectiveOverness / (double)Math.Max(1m, career.PerDateAsk(w)))
                   .ThenBy(w => w.Id, StringComparer.Ordinal);
 
@@ -249,7 +266,9 @@ namespace WrestlingSim.Engine
             var hold = Forecast(career, rival, rival.Contracts, sees, cards: now);
             var onNow = On(now);
 
-            var free = FreeAgents(career).Where(w => rival.ContractOf(w) is null).ToList();
+            // Its own region and anybody with no region: below television, the cost of
+            // bringing somebody across the country is what stops it (Promotion.CanBook).
+            var free = FreeAgents(career).Where(w => rival.ContractOf(w) is null && rival.Promotion.CanBook(w)).ToList();
             int reach = 2 * TierOpeningRoster.For(tier).Size;
             var pools = new (string From, List<Wrestler> People)[]
             {

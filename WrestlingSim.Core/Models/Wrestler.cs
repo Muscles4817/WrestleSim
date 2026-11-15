@@ -27,6 +27,17 @@ namespace WrestlingSim.Models
 
         public string RingName => Gimmick?.Name;
         public string RealName { get; set; }
+
+        /// <summary>
+        /// Made by <see cref="Engine.WrestlerGenerator"/> rather than taken from a database.
+        /// Real people are never altered or invented as real people; generated people are
+        /// marked as generated (living-world plan, Part 1). A save carries them whole, because
+        /// no database holds them.
+        /// </summary>
+        public bool IsGenerated { get; set; }
+
+        /// <summary>Where they work from. Null means anywhere — see <see cref="Enums.Region"/>.</summary>
+        public Region? Region { get; set; }
         public List<Gimmick> PreviousGimmicks { get; set; }
 
         /// <summary>
@@ -249,7 +260,7 @@ namespace WrestlingSim.Models
         }
 
         /// <summary>Lower-case, punctuation-free form of a name, for use as a stable key.</summary>
-        private static string SlugOf(string? name)
+        internal static string SlugOf(string? name)
         {
             if (string.IsNullOrWhiteSpace(name)) return "unknown";
 

@@ -44,9 +44,10 @@ else
                     <span class="badge badge--heel">A rival has bid for them</span>
                 }
             </div>
-            <h1 class="phead__name">@w.RingName</h1>
+            <h1 class="phead__name">@w.RingName@if (w.IsGenerated) { <span class="gen-mark" title="Made by the game, not a real person">Generated</span> }</h1>
             <span class="phead__line">
                 @w.RealName
+                @if (w.Region is { } home) { <text> · from @home.Name()</text> }
                 @if (age is { } a) { <text> · @a (@AgeCurve.Band(a).ToLowerInvariant())</text> }
                 @if (w.DebutedIn is { } debut) { <text> · @(today.Year - debut) years in the ring</text> }
                 · @w.Style style

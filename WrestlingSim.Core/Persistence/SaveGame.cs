@@ -50,6 +50,19 @@ namespace WrestlingSim.Persistence
         public DateTime LastPlayedUtc { get; set; } = DateTime.UtcNow;
 
         public List<WrestlerStateDto> Wrestlers { get; set; } = new();
+
+        /// <summary>
+        /// Generated wrestlers, whole. Everybody else is in the database and the save keeps only
+        /// their state; nobody generated is in any database, so the save is the only place they
+        /// exist (living-world plan, Part 1). Null for a career with nobody generated.
+        /// </summary>
+        public List<Models.Wrestler>? Generated { get; set; }
+
+        /// <summary>The world the career was opened in, or null for the four-promotion world.</summary>
+        public WorldChoiceDto? World { get; set; }
+
+        /// <summary>Where the player's promotion runs; null for nowhere in particular.</summary>
+        public Region? Region { get; set; }
         public List<ShowDefinitionDto> ShowDefinitions { get; set; } = new();
         public List<FeudDto> Feuds { get; set; } = new();
         public List<ShowDto> Shows { get; set; } = new();
@@ -143,11 +156,19 @@ namespace WrestlingSim.Persistence
         public List<string> Notes { get; set; } = new();
     }
 
+    public class WorldChoiceDto
+    {
+        public Engine.WorldSize Size { get; set; }
+        public Engine.WorldSource Source { get; set; }
+        public int Seed { get; set; }
+    }
+
     public class RivalDto
     {
         public string Id { get; set; } = "";
         public string Name { get; set; } = "";
         public PromotionTier Tier { get; set; }
+        public Region? Region { get; set; }
         public Models.World.FounderMotive Motive { get; set; }
         public decimal Cash { get; set; }
         public decimal OpeningCash { get; set; }

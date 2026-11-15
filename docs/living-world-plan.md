@@ -147,6 +147,46 @@ potential, contentment, regions and world size will show when they are built.
   Decided 0–100. **Both built** (14 Nov): `docs/ui-record.md`, and the design record's
   "Every owner has favourites".
 
+**14 Nov — rising and falling, and the harness (Parts 7 and 8).**
+
+- Proposed for Part 7, from doc 01 §3 (tiers are separated by dividing lines, the first being
+  guaranteed money that is not attendance): a promotion's **level is read off its business**
+  each quarter with about six months' hysteresis, not set; **television is won** from a limited
+  number of network slots and **can be lost** (the network walks away from a weak enough term,
+  leaving guaranteed contracts to be paid without the income); **new promotions are founded**
+  when there is room; takeovers later.
+- **Decided (15 Nov):** the player's promotion moves levels by the same rules; networks make
+  the player offers (fee, term, night, sometimes a condition) to choose between, haggling
+  later; the number of television slots follows the world size chosen at career start.
+- **Decided: the harness report is a page with charts**, opened in the browser, comparing runs.
+
+**15 Nov — speed and saves, and the plan closes.**
+
+- **Saves are compressed and kept in the browser's large store** (IndexedDB) rather than the
+  ~5 MB local storage, which a full-size world outgrows within weeks.
+- **Budget: one simulated week in two seconds or less**, measured in the real browser build.
+  Measured before Part 1 lands, and the world sizes on offer are set from the result.
+  - *Measured 15 Nov* (Release build, interpreted WebAssembly in Chromium, stand-in worlds
+    from `StandInWorld.Size`, `Benchmarks.WorldWeek` called from the page):
+
+    | World | Wrestlers / promotions | Built | Week 1 | Weeks 2–4 | Save (gzip in IndexedDB) |
+    |---|---|---|---|---|---|
+    | small | 500 / 15 | 0.4 s | 1.9 s | 0.1, 0.0, 0.3 s | 320 KB raw JSON, written in 0.4 s |
+    | medium | 1,200 / 40 | 0.5 s | **3.1 s** | 0.6, 0.1, 0.3 s | 789 KB, 0.2 s |
+    | full | 3,000 / 92 | 1.0 s | **9.2 s** | 0.6, 0.5 s | 1,734 KB, 0.3 s |
+
+    An ordinary week is inside the budget at every size, with room to spare. The **first** week
+    is not, at medium and full: it is the week every promotion plans from nothing — every free
+    agent is new, every booking pool unchosen. So all three sizes are offered, and the first
+    week's planning is done while the world is being made, behind a progress bar, rather than
+    on the player's first Advance. Two caveats, written here so they are not forgotten: the
+    stand-in worlds do none of what Parts 2–5 add (moving careers, rival shows with
+    consequences), so every figure must be re-measured when those land (Part 8 does that);
+    and a real save of a 90-wrestler career compressed from 211 KB to 23 KB, nine to one.
+- **Build order:** saves and the speed measurement first; then Part 1 (population and world
+  choice); Parts 2 and 3 together; Parts 4 and 5 together; Part 8 (harness page) and the
+  re-measure of every constant; then Parts 6 and 7.
+
 ## 1. The rule this plan follows
 
 > **Anything that can happen to a wrestler or a promotion happens the same way whoever is
@@ -191,7 +231,42 @@ Proposal:
 - Generated names come from first-name and surname lists, checked against the database so
   nobody shares a real wrestler's name.
 
-Open:
+**Built (15 Nov 2026).** As proposed, with these choices made by default where the plan left
+them open — each is easy to change:
+
+- Sources offered: the bundled database (topped up) and fully generated. **A custom database
+  loaded from a file is not built.**
+- Generated wrestlers get full movesets, signatures and gimmicks, because every match in the
+  world will go through the same engine (Part 5). Each is drawn from a real wrestler of the same
+  division — style, shape as a worker, kind of gimmick, moves — shifted for the level they work
+  at, renamed, re-aged, with a finisher called what the move is. The level bands and skill
+  shifts in `WrestlerGenerator` are first guesses for Part 8 to check, labelled as calibration.
+- Promotions are generated in every world, at every size; the four default rivals keep their
+  names at the top of their levels.
+- Top-up fills from the bottom: the database takes the best places, and no generated person is
+  more popular than the database's top quarter (a cap lowers the band rather than clipping it,
+  so there is no crowd standing at the cap).
+- Seven US regions (`Region`). The database's people have none and work anywhere. Below
+  television a promotion — the player's included — books its own region and anybody with none
+  (`Promotion.CanBook`); with television, anywhere. International scenes are not modelled.
+- The opening week's planning is done while the world is made, behind a progress bar
+  (`World.PlanOpening`).
+- The pickers and talent lists offer whoever the player can book (`Career.PlayerCanBook`),
+  capped and paged, because a world of thousands cannot be drawn whole.
+- **Speed, measured in the browser (15 Nov, real worlds, eight weeks each):** small averages
+  0.5 s a week, worst 1.5 s; medium 1.6 s, worst 3.1 s, three weeks in eight over budget; full
+  3.0 s, worst 9.4 s (the week every television company's first premium event lands — they all
+  opened the same week). A full world is ready to play in about 14 s. So **small meets the
+  budget, medium nearly, full does not.** All three are offered, small by default, and the
+  size list says the bigger two are slow. Two fixes were made on the way: the quiet-week check
+  compared the free-agent shortlist by name, which in a big world changed every week for every
+  promotion (`SituationOf` now compares how good the best on offer is, in coarse steps); and
+  `BookCard` ranks a roster once per card. Not done, written down: ahead-of-time compilation of
+  the browser build (needs the `wasm-tools` workload in the deploy workflow; could not be
+  measured here), desynchronising the television companies' premium-event calendars, and
+  cheaper forecasts.
+
+Open (now settled as above unless the owner says otherwise):
 
 1. **How big is the world?** True scale (Tier 0 holds 150–200) or the game's present scale
    (the global major opens with 40)? This sets everything downstream, including how long a

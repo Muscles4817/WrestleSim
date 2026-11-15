@@ -27,7 +27,7 @@
                 Placeholder="Search the roster…" />
 
     <div class="picks picks--2">
-        @foreach (var w in Available())
+        @foreach (var w in Available().Take(80))
         {
             var pick = w;
             <button class="pick @(cast.Contains(pick) ? "is-selected" : "")"
@@ -262,7 +262,7 @@
 
     private IEnumerable<Wrestler> Available() =>
         BookingSuggestions.Rank(
-            State.Roster
+            State.Bookable
                  .Where(w => includeCrossover || !State.IsCrossover(w))
                  .Where(w => division is null || w.Division == division)
                  .Where(w => string.IsNullOrWhiteSpace(query)
