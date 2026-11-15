@@ -129,6 +129,13 @@ public class GameState
     // ── Roster / feuds the screens read ──────────────────────────────────────
 
     public List<Wrestler> Roster => Career?.Roster ?? BaseRoster;
+
+    /// <summary>
+    /// Who the pickers offer: everybody in an exhibition, and in a career whoever the player
+    /// could put on a card today (<see cref="Career.PlayerCanBook"/>). In a world of
+    /// thousands, most of the world is signed elsewhere or works in another region.
+    /// </summary>
+    public List<Wrestler> Bookable => Career?.PlayerCanBook() ?? BaseRoster;
     public FeudBook FeudBook => Career?.FeudBook ?? _exhibitionFeuds;
 
     /// <summary>Standing teams, from the career if there is one and from the sandbox if not.</summary>
@@ -268,12 +275,15 @@ public class GameState
         string promotionName,
         PromotionTier tier,
         DateOnly startDate,
-        IEnumerable<ShowDefinition>? shows = null)
+        IEnumerable<ShowDefinition>? shows = null,
+        WorldChoice? world = null,
+        Region? region = null)
     {
         var promotion = new Promotion
         {
             Name = string.IsNullOrWhiteSpace(promotionName) ? "New Promotion" : promotionName.Trim(),
-            Tier = tier
+            Tier = tier,
+            Region = region
         };
 
         var career = new Career
@@ -285,6 +295,13 @@ public class GameState
             // leak into exhibition mode or into another save opened in the same session.
             Roster = DataLoaders.LoadEmbeddedWrestlers()
         };
+
+        // The world's people: the database topped up, or generated throughout.
+        if (world is not null)
+        {
+            await PreparingAsync($"Making {WorldShape.Population(world.Size):N0} wrestlers…", 0, 1);
+            World.Populate(career, world, DataLoaders.LoadEmbeddedWrestlers());
+        }
 
         // Not a roster of razor-sharp wrestlers. Everybody opens where a weekly schedule
         // would have settled them, which is what they have been doing — a spread from the low
@@ -300,7 +317,19 @@ public class GameState
         // Who the promotion opens with, and who it is up against. Everybody signs from one
         // shared roster, biggest promotion first — see World.Open. A custom database will be
         // another source.
-        World.Open(career, startDate);
+        if (world is null) World.Open(career, startDate);
+        else
+        {
+            await PreparingAsync("Opening the promotions…", 0, 1);
+            World.Open(career, startDate, world);
+
+            // Every promotion's first look at the market, done now rather than on the first
+            // Advance: in a big world it is the dearest week there is (World.PlanOpening).
+            foreach (var (done, of) in World.PlanOpening(career))
+                if (done % 4 == 0 || done == of)
+                    await PreparingAsync("Promotions are signing their opening rosters…", done, of);
+        }
+        Preparing = null;
 
         career.ShowDefinitions.AddRange(shows ?? DefaultSlate(promotion));
         career.MaterialiseSchedule();
@@ -829,6 +858,17 @@ public class GameState
     {
         SaveMessage = null;
         Notify();
+    }
+
+    /// <summary>What a long job is doing, and how far it has got; null when nothing is.</summary>
+    public (string What, int Done, int Of)? Preparing { get; private set; }
+
+    /// <summary>Says how far a long job has got and gives the browser a moment to show it.</summary>
+    private async Task PreparingAsync(string what, int done, int of)
+    {
+        Preparing = (what, done, of);
+        Notify();
+        await Task.Delay(1);
     }
 
     public void Notify()

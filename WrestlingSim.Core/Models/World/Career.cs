@@ -39,6 +39,13 @@ namespace WrestlingSim.Models.World
         public List<Wrestler> Roster { get; set; } = new();
 
         /// <summary>
+        /// The world the career was opened in: its size, where its people came from, and the seed
+        /// that made the generated part. Null for a career opened in the four-promotion world that
+        /// came before world sizes, which is still how tests and old saves open.
+        /// </summary>
+        public Engine.WorldChoice? WorldChoice { get; set; }
+
+        /// <summary>
         /// Cash and reputation. Opened by <see cref="OpenBooks"/> when a career starts, or
         /// when a career saved before money existed is loaded.
         /// </summary>
@@ -74,6 +81,23 @@ namespace WrestlingSim.Models.World
         public List<ContractEvent> ContractLog { get; set; } = new();
 
         public Contract? ContractOf(Wrestler w) => Contracts.FirstOrDefault(c => c.WrestlerId == w.Id);
+
+        /// <summary>
+        /// Everybody the player could put on a card today: their own people, and anybody not
+        /// held by a rival, not under a non-compete and not outside the player's region. The
+        /// same answer as <see cref="Unavailable"/> being null for each of them, worked out
+        /// once for the whole world — a world of thousands cannot ask one at a time.
+        /// </summary>
+        public List<Wrestler> PlayerCanBook()
+        {
+            var mine = Contracts.Select(c => c.WrestlerId).ToHashSet();
+            var held = Rivals.Where(r => r.IsActive).SelectMany(r => r.Contracts)
+                             .Where(c => c.IsGuaranteed).Select(c => c.WrestlerId).ToHashSet();
+            var barred = NonCompetes.Where(n => n.Until > CurrentDate).Select(n => n.WrestlerId).ToHashSet();
+            return Roster.Where(w => mine.Contains(w.Id)
+                                  || (!held.Contains(w.Id) && !barred.Contains(w.Id) && Promotion.CanBook(w)))
+                         .ToList();
+        }
 
         /// <summary>Paid by the guarantee: their appearances cost nothing extra.</summary>
         public bool IsGuaranteed(Wrestler w) => ContractOf(w)?.IsGuaranteed == true;
@@ -130,6 +154,8 @@ namespace WrestlingSim.Models.World
         public string? Unavailable(Wrestler w) =>
             SignedTo(w) is { } r ? $"signed to {r.Name}"
             : NonCompeteOf(w) is { } n ? $"under a non-compete until {n.Until:d MMM}"
+            // Below television the player books their own region, like every promotion there.
+            : ContractOf(w) is null && !Promotion.CanBook(w) && w.Region is { } far ? $"works in {far.Name()}, outside your region"
             : null;
 
         /// <summary>Everybody on a card the player cannot put in the ring, and why.</summary>
@@ -222,7 +248,7 @@ namespace WrestlingSim.Models.World
         /// <summary>Adds somebody to the regulars, below television. No contract, no cost until booked.</summary>
         public void MakeRegular(Wrestler w)
         {
-            if (ContractOf(w) is not null) return;
+            if (ContractOf(w) is not null || !Promotion.CanBook(w)) return;
             Contracts.Add(new Contract { WrestlerId = w.Id, Kind = ContractKind.Regular, Start = CurrentDate });
         }
 

@@ -77,6 +77,10 @@ namespace WrestlingSim.Persistence
             StartDate     = Iso(career.StartDate),
             LastPlayedUtc = career.LastPlayedUtc,
 
+            Generated = career.Roster.Any(w => w.IsGenerated) ? career.Roster.Where(w => w.IsGenerated).ToList() : null,
+            World     = career.WorldChoice is { } wc ? new WorldChoiceDto { Size = wc.Size, Source = wc.Source, Seed = wc.Seed } : null,
+            Region    = career.Promotion.Region,
+
             // Only state that actually changes. Everything else comes from the roster.
             Wrestlers = career.Roster
                 .Select(w => new WrestlerStateDto
@@ -115,6 +119,7 @@ namespace WrestlingSim.Persistence
                 Id          = r.Id,
                 Name        = r.Name,
                 Tier        = r.Promotion.Tier,
+                Region      = r.Promotion.Region,
                 Motive      = r.Motive,
                 Cash        = r.Books.Cash,
                 OpeningCash = r.Books.OpeningCash,
@@ -489,6 +494,17 @@ namespace WrestlingSim.Persistence
 
         public static Career FromDto(SaveGame dto, IReadOnlyList<Wrestler> roster)
         {
+            // A database world: the database's own people, in a world that may not hold all of
+            // them (a generated world holds none). The generated come whole from the save.
+            if (dto.Generated is { Count: > 0 } generated)
+            {
+                foreach (var g in generated) g.IsGenerated = true;
+                var ids = generated.Select(g => g.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var held = dto.Wrestlers.Select(w => w.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                roster = roster.Where(w => !ids.Contains(w.Id) && (dto.World?.Source != Engine.WorldSource.Generated || held.Contains(w.Id)))
+                               .Concat(generated).ToList();
+            }
+
             var byId = roster.ToDictionary(w => w.Id, StringComparer.OrdinalIgnoreCase);
 
             // Apply saved state onto the freshly-loaded roster.
@@ -524,7 +540,8 @@ namespace WrestlingSim.Persistence
             var career = new Career
             {
                 Id          = string.IsNullOrWhiteSpace(dto.CareerId) ? Guid.NewGuid().ToString("N") : dto.CareerId,
-                Promotion   = new Promotion { Name = dto.PromotionName, Tier = dto.Tier },
+                Promotion   = new Promotion { Name = dto.PromotionName, Tier = dto.Tier, Region = dto.Region },
+                WorldChoice = dto.World is { } wc ? new Engine.WorldChoice(wc.Size, wc.Source, wc.Seed) : null,
                 CurrentDate = ParseDate(dto.CurrentDate),
                 StartDate   = ParseDate(dto.StartDate),
                 Roster      = roster.ToList(),
@@ -575,7 +592,7 @@ namespace WrestlingSim.Persistence
                     career.Rivals.Add(new RivalPromotion
                     {
                         Id        = r.Id,
-                        Promotion = new Promotion { Name = r.Name, Tier = r.Tier },
+                        Promotion = new Promotion { Name = r.Name, Tier = r.Tier, Region = r.Region },
                         Motive    = r.Motive,
                         Books     = new CareerBooks { Cash = r.Cash, OpeningCash = r.OpeningCash, Reputation = r.Reputation },
                         Television = r.Television is { } rtv ? FromDto(rtv) : null,

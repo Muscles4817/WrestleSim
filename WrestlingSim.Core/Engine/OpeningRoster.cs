@@ -26,7 +26,7 @@ namespace WrestlingSim.Engine
     /// regulars, booked and paid by the night. At television tiers it is guaranteed deals with
     /// staggered terms, so the renewals arrive a few at a time rather than all in one year.
     /// </summary>
-    public sealed class TierOpeningRoster(double budgetMultiplier = 1.0) : IOpeningRoster
+    public sealed class TierOpeningRoster(double budgetMultiplier = 1.0, int? rosterSize = null) : IOpeningRoster
     {
         /// <summary>
         /// How many, and what for. For a television tier the budget is a year's guarantees —
@@ -52,7 +52,10 @@ namespace WrestlingSim.Engine
 
         public IReadOnlyList<Contract> Open(Promotion promotion, IReadOnlyList<Wrestler> world, DateOnly on)
         {
-            var (size, baseBudget) = For(promotion.Tier);
+            // A bigger world opens bigger rosters (WorldShape); the budget is the tier's
+            // either way, and what it buys falls out of the prices.
+            var (tierSize, baseBudget) = For(promotion.Tier);
+            int size = rosterSize ?? tierSize;
             var budget = baseBudget * (decimal)budgetMultiplier;
             bool guaranteed = promotion.HasTelevision;
 

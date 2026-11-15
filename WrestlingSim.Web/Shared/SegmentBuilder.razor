@@ -189,7 +189,7 @@
                 <div class="field mt">
                     <span class="field__label">@template.ExtraParticipantRole (optional)</span>
                     <div class="picks picks--2">
-                        @foreach (var row in RankedRoster().Where(x => !cast.Take(template.ParticipantRoles.Count).Contains(x.Wrestler)))
+                        @foreach (var row in RankedRoster().Where(x => !cast.Take(template.ParticipantRoles.Count).Contains(x.Wrestler)).Take(80))
                         {
                             var w = row.Wrestler;
                             <button class="pick @(extras.Contains(w) ? "is-selected" : "")" @onclick="() => ToggleExtra(w)">
@@ -423,7 +423,7 @@
     /// </summary>
     private IReadOnlyList<BookingSuggestions.Suggestion> RankedRoster() =>
         BookingSuggestions.Rank(
-            State.Roster
+            State.Bookable
                  .Where(w => includeCrossover || !State.IsCrossover(w))
                  .Where(w => castDivision is null || w.Division == castDivision)
                  .Where(w => string.IsNullOrWhiteSpace(castQuery)

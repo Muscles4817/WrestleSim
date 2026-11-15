@@ -364,14 +364,17 @@
     /// step, so there is nothing left to desync. The razor still groups, but grouping an
     /// already-grouped list preserves it.
     /// </summary>
+    private const int MaxRows = 80;
+
     private IReadOnlyList<BookingSuggestions.Suggestion> Rows() =>
-        Ranked().GroupBy(r => BookingSuggestions.Heading(r.Band, r.Wrestler))
+        // The best-suggested first; a world of thousands is searched, not scrolled.
+        Ranked().Take(MaxRows).GroupBy(r => BookingSuggestions.Heading(r.Band, r.Wrestler))
                 .SelectMany(g => g)
                 .ToList();
 
     private IReadOnlyList<BookingSuggestions.Suggestion> Ranked() =>
         BookingSuggestions.Rank(
-            State.Roster
+            State.Bookable
                  .Where(w => includeCrossover || !State.IsCrossover(w))
                  .Where(w => division is null || w.Division == division)
                  .Where(w => Matches(w, query)),

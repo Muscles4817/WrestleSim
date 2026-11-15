@@ -22,6 +22,21 @@ namespace WrestlingSim.Engine
             finally { _ticking = false; _holdings = null; }
         }
 
+        /// <summary>
+        /// Where a week's time goes, by phase, when somebody is measuring (a probe or the
+        /// browser benchmark sets it); null, and free, otherwise.
+        /// </summary>
+        [ThreadStatic] public static Dictionary<string, (int Count, long Ticks)>? Phases;
+
+        private static void Timed(string phase, Action act)
+        {
+            if (Phases is not { } phases) { act(); return; }
+            long started = System.Diagnostics.Stopwatch.GetTimestamp();
+            act();
+            var (count, ticks) = phases.GetValueOrDefault(phase);
+            phases[phase] = (count + 1, ticks + System.Diagnostics.Stopwatch.GetTimestamp() - started);
+        }
+
         private static void TickEveryone(Career career)
         {
             var today = career.CurrentDate;
@@ -38,7 +53,7 @@ namespace WrestlingSim.Engine
                 rival.Books.Overheads += overhead;
                 rival.Books.Payroll += payroll;
 
-                if (!rival.Frozen) SettleContracts(career, rival);
+                if (!rival.Frozen) Timed("settle", () => SettleContracts(career, rival));
 
                 // Its audience and its belts live on the same clock as the player's.
                 AudienceModel.Decay(rival.Audience);
@@ -52,13 +67,13 @@ namespace WrestlingSim.Engine
 
                 if (today >= rival.NextShow)
                 {
-                    RunNight(career, rival, today);
+                    Timed("night " + rival.Promotion.Tier, () => RunNight(career, rival, today));
                     rival.NextShow = today.AddDays(rival.Promotion.TypicalShowIntervalDays);
                 }
 
                 // Talent business once a week, on a day of its own.
                 if (!rival.Frozen && (today.DayNumber + Math.Abs(StableSeed.From(rival.Id))) % 7 == 0)
-                    Plan(career, rival);
+                    Timed("plan " + rival.Promotion.Tier, () => Plan(career, rival));
 
                 if (rival.Books.Cash < rival.Books.OpeningCash * FoldAt)
                     Fold(career, rival);
@@ -287,11 +302,16 @@ namespace WrestlingSim.Engine
             double Pull(ICardItem i) => i is BookedMatch m
                 ? BoxOffice.PullOf(m, null, today, response, freshness)
                 : BoxOffice.DrawOf(i, null, today, response, freshness).Pull;
-            IEnumerable<Wrestler> Free(Division d) => available
-                .Where(w => w.Division == d && !used.Contains(w))
-                .OrderByDescending(w => w.EffectiveOverness * response(w))
-                .ThenBy(w => w.Id, StringComparer.Ordinal);
             double Key(Wrestler w) => w.EffectiveOverness * response(w);
+
+            // Everybody ranked once. The ranking cannot change within a night, and every list
+            // below is the top of it with some people taken out — so they walk this rather than
+            // sorting the roster again each time they are asked, which at a hundred and eighty
+            // names was most of what a forecast cost (measured 15 Nov).
+            var ranked = available.OrderByDescending(Key).ThenBy(w => w.Id, StringComparer.Ordinal).ToList();
+            var byDivision = ranked.GroupBy(w => w.Division).ToDictionary(g => g.Key, g => g.ToList());
+            IEnumerable<Wrestler> Free(Division d) =>
+                byDivision.TryGetValue(d, out var list) ? list.Where(w => !used.Contains(w)) : [];
             if (cut is not null) foreach (var w in available) cut.Present.Add(w.Division);
 
             void Book(BookedMatch m)
@@ -345,9 +365,7 @@ namespace WrestlingSim.Engine
             // 3. Talking, on television: somebody the audience came to see, not wrestling tonight.
             if (type == ShowType.Television)
             {
-                var names = available.Where(w => !used.Contains(w))
-                    .OrderByDescending(w => w.EffectiveOverness * response(w))
-                    .ThenBy(w => w.Id, StringComparer.Ordinal).Take(2).ToList();
+                var names = ranked.Where(w => !used.Contains(w)).Take(2).ToList();
                 cut?.SeeAnybody(names.Count, 2, names.Count == 0 ? 0 : Key(names[^1]));
                 if (index % 2 == 1 && names.Count == 2)
                 {
@@ -367,7 +385,8 @@ namespace WrestlingSim.Engine
             //    roster has to do, and what burns its match-ups.
             var worked = matches.SelectMany(m => m.Wrestlers).Concat(talking.SelectMany(t => t.Wrestlers))
                 .GroupBy(w => w).ToDictionary(g => g.Key, g => g.Count());
-            var divisions = available.GroupBy(w => w.Division).Select(g => g.ToList()).ToList();
+            // In the order the divisions first appear among those available, as before.
+            var divisions = available.Select(w => w.Division).Distinct().Select(d => byDivision[d]).ToList();
             var pairs = new Dictionary<(Wrestler, Wrestler), (BookedMatch Match, double Pull)>();
             var booked = matches.Where(x => x.Plan.Sides.Count == 2 && !x.Plan.IsTagMatch && x.Wrestlers.Count == 2)
                 .Select(x => (x.Wrestlers[0], x.Wrestlers[1])).ToHashSet();
@@ -378,9 +397,7 @@ namespace WrestlingSim.Engine
                     (BookedMatch? Match, double Pull) best = (null, 0);
                     foreach (var g in divisions)
                     {
-                        var pool = g.Where(w => worked.GetValueOrDefault(w) < pass)
-                            .OrderByDescending(w => w.EffectiveOverness * response(w))
-                            .ThenBy(w => w.Id, StringComparer.Ordinal).Take(10).ToList();
+                        var pool = g.Where(w => worked.GetValueOrDefault(w) < pass).Take(10).ToList();
                         cut?.See(g[0].Division, pool.Count, 10, pool.Count == 0 ? 0 : Key(pool[^1]));
                         for (int a = 0; a < pool.Count; a++)
                             for (int b = a + 1; b < pool.Count; b++)

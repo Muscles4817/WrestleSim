@@ -2392,3 +2392,25 @@ table.data tr.is-mine td { background: rgba(245, 185, 59, .06); }
 .calhead { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; }
 .calhead__mid { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; justify-content: center; }
 .calhead__month { font-family: var(--display); font-weight: 700; font-size: 22px; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+
+/* ── Making a world (new career) ─────────────────────────────────────────── */
+.preparing {
+  position: fixed; inset: 0; z-index: 60;
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+}
+.preparing__box {
+  width: min(420px, calc(100vw - 32px));
+  padding: 20px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--panel); display: grid; gap: 10px;
+}
+.preparing__what { font-weight: 600; color: var(--ink); }
+.preparing .bar { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.preparing .bar__fill { height: 100%; background: var(--gold); transition: width .2s; }
+
+/* A generated wrestler, marked as such wherever they are named in full. */
+.gen-mark {
+  display: inline-block; margin-left: 6px; padding: 0 5px; border-radius: 4px;
+  font-size: 11px; line-height: 16px; color: var(--muted); border: 1px solid var(--line);
+  vertical-align: middle;
+}

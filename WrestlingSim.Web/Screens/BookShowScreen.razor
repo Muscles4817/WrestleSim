@@ -868,7 +868,7 @@ else
         var booked = show.Card.SelectMany(i => i.Wrestlers).ToHashSet();
 
         return BookingSuggestions.Rank(
-            career.Roster.Where(w => string.IsNullOrWhiteSpace(rosterQuery)
+            career.PlayerCanBook().Where(w => string.IsNullOrWhiteSpace(rosterQuery)
                                   || (w.RingName?.Contains(rosterQuery, StringComparison.OrdinalIgnoreCase) ?? false)
                                   || (w.RealName?.Contains(rosterQuery, StringComparison.OrdinalIgnoreCase) ?? false)),
             against, career.FeudBook,

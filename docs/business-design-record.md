@@ -792,6 +792,19 @@ would push its favourite to second. It is now the favourites' share of the card'
 wealthy fan or a media company would pay $11.4M a year, an owner run for the wrestling $6.6M,
 while a vanity owner, a family business and one run for a return pass. Not tuned for; measured.
 
+### A world of any size (15 Nov) — living-world plan, Part 1
+
+`World.Populate` and `World.Open(career, on, WorldChoice)` make a small, medium or full world
+(`WorldShape`) from the database topped up or generated throughout (`WrestlerGenerator`); the
+four-promotion `World.Open(career, on)` is unchanged and is still what tests, old saves and the
+measured constants (`TypicalInvestment`, `TypicalCardPullFor`) use until Part 8 re-measures.
+Measured, not tuned: at full size the two global companies open with every star, because they
+sign first and their budget buys everybody above about 60 — the national companies' best is 58.
+That is the opening order, not something new, and is for Parts 7–8. A save carries generated
+people whole (`SaveGame.Generated`); at full size that is 6.5 MB of JSON, about 0.7 MB in the
+compressed store. Speed and the two cost fixes made on the way are in
+`docs/living-world-plan.md`, Part 1.
+
 ### Not built in slice 6
 
 - **Where wrestlers come from.** Finding 2. Nothing creates a wrestler.

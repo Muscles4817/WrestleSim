@@ -72,8 +72,12 @@ So a feature is done when:
 
 ## This repo
 
-- **The roster is real WWE wrestlers.** `WrestlingSim.Core/JSON/Wrestlers.json` uses
-  `RealName` for the performer and `Gimmick.Name` for the character. Do not invent wrestlers.
+- **The database is real WWE wrestlers.** `WrestlingSim.Core/JSON/Wrestlers.json` uses
+  `RealName` for the performer and `Gimmick.Name` for the character. Never alter a real person
+  or invent anybody *as* a real person — add to the JSON only people who exist. Since Part 1 of
+  the living-world plan (owner's decision, 13 Nov 2026) a world bigger than the database is
+  filled out by `WrestlerGenerator`; generated people are marked `IsGenerated`, never share a
+  real name, and are carried whole in the save.
 - **`MatchEngine.TypicalInvestment` is the measured median of that roster.** Any roster change
   moves it. `ATypicalMatchIsUnmoved_AndThatIsMeasuredNotAsserted` fails when the two part
   company — re-measure and update the constant, do not widen the test.
