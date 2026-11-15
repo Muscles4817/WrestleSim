@@ -208,6 +208,8 @@ namespace WrestlingSim.Persistence
 
         /// <summary>The booker's kept direction and how well it books (Part 5); absent before either existed.</summary>
         public Models.World.BookingDirection? Direction { get; set; }
+        public double[]? QuietBest { get; set; }
+        public List<string>? QuietHeadliners { get; set; }
         public double? Competence { get; set; }
     }
 

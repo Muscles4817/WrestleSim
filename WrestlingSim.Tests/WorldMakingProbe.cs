@@ -70,9 +70,12 @@ namespace WrestlingSim.Tests
             {
                 var before = career.Rivals.Where(r => r.Promotion.HasTelevision).ToDictionary(r => r.Id, r => (
                     Roster: string.Join(",", r.Contracts.Select(c => c.WrestlerId).OrderBy(x => x)),
-                    Short: Parts(r),
+                    Short: string.Join(",", World.Opportunity(career, r)),
                     Cash: (int)Math.Floor(r.Books.Cash / Math.Max(1m, r.Books.OpeningCash) * 10m),
                     Expiring: career.ExpiringWithin(TalentMarket.ExpiryWarningDays).Count(c => c.IsGuaranteed)));
+                var indie = career.Rivals.Where(r => !r.Promotion.HasTelevision && r.IsActive).ToDictionary(r => r.Id, r => (
+                    Roster: string.Join(",", r.Contracts.Select(c => c.WrestlerId).OrderBy(x => x)),
+                    Cash: r.Books.Cash < 0 ? "debt" : r.Books.Cash < r.Books.OpeningCash / 2 ? "short" : "fine"));
                 World.Phases = new();
                 sw.Restart();
                 for (int d = 0; d < 7; d++) career.AdvanceOneDay();
@@ -86,11 +89,29 @@ namespace WrestlingSim.Tests
                 {
                     var b = before[r.Id];
                     if (b.Roster != string.Join(",", r.Contracts.Select(c => c.WrestlerId).OrderBy(x => x))) roster++;
-                    var now = Parts(r);
+                    var now = string.Join(",", World.Opportunity(career, r));
                     if (b.Short != now) { shortl++; if (shortl == 1) Say($"      was {b.Short}\n      now {now}"); }
                     if (b.Cash != (int)Math.Floor(r.Books.Cash / Math.Max(1m, r.Books.OpeningCash) * 10m)) cash++;
                 }
-                Say($"    of {before.Count} TV promotions, changed this week: roster {roster}, shortlist by name {shortl}, cash step {cash}");
+                Say($"    of {before.Count} TV promotions, changed this week: roster {roster}, opportunity {shortl}, cash step {cash}");
+                int iRoster = 0, iCash = 0;
+                foreach (var r in career.Rivals.Where(r => !r.Promotion.HasTelevision && r.IsActive))
+                {
+                    var b = indie[r.Id];
+                    var nowIds = r.Contracts.Select(c => c.WrestlerId).OrderBy(x => x).ToList();
+                    if (b.Roster != string.Join(",", nowIds))
+                    {
+                        iRoster++;
+                        if (iRoster <= 2)
+                        {
+                            var was = b.Roster.Split(',').ToHashSet();
+                            Say($"      {r.Name}: in {string.Join(" ", nowIds.Where(x => !was.Contains(x)).Take(4))} out {string.Join(" ", was.Where(x => !nowIds.Contains(x)).Take(4))}; last decision {r.Decisions.LastOrDefault()?.Date} {r.Decisions.LastOrDefault()?.Move}");
+                        }
+                    }
+                    if (b.Cash != (r.Books.Cash < 0 ? "debt" : r.Books.Cash < r.Books.OpeningCash / 2 ? "short" : "fine")) iCash++;
+                }
+                int iTop = career.Rivals.Where(r => !r.Promotion.HasTelevision && r.IsActive).Count(r => r.QuietSince is not { } q || (career.CurrentDate.DayNumber - q.DayNumber) <= 7);
+                Say($"    of {indie.Count} indies, changed this week: roster {iRoster}, money state {iCash}; looked this week {iTop}");
             }
             sw.Restart();
             var json = SaveSerializer.ToJson(career);

@@ -152,6 +152,8 @@ namespace WrestlingSim.Persistence
                 Favourites  = r.Favourites.Count > 0 ? new List<string>(r.Favourites) : null,
                 QuietAs     = r.QuietAs,
                 Direction   = r.Direction,
+                QuietBest   = r.QuietBest,
+                QuietHeadliners = r.QuietHeadliners,
                 Competence  = r.Competence,
                 QuietSince  = r.QuietSince is { } q ? Iso(q) : null,
                 Decisions   = r.Decisions.Select(d => new RivalDecisionDto
@@ -639,6 +641,8 @@ namespace WrestlingSim.Persistence
                         Favourites  = r.Favourites?.Where(byId.ContainsKey).Select(id => byId[id].Id).ToList() ?? [],
                         QuietAs     = r.QuietAs,
                         Direction   = r.Direction,
+                        QuietBest   = r.QuietBest,
+                        QuietHeadliners = r.QuietHeadliners,
                         Competence  = r.Competence,
                         QuietSince  = string.IsNullOrEmpty(r.QuietSince) ? null : ParseDate(r.QuietSince),
                         Decisions   = r.Decisions?.Where(d => byId.ContainsKey(d.WrestlerId)).Select(d => new RivalDecision

@@ -89,6 +89,15 @@ namespace WrestlingSim.Models.World
         public int QuietAs { get; set; }
         public DateOnly? QuietSince { get; set; }
 
+        /// <summary>
+        /// The best on offer when it last looked and found nothing worth doing: best name's
+        /// popularity, best worker's ring skill, best value. Only something better wakes it early.
+        /// </summary>
+        public double[]? QuietBest { get; set; }
+
+        /// <summary>Below television: the headliners it decided its month's bookings around.</summary>
+        public List<string>? QuietHeadliners { get; set; }
+
         /// <summary>When its next show runs. Advanced by its tier's cadence.</summary>
         public DateOnly NextShow { get; set; }
 

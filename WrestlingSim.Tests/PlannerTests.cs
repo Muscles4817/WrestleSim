@@ -477,8 +477,19 @@ namespace WrestlingSim.Tests
             var used = cards.SelectMany(c => c.Card).SelectMany(i => i.Wrestlers).Select(w => w.Id).ToHashSet();
             if (indie.Decisions.Count > 0) Assert.All(indie.Contracts, c => Assert.Contains(c.WrestlerId, used));
 
-            // Losing somebody is a reason to look again.
-            indie.Contracts.RemoveAt(0);
+            // Losing one of the headliners it decided its month around is a reason to look again;
+            // losing a lesser regular is not — it books somebody else on the night (15 Nov: keyed
+            // on every name, a full world's indies all re-planned every week).
+            var byDraw = indie.Contracts.OrderByDescending(c => career.FindWrestler(c.WrestlerId)!.Overness)
+                .ThenBy(c => c.WrestlerId, StringComparer.Ordinal).ToList();
+            if (byDraw.Count > 4)
+            {
+                indie.Contracts.Remove(byDraw[^1]);
+                World.ForecastsRun = 0;
+                World.Plan(career, indie);
+                Assert.Equal(0, World.ForecastsRun);
+            }
+            indie.Contracts.Remove(byDraw[0]);
             World.ForecastsRun = 0;
             World.Plan(career, indie);
             Assert.True(World.ForecastsRun > 0);
