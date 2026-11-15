@@ -186,6 +186,8 @@ else
                                         @(w.Gimmick?.Type.ToString() ?? "No gimmick") · @(w.Division == Division.Womens ? "Women's" : "Men's")
                                         @if (w.Region is { } home) { <text> · @home.Short()</text> }
                                         @if (w.IsGenerated) { <text> · generated</text> }
+                                        @if (w.IsPartTime) { <text> · big shows only</text> }
+                                        @if (w.DebutedIn is { } debut && debut >= Today.Year) { <text> · rookie</text> }
                                         @if (State.BrandOf(w) is { } brand) { <text> · @brand.Name</text> }
                                     </span>
                                 </button>
@@ -253,7 +255,8 @@ else
 
     private IEnumerable<Wrestler> Rows(Career? career, TalentView view)
     {
-        var people = State.Roster.AsEnumerable();
+        // The retired stay in the world as names (records, title histories), not as talent.
+        var people = State.Roster.Where(w => !w.IsRetired);
         if (career is not null)
             people = view switch
             {

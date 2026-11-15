@@ -297,6 +297,9 @@ namespace WrestlingSim.Engine
             Func<Wrestler, double> response, Func<BookedMatch, double> freshness, CutLine? cut = null)
         {
             double target = rival.Promotion.DefaultRuntimeFor(type) * AudienceModel.FullCard;
+
+            // A part-timer works the big nights only (Part 3); nobody retired works at all.
+            available = available.Where(w => !w.IsRetired && (!w.IsPartTime || type == ShowType.PremiumEvent)).ToList();
             var used = new HashSet<Wrestler>();
             var talking = new List<ICardItem>();
             var matches = new List<BookedMatch>();
@@ -533,7 +536,7 @@ namespace WrestlingSim.Engine
             var mine = career.Contracts.Where(c => c.IsGuaranteed).Select(c => c.WrestlerId).ToHashSet();
             var barred = career.NonCompetes.Where(n => n.Until > career.CurrentDate).Select(n => n.WrestlerId).ToHashSet();
             var free = career.Roster
-                .Where(w => !mine.Contains(w.Id)
+                .Where(w => !w.IsRetired && !mine.Contains(w.Id)
                          && !holdings.Holder.ContainsKey(w.Id)
                          && !barred.Contains(w.Id)
                          && career.PlayerBid(w) is null)

@@ -813,6 +813,14 @@ their tests pass, because nothing moves until the first of the month. What a lon
 them is Part 8's to measure. The planner sees the changed numbers through the same profiles as
 everything else; nothing in it was told about growth.
 
+### Arriving and leaving (15 Nov) — living-world plan, Part 3
+
+Retirement removes contracts from rivals and the player without a payout (`Careers.Retire`), so a
+rival's payroll and roster change under the planner the way a release would, and the planner
+re-plans when its roster changes. A part-timer is on the books all year and on the card only on
+premium nights. Measured: small-world indies and super-indies still fold within two or three years,
+as they did before Parts 2-3 (same seed, same world, run on main) — a Part 8 calibration.
+
 ### Not built in slice 6
 
 - **Where wrestlers come from.** Finding 2. Nothing creates a wrestler.

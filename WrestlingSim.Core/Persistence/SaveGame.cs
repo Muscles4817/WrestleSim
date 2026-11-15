@@ -63,6 +63,9 @@ namespace WrestlingSim.Persistence
 
         /// <summary>Where the player's promotion runs; null for nowhere in particular.</summary>
         public Region? Region { get; set; }
+
+        /// <summary>The active population each January's class restores (Part 3); 0 if never set.</summary>
+        public int PopulationTarget { get; set; }
         public List<ShowDefinitionDto> ShowDefinitions { get; set; } = new();
         public List<FeudDto> Feuds { get; set; } = new();
         public List<ShowDto> Shows { get; set; } = new();
@@ -471,6 +474,10 @@ namespace WrestlingSim.Persistence
 
         /// <summary>Ceilings, learning speeds, this month's work and the history of levels.</summary>
         public Models.Person.Development? Development { get; set; }
+
+        /// <summary>Retired, or working big shows only (Part 3), ISO dates; absent for neither.</summary>
+        public string? RetiredOn { get; set; }
+        public string? PartTimeSince { get; set; }
 
         /// <summary>The stock: how over they are.</summary>
         public double Overness { get; set; }

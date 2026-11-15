@@ -392,7 +392,7 @@ namespace WrestlingSim.Engine
         public static void Month(Career career)
         {
             Begin(career);
-            foreach (var w in career.Roster)
+            foreach (var w in career.Roster.Where(w => !w.IsRetired))
             {
                 // The player hears when one of theirs moves a step of five in the ring.
                 bool yours = career.ContractOf(w) is not null;

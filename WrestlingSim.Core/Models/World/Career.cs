@@ -46,6 +46,12 @@ namespace WrestlingSim.Models.World
         public Engine.WorldChoice? WorldChoice { get; set; }
 
         /// <summary>
+        /// How many active wrestlers the world holds itself at: each January's class of rookies
+        /// brings it back here (Part 3). Zero until the first class sets it from the world as made.
+        /// </summary>
+        public int PopulationTarget { get; set; }
+
+        /// <summary>
         /// Cash and reputation. Opened by <see cref="OpenBooks"/> when a career starts, or
         /// when a career saved before money existed is loaded.
         /// </summary>
@@ -94,8 +100,8 @@ namespace WrestlingSim.Models.World
             var held = Rivals.Where(r => r.IsActive).SelectMany(r => r.Contracts)
                              .Where(c => c.IsGuaranteed).Select(c => c.WrestlerId).ToHashSet();
             var barred = NonCompetes.Where(n => n.Until > CurrentDate).Select(n => n.WrestlerId).ToHashSet();
-            return Roster.Where(w => mine.Contains(w.Id)
-                                  || (!held.Contains(w.Id) && !barred.Contains(w.Id) && Promotion.CanBook(w)))
+            return Roster.Where(w => !w.IsRetired && (mine.Contains(w.Id)
+                                  || (!held.Contains(w.Id) && !barred.Contains(w.Id) && Promotion.CanBook(w))))
                          .ToList();
         }
 
@@ -153,6 +159,7 @@ namespace WrestlingSim.Models.World
         /// <summary>Why the player cannot book them, or null if they can.</summary>
         public string? Unavailable(Wrestler w) =>
             SignedTo(w) is { } r ? $"signed to {r.Name}"
+            : w.IsRetired ? $"retired in {w.RetiredOn:yyyy}"
             : NonCompeteOf(w) is { } n ? $"under a non-compete until {n.Until:d MMM}"
             // Below television the player books their own region, like every promotion there.
             : ContractOf(w) is null && !Promotion.CanBook(w) && w.Region is { } far ? $"works in {far.Name()}, outside your region"
@@ -161,7 +168,8 @@ namespace WrestlingSim.Models.World
         /// <summary>Everybody on a card the player cannot put in the ring, and why.</summary>
         public IReadOnlyList<(Wrestler Wrestler, string Why)> UnavailableOnCard(ScheduledShow show) =>
             show.Card.SelectMany(i => i.Wrestlers).Distinct()
-                .Select(w => (w, Unavailable(w)))
+                // A part-timer works the big shows and nothing else, for the player as for anybody.
+                .Select(w => (w, Unavailable(w) ?? (w.IsPartTime && show.Type != ShowType.PremiumEvent ? "works big shows only now" : null)))
                 .Where(x => x.Item2 is not null)
                 .Select(x => (x.w, x.Item2!))
                 .ToList();
@@ -521,8 +529,13 @@ namespace WrestlingSim.Models.World
             NonCompetes.RemoveAll(n => n.Until <= CurrentDate);
             Engine.World.Tick(this);
 
-            // Once a month everybody in the world gets a little better or worse (Part 2).
-            if (CurrentDate.Day == 1) Engine.Growth.Month(this);
+            // Once a month everybody in the world gets a little better or worse (Part 2), some
+            // retire, and each January a class of rookies arrives (Part 3).
+            if (CurrentDate.Day == 1)
+            {
+                Engine.Growth.Month(this);
+                Engine.Careers.Month(this);
+            }
 
             // The term runs out on the clock, and the network pays next term for what this
             // one drew.

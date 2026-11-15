@@ -35,6 +35,18 @@ else
                 {
                     <span class="badge badge--gold">@title.Name</span>
                 }
+                @if (w.RetiredOn is { } retired)
+                {
+                    <span class="badge badge--muted">Retired @retired.Year</span>
+                }
+                @if (w.IsPartTime)
+                {
+                    <span class="badge badge--muted">Big shows only</span>
+                }
+                @if (w.DebutedIn is { } d0 && d0 >= today.Year && !w.IsRetired)
+                {
+                    <span class="badge badge--muted">Rookie</span>
+                }
                 @if (w.Injury is { } inj && inj.KeepsOut(today))
                 {
                     <span class="badge badge--heel">Injured</span>

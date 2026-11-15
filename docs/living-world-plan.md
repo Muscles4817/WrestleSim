@@ -109,7 +109,11 @@ Kept here as they are made, so the sections below can be read against them.
 - Retirement becomes likelier with age, injuries and having nowhere to work, often through a
   part-time stage first. Returns come later, not in the first build.
 - Real wrestlers retire on the simulation's schedule by default, with a switch at career start
-  to hold real people in place for a set number of years.
+  to hold real people in place for a set number of years. *Corrected 15 Nov: no switch.* The owner
+  asked why one would be needed if the model is sensible, and it is not: retirement is driven by
+  what ends careers (the body, injuries, nowhere to work) and held off by being wanted at the top,
+  so a star still drawing keeps going. Divergence from what really happens is the simulation's,
+  as it is from the first night.
 - Retired wrestlers stay in the world as names, so records and title histories still read.
 
 **14 Nov — the interface.** Rebuilt around a career frame and six groups (#98,
@@ -364,7 +368,28 @@ Proposal:
 - The 5–10% funnel is represented by the intake already being the survivors of training; the
   washing-out that happens *after* debut is the "nowhere to work" exit.
 
-Open:
+**Built (15 Nov 2026).** `Engine.Careers`: each month a chance of retiring, from age (doc 15's
+35-45, as a table) pushed up by serious injuries, a long injury now and months without a match,
+and held down by being near the top under contract; a name still worth seeing (38 or older,
+popularity 60 or more) goes part-time first — big shows only, for rivals and the player alike.
+Young, unknown and unbooked for a year washes out. Retired people stay in the world as names; their
+deals end without a payout, their belts are vacated, their teams break up, and it is news when they
+mattered. Each January a class of rookies, 19-25, debuts at the bottom in the regions, as many as
+retired, so the world holds its size; about one in six is a real prospect and one in fifty a
+prodigy (higher ceilings, same start). Not built: comebacks (decided later), retired people as
+trainers or agents.
+
+Measured over ten simulated years of a small real-life world (`CareersProbe`): the population held
+at 490 with about fifty rookies a year; real people mostly retired between 38 and 50, and the
+biggest names still wanted at the top (Cody Rhodes, Seth Rollins, Randy Orton) were still working
+past 50. **Two outcomes Part 3 cannot fix on its own, both expected by the plan:** rookies never
+became popular (the most popular after ten years was at 12), because nothing but the player's
+shows moves popularity — that is Part 4 — so unknowns wash out (187 of 478 retirements were under
+30) and the world's in-ring median fell from 59 to 47 as kids replaced veterans; and indies and
+super-indies fold within two or three years (14 rivals to 5), which the same run on main before
+Parts 2-3 shows too — business figures calibrated on the four-promotion world, for Part 8.
+
+Open (settled 14-15 Nov, kept for the record):
 
 8. Do real wrestlers in a real database retire on the simulation's schedule (Randy Orton gone
    in three years), or are real people protected for some period?

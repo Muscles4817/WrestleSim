@@ -80,6 +80,7 @@ namespace WrestlingSim.Persistence
             Generated = career.Roster.Any(w => w.IsGenerated) ? career.Roster.Where(w => w.IsGenerated).ToList() : null,
             World     = career.WorldChoice is { } wc ? new WorldChoiceDto { Size = wc.Size, Source = wc.Source, Seed = wc.Seed } : null,
             Region    = career.Promotion.Region,
+            PopulationTarget = career.PopulationTarget,
 
             // Only state that actually changes. Everything else comes from the roster.
             Wrestlers = career.Roster
@@ -96,6 +97,8 @@ namespace WrestlingSim.Persistence
                     },
                     // Generated people carry theirs in the whole-wrestler copy.
                     Development    = w.IsGenerated ? null : w.Development,
+                    RetiredOn      = w.RetiredOn is { } r ? Iso(r) : null,
+                    PartTimeSince  = w.PartTimeSince is { } pt ? Iso(pt) : null,
                     Overness       = Math.Round(w.Overness, 3),
                     Momentum       = Math.Round(w.Momentum, 3),
                     LastAppearance = w.LastAppearance is { } seen ? Iso(seen) : null,
@@ -555,6 +558,8 @@ namespace WrestlingSim.Persistence
                     w.Charisma = a.Charisma;
                 }
                 if (state.Development is { } dev) w.Development = dev;
+                w.RetiredOn     = string.IsNullOrEmpty(state.RetiredOn) ? null : ParseDate(state.RetiredOn);
+                w.PartTimeSince = string.IsNullOrEmpty(state.PartTimeSince) ? null : ParseDate(state.PartTimeSince);
             }
 
             var career = new Career
@@ -562,6 +567,7 @@ namespace WrestlingSim.Persistence
                 Id          = string.IsNullOrWhiteSpace(dto.CareerId) ? Guid.NewGuid().ToString("N") : dto.CareerId,
                 Promotion   = new Promotion { Name = dto.PromotionName, Tier = dto.Tier, Region = dto.Region },
                 WorldChoice = dto.World is { } wc ? new Engine.WorldChoice(wc.Size, wc.Source, wc.Seed) : null,
+                PopulationTarget = dto.PopulationTarget,
                 CurrentDate = ParseDate(dto.CurrentDate),
                 StartDate   = ParseDate(dto.StartDate),
                 Roster      = roster.ToList(),
