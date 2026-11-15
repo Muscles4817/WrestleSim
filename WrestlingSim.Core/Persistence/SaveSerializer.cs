@@ -86,6 +86,16 @@ namespace WrestlingSim.Persistence
                 .Select(w => new WrestlerStateDto
                 {
                     Id             = w.Id,
+                    Attributes     = w.Development is null ? null : new AttributesDto
+                    {
+                        Ring = [w.RingSkills.HighFlyer, w.RingSkills.Grappler, w.RingSkills.Powerhouse,
+                                w.RingSkills.Technical, w.RingSkills.Brawler, w.RingSkills.Striker],
+                        Body = [w.Physical.Strength, w.Physical.Speed, w.Physical.Agility, w.Physical.Stamina],
+                        Mind = [w.Mental.Psychology, w.Mental.Selling, w.Mental.RingIQ],
+                        Charisma = w.Charisma
+                    },
+                    // Generated people carry theirs in the whole-wrestler copy.
+                    Development    = w.IsGenerated ? null : w.Development,
                     Overness       = Math.Round(w.Overness, 3),
                     Momentum       = Math.Round(w.Momentum, 3),
                     LastAppearance = w.LastAppearance is { } seen ? Iso(seen) : null,
@@ -535,6 +545,16 @@ namespace WrestlingSim.Persistence
                 w.Injury        = FromDto(state.Injury);
                 w.InjuryHistory = state.InjuryHistory
                     .Select(FromDto).OfType<Models.Person.Injury>().ToList();
+
+                if (state.Attributes is { Ring.Length: 6, Body.Length: 4, Mind.Length: 3 } a)
+                {
+                    (w.RingSkills.HighFlyer, w.RingSkills.Grappler, w.RingSkills.Powerhouse,
+                     w.RingSkills.Technical, w.RingSkills.Brawler, w.RingSkills.Striker) = (a.Ring[0], a.Ring[1], a.Ring[2], a.Ring[3], a.Ring[4], a.Ring[5]);
+                    (w.Physical.Strength, w.Physical.Speed, w.Physical.Agility, w.Physical.Stamina) = (a.Body[0], a.Body[1], a.Body[2], a.Body[3]);
+                    (w.Mental.Psychology, w.Mental.Selling, w.Mental.RingIQ) = (a.Mind[0], a.Mind[1], a.Mind[2]);
+                    w.Charisma = a.Charisma;
+                }
+                if (state.Development is { } dev) w.Development = dev;
             }
 
             var career = new Career
@@ -698,6 +718,11 @@ namespace WrestlingSim.Persistence
                 career.Shows.Add(FromDto(s, byId, career.FeudBook, career.Titles, career.Teams));
 
             ResolveDraws(career);
+
+            // A save from before careers moved: everybody gets a development now, and a real
+            // person is aged from the database's year to the save's — what the old age lens did
+            // at every match, done once (Growth.Begin).
+            Engine.Growth.Begin(career);
 
             return career;
         }

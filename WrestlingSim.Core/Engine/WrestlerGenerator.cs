@@ -170,6 +170,15 @@ namespace WrestlingSim.Engine
                     return s;
                 }).ToList()
             };
+            // The real wrestler it was drawn from was a different age with a different career
+            // behind them. Move the age-bound numbers to this person's age and years in, by the
+            // same curves careers move along, so a twenty-year-old is not born with a veteran's
+            // psychology (measured 15 Nov: they were, and then declined from it).
+            if (t.BornIn is { } tBorn && t.DebutedIn is { } tDebut)
+            {
+                int tAge = AgeCurve.RosterBaselineYear - tBorn, tYears = AgeCurve.RosterBaselineYear - tDebut;
+                Growth.Reage(w, tAge, age, tYears, _year - debutedIn);
+            }
             return w;
         }
 

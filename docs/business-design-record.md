@@ -805,6 +805,14 @@ people whole (`SaveGame.Generated`); at full size that is 6.5 MB of JSON, about 
 compressed store. Speed and the two cost fixes made on the way are in
 `docs/living-world-plan.md`, Part 1.
 
+### Careers that move (15 Nov) — living-world plan, Part 2
+
+Every wrestler's attributes change once a month (`Growth`), so day-one figures are the only
+ones the measured constants see: `TypicalInvestment` and `TypicalCardPullFor` are unchanged and
+their tests pass, because nothing moves until the first of the month. What a long career does to
+them is Part 8's to measure. The planner sees the changed numbers through the same profiles as
+everything else; nothing in it was told about growth.
+
 ### Not built in slice 6
 
 - **Where wrestlers come from.** Finding 2. Nothing creates a wrestler.

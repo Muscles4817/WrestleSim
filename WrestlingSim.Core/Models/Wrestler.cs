@@ -38,6 +38,12 @@ namespace WrestlingSim.Models
 
         /// <summary>Where they work from. Null means anywhere — see <see cref="Enums.Region"/>.</summary>
         public Region? Region { get; set; }
+
+        /// <summary>
+        /// Where they are going and how quickly (<see cref="Engine.Growth"/>). Null until a
+        /// career starts them; an exhibition's wrestlers have none and never change.
+        /// </summary>
+        public Development? Development { get; set; }
         public List<Gimmick> PreviousGimmicks { get; set; }
 
         /// <summary>

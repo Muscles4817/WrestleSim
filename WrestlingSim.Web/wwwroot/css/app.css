@@ -2414,3 +2414,12 @@ table.data tr.is-mine td { background: rgba(245, 185, 59, .06); }
   font-size: 11px; line-height: 16px; color: var(--muted); border: 1px solid var(--line);
   vertical-align: middle;
 }
+
+/* Where somebody is going (Part 2): a row per skill group, the words under the number. */
+.devrow {
+  display: grid; grid-template-columns: 1fr auto 2.5em; gap: 2px 10px; align-items: baseline;
+  padding: 7px 0; border-bottom: 1px solid var(--line-soft);
+}
+.devrow__now { font-variant-numeric: tabular-nums; text-align: right; }
+.devrow__change { font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; }
+.devrow__words { grid-column: 1 / -1; color: var(--muted); }

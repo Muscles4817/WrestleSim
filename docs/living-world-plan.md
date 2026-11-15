@@ -187,6 +187,25 @@ potential, contentment, regions and world size will show when they are built.
   choice); Parts 2 and 3 together; Parts 4 and 5 together; Part 8 (harness page) and the
   re-measure of every constant; then Parts 6 and 7.
 
+**15 Nov — how people develop (Part 2, settled before building).**
+
+- **Learning speed is per skill group, not one number.** Six groups, each with its own ceiling
+  and its own speed: conditioning (strength, stamina — the gym; grows from training, not
+  matches), athletic movement (speed, agility, high-flying — natural athleticism, capped by
+  build, first to go with age), combat (striking, brawling, power), mat wrestling (technical,
+  grappling — slow to learn, ages best), craft (psychology, selling, ring IQ — reps and who you
+  work with, longest-growing) and presence (charisma — a little, the gimmick does more).
+- **For real people both are read from the database, not invented.** The ceiling from age (where
+  their own curve takes them); the speed from how far they have come in that group for their
+  years. Ring IQ alone was rejected: it is what someone knows now, mostly built from experience,
+  so it would have counted experience twice and made veterans the fastest learners.
+- Only the groups a wrestler's style uses are judged that way; a low score in a group they never
+  trained says nothing about how fast they would learn it.
+- **People get better at what they do in matches.** The player's matches use the beats the engine
+  worked; rival matches follow the wrestler's style until Part 5 runs them through the engine.
+- Generated people draw both from the spread the real roster shows.
+- **The developmental brand is the next PR**, not this one.
+
 ## 1. The rule this plan follows
 
 > **Anything that can happen to a wrestler or a promotion happens the same way whoever is
@@ -297,7 +316,28 @@ Proposal:
   potential end up different, for reasons the player can see.
 - The bundled database's hand-authored numbers stay true on day one, as now.
 
-Open:
+**Built (15 Nov 2026).** Six skill groups with a ceiling and a learning speed each
+(`Models.Person.Development`, `Engine.Growth`); a monthly step for everybody in the world;
+usage from the player's beats and the rivals' cards; potential and learning speed in words on
+the profile, sharpening at three and twelve months with you (`Scouting`); news when one of yours
+moves a step of five in the ring. The age lens is retired and baked once into a career set in
+another year, and into old saves on load. Not built, written down: the developmental brand (next
+PR), trainers and facilities, gimmick changes moving connection, rival matches using beats (Part 5).
+
+Measured over five simulated years of a small world (`GrowthProbe`, the real roster only): the
+busiest under-24s gained about 11 points of ring craft and the busiest 24-28s about 6; the unused
+stood still; 29-35s lost about 5 of athleticism, 36-42s about 9, while their craft held; 43+ lost
+10-25. Calibration found and fixed on the way: generated young people inherited a veteran's craft
+from the wrestler they were drawn from and then declined (the generator now ages what it copies);
+a generated ceiling could land below where somebody already was; the target moved once a January,
+so a twenty-two-year-old learned nothing for eleven months; and four matches a month as "full use"
+left nobody fully used. The pace (8% of the gap a month), decline (8%) and a month's full use
+(three matches) are first guesses for Part 8 to check.
+
+Speed: small stays inside the budget; full's average week went from about 3.0 s to 3.7 s in the
+browser, and its save from 6.8 MB to about 9 MB of JSON before compression.
+
+Open (settled 14-15 Nov, kept for the record):
 
 5. Does the player see potential as a number, as words ("has a ceiling", "could main-event"),
    or only through results?

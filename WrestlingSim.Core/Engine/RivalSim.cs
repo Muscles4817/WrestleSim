@@ -199,6 +199,13 @@ namespace WrestlingSim.Engine
             // the people nobody is booking.
             foreach (var w in show.Card.SelectMany(i => i.Wrestlers).Distinct()) w.LastAppearance = today;
 
+            // And what they worked is what they get better at — in their own style, since a
+            // rival's match is not worked beat by beat (Growth).
+            foreach (var item in show.Card)
+                foreach (var w in item.Wrestlers)
+                    if (item is BookedMatch) Growth.RecordMatch(w, item.Wrestlers);
+                    else Growth.RecordTalk(w);
+
             rival.Nights.Add(new RivalNight
             {
                 Date = today, Type = type, Rating = Math.Round(rating, 1),

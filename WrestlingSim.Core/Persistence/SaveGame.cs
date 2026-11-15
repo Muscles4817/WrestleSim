@@ -156,6 +156,18 @@ namespace WrestlingSim.Persistence
         public List<string> Notes { get; set; } = new();
     }
 
+    /// <summary>The attributes that change, compactly: ring skills in the order of <see cref="Models.RingSkills"/>'s properties.</summary>
+    public class AttributesDto
+    {
+        /// <summary>HighFlyer, Grappler, Powerhouse, Technical, Brawler, Striker (0–5).</summary>
+        public double[] Ring { get; set; } = [];
+        /// <summary>Strength, Speed, Agility, Stamina.</summary>
+        public int[] Body { get; set; } = [];
+        /// <summary>Psychology, Selling, RingIQ.</summary>
+        public int[] Mind { get; set; } = [];
+        public double Charisma { get; set; }
+    }
+
     public class WorldChoiceDto
     {
         public Engine.WorldSize Size { get; set; }
@@ -450,6 +462,15 @@ namespace WrestlingSim.Persistence
     public class WrestlerStateDto
     {
         public string Id { get; set; } = "";
+
+        /// <summary>
+        /// The attributes as they are now, since they change (Part 2). Absent from saves made
+        /// before they did, which take the database's and are aged to the save's year on load.
+        /// </summary>
+        public AttributesDto? Attributes { get; set; }
+
+        /// <summary>Ceilings, learning speeds, this month's work and the history of levels.</summary>
+        public Models.Person.Development? Development { get; set; }
 
         /// <summary>The stock: how over they are.</summary>
         public double Overness { get; set; }

@@ -521,6 +521,9 @@ namespace WrestlingSim.Models.World
             NonCompetes.RemoveAll(n => n.Until <= CurrentDate);
             Engine.World.Tick(this);
 
+            // Once a month everybody in the world gets a little better or worse (Part 2).
+            if (CurrentDate.Day == 1) Engine.Growth.Month(this);
+
             // The term runs out on the clock, and the network pays next term for what this
             // one drew.
             RenewIfDue();

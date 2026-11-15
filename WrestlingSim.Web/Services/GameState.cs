@@ -314,6 +314,10 @@ public class GameState
 
         career.OpenBooks(startDate);
 
+        // Everybody's ceilings and learning speeds, read or drawn (Growth). A real person's
+        // numbers are as of 2026; a career set in another year moves them to it first.
+        Growth.Begin(career);
+
         // Who the promotion opens with, and who it is up against. Everybody signs from one
         // shared roster, biggest promotion first — see World.Open. A custom database will be
         // another source.
