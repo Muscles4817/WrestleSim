@@ -95,18 +95,20 @@ namespace WrestlingSim.Engine
             }
 
             d.NextChampion.Clear();
-            foreach (var title in rival.Titles.Active.Where(t => t.SideSize == 1))
+            // One belt each: nobody is planned to take two (found on the rival page, 15 Nov).
+            var promised = new HashSet<string>(rival.Titles.Active.Select(t => t.Champion?.Id).OfType<string>());
+            foreach (var title in rival.Titles.Active.Where(t => t.SideSize == 1).OrderByDescending(t => t.Prestige))
             {
                 var champion = title.Champion;
                 bool due = champion is null || champion.IsRetired || !people.Contains(champion)
                         || title.CurrentReignDays(today) >= ReignBeforeChange;
                 if (!due) continue;
-                var next = people.Where(w => w.Division == title.Division && w != champion && !w.IsPartTime)
+                var next = people.Where(w => w.Division == title.Division && w != champion && !w.IsPartTime && !promised.Contains(w.Id))
                     .OrderByDescending(w => d.Pushes.Contains(w.Id) ? 1 : 0)
                     .ThenByDescending(w => w.EffectiveOverness)
                     .ThenBy(w => w.Id, StringComparer.Ordinal)
                     .FirstOrDefault();
-                if (next is not null) d.NextChampion[title.Name] = next.Id;
+                if (next is not null) { d.NextChampion[title.Name] = next.Id; promised.Add(next.Id); }
             }
 
             rival.Direction = d;
@@ -203,6 +205,46 @@ namespace WrestlingSim.Engine
             }
             match.Plan.Beats.Clear();
             match.Plan.Beats.AddRange(written.Beats);
+        }
+    }
+}
+
+namespace WrestlingSim.Engine
+{
+    public static partial class World
+    {
+        /// <summary>
+        /// The rival booker's card for one of the player's shows (Part 5, decided 14 Nov: "Suggest
+        /// a card" — a suggestion to accept or edit, never automatic). The same booker the rivals
+        /// use, on the player's roster, belts and audience: who is on it, who wins, and each match
+        /// written from a brief. Nothing is changed until the player keeps it.
+        /// </summary>
+        public static List<ICardItem> SuggestCard(Career career, ScheduledShow show)
+        {
+            var me = new RivalPromotion
+            {
+                Id = "player", Promotion = career.Promotion, Titles = career.Titles, Feuds = career.FeudBook,
+                Competence = 1.0
+            };
+            var available = career.PlayerCanBook()
+                .Where(w => !w.IsInjured(show.Date) && career.Unavailable(w) is null)
+                .ToList();
+            double Response(Wrestler w) => career.Response(w, show.Type);
+            double Freshness(BookedMatch m) => BoxOffice.StoryBetween(m.Plan, career.FeudBook)?.Familiarity(show.Date) ?? 1.0;
+
+            var card = BookCard(me, available, show.Type, show.Date, career.Shows.Count, Response, Freshness);
+            var matches = card.OfType<BookedMatch>().ToList();
+            int talking = card.Where(c => c is not BookedMatch).Sum(c => c.DurationMinutes);
+            int share = matches.Count == 0 ? 0 : (int)(show.RuntimeMinutes * AudienceModel.FullCard - talking) / matches.Count;
+            var rng = new Random(StableSeed.From(career.Id, show.Date.DayNumber, "suggest"));
+            for (int i = 0; i < matches.Count; i++)
+            {
+                bool main = i == matches.Count - 1;
+                int winner = Winner(me, matches[i], show.Type, rng);
+                Write(me, matches[i], winner, show.Type, mainEvent: main, opener: i == 0 && matches.Count >= 5,
+                      minutes: main ? (int)(share * 1.4) : share);
+            }
+            return card;
         }
     }
 }

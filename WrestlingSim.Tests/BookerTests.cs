@@ -173,5 +173,24 @@ namespace WrestlingSim.Tests
             var w2 = back.FindWrestler(w.Id)!;
             Assert.Equal((0.9, -4.0, (DateOnly?)Day), (w2.Favoured, w2.Warmth, w2.RejectedSince));
         }
+
+        [Fact]
+        public void ASuggestedCardIsWrittenInFull_FromPeopleThePlayerCanBook_AndChangesNothingUntilKept()
+        {
+            var career = World4();
+            var show = career.Schedule("Tuesday", Day.AddDays(3), ShowType.HouseShow);
+            string before = SaveSerializer.ToJson(career);
+
+            var card = World.SuggestCard(career, show);
+
+            Assert.NotEmpty(card);
+            Assert.All(card.OfType<BookedMatch>(), m => Assert.True(m.IsComplete, "A suggested match has its beats written."));
+            var bookable = career.PlayerCanBook().ToHashSet();
+            Assert.All(card.SelectMany(i => i.Wrestlers), w => Assert.Contains(w, bookable));
+            Assert.Equal(before, SaveSerializer.ToJson(career));
+
+            show.Card.AddRange(card);
+            Assert.Empty(career.UnavailableOnCard(show));
+        }
     }
 }

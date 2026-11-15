@@ -329,10 +329,10 @@ namespace WrestlingSim.Engine
         private static int BookingSituationOf(Career career, RivalPromotion rival)
         {
             var today = career.CurrentDate;
+            // Who it books from, not who of them is hurt this week: the card already leaves the
+            // injured off (BookCard), and since Part 4 rival nights injure people, so counting them
+            // had all sixty indies of a full world re-planning every week (measured 15 Nov).
             var parts = rival.Contracts.Select(c => c.WrestlerId).OrderBy(id => id, StringComparer.Ordinal)
-                .Append("|")
-                .Concat(rival.Contracts.Select(c => career.FindWrestler(c.WrestlerId)).OfType<Wrestler>()
-                             .Where(w => w.IsInjured(today)).Select(w => w.Id).OrderBy(id => id, StringComparer.Ordinal))
                 .Append("|")
                 // In debt, short, or neither. Not finer: a promotion that opened on $25,000
                 // crosses a tenth of that most weeks, in either direction, without anything
