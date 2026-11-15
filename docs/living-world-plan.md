@@ -154,9 +154,21 @@ potential, contentment, regions and world size will show when they are built.
   each quarter with about six months' hysteresis, not set; **television is won** from a limited
   number of network slots and **can be lost** (the network walks away from a weak enough term,
   leaving guaranteed contracts to be paid without the income); **new promotions are founded**
-  when there is room; takeovers later. Awaiting the owner on: the player moving levels by the
-  same rules, how a television offer works for the player, and how scarce slots are.
+  when there is room; takeovers later.
+- **Decided (15 Nov):** the player's promotion moves levels by the same rules; networks make
+  the player offers (fee, term, night, sometimes a condition) to choose between, haggling
+  later; the number of television slots follows the world size chosen at career start.
 - **Decided: the harness report is a page with charts**, opened in the browser, comparing runs.
+
+**15 Nov — speed and saves, and the plan closes.**
+
+- **Saves are compressed and kept in the browser's large store** (IndexedDB) rather than the
+  ~5 MB local storage, which a full-size world outgrows within weeks.
+- **Budget: one simulated week in two seconds or less**, measured in the real browser build.
+  Measured before Part 1 lands, and the world sizes on offer are set from the result.
+- **Build order:** saves and the speed measurement first; then Part 1 (population and world
+  choice); Parts 2 and 3 together; Parts 4 and 5 together; Part 8 (harness page) and the
+  re-measure of every constant; then Parts 6 and 7.
 
 ## 1. The rule this plan follows
 
