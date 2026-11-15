@@ -151,7 +151,8 @@ namespace WrestlingSim.Engine
         /// beats by <see cref="BriefDirector"/>. Somebody worth protecting who loses loses by a
         /// stolen finish rather than clean.
         /// </summary>
-        public static void Write(RivalPromotion rival, BookedMatch match, int winner, ShowType type, bool mainEvent, bool opener)
+        public static void Write(RivalPromotion rival, BookedMatch match, int winner, ShowType type, bool mainEvent, bool opener,
+                                 int minutes = 0)
         {
             var sides = match.Plan.Sides;
             double loserValue = sides.Where((_, i) => i != winner).SelectMany(s => s.Members).Select(w => BookingValue(rival, w)).DefaultIfEmpty(0).Max();
@@ -172,8 +173,19 @@ namespace WrestlingSim.Engine
                        : FinishKind.Clean
             };
             match.Plan.Brief = brief;
+
+            // The time it has: a booker lays the card out to fill the show. The scale above is
+            // where it starts; it is lengthened until the match takes its share of the night
+            // (measured 15 Nov: written at the scale alone, rival cards filled half to three
+            // quarters of their running time and the audience marked them down for it).
+            var written = BriefDirector.Write(brief, sides);
+            while (minutes > 0 && written.Minutes + BookedMatch.EntranceMinutes < minutes && brief.Length < MatchScale.Epic)
+            {
+                brief.Length++;
+                written = BriefDirector.Write(brief, sides);
+            }
             match.Plan.Beats.Clear();
-            match.Plan.Beats.AddRange(BriefDirector.Write(brief, sides).Beats);
+            match.Plan.Beats.AddRange(written.Beats);
         }
     }
 }

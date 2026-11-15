@@ -184,7 +184,8 @@ namespace WrestlingSim.Tests
             foreach (var c in result.StatusChanges)
                 output.WriteLine($"  {c.Wrestler.RingName,-6} {c.OvernessDelta:+0.00;-0.00}  {c.Reason}");
 
-            var win = result.StatusChanges.SingleOrDefault(c => c.Wrestler == winner);
+            // The result, not what being seen on the show was worth (HeatEconomy.ForExposure).
+            var win = result.StatusChanges.SingleOrDefault(c => c.Wrestler == winner && !c.Reason.StartsWith("Seen"));
             Assert.NotNull(win);
             Assert.True(win!.OvernessDelta > 0, "the winner of a battle royal gained nothing");
         }

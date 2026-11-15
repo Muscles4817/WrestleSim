@@ -185,6 +185,19 @@ namespace WrestlingSim.Engine
 
                 itemResult.Score = Math.Clamp(score, 0, 100);
 
+                // ── Being seen ───────────────────────────────────────────────
+                // Everybody in it was on the show, in front of this crowd: exposure builds how
+                // well known they are toward what this promotion can make them, at the pace
+                // the crowd's reaction sets (HeatEconomy.ForExposure).
+                foreach (var w in item.Wrestlers.Distinct())
+                {
+                    var seen = HeatEconomy.ForExposure(w, HeatEconomy.Reach(_tier), item.DurationMinutes,
+                        itemResult.Score, talking: item.Kind == CardItemKind.Segment, freshness: _response?.Invoke(w) ?? 1.0);
+                    if (starMaking < 1.0 && seen.OvernessDelta > 0) seen = seen with { OvernessDelta = seen.OvernessDelta * starMaking };
+                    HeatEconomy.Apply(seen);
+                    if (seen.IsMeaningful) result.StatusChanges.Add(seen);
+                }
+
                 crowdMood = Math.Clamp(crowdMood + MoodSwing(item, raw), 0, 10);
 
                 totalScore += itemResult.Score * weight;
@@ -588,10 +601,11 @@ namespace WrestlingSim.Engine
                     engineResult.LosingSide, engineResult.Pinned,
                     engineResult.StarRating, weight, familiarity,
                     winningChemistry: ChemistryOf(match.Plan, engineResult.WinningSide),
-                    losingChemistry:  ChemistryOf(match.Plan, engineResult.LosingSide))
+                    losingChemistry:  ChemistryOf(match.Plan, engineResult.LosingSide),
+                    story: HeatEconomy.StoryOf(feud.Intensity))
                 : HeatEconomy.ForMatch(
                     engineResult.Winner, engineResult.Loser, engineResult.StarRating, weight, familiarity,
-                    sideCount: match.Plan.Sides.Count);
+                    sideCount: match.Plan.Sides.Count, story: HeatEconomy.StoryOf(feud.Intensity));
 
             foreach (var raw in outcome.All)
             {

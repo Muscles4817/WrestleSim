@@ -136,11 +136,28 @@ namespace WrestlingSim.Engine
             if (rival.Direction is not { } direction || today.DayNumber - direction.Decided.DayNumber >= 28)
                 Direct(career, rival);
             var matches = show.Card.OfType<BookedMatch>().ToList();
+            int talking = show.Card.Where(c => c is not BookedMatch).Sum(c => c.DurationMinutes);
+            int share = matches.Count == 0 ? 0
+                : (int)(rival.Promotion.DefaultRuntimeFor(type) * AudienceModel.FullCard - talking) / matches.Count;
             for (int i = 0; i < matches.Count; i++)
             {
                 int winner = Winner(rival, matches[i], type, rng);
-                Write(rival, matches[i], winner, type, mainEvent: i == matches.Count - 1, opener: i == 0 && matches.Count >= 5);
+                bool main = i == matches.Count - 1;
+                Write(rival, matches[i], winner, type, mainEvent: main, opener: i == 0 && matches.Count >= 5,
+                      minutes: main ? (int)(share * 1.4) : share);
             }
+
+            // What the forecast would have expected of each item, for anybody measuring the two
+            // against each other (a probe sets Observed; null and free otherwise).
+            var imagined = Observed is null ? null
+                : show.Card.Select(item => ExpectedItemRating(rival, item, Response, Freshness)).ToList();
+            var features = Observed is null ? null
+                : show.Card.Select(item => (Skill: item.Wrestlers.Average(w => w.RingSkills.GetOverallSkill()),
+                                            Over: item.Wrestlers.Average(w => w.EffectiveOverness),
+                                            Acts: item.Wrestlers.Average(Response),
+                                            Fresh: item is BookedMatch bm ? Freshness(bm) : 1.0,
+                                            Charisma: item.Wrestlers.Average(w => w.Charisma),
+                                            Psych: item.Wrestlers.Average(w => (double)w.Mental.Psychology))).ToList();
 
             // **One set of consequences** (Part 4): the night is worked by the same engine and
             // run through the same show simulator as the player's — popularity from results,
@@ -149,6 +166,13 @@ namespace WrestlingSim.Engine
             var result = new ShowSimulator(rival.Feuds, seed: StableSeed.From(rival.Id, today.DayNumber, "night"),
                                            titles: rival.Titles, tier: rival.Promotion.Tier, response: Response)
                 .Simulate(show.ToShow());
+            if (Observed is { } observed)
+                for (int i = 0; i < show.Card.Count && i < result.Items.Count; i++)
+                    observed.Add(new ObservedItem(rival.Promotion.Tier, type, show.Card[i] is BookedMatch, show.Card[i] is BookedMatch { Plan.TitleAtStake: not null },
+                        show.Card[i].DurationMinutes, imagined![i], result.Items[i].RawScore, result.Items[i].Score,
+                        features![i].Skill, features[i].Over, features[i].Acts, features[i].Fresh, features[i].Charisma, features[i].Psych,
+                        Profile(rival.Motive).RatingBias));
+
             var winners = result.Items.Select(r => r.MatchResult).OfType<Models.MatchPlan.MatchEngineResult>()
                 .SelectMany(m => m.WinningSide).Select(w => w.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
             var lines = show.Card.Select(Describe).ToList();
@@ -184,6 +208,13 @@ namespace WrestlingSim.Engine
             });
             if (rival.Nights.Count > 12) rival.Nights.RemoveAt(0);
         }
+
+        /// <summary>One worked rival item beside what the forecast imagined of it: for calibration probes.</summary>
+        public sealed record ObservedItem(PromotionTier Tier, ShowType Type, bool Match, bool Title, int Minutes,
+            double Imagined, double Raw, double Score, double Skill, double Over, double Acts, double Fresh,
+            double Charisma, double Psych, double Bias);
+
+        [ThreadStatic] public static List<ObservedItem>? Observed;
 
         private static string Describe(ICardItem item) => item switch
         {
@@ -413,9 +444,22 @@ namespace WrestlingSim.Engine
         }
 
         /// <summary>
-        /// What an item is worth on the same 0–100 scale as the player's, without working it:
-        /// who is in it, how good they are, how over they are, whether the crowd has seen this
-        /// match-up or these acts too often, what is on the line, and what the promotion is for.
+        /// What an item is worth on the same 0–100 scale as the player's, without working it —
+        /// what the planner's forecast imagines of a card it has not run.
+        ///
+        /// **Fitted to the engine** (15 Nov 2026). Since Part 4 every rival night is worked by the
+        /// match engine, so this is no longer a model of its own: it is the engine summarised, as
+        /// the living-world plan requires of any cheap version. 1,556 rival matches and 131
+        /// promos from eight months of a small world (<c>ItemCalibrationProbe</c>), least squares:
+        /// a match is ability, popularity, psychology, the crowd's appetite for these acts and the
+        /// time it is given (R² 0.90, typical error 5 points, fitted to the item's score on the
+        /// night — after the card's own marks, like two matches in a row — because that is what a
+        /// night's rating is made of); a promo is charisma, appetite and
+        /// time (R² 0.999). The old hand formula was 13 points out on average — too kind to
+        /// indies, too hard on the global major. How stale the match-up is could not be fitted
+        /// (nearly every rival match-up in the sample was fresh), so it keeps a mild discount in
+        /// the direction the engine applies one. Refit when the engine changes; the
+        /// forecast-against-the-world test is what notices.
         /// </summary>
         public static double ExpectedItemRating(
             RivalPromotion rival, ICardItem item,
@@ -426,20 +470,19 @@ namespace WrestlingSim.Engine
 
             double acts = response is null ? 1.0 : people.Average(response);
             double over = people.Average(w => w.EffectiveOverness);
-            double bias = Profile(rival.Motive).RatingBias;
+            int minutes = item.DurationMinutes;
 
             if (item is BookedMatch match)
             {
                 double skill = people.Average(w => w.RingSkills.GetOverallSkill());
+                double psych = people.Average(w => (double)w.Mental.Psychology);
                 double fresh = freshness?.Invoke(match) ?? 1.0;
-                double rating = (22 + 6 * skill + 0.2 * over + bias) * acts * (0.75 + 0.25 * fresh);
-                if (match.Plan.IsTitleMatch) rating += 3;
-                return Math.Clamp(rating, 5, 95);
+                double rating = -84.358 + 6.004 * skill + 0.464 * over + 0.282 * psych + 54.129 * acts + 1.025 * minutes;
+                return Math.Clamp(rating * (0.85 + 0.15 * fresh), 5, 95);
             }
 
-            // Talking: charisma carries it.
             double charisma = people.Average(w => Math.Clamp(w.Charisma, 0, 5));
-            return Math.Clamp((28 + 7 * charisma + 0.12 * over + bias / 2) * acts, 5, 95);
+            return Math.Clamp(-41.058 + 4.965 * charisma + 31.515 * acts + 7.45 * minutes, 5, 95);
         }
 
         /// <summary>Takes anything they hold off them, because they are leaving this promotion.</summary>
