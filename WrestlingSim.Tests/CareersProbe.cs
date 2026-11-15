@@ -35,6 +35,12 @@ namespace WrestlingSim.Tests
             World.Open(career, day, choice);
             foreach (var _ in World.PlanOpening(career)) { }
 
+            {
+                var a0 = career.Roster.Where(w => !w.IsRetired).ToList();
+                var t0 = a0.OrderByDescending(w => w.Overness).Take(10).ToList();
+                Say($"start popularity: top ten mean {t0.Average(w => w.Overness):0}, 70+: {a0.Count(w => w.Overness >= 70)}, 50+: {a0.Count(w => w.Overness >= 50)}, median {a0.Select(w => w.Overness).OrderBy(x => x).ElementAt(a0.Count / 2):0}");
+            }
+            var pushed = new HashSet<string>();
             var real = career.Roster.Where(w => !w.IsGenerated).Select(w => w.Id).ToHashSet();
             for (int y = 0; y < years; y++)
             {
@@ -47,6 +53,12 @@ namespace WrestlingSim.Tests
                     $"rookies so far {career.Roster.Count(w => w.DebutedIn > 2026)}; ages median {ages[ages.Count / 2]}, p90 {ages[ages.Count * 9 / 10]}; " +
                     $"real people active {active.Count(w => real.Contains(w.Id))}; in-ring median {active.Select(w => w.RingSkills.GetOverallSkill() * 20).OrderBy(x => x).ElementAt(active.Count / 2):0}; " +
                     $"rival rosters {career.Rivals.Where(r => r.IsActive).Sum(r => r.Contracts.Count)}, active rivals {career.Rivals.Count(r => r.IsActive)}");
+                foreach (var r in career.Rivals.Where(r => r.Direction is not null))
+                    foreach (var id in r.Direction!.Pushes) pushed.Add(id);
+                Say($"    pushes now {career.Rivals.Sum(r => r.Direction?.Pushes.Count ?? 0)}, ever pushed {pushed.Count}, refused (last year) {career.Rivals.Sum(r => r.Direction?.Rejected.Count ?? 0)}, crowd turned now {active.Count(w => w.RejectedSince is not null)}");
+                var top = active.OrderByDescending(w => w.Overness).Take(10).ToList();
+                Say($"    popularity: top ten mean {top.Average(w => w.Overness):0} (from {string.Join(", ", top.Take(3).Select(w => $"{w.RingName} {w.Overness:0}"))}), 70+: {active.Count(w => w.Overness >= 70)}, 50+: {active.Count(w => w.Overness >= 50)}, median {active.Select(w => w.Overness).OrderBy(x => x).ElementAt(active.Count / 2):0}; " +
+                    $"best rookie {active.Where(w => w.DebutedIn > 2026).Select(w => w.Overness).DefaultIfEmpty(0).Max():0}");
             }
 
             var gone = career.Roster.Where(w => w.RetiredOn is not null).ToList();

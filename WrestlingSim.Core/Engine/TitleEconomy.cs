@@ -504,7 +504,7 @@ namespace WrestlingSim.Engine
 
             return new StatusChange(
                 winner,
-                HeatEconomy.DampenGain(winner.Overness, share * 3.0),
+                HeatEconomy.DampenGain(winner, share * 3.0),
                 share * 22.0,
                 $"Won the {title.Name}");
         }

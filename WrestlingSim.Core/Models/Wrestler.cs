@@ -57,6 +57,22 @@ namespace WrestlingSim.Models
         /// (decided 14 Nov). Null for a full-timer.
         /// </summary>
         public DateOnly? PartTimeSince { get; set; }
+
+        /// <summary>
+        /// How often they have been winning lately, 0–1 — a running average of results, a half-life
+        /// of about three matches. With <see cref="Warmth"/>, what tells the audience it is being
+        /// managed (Part 5's rejection of a push).
+        /// </summary>
+        public double Favoured { get; set; } = 0.5;
+
+        /// <summary>
+        /// How the crowd has been taking them lately, against the rest of the cards they were on:
+        /// a running average of their items' scores less the night's, in points. Zero is ordinary.
+        /// </summary>
+        public double Warmth { get; set; }
+
+        /// <summary>When the audience turned on the way they are being presented, or null if it has not.</summary>
+        public DateOnly? RejectedSince { get; set; }
         public bool IsPartTime => PartTimeSince is not null;
         public List<Gimmick> PreviousGimmicks { get; set; }
 

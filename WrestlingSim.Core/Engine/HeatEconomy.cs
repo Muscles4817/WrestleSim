@@ -164,7 +164,7 @@ namespace WrestlingSim.Engine
             IReadOnlyList<Wrestler> winningSide, Wrestler pinner,
             IReadOnlyList<Wrestler> losingSide, Wrestler pinned,
             double starRating, FinishWeight finish, double familiarity = 1.0,
-            double winningChemistry = 0.0, double losingChemistry = 0.0)
+            double winningChemistry = 0.0, double losingChemistry = 0.0, double story = 0)
         {
             // ForMatch is protected by MatchPlan.Validate upstream; this is public and has
             // no such guard, and the degenerate calls are not harmlessly wrong — an empty
@@ -184,7 +184,7 @@ namespace WrestlingSim.Engine
             var core = ForMatch(
                 pinner, pinned, starRating, finish, familiarity,
                 winnerStanding: SideStanding(winningSide, winningChemistry),
-                loserStanding:  SideStanding(losingSide, losingChemistry));
+                loserStanding:  SideStanding(losingSide, losingChemistry), story: story);
 
             var partners = new List<StatusChange>();
 
@@ -200,7 +200,7 @@ namespace WrestlingSim.Engine
             foreach (var w in winningSide.Where(m => m != pinner))
                 partners.Add(new StatusChange(
                     w,
-                    DampenGain(w.Overness, core.RawWinnerOverness * PartnerWinShare),
+                    DampenGain(w, core.RawWinnerOverness * PartnerWinShare),
                     core.Winner.MomentumDelta * PartnerWinShare,
                     $"On the winning team, but {pinner.RingName} scored the fall."));
 
@@ -335,7 +335,7 @@ namespace WrestlingSim.Engine
             Wrestler winner, Wrestler loser, double starRating, FinishWeight finish,
             double familiarity = 1.0,
             double? winnerStanding = null, double? loserStanding = null,
-            int sideCount = 2)
+            int sideCount = 2, double story = 0)
         {
             // Normally each man's own standing. A tag match passes its sides' standing
             // instead, because that is what the audience is weighing.
@@ -379,6 +379,16 @@ namespace WrestlingSim.Engine
             double winnerMomentum = MomentumScale * common * winnerMomentumScale;
             double loserMomentum  = MomentumScale * common * loserMomentumScale;
 
+            // A loss with structure costs little or nothing (15 Nov 2026, owner's ruling, and
+            // doc 17 §3.1: "the audience will forgive any loss it understands"). Two kinds of
+            // structure are in the model: a great match — Austin at WrestleMania 13, Bryan
+            // against Lesnar, Michaels in the 1994 ladder match were all made in defeat — and
+            // a feud that is going somewhere. Losing without either, in a poor match, to
+            // somebody who is no bigger, is what still costs.
+            double kept = LossKept(starRating, story);
+            loserOverness *= kept;
+            loserMomentum *= kept;
+
             // An outstanding match lifts both people a little regardless of the result:
             // quality builds reputation even in defeat. It is momentum, not overness —
             // respect is not the same as the audience caring who you are.
@@ -389,7 +399,7 @@ namespace WrestlingSim.Engine
             double rawWinnerOverness = winnerOverness;
             double rawLoserOverness  = loserOverness;
 
-            winnerOverness = DampenGain(winner.Overness, winnerOverness);
+            winnerOverness = DampenGain(winner, winnerOverness);
             loserOverness  = DampenLoss(loser.Overness, loserOverness);
 
             return new MatchStatusOutcome(
@@ -418,6 +428,119 @@ namespace WrestlingSim.Engine
         };
 
         // ── Appearances ──────────────────────────────────────────────────────
+
+        /// <summary>
+        /// How much of a loss's cost survives its structure, 0–1. A great match — protection
+        /// starts at four stars and is complete by four and three-quarters, the range the
+        /// business itself calls great — costs nothing; a feud at its hottest protects as much
+        /// again. The two do not add: a great match in a hot feud is simply protected.
+        /// </summary>
+        public static double LossKept(double starRating, double story)
+        {
+            double quality = Math.Clamp((starRating - 4.0) / 0.75, 0, 1);
+            return 1 - Math.Max(quality, Math.Clamp(story, 0, 1));
+        }
+
+        /// <summary>How much a feud at this pitch protects whoever loses in it.</summary>
+        public static double StoryOf(FeudIntensity intensity) => intensity switch
+        {
+            FeudIntensity.Building => 0.5,
+            FeudIntensity.Hot      => 0.8,
+            FeudIntensity.Nuclear  => 0.9,
+            _                      => 0
+        };
+
+        // ── Exposure ─────────────────────────────────────────────────────────
+        //
+        // Being shown makes you known (owner, 15 Nov 2026). Doc 12 §2 lists television time,
+        // promo time and match time among what a push *is*, its star-making sequence begins
+        // with exposure, and its first killer of a push is being kept off television. Doc 17
+        // separates the stock (over) from the flow (hot): exposure builds the stock toward
+        // what the promotion's audience can make you, and how strongly that audience reacts —
+        // loved or hated alike — sets how fast, and warms or cools you. Overexposure is the
+        // audience's response falling (AudienceModel), which slows all of it.
+        //
+        // Before this, results were the only thing that moved popularity, and their sum was
+        // negative under any sensible booker: beating somebody smaller pays nothing, losing
+        // always cost. Measured 15 Nov with every rival night run through the engine, the
+        // established stars of a small world fell from about ninety to about thirty in five years.
+
+        /// <summary>
+        /// How well known this promotion's shows can make somebody, 0–100. The global major's
+        /// television makes household names; three hundred people in a hall do not. A rough
+        /// first reading of doc 01's tiers and doc 29's audience sizes, for Part 8 to check.
+        /// </summary>
+        public static double Reach(PromotionTier tier) => tier switch
+        {
+            PromotionTier.Global      => 92,
+            PromotionTier.National    => 80,
+            PromotionTier.Established => 66,
+            PromotionTier.SuperIndie  => 50,
+            PromotionTier.Independent => 36,
+            _                         => 24
+        };
+
+        /// <summary>The share of the gap to the promotion's reach one ordinary appearance closes.</summary>
+        public const double ExposureRate = 0.012;
+
+        /// <summary>
+        /// What one appearance did. <paramref name="reaction"/> is the item's score, 0–100: how
+        /// much the crowd felt about it, either way. <paramref name="freshness"/> is the
+        /// audience's response to this act (1 fresh, lower when seen too often). Talking is
+        /// worth more than wrestling to somebody who can talk, and less to somebody who cannot.
+        /// </summary>
+        public static StatusChange ForExposure(Wrestler w, double reach, int minutes, double reaction,
+                                               bool talking, double freshness = 1.0)
+        {
+            double screen = Math.Clamp(minutes / 12.0, 0.25, 1.5);
+            double engaged = Math.Clamp(reaction / 60.0, 0.2, 1.6);
+            double voice = talking ? 0.4 + Math.Clamp(w.Charisma, 0, 5) / 5.0 * 0.9 : 1.0;
+            double fresh = Math.Clamp(freshness, 0, 1.2);
+
+            double gap = Math.Max(0, Math.Min(reach, Appeal(w)) - w.Overness);
+            double overness = ExposureRate * gap * screen * engaged * voice * fresh;
+            // The flow: a reaction above the ordinary warms, one below it cools.
+            double momentum = (engaged - 0.75) * 4.0 * screen * fresh;
+
+            // Rejection (doc 16 §4.11, doc 17 §9). Somebody who wins nearly everything in front of
+            // a crowd that has not taken to them reads as somebody the promotion is forcing, and
+            // an audience that senses it is being managed resists: being shown cools them instead
+            // of making them better known. Not a dice roll and not a rule about a type of
+            // character — the same signals for the player's people and everybody else's, and
+            // whether it happens depends on whether the crowd warmed to them.
+            if (Rejecting(w))
+            {
+                overness *= 0.3;
+                momentum = Math.Min(momentum, 0) - 2.0 * screen;
+            }
+            return new StatusChange(w, overness, momentum,
+                engaged >= 1.1 ? "Seen, and the crowd reacted" : engaged < 0.5 ? "Seen, and the crowd did not care" : "Seen on the show");
+        }
+
+        /// <summary>The threshold of "nearly everything": winning about four times in five lately.</summary>
+        public const double ForcedWinning = 0.78;
+
+        /// <summary>
+        /// A crowd that has not taken to somebody: lately their items have scored this far below
+        /// the rest of the cards they were on. Relative, because an indie crowd is not a cold
+        /// crowd. Measured 15 Nov over five years of a small world: against an absolute line,
+        /// seventeen of the first twenty-three pushes were refused within a year; six points
+        /// under the card refused almost none; two points under refused about twenty of fifty —
+        /// near doc 17 §9's "about a third", which is what it is set against.
+        /// </summary>
+        public const double ColdCrowd = -2;
+
+        public const string RejectionReason = "The crowd is turning on how they are being presented";
+
+        /// <summary>Whether the audience is turning on how this person is being presented.</summary>
+        public static bool Rejecting(Wrestler w) => w.Favoured >= ForcedWinning && w.Warmth < ColdCrowd;
+
+        /// <summary>Records a result and a reaction into the running averages <see cref="Rejecting"/> reads.</summary>
+        public static void Track(Wrestler w, bool? won, double reaction)
+        {
+            if (won is { } win) w.Favoured = 0.8 * w.Favoured + 0.2 * (win ? 1 : 0);
+            w.Warmth = 0.85 * w.Warmth + 0.15 * Math.Clamp(reaction, -100, 100);
+        }
 
         /// <summary>
         /// What being on a show is worth by itself. Small, and it is momentum rather than
@@ -482,6 +605,33 @@ namespace WrestlingSim.Engine
         /// Gains compress as someone approaches the ceiling. The last ten points of
         /// overness are far harder to buy than the first ten.
         /// </summary>
+        /// <summary>
+        /// How over this person could ever become, 0–100: what they bring that an audience can
+        /// attach to. Doc 17 §9: a promotion can make somebody visible and credible; it cannot
+        /// make them beloved. Charisma is most of it, ability the rest. A first reading for
+        /// Part 8: a gifted talker can reach the top of the scale, a middling one plateaus in
+        /// the seventies, and somebody who cannot talk in the fifties.
+        ///
+        /// Found 15 Nov: once a great match protected the loser, stars working each other only
+        /// ever gained, and the whole top ten of a small world sat at exactly 100 within five
+        /// years — the scale's edge doing the job a person's own limits should.
+        /// </summary>
+        public static double Appeal(Wrestler w) =>
+            Math.Clamp(25 + 13 * Math.Clamp(w.Charisma, 0, 5) + 0.12 * Math.Clamp(w.RingSkills.GetOverallSkill(), 0, 5) * 20, 0, 100);
+
+        /// <summary>
+        /// A gain, compressed as this person nears their own ceiling (<see cref="Appeal"/>) — or
+        /// <paramref name="ceiling"/> where it is lower, as a promotion's reach is. Nobody is
+        /// pulled down for being above it; they simply stop gaining.
+        /// </summary>
+        public static double DampenGain(Wrestler w, double raw, double ceiling = 100)
+        {
+            double top = Math.Min(Appeal(w), ceiling);
+            if (raw <= 0) return raw;
+            if (w.Overness >= top) return 0;
+            return raw * Math.Pow((top - w.Overness) / Math.Max(1, top), 0.6);
+        }
+
         public static double DampenGain(double current, double raw) =>
             raw * Math.Pow(Math.Clamp(1.0 - current / 100.0, 0, 1), 0.6);
 

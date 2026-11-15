@@ -205,6 +205,12 @@ namespace WrestlingSim.Persistence
         public List<RivalDecisionDto>? Decisions { get; set; }
         public int QuietAs { get; set; }
         public string? QuietSince { get; set; }
+
+        /// <summary>The booker's kept direction and how well it books (Part 5); absent before either existed.</summary>
+        public Models.World.BookingDirection? Direction { get; set; }
+        public double[]? QuietBest { get; set; }
+        public List<string>? QuietHeadliners { get; set; }
+        public double? Competence { get; set; }
     }
 
     public class RivalDecisionDto
@@ -478,6 +484,11 @@ namespace WrestlingSim.Persistence
         /// <summary>Retired, or working big shows only (Part 3), ISO dates; absent for neither.</summary>
         public string? RetiredOn { get; set; }
         public string? PartTimeSince { get; set; }
+
+        /// <summary>The running averages a push's rejection reads, and when the crowd turned (Part 5).</summary>
+        public double? Favoured { get; set; }
+        public double? Warmth { get; set; }
+        public string? RejectedSince { get; set; }
 
         /// <summary>The stock: how over they are.</summary>
         public double Overness { get; set; }

@@ -268,6 +268,13 @@ else
                 {
                     <text>Nothing booked yet. Add a match or a segment below.</text>
                 }
+                @if (!show.HasRoadRun)
+                {
+                    <div class="mt">
+                        <button class="btn btn--sm" @onclick="() => Suggest(career, show)">Suggest a card</button>
+                        <div class="small muted mt">The booker the other promotions use, on your roster: who works, who wins and how, written in full. Keep it, change any of it, or clear it.</div>
+                    </div>
+                }
             </div>
         }
 
@@ -1045,4 +1052,13 @@ else
 
     /// <summary>Every edit to a card is written straight to the save — there is no "unsaved card".</summary>
     private Task Persist() => State.SaveAsync();
+
+    /// <summary>Fills an empty card with the rival booker's suggestion (World.SuggestCard). Nothing is run.</summary>
+    private async Task Suggest(Career career, ScheduledShow show)
+    {
+        if (show.Card.Count > 0) return;
+        show.Card.AddRange(World.SuggestCard(career, show));
+        await Persist();
+        State.Notify();
+    }
 }

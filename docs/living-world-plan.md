@@ -414,6 +414,73 @@ Proposal:
   `InjuryRisk` and `FeudBook` calls the player's nights use.
 - The planner's forecast reads the same summary, so it stays honest for free.
 
+**Built (15 Nov 2026), on the branch.** Every rival night is written from briefs (`BriefDirector`)
+and worked by the player's `ShowSimulator` against the rival's own feuds, belts, tier and
+audience: one set of consequences for every show. A rival booker (`RivalBooker.cs`) keeps a
+monthly direction (who it is building, which belt goes to whom next, one heir per belt), chooses
+winners by what each side is worth to it, misjudging more the less competent the promotion is
+(each draws its own competence near its owner's default; editable on its page), and lays each
+match out to its share of the show. The rival page shows its direction; the player has
+**Suggest a card** on any empty card — the same booker on the player's roster, never automatic.
+
+**What makes people more and less popular — the owner's ruling (15 Nov) and the research behind it.**
+The first run drained the world: results only move popularity from loser to winner and their sum
+was negative under any sensible booker. The owner: being shown makes you known; being liked or
+hated builds buzz; losing need not cost — not in a great match, not in a great feud. The reference
+library agrees (doc 12 §2–3: television time, promo time and match time are what a push *is*,
+exposure begins the star-making sequence, being kept off television kills one; doc 17 §1.1 stock
+and flow, §3.1 "the audience will forgive any loss it understands", §9 "you can make somebody
+visible and credible, not beloved", a third of sustained pushes rejected; doc 16 §4.11 visible
+effort is resisted; doc 19 §4.4 a heel who cannot win is worthless), and so does the outside
+record, anecdotal as it is (Austin at WrestleMania 13, Bryan against Lesnar, Michaels' 1994
+ladder match made in defeat; Bret Hart after the 1996 Iron Man the counter-case; overexposure
+and 50/50 booking as the named coolers). Built, for the player's shows and the rivals' alike:
+
+- **Exposure builds the stock** (`HeatEconomy.ForExposure`): each appearance pulls a wrestler
+  toward what the promotion's audience can reach (`Reach` by tier), at a pace set by screen time,
+  the crowd's reaction (loved or hated alike), talking for those who can talk, and freshness (the
+  overexposed gain less). The reaction warms or cools momentum.
+- **Losses with structure cost little**: a match of four stars and up (full protection by 4¾) and
+  a feud that is going somewhere (`StoryOf`) protect the loser. A poor match, no story, to somebody
+  no bigger still costs.
+- **Everybody has a ceiling** (`Appeal`: mostly charisma, then ability): gains slow as they near it.
+  Without it, a top ten pinned at 100 within five years.
+- **Rejection**: winning nearly everything while the crowd takes you below the rest of the card
+  turns them against you (`Rejecting`); being shown then cools you. News for the player; a rival
+  drops the push for a year. About twenty of fifty pushes refused in five years, near doc 17's third.
+
+The forecast's item rating is now the engine summarised (least squares on 1,556 worked rival
+matches and 131 promos, R² 0.90 / 0.999), within two points of the world on every promotion.
+
+Measured over five years of a small real-life world: the top ten holds (85 to 91), established
+stars age gently (Seth Rollins 88 at 45, Cody Rhodes 84 at 46, Randy Orton 55 at 51 and part-time),
+new stars are made (two generated wrestlers reach the high nineties), and the count at 70 or more
+grows from 18 to 37 after the first year's shake-out. The world's median still drains to near zero:
+small-world indies fold within two or three years, leaving most people unbooked — Part 8.
+
+**Speed — over budget, for the owner.** Every rival match worked by the engine is cheap natively
+(about 60 ms a week of nights at full size), but planning is not: with popularity, injuries and
+money now moving every week, the quiet-week checks fire constantly. Browser, eight weeks each:
+small 0.3–2.6 s a week (was about 0.5), medium 3–6 s (was 1.6), full 11–15 s (was 3.7). Injuries
+were removed from the indie check (the card already leaves the injured off); indies still re-plan
+weekly because their money hovers on the line toward folding, and eight to eleven of eighteen
+television companies change their rosters every week — that one is behaviour, not a cost device,
+and is not hidden. Not done, written down: ahead-of-time compilation of the browser build, a
+cheaper planner, the indie economy (Part 8).
+
+*Since (15 Nov, same branch):* the television churn was the planner acting on gains inside its
+own error — signing a cheap unknown most weeks for a third of a rating point. A move must now
+clear the forecast's resolution in the promotion's own weights (`World.Resolution`: half a rating
+point and its equivalents); twelve weeks of a small world went from 26 signings to 9, all real
+names or favourites, and a year grows rosters modestly (Established 30 to about 40) with no
+releases yet (Parts 6–7). A quiet promotion now wakes early only when the market gets better
+(`BestOnOffer`, `Better`), and an indie re-thinks its bookings when it loses a headliner it
+decided its month around (`LostHeadliner`) rather than any regular. Browser, eight weeks: small
+0.3–1.7 s (inside budget), medium 1.5–4.6 s (about 2.7), full 7.6–12 s (about 9). Natively a full
+week is about 1.5 s on one core, so the remaining gap is the browser's interpreter; the owner has
+chosen to try a native build for playtesting (a local program serving the same interface), after
+other work.
+
 Open:
 
 10. Should a rival's show ever be worked beat by beat — when the player chooses to watch one,

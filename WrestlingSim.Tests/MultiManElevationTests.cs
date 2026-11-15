@@ -214,7 +214,10 @@ namespace WrestlingSim.Tests
             });
 
             var result = new ShowSimulator(career.FeudBook).Simulate(show.ToShow());
-            double gained = challenger.Overness - overnessBefore;
+            // Less what being seen on the show was worth (HeatEconomy.ForExposure, 15 Nov):
+            // this test is about the result, and exposure is applied before it.
+            double gained = challenger.Overness - overnessBefore
+                - result.StatusChanges.Where(c => c.Wrestler == challenger && c.Reason.StartsWith("Seen")).Sum(c => c.OvernessDelta);
 
             // What the same result would have paid at each side count, using the star rating
             // this match actually produced — and **pristine copies of the wrestlers**, because

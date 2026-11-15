@@ -103,6 +103,8 @@ namespace WrestlingSim.Engine
                 ? BrandIntegrity.StarMakingFactor(integrity) * BrandIntegrity.StandingFactor(homeBrand!, split!)
                 : 1.0;
 
+            var tracked = new List<(Wrestler W, bool? Won, double Score)>();
+
             for (int i = 0; i < show.Card.Count; i++)
             {
                 var item = show.Card[i];
@@ -185,6 +187,22 @@ namespace WrestlingSim.Engine
 
                 itemResult.Score = Math.Clamp(score, 0, 100);
 
+                // ── Being seen ───────────────────────────────────────────────
+                // Everybody in it was on the show, in front of this crowd: exposure builds how
+                // well known they are toward what this promotion can make them, at the pace
+                // the crowd's reaction sets (HeatEconomy.ForExposure).
+                foreach (var w in item.Wrestlers.Distinct())
+                {
+                    var seen = HeatEconomy.ForExposure(w, HeatEconomy.Reach(_tier), item.DurationMinutes,
+                        itemResult.Score, talking: item.Kind == CardItemKind.Segment, freshness: _response?.Invoke(w) ?? 1.0);
+                    if (starMaking < 1.0 && seen.OvernessDelta > 0) seen = seen with { OvernessDelta = seen.OvernessDelta * starMaking };
+                    HeatEconomy.Apply(seen);
+                    if (seen.IsMeaningful) result.StatusChanges.Add(seen);
+
+                    bool? won = itemResult.MatchResult is { } m ? m.WinningSide.Contains(w) : null;
+                    tracked.Add((w, won, itemResult.Score));
+                }
+
                 crowdMood = Math.Clamp(crowdMood + MoodSwing(item, raw), 0, 10);
 
                 totalScore += itemResult.Score * weight;
@@ -194,6 +212,26 @@ namespace WrestlingSim.Engine
             }
 
             double overall = weightSum > 0 ? totalScore / weightSum : 0;
+
+            // What tonight said about how each person is being presented, for next time:
+            // whether they won, and how the crowd took them against the rest of this card —
+            // not against a fixed number, or every indie crowd would read as cold.
+            if (tracked.Count > 0)
+            {
+                double night = tracked.Average(t => t.Score);
+                foreach (var (w, won, itemScore) in tracked)
+                {
+                    HeatEconomy.Track(w, won, itemScore - night);
+                    bool turning = HeatEconomy.Rejecting(w);
+                    if (turning && w.RejectedSince is null)
+                    {
+                        w.RejectedSince = showDate;
+                        result.StatusChanges.Add(new StatusChange(w, 0, 0, HeatEconomy.RejectionReason));
+                    }
+                    else if (!turning && w.RejectedSince is not null && w.Favoured < HeatEconomy.ForcedWinning - 0.15)
+                        w.RejectedSince = null;   // they stopped being forced on the crowd
+                }
+            }
 
             // ── Brand-based stakes ───────────────────────────────────────────
             // A show that kept to its own roster is worth a little more, because the
@@ -588,10 +626,11 @@ namespace WrestlingSim.Engine
                     engineResult.LosingSide, engineResult.Pinned,
                     engineResult.StarRating, weight, familiarity,
                     winningChemistry: ChemistryOf(match.Plan, engineResult.WinningSide),
-                    losingChemistry:  ChemistryOf(match.Plan, engineResult.LosingSide))
+                    losingChemistry:  ChemistryOf(match.Plan, engineResult.LosingSide),
+                    story: HeatEconomy.StoryOf(feud.Intensity))
                 : HeatEconomy.ForMatch(
                     engineResult.Winner, engineResult.Loser, engineResult.StarRating, weight, familiarity,
-                    sideCount: match.Plan.Sides.Count);
+                    sideCount: match.Plan.Sides.Count, story: HeatEconomy.StoryOf(feud.Intensity));
 
             foreach (var raw in outcome.All)
             {

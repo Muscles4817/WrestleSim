@@ -696,6 +696,10 @@ namespace WrestlingSim.Models.World
                     .Simulate(show.ToShow())
                 : new ShowResult { BudgetMinutes = show.RuntimeMinutes };
 
+            // A push the crowd is refusing is news to the booker who is pushing it (Part 5).
+            foreach (var turned in result.StatusChanges.Where(c => c.Reason == Engine.HeatEconomy.RejectionReason))
+                AddNews($"The crowd is turning on {turned.Wrestler.RingName}: winning nearly every night in front of fans who have not taken to them reads as being forced on them.", aboutYou: true);
+
             // What the night did to the audience's patience, and what their patience did to the
             // night: a show like the last few, or one that left its slot half empty, is a worse
             // show. Before reputation and retention read the rating, because both should feel it.

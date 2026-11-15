@@ -217,7 +217,7 @@ namespace WrestlingSim.Engine
                 // Gains compress near the ceiling and losses near the floor, so a promo is
                 // no longer a free point that ratchets everyone toward 100 over a career.
                 double overness = raw >= 0
-                    ? HeatEconomy.DampenGain(wrestler.Overness, raw * 0.5)
+                    ? HeatEconomy.DampenGain(wrestler, raw * 0.5)
                     : -HeatEconomy.DampenLoss(wrestler.Overness, -raw * 0.5);
 
                 double before = wrestler.Overness;

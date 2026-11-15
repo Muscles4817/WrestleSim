@@ -124,6 +124,14 @@ else
                             <b style="flex-basis: 76px">@risk of 8</b>
                         </div>
 
+                        <div class="panel__title mt" style="font-size: 13px">How well it books</div>
+                        <div class="skillbar">
+                            <label for="d-competence" style="flex: 0 0 190px; color: var(--ink-2)">Booking skill</label>
+                            <input id="d-competence" type="range" min="40" max="97" step="1" style="flex: 1 1 auto" value="@competence" @oninput="e => competence = Num(e)" />
+                            <b style="flex-basis: 76px">@competence</b>
+                        </div>
+                        <div class="small muted">How closely its results follow its own judgement of who is worth more. Low skill misjudges people near each other; nobody books a nobody over a star by accident.</div>
+
                         <div class="panel__title mt" style="font-size: 13px">Favourites</div>
                         <div class="chips">
                             @foreach (var id in favourites.ToList())
@@ -265,6 +273,44 @@ else
                 </section>
             }
 
+            @if (rival.Direction is { } direction)
+            {
+                <section class="panel">
+                    <div class="panel__title">Its direction</div>
+                    <div class="small muted">Decided @direction.Decided.ToString("d MMM") and kept month to month. @BookingWords(World.CompetenceOf(rival))</div>
+                    <div class="kv">
+                        <span>Building</span>
+                        <span>
+                            @if (direction.Pushes.Count == 0) { <span class="muted">Nobody yet</span> }
+                            @foreach (var (id, n) in direction.Pushes.Select((id, n) => (id, n)))
+                            {
+                                if (career.FindWrestler(id) is { } pushed)
+                                {
+                                    @if (n > 0) { <text>, </text> }
+                                    <button class="namelink" @onclick="() => State.OpenProfile(pushed)">@pushed.RingName</button>
+                                }
+                            }
+                        </span>
+                    </div>
+                    @foreach (var (beltName, nextId) in direction.NextChampion)
+                    {
+                        if (career.FindWrestler(nextId) is { } heir)
+                        {
+                            <div class="kv">
+                                <span class="small">@ShortTitle(beltName, rival.Name)</span>
+                                <span class="small">to <button class="namelink" @onclick="() => State.OpenProfile(heir)">@heir.RingName</button> on a big night</span>
+                            </div>
+                        }
+                    }
+                    @if (direction.Rejected.Count > 0)
+                    {
+                        <div class="small muted mt">
+                            The crowd refused: @string.Join(", ", direction.Rejected.Keys.Select(k => career.FindWrestler(k)?.RingName).OfType<string>())
+                        </div>
+                    }
+                </section>
+            }
+
             @if (rival.Titles.Active.Count > 0)
             {
                 <section class="panel">
@@ -333,7 +379,10 @@ else
 
     private bool editing;
     private Dictionary<string, int> draft = new();
-    private int horizon, optimism, floor, risk;
+    private int horizon, optimism, floor, risk, competence;
+
+    private static string BookingWords(double c) =>
+        c >= 0.88 ? "Books shrewdly." : c >= 0.8 ? "Books soundly." : c >= 0.7 ? "Books unevenly." : "Books erratically.";
     private List<string> favourites = new();
     private string adding = "";
 
@@ -351,11 +400,15 @@ else
     private void StartEditing(RivalPromotion rival)
     {
         Load(World.ObjectiveOf(rival), World.DispositionOf(rival), rival.Favourites);
+        competence = (int)Math.Round(World.CompetenceOf(rival) * 100);
         editing = true;
     }
 
-    private void ResetToFounder(RivalPromotion rival) =>
+    private void ResetToFounder(RivalPromotion rival)
+    {
         Load(World.ObjectiveFor(rival.Motive), World.DispositionFor(rival.Motive), favourites);
+        competence = (int)Math.Round(World.DrawCompetence(rival) * 100);
+    }
 
     private async Task Save(RivalPromotion rival)
     {
@@ -369,6 +422,7 @@ else
         rival.Disposition = disposition == World.DispositionFor(rival.Motive) ? null : disposition;
         rival.Favourites.Clear();
         rival.Favourites.AddRange(favourites);
+        rival.Competence = competence / 100.0;
 
         // Look again next week rather than waiting out a quiet month.
         rival.QuietAs = 0;
