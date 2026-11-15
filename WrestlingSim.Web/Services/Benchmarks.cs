@@ -53,6 +53,7 @@ public static class Benchmarks
             StartDate = day, CurrentDate = day, Roster = DataLoaders.LoadEmbeddedWrestlers()
         };
         World.Populate(career, choice, DataLoaders.LoadEmbeddedWrestlers());
+        Growth.Begin(career);
         double populated = sw.Elapsed.TotalMilliseconds; sw.Restart();
         career.OpenBooks(day);
         career.Titles.SeedDefaults(career.Promotion.Name, day);

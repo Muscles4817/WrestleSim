@@ -35,6 +35,18 @@ else
                 {
                     <span class="badge badge--gold">@title.Name</span>
                 }
+                @if (w.RetiredOn is { } retired)
+                {
+                    <span class="badge badge--muted">Retired @retired.Year</span>
+                }
+                @if (w.IsPartTime)
+                {
+                    <span class="badge badge--muted">Big shows only</span>
+                }
+                @if (w.DebutedIn is { } d0 && d0 >= today.Year && !w.IsRetired)
+                {
+                    <span class="badge badge--muted">Rookie</span>
+                }
                 @if (w.Injury is { } inj && inj.KeepsOut(today))
                 {
                     <span class="badge badge--heel">Injured</span>
@@ -146,6 +158,26 @@ else
                 <div class="small muted mt">@AgeCurve.Reading(years)</div>
             }
         </section>
+
+        @if (career is not null && w.Development is not null)
+        {
+            var scout = Scouting.Of(career, w);
+            <section class="panel">
+                <div class="panel__title">Where they are going</div>
+                <p class="small">@scout.Summary</p>
+                @foreach (var grp in scout.Groups)
+                {
+                    <div class="devrow">
+                        <span class="devrow__name">@grp.Name</span>
+                        <b class="devrow__now">@grp.Level</b>
+                        <span class="devrow__change @(grp.Change > 0 ? "grade--great" : grp.Change < 0 ? "grade--poor" : "muted")">@(grp.Change is { } c && (scout.MonthsWithYou ?? 1) > 0 ? Shown.Change(c) : "")</span>
+                        <small class="devrow__words">@grp.Potential@(grp.Learns is { } l ? $" · {l.ToLowerInvariant()}" : "")</small>
+                    </div>
+                }
+                <div class="small muted mt">Change @(scout.MonthsWithYou is null ? "over the last year" : "since they started with you"). @scout.Knowledge People improve at what they do in matches; conditioning is the gym. Out of 100.</div>
+
+            </section>
+        }
 
         <section class="panel">
             <div class="panel__title">@(career is null ? "Condition" : mine is null ? "Where they work" : "With you")</div>

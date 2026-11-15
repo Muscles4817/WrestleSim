@@ -199,10 +199,20 @@ namespace WrestlingSim.Tests
         [Fact]
         public void ThePerformerProfileAgesWhenTheClockRuns()
         {
+            // The curve no longer acts at match time (15 Nov 2026): it moves the stored
+            // attributes, a month at a time, and the profile reads those. Twelve years of
+            // months for a high-flyer from 40 to 52, worked every week.
             var w = Aged(bornIn: 1986, debutedIn: 2006, style: WrestlingStyle.HighFlyer);
+            var start = new DateOnly(AgeCurve.RosterBaselineYear, 6, 1);
+            w.Development = Growth.Read(w, start.Year);
+            var now = new PerformerProfile(w, start);
 
-            var now   = new PerformerProfile(w, new DateOnly(AgeCurve.RosterBaselineYear, 6, 1));
-            var later = new PerformerProfile(w, new DateOnly(AgeCurve.RosterBaselineYear + 12, 6, 1));
+            for (var on = start.AddMonths(1); on <= start.AddYears(12); on = on.AddMonths(1))
+            {
+                for (int m = 0; m < 4; m++) Growth.RecordMatch(w, [w]);
+                Growth.Step(w, on);
+            }
+            var later = new PerformerProfile(w, start.AddYears(12));
 
             Assert.True(later.Athleticism < now.Athleticism,
                 "A high-flyer from 40 to 52 should have lost a great deal.");

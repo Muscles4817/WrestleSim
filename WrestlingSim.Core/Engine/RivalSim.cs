@@ -199,6 +199,13 @@ namespace WrestlingSim.Engine
             // the people nobody is booking.
             foreach (var w in show.Card.SelectMany(i => i.Wrestlers).Distinct()) w.LastAppearance = today;
 
+            // And what they worked is what they get better at — in their own style, since a
+            // rival's match is not worked beat by beat (Growth).
+            foreach (var item in show.Card)
+                foreach (var w in item.Wrestlers)
+                    if (item is BookedMatch) Growth.RecordMatch(w, item.Wrestlers);
+                    else Growth.RecordTalk(w);
+
             rival.Nights.Add(new RivalNight
             {
                 Date = today, Type = type, Rating = Math.Round(rating, 1),
@@ -290,6 +297,9 @@ namespace WrestlingSim.Engine
             Func<Wrestler, double> response, Func<BookedMatch, double> freshness, CutLine? cut = null)
         {
             double target = rival.Promotion.DefaultRuntimeFor(type) * AudienceModel.FullCard;
+
+            // A part-timer works the big nights only (Part 3); nobody retired works at all.
+            available = available.Where(w => !w.IsRetired && (!w.IsPartTime || type == ShowType.PremiumEvent)).ToList();
             var used = new HashSet<Wrestler>();
             var talking = new List<ICardItem>();
             var matches = new List<BookedMatch>();
@@ -526,7 +536,7 @@ namespace WrestlingSim.Engine
             var mine = career.Contracts.Where(c => c.IsGuaranteed).Select(c => c.WrestlerId).ToHashSet();
             var barred = career.NonCompetes.Where(n => n.Until > career.CurrentDate).Select(n => n.WrestlerId).ToHashSet();
             var free = career.Roster
-                .Where(w => !mine.Contains(w.Id)
+                .Where(w => !w.IsRetired && !mine.Contains(w.Id)
                          && !holdings.Holder.ContainsKey(w.Id)
                          && !barred.Contains(w.Id)
                          && career.PlayerBid(w) is null)

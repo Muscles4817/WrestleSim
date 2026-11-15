@@ -31,6 +31,12 @@ namespace WrestlingSim.Engine
     ///
     /// Age is held to **year precision** — see <see cref="Models.Wrestler.BornIn"/> for why
     /// — and every function here is pure so it can be asserted as itself.
+    ///
+    /// **Corrected 15 Nov 2026:** the drifts below are no longer applied at match time.
+    /// <see cref="Growth"/> uses the curves to set each skill group's monthly target and moves
+    /// the stored attributes toward it, so the profile and the engine read the same number.
+    /// The ratio-against-2026 idea survives in one place: a career set in another year moves
+    /// the real roster to that year once, when it starts (<see cref="Growth.Begin"/>).
     /// </summary>
     public static class AgeCurve
     {
@@ -158,7 +164,7 @@ namespace WrestlingSim.Engine
         /// <summary>Fatigue-recovery multiplier at an age.</summary>
         public static double RecoveryMultiplier(int age) => Interpolate(RecoveryRows, age);
 
-        // ── Drift: what the engine actually applies ──────────────────────────
+        // ── Drift: what the engine used to apply at match time (see the correction above) ──────────────────────────
 
         /// <summary>
         /// How far athletic capacity has moved since the roster baseline. 1.0 = unchanged.

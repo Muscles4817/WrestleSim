@@ -86,7 +86,7 @@ namespace WrestlingSim.Engine
         /// <paramref name="overnessCap"/> keeps a top-up from inventing a bigger star than the
         /// database's own.
         /// </summary>
-        public Wrestler Make(Division division, PromotionTier level, Region? region, double overnessCap = 100)
+        public Wrestler Make(Division division, PromotionTier level, Region? region, double overnessCap = 100, bool rookie = false)
         {
             var pool = _templates.Where(t => t.Division == division).ToList();
             if (pool.Count == 0) pool = _templates.ToList();
@@ -100,6 +100,8 @@ namespace WrestlingSim.Engine
             lo = Math.Min(lo, hi * 0.6);
             // Weighted toward the bottom of the band: most people at any level are not its stars.
             double overness = lo + (hi - lo) * Math.Pow(_rng.NextDouble(), 1.6);
+            // A rookie is somebody nobody has heard of yet (Part 3).
+            if (rookie) overness = 2 + 10 * _rng.NextDouble();
 
             var (realName, ringName) = NewName(division);
 
@@ -114,6 +116,9 @@ namespace WrestlingSim.Engine
                 : 20;
             int bornIn = _year - age;
             int debutedIn = Math.Min(_year, bornIn + Math.Min(debutAge, age - 1));
+            // Out of training this year, at nineteen to twenty-five (doc 15: six months to two
+            // years of school, most starting in their late teens or early twenties).
+            if (rookie) { age = 19 + _rng.Next(7); bornIn = _year - age; debutedIn = _year; }
 
             var gimmick = new Gimmick(ringName)
             {
@@ -170,6 +175,15 @@ namespace WrestlingSim.Engine
                     return s;
                 }).ToList()
             };
+            // The real wrestler it was drawn from was a different age with a different career
+            // behind them. Move the age-bound numbers to this person's age and years in, by the
+            // same curves careers move along, so a twenty-year-old is not born with a veteran's
+            // psychology (measured 15 Nov: they were, and then declined from it).
+            if (t.BornIn is { } tBorn && t.DebutedIn is { } tDebut)
+            {
+                int tAge = AgeCurve.RosterBaselineYear - tBorn, tYears = AgeCurve.RosterBaselineYear - tDebut;
+                Growth.Reage(w, tAge, age, tYears, _year - debutedIn);
+            }
             return w;
         }
 

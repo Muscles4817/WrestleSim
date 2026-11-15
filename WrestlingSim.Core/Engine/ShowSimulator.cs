@@ -212,6 +212,13 @@ namespace WrestlingSim.Engine
             foreach (var wrestler in show.Card.SelectMany(i => i.Wrestlers).Distinct())
                 wrestler.LastAppearance = showDate;
 
+            // Everything that was not a match worked beat by beat: talking is presence, and a
+            // rumble or a draw is a match in their own style.
+            foreach (var item in show.Card.Where(i => i is not BookedMatch))
+                foreach (var w in item.Wrestlers)
+                    if (item.Kind == CardItemKind.Segment) Growth.RecordTalk(w);
+                    else Growth.RecordMatch(w, item.Wrestlers);
+
             // And everyone who wrestled paid for it, and got sharper for it. Charged per
             // card item rather than once per night, so a wrestler booked twice pays twice —
             // which is the only thing stopping a booker working their main eventer three
@@ -521,6 +528,11 @@ namespace WrestlingSim.Engine
 
             itemResult.MatchResult = engineResult;
 
+            // What they did in it is what they get better at (Growth).
+            foreach (var side in match.Plan.Sides)
+                foreach (var w in side.Members)
+                    Growth.RecordMatch(w, match.Plan.Sides.Where(s => s != side).SelectMany(s => s.Members), engineResult);
+
             // Written down here rather than in the engine — see MatchEngineResult.Injuries.
             foreach (var roll in engineResult.Injuries)
             {
@@ -534,6 +546,7 @@ namespace WrestlingSim.Engine
 
                 roll.Wrestler.Injury = injury;
                 roll.Wrestler.InjuryHistory.Add(injury);
+                Growth.RecordHurt(roll.Wrestler);
 
                 itemResult.Notes.Add(
                     $"{roll.Wrestler.RingName} is hurt — {Models.Person.Injury.Label(roll.Part).ToLowerInvariant()}, " +

@@ -38,6 +38,26 @@ namespace WrestlingSim.Models
 
         /// <summary>Where they work from. Null means anywhere — see <see cref="Enums.Region"/>.</summary>
         public Region? Region { get; set; }
+
+        /// <summary>
+        /// Where they are going and how quickly (<see cref="Engine.Growth"/>). Null until a
+        /// career starts them; an exhibition's wrestlers have none and never change.
+        /// </summary>
+        public Development? Development { get; set; }
+
+        /// <summary>
+        /// Retired (Part 3): kept in the world as a name, so records and title histories still
+        /// read, but nobody books, signs or develops them.
+        /// </summary>
+        public DateOnly? RetiredOn { get; set; }
+        public bool IsRetired => RetiredOn is not null;
+
+        /// <summary>
+        /// Working big shows only, the stage many careers pass through before retirement
+        /// (decided 14 Nov). Null for a full-timer.
+        /// </summary>
+        public DateOnly? PartTimeSince { get; set; }
+        public bool IsPartTime => PartTimeSince is not null;
         public List<Gimmick> PreviousGimmicks { get; set; }
 
         /// <summary>
