@@ -143,3 +143,23 @@ already names it, and no "← Home" button at the bottom duplicating the navigat
   or internal tag names ("Stamps ChampionshipRivalry"); they say it in words.
 - **Phones**: key figures two to a row everywhere, instead of one a row filling the first screen.
 
+**Two UX review rounds** (an independent agent, desktop and phone, in the running build) found and
+these were fixed — several of them older behaviour these screens inherited:
+
+- Split wizard: brand buttons showed only the first word (two brands sharing one were identical);
+  step 3's show choices were written onto the live shows, so an abandoned split left a show tied
+  to a brand that was never made; default brand names ignored the promotion's own nights, and could
+  hand a brand the untelevised house show; splitting with a brand that has no television now asks
+  first. Right after a split, the draft no longer offers to "restore 20% of the 0 you are down".
+- Your shows: **Edit then Cancel did not cancel** — the editor writes into the live show, and the
+  next re-sync put the show on its old night and its new one; Cancel now restores it. Adding a
+  show saved at once on a night already taken; it is now a draft until saved, on a free night,
+  with a warning when it clashes. On a phone the actions, the next date and the brand control sit
+  under the show's name, and Add brings the new-show panel into view.
+- Titles: a vacant belt opens the next show to book a match for it; the attention figure says
+  whether there is room for another belt.
+
+Logged, not done (found in review, outside this change): the Titles button opens the show but does
+not preselect the belt as the stake; the suggested card names belts with the promotion's name in
+front; on the Calendar at 1440 wide the weekend column runs under the side panel.
+

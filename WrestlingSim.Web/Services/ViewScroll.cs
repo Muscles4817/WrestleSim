@@ -18,6 +18,12 @@ namespace WrestlingSim.Web.Services;
 /// </summary>
 public sealed class ViewScroll(IJSRuntime js)
 {
+    public async Task IntoViewAsync(string id)
+    {
+        try { await js.InvokeVoidAsync("wrestleSim.intoView", id); }
+        catch (JSDisconnectedException) { }
+    }
+
     public async Task ToTopAsync()
     {
         try

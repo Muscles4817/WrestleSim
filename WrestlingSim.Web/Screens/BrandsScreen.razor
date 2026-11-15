@@ -153,7 +153,7 @@ else if (mode == Mode.Wizard)
             @foreach (var brand in draftBrands.Where(b => !HasShow(career, b)))
             {
                 <div class="notice notice--warn mt">
-                    <strong>@brand.Name has no show of its own.</strong>
+                    <strong>@brand.Name has no @(career.Promotion.HasTelevision ? "television" : "show") of its own.</strong>
                     A brand without its own television is a roster with nowhere to appear.
                     <span class="spacer"></span>
                     <button class="btn btn--sm btn--primary" @onclick="() => GiveAShow(career, brand)">
@@ -351,7 +351,11 @@ else
         </div>
         <div class="row small">
             <span class="muted">
-                @if (Draft.DueOn(split) is { } due)
+                @if (split.Integrity >= split.Ceiling - 0.5)
+                {
+                    <text>Nothing to repair yet: integrity is at its ceiling. A draft resets every pairing at once — worth it once a year, not before.</text>
+                }
+                else if (Draft.DueOn(split) is { } due)
                 {
                     <text>
                         Last held @(split.LastDraftOn?.ToString("d MMM yyyy") ?? "never")
@@ -363,7 +367,7 @@ else
                 }
             </span>
             <span class="spacer"></span>
-            <button class="btn btn--sm btn--primary" @onclick="() => State.StartDraft()">Hold a draft</button>
+            <button class="btn btn--sm @(Draft.IsDue(split, career.CurrentDate) ? "btn--primary" : "btn--ghost")" @onclick="() => State.StartDraft()">Hold a draft</button>
         </div>
         <p class="small muted mt">
             Annual is right. It refreshes every roster and every possible pairing at once, ends
@@ -605,9 +609,13 @@ else
     /// </summary>
     private readonly List<ShowDefinition> newDefinitions = new();
 
-    private bool HasShow(Career career, Brand brand) =>
-        career.ShowDefinitions.Any(d => d.Active && DraftBrandOf(d) == brand.Id)
-        || newDefinitions.Any(d => d.BrandId == brand.Id);
+    /// <summary>A show of its own that counts: television, where the promotion has it.</summary>
+    private bool HasShow(Career career, Brand brand)
+    {
+        bool Counts(ShowDefinition d) => !career.Promotion.HasTelevision || d.Type == ShowType.Television;
+        return career.ShowDefinitions.Any(d => d.Active && DraftBrandOf(d) == brand.Id && Counts(d))
+            || newDefinitions.Any(d => d.BrandId == brand.Id && Counts(d));
+    }
 
     /// <summary>
     /// A brand needs its own television to be a brand at all
@@ -651,8 +659,13 @@ else
         // show, so the suggestion matches the calendar. The defaults used to be "Monday Night"
         // and "Friday Night" whatever the shows were, with every show left on both brands
         // (found by UX review, 15 Nov).
+        // Television shows only, where the promotion has television: a brand needs its own
+        // television to be a brand, and the first version handed one brand the untelevised
+        // house show (found by UX review, 15 Nov).
+        bool tv = State.Career?.Promotion.HasTelevision == true;
         var weekly = State.Career?.ShowDefinitions
-            .Where(d => d.Active && d.Recurrence == RecurrenceKind.Weekly && d.Type != ShowType.PremiumEvent)
+            .Where(d => d.Active && d.Recurrence == RecurrenceKind.Weekly && d.Type != ShowType.PremiumEvent
+                     && (!tv || d.Type == ShowType.Television))
             .OrderBy(d => d.Type == ShowType.Television ? 0 : 1).ThenBy(d => d.Day)
             .GroupBy(d => d.Day).Select(g => g.First()).Take(2).ToList() ?? [];
         var nights = weekly.Select(d => d.Day).Concat(new[] { DayOfWeek.Monday, DayOfWeek.Friday }.Where(d => weekly.All(w => w.Day != d)))

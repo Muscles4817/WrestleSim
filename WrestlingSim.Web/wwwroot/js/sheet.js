@@ -25,6 +25,15 @@ window.wrestleSim.toTop = function () {
     window.scrollTo(0, 0);
 };
 
+// Bring something just opened into view: on a phone the button that opened it can be a
+// screen or two away (the new-show panel opens above the Add buttons).
+window.wrestleSim.intoView = function (id) {
+    setTimeout(function () {
+        var el = document.getElementById(id);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 30);
+};
+
 // Whether the viewer has asked for less motion. Read once per match rather than wired to a
 // change event: a preference that flips mid-reveal is not worth the subscription, and the
 // next match reads it again.

@@ -1,5 +1,6 @@
 @using WrestlingSim.Models.World
 @inherits StateComponent
+@inject ViewScroll Scroll
 
 @if (State.Career is not { } career)
 {
@@ -39,9 +40,13 @@ else
         <div class="layout__main">
             @if (adding is { } draft)
             {
-                <section class="panel">
+                <section class="panel" id="new-show">
                     <div class="panel__title">A new show <span class="spacer"></span><span class="small muted">nothing is added until you save it</span></div>
                     <ShowDefinitionEditor Definition="draft" Promotion="career.Promotion" OnChanged="StateHasChanged" />
+                    @if (ClashOf(career, draft) is { } clash)
+                    {
+                        <div class="notice notice--warn mt">Lands on the same night as <strong>@clash.Name</strong>. Two of your shows on one night split the same roster and the same crowd.</div>
+                    }
                     <div class="row mt">
                         <span class="small muted">Saving puts its dates on the calendar from today.</span>
                         <span class="spacer"></span>
@@ -71,7 +76,7 @@ else
                                     <th class="col-wide">When</th>
                                     <th class="num col-wide">Length</th>
                                     @if (career.Brands.Active) { <th class="col-wide">Brand</th> }
-                                    <th>Next</th>
+                                    <th class="col-wide">Next</th>
                                     <th class="num col-wide">On the calendar</th>
                                     <th class="col-wide"><span class="sr-only">Actions</span></th>
                                 </tr>
@@ -89,7 +94,22 @@ else
                                                 @if (!definition.Active) { <span class="badge badge--muted">Retired</span> }
                                                 <span class="muted only-narrow"> · @definition.RecurrenceLabel</span>
                                             </div>
-                                            <div class="only-narrow-block mt">@Actions(definition)</div>
+                                            <div class="only-narrow-block mt">
+                                                @if (upcoming.FirstOrDefault() is { } soon)
+                                                {
+                                                    <div class="small">Next: <button class="namelink" @onclick="() => State.OpenShow(soon)">@soon.Date.ToString("ddd d MMM")</button></div>
+                                                }
+                                                @if (career.Brands.Active)
+                                                {
+                                                    <select class="input input--sm mt" aria-label="Brand for @definition.Name"
+                                                            value="@(definition.BrandId ?? "")"
+                                                            @onchange="e => State.SetShowBrandAsync(definition, string.IsNullOrEmpty(e.Value?.ToString()) ? null : e.Value!.ToString())">
+                                                        @foreach (var brand in career.Brands.Brands) { <option value="@brand.Id">@brand.Name</option> }
+                                                        <option value="">Both brands</option>
+                                                    </select>
+                                                }
+                                                <div class="mt">@Actions(definition)</div>
+                                            </div>
                                         </td>
                                         <td class="small col-wide">
                                             @definition.RecurrenceLabel
@@ -112,7 +132,7 @@ else
                                                 </select>
                                             </td>
                                         }
-                                        <td class="small nowrap">
+                                        <td class="small nowrap col-wide">
                                             @if (upcoming.FirstOrDefault() is { } first)
                                             {
                                                 <button class="namelink" @onclick="() => State.OpenShow(first)">@first.Date.ToString("ddd d MMM")</button>
@@ -141,10 +161,14 @@ else
                                         <tr>
                                             <td colspan="7">
                                                 <ShowDefinitionEditor Definition="definition" Promotion="career.Promotion" OnChanged="StateHasChanged" />
+                                                @if (ClashOf(career, definition) is { } clash)
+                                                {
+                                                    <div class="notice notice--warn mt">Lands on the same night as <strong>@clash.Name</strong>.</div>
+                                                }
                                                 <div class="row mt">
                                                     <span class="small muted">Saving moves every future date that has not been booked yet.</span>
                                                     <span class="spacer"></span>
-                                                    <button class="btn btn--sm btn--ghost" @onclick="() => editing = null">Cancel</button>
+                                                    <button class="btn btn--sm btn--ghost" @onclick="CancelEdit">Cancel</button>
                                                     <button class="btn btn--sm btn--primary" @onclick="() => Save(definition)">Save changes</button>
                                                 </div>
                                             </td>
@@ -198,10 +222,18 @@ else
             Name       = Label(type),
             Type       = type,
             Recurrence = type == ShowType.PremiumEvent ? RecurrenceKind.Monthly : RecurrenceKind.Weekly,
-            Day        = type == ShowType.PremiumEvent ? DayOfWeek.Saturday : FreeDay(career),
+            Day        = type == ShowType.PremiumEvent ? DayOfWeek.Sunday : FreeDay(career),
             Ordinal    = WeekOrdinal.Last
         };
-        editing = null;
+        if (type == ShowType.PremiumEvent)
+            foreach (var ordinal in new[] { WeekOrdinal.Last, WeekOrdinal.Second, WeekOrdinal.Third, WeekOrdinal.First })
+            {
+                adding.Ordinal = ordinal;
+                if (ClashOf(career, adding) is null) break;
+            }
+        CancelEdit();
+        // The panel opens at the top of the page; on a phone the Add buttons are far below it.
+        _ = Scroll.IntoViewAsync("new-show");
     }
 
     private async Task SaveNew()
@@ -222,7 +254,7 @@ else
     }
 
     private RenderFragment Actions(ShowDefinition definition) => @<span class="actions">
-        <button class="btn btn--sm" @onclick="() => editing = editing == definition.Id ? null : definition.Id">Edit</button>
+        <button class="btn btn--sm" @onclick="() => StartEdit(definition)">Edit</button>
         @if (definition.Active)
         {
             <button class="btn btn--sm btn--ghost" title="Stops new dates being added; dates already on the calendar stay"
@@ -235,10 +267,48 @@ else
         <button class="btn btn--sm btn--danger" @onclick="() => confirmingDelete = definition.Id">Delete</button>
     </span>;
 
+    /// <summary>
+    /// What the show was before Edit, put back by Cancel. The editor writes into the live show
+    /// as it is changed, so Cancel used to keep every change — and the next re-sync then put the
+    /// show on both its old night and its new one (found by UX review, 15 Nov).
+    /// </summary>
+    private ShowDefinition? before;
+
+    private void StartEdit(ShowDefinition definition)
+    {
+        if (editing == definition.Id) { CancelEdit(); return; }
+        CancelEdit();
+        before = definition.Clone();
+        editing = definition.Id;
+        adding = null;
+    }
+
+    private void CancelEdit()
+    {
+        if (before is { } was && State.Career?.ShowDefinitions.FirstOrDefault(d => d.Id == was.Id) is { } live)
+        {
+            live.Name = was.Name; live.Type = was.Type; live.Recurrence = was.Recurrence; live.Day = was.Day;
+            live.Ordinal = was.Ordinal; live.Venue = was.Venue; live.RuntimeMinutes = was.RuntimeMinutes;
+            live.BrandId = was.BrandId; live.Active = was.Active;
+        }
+        before = null;
+        editing = null;
+    }
+
     private async Task Save(ShowDefinition definition)
     {
         editing = null;
+        before = null;
         await State.ResyncShowDefinitionAsync(definition);
+    }
+
+    /// <summary>Another of the player's standing shows on the same night as this one, if any.</summary>
+    private static ShowDefinition? ClashOf(Career career, ShowDefinition d)
+    {
+        var from = career.CurrentDate;
+        var mine = d.OccurrencesBetween(from, from.AddDays(90)).ToHashSet();
+        return career.ShowDefinitions.FirstOrDefault(o => o.Id != d.Id && o.Active
+            && o.OccurrencesBetween(from, from.AddDays(90)).Any(mine.Contains));
     }
 
     private async Task Delete(ShowDefinition definition)

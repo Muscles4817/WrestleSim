@@ -91,7 +91,7 @@ else
                             <span class="spacer"></span>
                             @if (career.NextShow is { } next)
                             {
-                                <button class="btn btn--sm btn--primary" @onclick="() => State.OpenShow(next)">Book a match for it on @next.Name</button>
+                                <button class="btn btn--sm btn--primary" @onclick="() => State.OpenShow(next)">Open @next.Name to book it</button>
                             }
                         </div>
                     }
