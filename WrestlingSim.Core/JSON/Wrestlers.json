@@ -11898,5 +11898,203 @@
         "TagExclusive": false
       }
     ]
+  },
+  {
+    "Id": "paige-wooding",
+    "RealName": "Paige Wooding",
+    "Division": "Womens",
+    "BornIn": 1995,
+    "DebutedIn": 2015,
+    "Overness": 64,
+    "Charisma": 3.6,
+    "Style": "Brawler",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Jamie Hayter",
+      "Type": "Realist",
+      "PersonaDescriptor": "Hard-hitting Brit",
+      "Tone": "Serious",
+      "NaturalAlignment": "Face",
+      "PopularityModifier": 4,
+      "Durability": "LongTerm",
+      "Freshness": 0.7,
+      "GimmickTraits": [
+        "Hard-hitting",
+        "Tough"
+      ],
+      "AppealRatings": [
+        {
+          "Group": "Hardcore",
+          "AppealScore": 0.82
+        },
+        {
+          "Group": "Online",
+          "AppealScore": 0.78
+        },
+        {
+          "Group": "Casual",
+          "AppealScore": 0.6
+        }
+      ],
+      "PreviousNames": []
+    },
+    "RingSkills": {
+      "HighFlyer": 1.8,
+      "Grappler": 3.2,
+      "Powerhouse": 3.4,
+      "Technical": 3.2,
+      "Brawler": 4.2,
+      "Striker": 4.0
+    },
+    "Physical": {
+      "Strength": 72,
+      "Speed": 70,
+      "Agility": 66,
+      "Stamina": 80,
+      "Size": 2
+    },
+    "Mental": {
+      "Psychology": 80,
+      "Selling": 80,
+      "RingIQ": 78,
+      "Toughness": 86
+    },
+    "Moveset": [
+      {
+        "Name": "Running Forearm",
+        "Types": [
+          "Strike"
+        ],
+        "Risk": "Easy",
+        "Impact": "Medium",
+        "RequiresWeapons": false
+      },
+      {
+        "Name": "Clothesline",
+        "Types": [
+          "Strike"
+        ],
+        "Risk": "Easy",
+        "Impact": "Medium",
+        "RequiresWeapons": false
+      }
+    ],
+    "Signature": [
+      {
+        "Name": "Hayterade",
+        "Move": {
+          "Name": "Slingshot Lariat",
+          "Types": [
+            "Strike"
+          ],
+          "Risk": "Medium",
+          "Impact": "VeryHard"
+        },
+        "IsFinisher": true,
+        "ImpactModifier": "VeryHard",
+        "Overness": 64,
+        "TagExclusive": false
+      }
+    ]
+  },
+  {
+    "Id": "mariah-may-mead",
+    "RealName": "Mariah May Mead",
+    "Division": "Womens",
+    "BornIn": 1998,
+    "DebutedIn": 2019,
+    "Overness": 64,
+    "Charisma": 4.0,
+    "Style": "Brawler",
+    "PreviousGimmicks": [],
+    "Gimmick": {
+      "Name": "Blake Monroe",
+      "Type": "Superstar",
+      "PersonaDescriptor": "Glamorous starlet",
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Heel",
+      "PopularityModifier": 4,
+      "Durability": "MediumTerm",
+      "Freshness": 0.85,
+      "GimmickTraits": [
+        "Glamorous",
+        "Vicious"
+      ],
+      "AppealRatings": [
+        {
+          "Group": "Online",
+          "AppealScore": 0.8
+        },
+        {
+          "Group": "Casual",
+          "AppealScore": 0.66
+        },
+        {
+          "Group": "Hardcore",
+          "AppealScore": 0.7
+        }
+      ],
+      "PreviousNames": [
+        "Mariah May"
+      ]
+    },
+    "RingSkills": {
+      "HighFlyer": 2.4,
+      "Grappler": 2.8,
+      "Powerhouse": 2.2,
+      "Technical": 3.2,
+      "Brawler": 3.6,
+      "Striker": 3.4
+    },
+    "Physical": {
+      "Strength": 58,
+      "Speed": 76,
+      "Agility": 74,
+      "Stamina": 78,
+      "Size": 2
+    },
+    "Mental": {
+      "Psychology": 76,
+      "Selling": 80,
+      "RingIQ": 72,
+      "Toughness": 76
+    },
+    "Moveset": [
+      {
+        "Name": "Running Knee Strike",
+        "Types": [
+          "Strike"
+        ],
+        "Risk": "Easy",
+        "Impact": "Medium",
+        "RequiresWeapons": false
+      },
+      {
+        "Name": "Dropkick",
+        "Types": [
+          "Strike"
+        ],
+        "Risk": "Easy",
+        "Impact": "Medium",
+        "RequiresWeapons": false
+      }
+    ],
+    "Signature": [
+      {
+        "Name": "Neutralizer",
+        "Move": {
+          "Name": "Gutwrench Facebuster Piledriver",
+          "Types": [
+            "Slam"
+          ],
+          "Risk": "Hard",
+          "Impact": "VeryHard"
+        },
+        "IsFinisher": true,
+        "ImpactModifier": "VeryHard",
+        "Overness": 60,
+        "TagExclusive": false
+      }
+    ]
   }
 ]

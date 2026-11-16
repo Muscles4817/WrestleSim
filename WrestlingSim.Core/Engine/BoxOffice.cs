@@ -69,9 +69,9 @@ namespace WrestlingSim.Engine
         public static double TypicalCardPullFor(PromotionTier tier) => tier switch
         {
             PromotionTier.Local       => 0.3379,
-            PromotionTier.Independent => 0.4496,
+            PromotionTier.Independent => 0.4548,
             PromotionTier.SuperIndie  => 0.5849,
-            PromotionTier.Established => 0.6631,
+            PromotionTier.Established => 0.6756,
             PromotionTier.National    => 0.7686,
             PromotionTier.Global      => 0.8969,
             _                         => 0.3000
