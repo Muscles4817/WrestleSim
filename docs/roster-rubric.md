@@ -120,3 +120,35 @@ Every new entry gets an explicit `"Id"`: the real name lower-cased with hyphens
   spread reported against the file's.
 - Re-measure `MatchEngine.TypicalInvestment` and `BoxOffice.TypicalCardPullFor` (CLAUDE.md) —
   update the constants, never widen the tests.
+
+## Batch 1 — 16 Nov 2026 (AEW, TNA, WWE/NXT): 32 added, 90 → 122
+
+Three research agents, one per company, each fact read on a page this session (mostly
+Wikipedia — Cagematch and the promotions' own sites did not resolve from the sandbox). Source
+lists and anchors per person were kept with the batch.
+
+- **WWE (11):** Dominik Mysterio, Logan Paul, Jacob Fatu, Solo Sikoa, Oba Femi, Giulia, Ricky
+  Saints, Rusev, Jordynne Grace, Lola Vice, Jaida Parker.
+- **AEW (12):** MJF, Hangman Adam Page, Swerve Strickland, Kenny Omega, Will Ospreay, Jon Moxley,
+  Darby Allin, Kazuchika Okada, Mercedes Moné, Toni Storm, Kris Statlander, Samoa Joe.
+- **TNA (9):** Nic Nemeth, Jeff Hardy, Matt Hardy, Moose, Frankie Kazarian, Mustafa Ali, Leon
+  Slater, Eddie Edwards, Shotzi Blackheart.
+
+**Left out because a fact could not be confirmed** (add them when it can): Indi Hartwell (her
+current finisher, the "Hurts Donut", is reported but what move it is is not), Jamie Hayter and
+Kyle Fletcher (no sourced finisher), Blake Monroe (sources disagree on the finisher), Tasha Steelz
+(two birth years), Cedric Alexander, Naomi, Alexa Bliss, Ash by Elegance (status in 2026 unclear).
+Not reached: Rey Mysterio, The Miz, Kendal Grey, Hikaru Shida.
+
+**Noticed about people already in the file** (not changed — the file does not say who anybody
+works for): Wikipedia has Kofi Kingston and Xavier Woods in AEW since August 2026, and Shayna
+Baszler, Zoey Stark (now Zoey Serrano), Cora Jade (now Elayna Black) and Giovanni Vinci in TNA.
+
+**Judgement calls flagged by the agents:** most 2026 alignments are inferred from storylines;
+Kris Statlander's size is the default 3 (no billed height found); a few moveset entries are
+generic moves, as in the existing file. Toni Storm is written off television for 2026 and kept.
+
+**Re-measured:** `TypicalCardPullFor` — Independent 0.4236 → 0.4496, SuperIndie 0.4667 → 0.5849,
+Established 0.4934 → 0.6631, National 0.6161 → 0.7686, Global 0.8842 → 0.8969 (Local held).
+`TypicalInvestment` held. The opening rosters of the television tiers now carry real stars, so a
+typical card at those tiers is a good deal stronger than it was.

@@ -177,7 +177,8 @@ namespace WrestlingSim.Tests
 
             var before = career.Roster[17];
             var after = back.FindWrestler(before.Id)!;
-            Assert.Equal((before.RingName, before.Region, before.Overness, before.RingSkills.GetOverallSkill(), before.Signature.Count),
+            // Popularity is saved to three places (SaveSerializer), by design.
+            Assert.Equal((before.RingName, before.Region, Math.Round(before.Overness, 3), before.RingSkills.GetOverallSkill(), before.Signature.Count),
                          (after.RingName, after.Region, after.Overness, after.RingSkills.GetOverallSkill(), after.Signature.Count));
         }
 

@@ -117,7 +117,11 @@ namespace WrestlingSim.Tests
 
                 // Wikipedia's infobox gives these three no name but the one they wrestle
                 // under. Looked up and found to be the same, rather than not looked up.
-                "Jackson Drake", "Brad Baylor", "Ricky Smokes"
+                "Jackson Drake", "Brad Baylor", "Ricky Smokes",
+
+                // Added 16 Nov 2026 (docs/roster-rubric.md). The first three wrestle under
+                // their legal names; TNA's own personnel list gives Leon Slater no other.
+                "Jacob Fatu", "Logan Paul", "Kazuchika Okada", "Leon Slater"
             ];
 
             var unresolved = DataLoaders.LoadEmbeddedWrestlers()
