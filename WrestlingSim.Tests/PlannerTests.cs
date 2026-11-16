@@ -271,6 +271,9 @@ namespace WrestlingSim.Tests
             var major = RivalAt(career, PromotionTier.Global);
             var star = major.Contracts.Select(c => career.FindWrestler(c.WrestlerId)!).MaxBy(w => w.EffectiveOverness)!;
             major.Contracts.RemoveAll(c => c.WrestlerId == star.Id);        // a free agent, for the asking
+            // Nobody it already favours to be pushed down the card: favouritism is a term of
+            // its own, the same for every motive, and would hide the difference being tested.
+            rival.Favourites.Clear();
 
             var hold = World.Forecast(career, rival, rival.Contracts, Sober);
             decimal ask = career.GuaranteeAsk(star, 3);
@@ -320,9 +323,14 @@ namespace WrestlingSim.Tests
                 // Careful with money, and paying people more than its shows bring in.
                 rival.Objective = World.ObjectiveFor(FounderMotive.Business);
                 rival.Disposition = World.DispositionFor(FounderMotive.Business);
+                // Four times the going rate. (It was twelve, against a roster of cheap unknowns;
+                // since the roster grew (Nov 2026) this rival opens with real stars, and at
+                // twelve times their pay it has weeks of runway — fewer than a release's
+                // severance, so letting anybody go brings closing nearer, which the model
+                // rightly says. That is a different case from "short of money".)
                 var dear = rival.Contracts.Select(c => new Contract
                 {
-                    WrestlerId = c.WrestlerId, Kind = c.Kind, AnnualGuarantee = c.AnnualGuarantee * 12, Start = c.Start, End = c.End
+                    WrestlerId = c.WrestlerId, Kind = c.Kind, AnnualGuarantee = c.AnnualGuarantee * 4, Start = c.Start, End = c.End
                 }).ToList();
                 rival.Contracts.Clear();
                 rival.Contracts.AddRange(dear);
