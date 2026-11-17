@@ -102,6 +102,7 @@ namespace WrestlingSim.Persistence
                     Favoured       = Math.Round(w.Favoured, 3),
                     Warmth         = Math.Round(w.Warmth, 1),
                     RejectedSince  = w.RejectedSince is { } rj ? Iso(rj) : null,
+                    Freshness      = w.Gimmick is { } gim ? Math.Round(gim.Freshness, 4) : null,
                     Overness       = Math.Round(w.Overness, 3),
                     Momentum       = Math.Round(w.Momentum, 3),
                     LastAppearance = w.LastAppearance is { } seen ? Iso(seen) : null,
@@ -570,6 +571,7 @@ namespace WrestlingSim.Persistence
                 if (state.Favoured is { } fav) w.Favoured = fav;
                 if (state.Warmth is { } warm) w.Warmth = warm;
                 w.RejectedSince = string.IsNullOrEmpty(state.RejectedSince) ? null : ParseDate(state.RejectedSince);
+                if (state.Freshness is { } fresh && w.Gimmick is { } gimmick) gimmick.Freshness = Math.Clamp(fresh, 0, 1);
             }
 
             var career = new Career

@@ -541,6 +541,9 @@ namespace WrestlingSim.Models.World
             SettleContracts();
             AudienceModel.Decay(Audience);
 
+            // Characters rest while their people are off screen, wherever they work.
+            CharacterFreshness.Rest(Roster, CurrentDate, 1);
+
             // The rest of the world runs on the same clock.
             NonCompetes.RemoveAll(n => n.Until <= CurrentDate);
             Engine.World.Tick(this);
@@ -690,6 +693,7 @@ namespace WrestlingSim.Models.World
             // jumps: an act rested until the show is as rested as it will be on the night.
             int ahead = Math.Max(0, show.Date.DayNumber - CurrentDate.DayNumber);
             AudienceModel.Decay(Audience, ahead);
+            CharacterFreshness.Rest(Roster, show.Date, ahead);
 
             // Sold on the card as advertised, before anyone has wrestled.
             var house = Projection(show, daysAhead: 0);

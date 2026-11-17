@@ -14,7 +14,6 @@
       "PersonaDescriptor": "Brutal Enforcer",
       "Tone": "Serious",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 10,
       "Durability": "LongTerm",
       "Freshness": 0.9,
       "GimmickTraits": [
@@ -109,7 +108,6 @@
       "PersonaDescriptor": "The Man",
       "Tone": "Arrogant",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 12,
       "Durability": "LongTerm",
       "Freshness": 0.88,
       "GimmickTraits": [
@@ -204,7 +202,6 @@
       "PersonaDescriptor": "The Queen",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 9,
       "Durability": "LongTerm",
       "Freshness": 0.8,
       "GimmickTraits": [
@@ -297,7 +294,6 @@
       "PersonaDescriptor": "The EST",
       "Tone": "Inspirational",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 8,
       "Durability": "LongTerm",
       "Freshness": 0.85,
       "GimmickTraits": [
@@ -390,7 +386,6 @@
       "PersonaDescriptor": "The Empress of Tomorrow",
       "Tone": "Chaotic",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 7,
       "Durability": "LongTerm",
       "Freshness": 0.82,
       "GimmickTraits": [
@@ -485,7 +480,6 @@
       "PersonaDescriptor": "Role Model",
       "Tone": "SelfRighteous",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 6,
       "Durability": "MediumTerm",
       "Freshness": 0.78,
       "GimmickTraits": [
@@ -580,7 +574,6 @@
       "PersonaDescriptor": "The Genius of the Sky",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 5,
       "Durability": "MediumTerm",
       "Freshness": 0.86,
       "GimmickTraits": [
@@ -675,7 +668,6 @@
       "PersonaDescriptor": "Revenge Tour",
       "Tone": "Chaotic",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 7,
       "Durability": "MediumTerm",
       "Freshness": 0.9,
       "GimmickTraits": [
@@ -768,7 +760,6 @@
       "PersonaDescriptor": "Queen of Spades",
       "Tone": "Serious",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 6,
       "Durability": "LongTerm",
       "Freshness": 0.85,
       "GimmickTraits": [
@@ -861,7 +852,6 @@
       "PersonaDescriptor": "Big Mami Cool",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 4,
       "Durability": "MediumTerm",
       "Freshness": 0.8,
       "GimmickTraits": [
@@ -956,7 +946,6 @@
       "PersonaDescriptor": "Queen of the Ring",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 5,
       "Durability": "MediumTerm",
       "Freshness": 0.82,
       "GimmickTraits": [
@@ -1051,7 +1040,6 @@
       "PersonaDescriptor": "Scottish Wrecking Ball",
       "Tone": "Violent",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 3,
       "Durability": "MediumTerm",
       "Freshness": 0.72,
       "GimmickTraits": [
@@ -1147,7 +1135,6 @@
       "PersonaDescriptor": "The Girl With the Shiniest Wizards",
       "Tone": "Inspirational",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 2,
       "Durability": "MediumTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
@@ -1243,7 +1230,6 @@
       "PersonaDescriptor": "Lightning in a Bottle",
       "Tone": "Humorous",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 1,
       "Durability": "ShortTerm",
       "Freshness": 0.95,
       "GimmickTraits": [
@@ -1339,7 +1325,6 @@
       "PersonaDescriptor": "Legado Enforcer",
       "Tone": "Serious",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 0,
       "Durability": "ShortTerm",
       "Freshness": 0.75,
       "GimmickTraits": [
@@ -1432,7 +1417,6 @@
       "PersonaDescriptor": "The Tribal Chief",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 12,
       "Durability": "LongTerm",
       "Freshness": 0.86,
       "GimmickTraits": [
@@ -1528,7 +1512,6 @@
       "PersonaDescriptor": "The American Nightmare",
       "Tone": "Inspirational",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 11,
       "Durability": "LongTerm",
       "Freshness": 0.9,
       "GimmickTraits": [
@@ -1623,7 +1606,6 @@
       "PersonaDescriptor": "The Visionary",
       "Tone": "Chaotic",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 10,
       "Durability": "LongTerm",
       "Freshness": 0.84,
       "GimmickTraits": [
@@ -1719,7 +1701,6 @@
       "PersonaDescriptor": "The Viper",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 9,
       "Durability": "LongTerm",
       "Freshness": 0.66,
       "GimmickTraits": [
@@ -1815,7 +1796,6 @@
       "PersonaDescriptor": "The Ring General",
       "Tone": "Serious",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 8,
       "Durability": "LongTerm",
       "Freshness": 0.88,
       "GimmickTraits": [
@@ -1911,7 +1891,6 @@
       "PersonaDescriptor": "The Scottish Warrior",
       "Tone": "SelfRighteous",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 7,
       "Durability": "LongTerm",
       "Freshness": 0.8,
       "GimmickTraits": [
@@ -2006,7 +1985,6 @@
       "PersonaDescriptor": "The Underdog from the Underground",
       "Tone": "Inspirational",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 8,
       "Durability": "LongTerm",
       "Freshness": 0.88,
       "GimmickTraits": [
@@ -2102,7 +2080,6 @@
       "PersonaDescriptor": "The Megastar",
       "Tone": "Arrogant",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 9,
       "Durability": "MediumTerm",
       "Freshness": 0.94,
       "GimmickTraits": [
@@ -2199,7 +2176,6 @@
       "PersonaDescriptor": "The Prizefighter",
       "Tone": "Violent",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 6,
       "Durability": "LongTerm",
       "Freshness": 0.76,
       "GimmickTraits": [
@@ -2295,7 +2271,6 @@
       "PersonaDescriptor": "The Freak Athlete",
       "Tone": "Violent",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 5,
       "Durability": "ShortTerm",
       "Freshness": 0.96,
       "GimmickTraits": [
@@ -2389,7 +2364,6 @@
       "PersonaDescriptor": "The One and Only",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 3,
       "Durability": "MediumTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
@@ -2484,7 +2458,6 @@
       "PersonaDescriptor": "The Master of the Amateurs",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 2,
       "Durability": "MediumTerm",
       "Freshness": 0.84,
       "GimmickTraits": [
@@ -2579,7 +2552,6 @@
       "PersonaDescriptor": "The Wiggle",
       "Tone": "Humorous",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 4,
       "Durability": "ShortTerm",
       "Freshness": 0.68,
       "GimmickTraits": [
@@ -2675,7 +2647,6 @@
       "PersonaDescriptor": "The Stamina Monster",
       "Tone": "Humorous",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 1,
       "Durability": "MediumTerm",
       "Freshness": 0.6,
       "GimmickTraits": [
@@ -2768,7 +2739,6 @@
       "PersonaDescriptor": "The Troubled Giant",
       "Tone": "Melancholic",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 0,
       "Durability": "ShortTerm",
       "Freshness": 0.72,
       "GimmickTraits": [
@@ -2862,7 +2832,6 @@
       "PersonaDescriptor": "Shepherd of the Lost",
       "Tone": "SelfRighteous",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 9,
       "Durability": "LongTerm",
       "Freshness": 0.88,
       "GimmickTraits": [
@@ -2960,7 +2929,6 @@
       "PersonaDescriptor": "The Last Honest Man",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 5,
       "Durability": "LongTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
@@ -3054,7 +3022,6 @@
       "PersonaDescriptor": "The Purist",
       "Tone": "Serious",
       "NaturalAlignment": "Tweener",
-      "PopularityModifier": 4,
       "Durability": "MediumTerm",
       "Freshness": 0.8,
       "GimmickTraits": [
@@ -3152,7 +3119,6 @@
       "PersonaDescriptor": "The Corporate Signing",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 6,
       "Durability": "MediumTerm",
       "Freshness": 0.76,
       "GimmickTraits": [
@@ -3250,7 +3216,6 @@
       "PersonaDescriptor": "The Coal-Country Bruiser",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 3,
       "Durability": "LongTerm",
       "Freshness": 0.66,
       "GimmickTraits": [
@@ -3344,7 +3309,6 @@
       "PersonaDescriptor": "Keeper of Quiet Rooms",
       "Tone": "Cryptic",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 4,
       "Durability": "MediumTerm",
       "Freshness": 0.74,
       "GimmickTraits": [
@@ -3442,7 +3406,6 @@
       "PersonaDescriptor": "The Main Event Mind",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 7,
       "Durability": "MediumTerm",
       "Freshness": 0.82,
       "GimmickTraits": [
@@ -3540,7 +3503,6 @@
       "PersonaDescriptor": "The Merch Table Hero",
       "Tone": "Humorous",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 5,
       "Durability": "ShortTerm",
       "Freshness": 0.78,
       "GimmickTraits": [
@@ -3642,7 +3604,6 @@
       "PersonaDescriptor": "The Quarry Giant",
       "Tone": "Violent",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 3,
       "Durability": "MediumTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
@@ -3736,7 +3697,6 @@
       "PersonaDescriptor": "The Shoot-Style Import",
       "Tone": "Serious",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 2,
       "Durability": "MediumTerm",
       "Freshness": 0.72,
       "GimmickTraits": [
@@ -3834,7 +3794,6 @@
       "PersonaDescriptor": "Old Money",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 5,
       "Durability": "MediumTerm",
       "Freshness": 0.75,
       "GimmickTraits": [
@@ -3929,7 +3888,6 @@
       "PersonaDescriptor": "Never Quite The Guy",
       "Tone": "Melancholic",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 3,
       "Durability": "LongTerm",
       "Freshness": 0.6,
       "GimmickTraits": [
@@ -4024,7 +3982,6 @@
       "PersonaDescriptor": "The Sound And The Fury",
       "Tone": "Chaotic",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 4,
       "Durability": "ShortTerm",
       "Freshness": 0.84,
       "GimmickTraits": [
@@ -4122,7 +4079,6 @@
       "PersonaDescriptor": "The Drifter",
       "Tone": "Melancholic",
       "NaturalAlignment": "Tweener",
-      "PopularityModifier": 2,
       "Durability": "MediumTerm",
       "Freshness": 0.62,
       "GimmickTraits": [
@@ -4216,7 +4172,6 @@
       "PersonaDescriptor": "The Territory Kid",
       "Tone": "Inspirational",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 2,
       "Durability": "MediumTerm",
       "Freshness": 0.68,
       "GimmickTraits": [
@@ -4325,7 +4280,6 @@
       "PersonaDescriptor": "The Insurance Salesman",
       "Tone": "SelfRighteous",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 2,
       "Durability": "ShortTerm",
       "Freshness": 0.66,
       "GimmickTraits": [
@@ -4419,7 +4373,6 @@
       "PersonaDescriptor": "The Kid From The Parking Lot",
       "Tone": "Inspirational",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 2,
       "Durability": "ShortTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
@@ -4518,7 +4471,6 @@
       "PersonaDescriptor": "The Signal From The Dark",
       "Tone": "Cryptic",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 1,
       "Durability": "ShortTerm",
       "Freshness": 0.8,
       "GimmickTraits": [
@@ -4616,7 +4568,6 @@
       "PersonaDescriptor": "The Lunchpail",
       "Tone": "Humorous",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 2,
       "Durability": "ShortTerm",
       "Freshness": 0.72,
       "GimmickTraits": [
@@ -4718,7 +4669,6 @@
       "PersonaDescriptor": "The Trainer's Son",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 1,
       "Durability": "MediumTerm",
       "Freshness": 0.64,
       "GimmickTraits": [
@@ -4827,7 +4777,6 @@
       "PersonaDescriptor": "Just A Guy In Trunks",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 0,
       "Durability": "ShortTerm",
       "Freshness": 0.5,
       "GimmickTraits": [
@@ -4922,7 +4871,6 @@
       "PersonaDescriptor": "The Local Hero, Allegedly",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 0,
       "Durability": "ShortTerm",
       "Freshness": 0.58,
       "GimmickTraits": [
@@ -5016,7 +4964,6 @@
       "PersonaDescriptor": "The Warehouse",
       "Tone": "Violent",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 1,
       "Durability": "ShortTerm",
       "Freshness": 0.6,
       "GimmickTraits": [
@@ -5110,7 +5057,6 @@
       "PersonaDescriptor": "Loudest Woman In The Building",
       "Tone": "Chaotic",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 10,
       "Durability": "MediumTerm",
       "Freshness": 0.9,
       "GimmickTraits": [
@@ -5208,7 +5154,6 @@
       "PersonaDescriptor": "The Iron Mountain",
       "Tone": "Serious",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 7,
       "Durability": "LongTerm",
       "Freshness": 0.82,
       "GimmickTraits": [
@@ -5302,7 +5247,6 @@
       "PersonaDescriptor": "The Golden Hour",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 8,
       "Durability": "MediumTerm",
       "Freshness": 0.85,
       "GimmickTraits": [
@@ -5400,7 +5344,6 @@
       "PersonaDescriptor": "The Textbook",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 5,
       "Durability": "LongTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
@@ -5494,7 +5437,6 @@
       "PersonaDescriptor": "The Cold Read",
       "Tone": "Melancholic",
       "NaturalAlignment": "Tweener",
-      "PopularityModifier": 4,
       "Durability": "MediumTerm",
       "Freshness": 0.76,
       "GimmickTraits": [
@@ -5588,7 +5530,6 @@
       "PersonaDescriptor": "Smallest Person In The Building",
       "Tone": "Inspirational",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 6,
       "Durability": "MediumTerm",
       "Freshness": 0.8,
       "GimmickTraits": [
@@ -5686,7 +5627,6 @@
       "PersonaDescriptor": "La Tormenta",
       "Tone": "Chaotic",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 5,
       "Durability": "ShortTerm",
       "Freshness": 0.86,
       "GimmickTraits": [
@@ -5785,7 +5725,6 @@
       "PersonaDescriptor": "The Girl In The Polaroid",
       "Tone": "Cryptic",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 4,
       "Durability": "MediumTerm",
       "Freshness": 0.78,
       "GimmickTraits": [
@@ -5884,7 +5823,6 @@
       "PersonaDescriptor": "The Bouncer",
       "Tone": "Serious",
       "NaturalAlignment": "Tweener",
-      "PopularityModifier": 3,
       "Durability": "MediumTerm",
       "Freshness": 0.72,
       "GimmickTraits": [
@@ -5978,7 +5916,6 @@
       "PersonaDescriptor": "The Shooter",
       "Tone": "Serious",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 2,
       "Durability": "MediumTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
@@ -6072,7 +6009,6 @@
       "PersonaDescriptor": "The Bingo Hall Legend",
       "Tone": "Humorous",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 5,
       "Durability": "LongTerm",
       "Freshness": 0.68,
       "GimmickTraits": [
@@ -6171,7 +6107,6 @@
       "PersonaDescriptor": "Trust-Fund Terror",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 4,
       "Durability": "MediumTerm",
       "Freshness": 0.76,
       "GimmickTraits": [
@@ -6269,7 +6204,6 @@
       "PersonaDescriptor": "The Ratings Darling",
       "Tone": "SelfRighteous",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 3,
       "Durability": "ShortTerm",
       "Freshness": 0.72,
       "GimmickTraits": [
@@ -6367,7 +6301,6 @@
       "PersonaDescriptor": "All Risk, No Reward",
       "Tone": "Chaotic",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 2,
       "Durability": "ShortTerm",
       "Freshness": 0.82,
       "GimmickTraits": [
@@ -6465,7 +6398,6 @@
       "PersonaDescriptor": "The Standing Stone",
       "Tone": "Serious",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 1,
       "Durability": "MediumTerm",
       "Freshness": 0.64,
       "GimmickTraits": [
@@ -6559,7 +6491,6 @@
       "PersonaDescriptor": "Never Beaten, Never Booked",
       "Tone": "Inspirational",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 2,
       "Durability": "MediumTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
@@ -6653,7 +6584,6 @@
       "PersonaDescriptor": "The Bar-Fight Champion",
       "Tone": "Chaotic",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 2,
       "Durability": "ShortTerm",
       "Freshness": 0.78,
       "GimmickTraits": [
@@ -6748,7 +6678,6 @@
       "PersonaDescriptor": "Speaks To No One",
       "Tone": "Melancholic",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 1,
       "Durability": "MediumTerm",
       "Freshness": 0.66,
       "GimmickTraits": [
@@ -6843,7 +6772,6 @@
       "PersonaDescriptor": "The Enthusiast",
       "Tone": "Humorous",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 1,
       "Durability": "ShortTerm",
       "Freshness": 0.74,
       "GimmickTraits": [
@@ -6942,7 +6870,6 @@
       "PersonaDescriptor": "Hired Muscle",
       "Tone": "Violent",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 0,
       "Durability": "ShortTerm",
       "Freshness": 0.6,
       "GimmickTraits": [
@@ -7037,7 +6964,6 @@
       "PersonaDescriptor": "The Model",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 0,
       "Durability": "ShortTerm",
       "Freshness": 0.62,
       "GimmickTraits": [
@@ -7132,7 +7058,6 @@
       "PersonaDescriptor": "Local Talent",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 0,
       "Durability": "ShortTerm",
       "Freshness": 0.5,
       "GimmickTraits": [
@@ -7227,7 +7152,6 @@
       "PersonaDescriptor": "Still Learning",
       "Tone": "Inspirational",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 0,
       "Durability": "ShortTerm",
       "Freshness": 0.56,
       "GimmickTraits": [
@@ -7321,7 +7245,6 @@
       "PersonaDescriptor": "Whoop That Trick",
       "Tone": "Arrogant",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 9,
       "Durability": "LongTerm",
       "Freshness": 0.84,
       "GimmickTraits": [
@@ -7417,7 +7340,6 @@
       "PersonaDescriptor": "Cero Miedo",
       "Tone": "Violent",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 10,
       "Durability": "LongTerm",
       "Freshness": 0.82,
       "GimmickTraits": [
@@ -7518,7 +7440,6 @@
       "PersonaDescriptor": "All Ego",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 6,
       "Durability": "MediumTerm",
       "Freshness": 0.76,
       "GimmickTraits": [
@@ -7614,7 +7535,6 @@
       "PersonaDescriptor": "The Young OG",
       "Tone": "Inspirational",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 11,
       "Durability": "MediumTerm",
       "Freshness": 0.94,
       "GimmickTraits": [
@@ -7714,7 +7634,6 @@
       "PersonaDescriptor": "Guerrilla of Destiny",
       "Tone": "Violent",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 4,
       "Durability": "LongTerm",
       "Freshness": 0.68,
       "GimmickTraits": [
@@ -7810,7 +7729,6 @@
       "PersonaDescriptor": "The Tongan Giant",
       "Tone": "Serious",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 3,
       "Durability": "MediumTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
@@ -7907,7 +7825,6 @@
       "PersonaDescriptor": "The Fabulous One",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 4,
       "Durability": "MediumTerm",
       "Freshness": 0.72,
       "GimmickTraits": [
@@ -8001,7 +7918,6 @@
       "PersonaDescriptor": "The King of Flight",
       "Tone": "Chaotic",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 9,
       "Durability": "LongTerm",
       "Freshness": 0.86,
       "GimmickTraits": [
@@ -8102,7 +8018,6 @@
       "PersonaDescriptor": "The Aussie Icon",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 7,
       "Durability": "MediumTerm",
       "Freshness": 0.8,
       "GimmickTraits": [
@@ -8198,7 +8113,6 @@
       "PersonaDescriptor": "One of a Kind",
       "Tone": "Serious",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 5,
       "Durability": "MediumTerm",
       "Freshness": 0.84,
       "GimmickTraits": [
@@ -8291,7 +8205,6 @@
       "PersonaDescriptor": "The Australian Powerhouse",
       "Tone": "Violent",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 4,
       "Durability": "MediumTerm",
       "Freshness": 0.82,
       "GimmickTraits": [
@@ -8388,7 +8301,6 @@
       "PersonaDescriptor": "The Vanity Project",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 4,
       "Durability": "MediumTerm",
       "Freshness": 0.9,
       "GimmickTraits": [
@@ -8484,7 +8396,6 @@
       "PersonaDescriptor": "Swipe Right",
       "Tone": "Humorous",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 3,
       "Durability": "ShortTerm",
       "Freshness": 0.88,
       "GimmickTraits": [
@@ -8593,7 +8504,6 @@
       "PersonaDescriptor": "Swipe Right",
       "Tone": "Humorous",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 3,
       "Durability": "ShortTerm",
       "Freshness": 0.86,
       "GimmickTraits": [
@@ -8705,7 +8615,6 @@
       "PersonaDescriptor": "Dirty Dom",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 8,
       "Durability": "LongTerm",
       "Freshness": 0.82,
       "GimmickTraits": [
@@ -8805,7 +8714,6 @@
       "PersonaDescriptor": "The Samoan Werewolf",
       "Tone": "Violent",
       "NaturalAlignment": "Tweener",
-      "PopularityModifier": 8,
       "Durability": "LongTerm",
       "Freshness": 0.9,
       "GimmickTraits": [
@@ -8914,7 +8822,6 @@
       "PersonaDescriptor": "The Enforcer",
       "Tone": "Serious",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 4,
       "Durability": "MediumTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
@@ -9010,7 +8917,6 @@
       "PersonaDescriptor": "Dominant Powerhouse",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 9,
       "Durability": "LongTerm",
       "Freshness": 0.95,
       "GimmickTraits": [
@@ -9108,7 +9014,6 @@
       "PersonaDescriptor": "Beautiful Madness",
       "Tone": "Violent",
       "NaturalAlignment": "Tweener",
-      "PopularityModifier": 5,
       "Durability": "MediumTerm",
       "Freshness": 0.8,
       "GimmickTraits": [
@@ -9221,7 +9126,6 @@
       "PersonaDescriptor": "Smooth-Talking Showman",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 6,
       "Durability": "MediumTerm",
       "Freshness": 0.82,
       "GimmickTraits": [
@@ -9321,7 +9225,6 @@
       "PersonaDescriptor": "Powerhouse Brawler",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 5,
       "Durability": "MediumTerm",
       "Freshness": 0.82,
       "GimmickTraits": [
@@ -9415,7 +9318,6 @@
       "PersonaDescriptor": "Celebrity Crossover Star",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 8,
       "Durability": "MediumTerm",
       "Freshness": 0.78,
       "GimmickTraits": [
@@ -9513,7 +9415,6 @@
       "PersonaDescriptor": "Hip-Attack Bruiser",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 4,
       "Durability": "MediumTerm",
       "Freshness": 0.9,
       "GimmickTraits": [
@@ -9607,7 +9508,6 @@
       "PersonaDescriptor": "The Bulgarian Brute",
       "Tone": "Violent",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 4,
       "Durability": "MediumTerm",
       "Freshness": 0.6,
       "GimmickTraits": [
@@ -9724,7 +9624,6 @@
       "PersonaDescriptor": "Former Bellator Fighter",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 5,
       "Durability": "MediumTerm",
       "Freshness": 0.88,
       "GimmickTraits": [
@@ -9822,7 +9721,6 @@
       "PersonaDescriptor": "The One True Champion",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 8,
       "Durability": "LongTerm",
       "Freshness": 0.85,
       "GimmickTraits": [
@@ -9920,7 +9818,6 @@
       "PersonaDescriptor": "The Anxious Millennial Cowboy",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 8,
       "Durability": "LongTerm",
       "Freshness": 0.82,
       "GimmickTraits": [
@@ -10018,7 +9915,6 @@
       "PersonaDescriptor": "Swerve the Realest",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 7,
       "Durability": "LongTerm",
       "Freshness": 0.84,
       "GimmickTraits": [
@@ -10132,7 +10028,6 @@
       "PersonaDescriptor": "The Cleaner",
       "Tone": "Inspirational",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 9,
       "Durability": "LongTerm",
       "Freshness": 0.78,
       "GimmickTraits": [
@@ -10229,7 +10124,6 @@
       "PersonaDescriptor": "The Aerial Assassin",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 8,
       "Durability": "LongTerm",
       "Freshness": 0.86,
       "GimmickTraits": [
@@ -10343,7 +10237,6 @@
       "PersonaDescriptor": "The Death Rider",
       "Tone": "Violent",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 8,
       "Durability": "LongTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
@@ -10440,7 +10333,6 @@
       "PersonaDescriptor": "Skateboarding Daredevil",
       "Tone": "Melancholic",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 7,
       "Durability": "LongTerm",
       "Freshness": 0.8,
       "GimmickTraits": [
@@ -10537,7 +10429,6 @@
       "PersonaDescriptor": "The Rainmaker",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 7,
       "Durability": "LongTerm",
       "Freshness": 0.72,
       "GimmickTraits": [
@@ -10634,7 +10525,6 @@
       "PersonaDescriptor": "The CEO",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 9,
       "Durability": "LongTerm",
       "Freshness": 0.76,
       "GimmickTraits": [
@@ -10747,7 +10637,6 @@
       "PersonaDescriptor": "Timeless",
       "Tone": "Humorous",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 8,
       "Durability": "MediumTerm",
       "Freshness": 0.76,
       "GimmickTraits": [
@@ -10844,7 +10733,6 @@
       "PersonaDescriptor": "Triple Crown Powerhouse",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 4,
       "Durability": "MediumTerm",
       "Freshness": 0.74,
       "GimmickTraits": [
@@ -10941,7 +10829,6 @@
       "PersonaDescriptor": "The Samoan Submission Machine",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 5,
       "Durability": "MediumTerm",
       "Freshness": 0.6,
       "GimmickTraits": [
@@ -11039,7 +10926,6 @@
       "PersonaDescriptor": "The Natural",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 6,
       "Durability": "MediumTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
@@ -11137,7 +11023,6 @@
       "PersonaDescriptor": "Ladder-Match Daredevil",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 9,
       "Durability": "LongTerm",
       "Freshness": 0.55,
       "GimmickTraits": [
@@ -11235,7 +11120,6 @@
       "PersonaDescriptor": "Broken",
       "Tone": "Chaotic",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 6,
       "Durability": "LongTerm",
       "Freshness": 0.55,
       "GimmickTraits": [
@@ -11333,7 +11217,6 @@
       "PersonaDescriptor": "The System's Exile",
       "Tone": "Serious",
       "NaturalAlignment": "Tweener",
-      "PopularityModifier": 3,
       "Durability": "MediumTerm",
       "Freshness": 0.6,
       "GimmickTraits": [
@@ -11430,7 +11313,6 @@
       "PersonaDescriptor": "The Elite Hunter",
       "Tone": "Arrogant",
       "NaturalAlignment": "Tweener",
-      "PopularityModifier": 2,
       "Durability": "MediumTerm",
       "Freshness": 0.6,
       "GimmickTraits": [
@@ -11528,7 +11410,6 @@
       "PersonaDescriptor": "Self-Styled Politician",
       "Tone": "SelfRighteous",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 5,
       "Durability": "MediumTerm",
       "Freshness": 0.72,
       "GimmickTraits": [
@@ -11626,7 +11507,6 @@
       "PersonaDescriptor": "Youngest X Division Champion",
       "Tone": "Inspirational",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 8,
       "Durability": "MediumTerm",
       "Freshness": 0.95,
       "GimmickTraits": [
@@ -11722,7 +11602,6 @@
       "PersonaDescriptor": "Leader of The System",
       "Tone": "Serious",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 2,
       "Durability": "MediumTerm",
       "Freshness": 0.6,
       "GimmickTraits": [
@@ -11818,7 +11697,6 @@
       "PersonaDescriptor": "Indy God",
       "Tone": "Chaotic",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 5,
       "Durability": "MediumTerm",
       "Freshness": 0.8,
       "GimmickTraits": [
@@ -11915,7 +11793,6 @@
       "PersonaDescriptor": "Hard-hitting Brit",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 4,
       "Durability": "LongTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
@@ -12013,7 +11890,6 @@
       "PersonaDescriptor": "Glamorous starlet",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 4,
       "Durability": "MediumTerm",
       "Freshness": 0.85,
       "GimmickTraits": [

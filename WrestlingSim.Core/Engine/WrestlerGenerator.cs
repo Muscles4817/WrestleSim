@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using WrestlingSim.Enums;
 using WrestlingSim.Models;
 
@@ -126,7 +126,6 @@ namespace WrestlingSim.Engine
                 PersonaDescriptor = Descriptor(t.Gimmick?.Type ?? default),
                 Tone              = t.Gimmick?.Tone ?? default,
                 NaturalAlignment  = t.Gimmick?.NaturalAlignment ?? default,
-                PopularityModifier = t.Gimmick?.PopularityModifier ?? 0,
                 Durability        = t.Gimmick?.Durability ?? default,
                 Freshness         = Math.Round(0.5 + 0.5 * _rng.NextDouble(), 2),
                 GimmickTraits     = [.. t.Gimmick?.GimmickTraits ?? []],

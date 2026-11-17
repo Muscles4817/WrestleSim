@@ -124,7 +124,7 @@ namespace WrestlingSim.Engine
         /// <summary>
         /// A gimmick's appeal to a group, 0–1. Regular has no rating in the roster and reads
         /// Casual's — the two differ in how often they watch, not in who they like. Unrated
-        /// groups read a neutral 0.5.
+        /// groups read a neutral 0.5. Less, once the character is worn.
         /// </summary>
         public static double Appeal(Wrestler w, FanGroup g)
         {
@@ -135,7 +135,9 @@ namespace WrestlingSim.Engine
                 .FirstOrDefault(r => string.Equals(r.Group, group.ToString(), StringComparison.OrdinalIgnoreCase))
                 ?.AppealScore;
 
-            return Of(g) ?? (g == FanGroup.Regular ? Of(FanGroup.Casual) : null) ?? 0.5;
+            // A worn character loses its pull on every group alike (CharacterFreshness).
+            return (Of(g) ?? (g == FanGroup.Regular ? Of(FanGroup.Casual) : null) ?? 0.5)
+                   * CharacterFreshness.Factor(w);
         }
 
         /// <summary>
@@ -321,6 +323,13 @@ namespace WrestlingSim.Engine
 
                 if (winners.Contains(w.Id)) act.Streak++;
                 else if (wrestled.Contains(w.Id)) act.Streak = 0;
+
+                // The character wears too, more slowly, and less when tonight gave it something
+                // new to say (docs/gimmick-plan.md Part 4). Tonight crossing the line is news.
+                bool wasWorn = (w.Gimmick?.Freshness ?? 1) < CharacterFreshness.Worn;
+                CharacterFreshness.Wear(w, show.Type, n);
+                if (!wasWorn && (w.Gimmick?.Freshness ?? 1) < CharacterFreshness.Worn)
+                    notes.Add((100, CharacterFreshness.WornNote(w)));
 
                 act.LastKind    = lastKind[w.Id];
                 act.LastGimmick = w.Gimmick?.Name ?? "";

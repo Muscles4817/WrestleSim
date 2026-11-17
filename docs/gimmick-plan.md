@@ -424,6 +424,25 @@ Each step is reachable by the booker and legible in the report before it counts 
    - `PopularityModifier` is deleted.
    - `ChangeGimmick` is fixed.
    - The doc corrections are made.
+   **Built (17 Nov 2026).** `Engine.CharacterFreshness`:
+   - Each appearance wears the character by durability, charisma and show type. Novelty
+     (the same reading act sameness uses) slows the wear.
+   - Time away past a 28-day grace restores it toward 0.9, at a four-month half-life.
+   - It costs nothing above 0.45. Below that it scales gimmick appeal down to 0.6× at zero.
+     Every shipped and generated character starts at 0.5 or more, so day one is unmoved and
+     the measured medians stand.
+   - The show report says when somebody crosses the line. The profile's new Character panel
+     shows freshness in words, and the booked alignment beside `Engine.CrowdReading`. The
+     picker marks a crossed reading and a worn character.
+   - Freshness is saved per wrestler. `PopularityModifier` is gone from the model, the
+     generator and all 124 entries, and `ChangeGimmick` is fixed.
+
+   Not built, written down:
+   - A new context (a move to another promotion, a new brand or division) restoring
+     freshness. Contracts are signed in six places, and it belongs with the repackage work.
+   - Saving a changed gimmick whole for a real wrestler. Today the save carries freshness and
+     the rest of the gimmick reloads from the roster file. Repackaging (step 5) needs the whole
+     gimmick saved.
 2. **Characters on the card** (Part 2): type and trait weights, fit, builder hints, report lines,
    and the comedy door. *The interchangeability fix.*
 3. **Promos** (Part 3):

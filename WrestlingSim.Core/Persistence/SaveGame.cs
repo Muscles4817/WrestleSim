@@ -490,6 +490,12 @@ namespace WrestlingSim.Persistence
         public double? Warmth { get; set; }
         public string? RejectedSince { get; set; }
 
+        /// <summary>
+        /// How worn the character is (<see cref="Engine.CharacterFreshness"/>). Null in a save
+        /// from before characters wore, which keeps the roster's value.
+        /// </summary>
+        public double? Freshness { get; set; }
+
         /// <summary>The stock: how over they are.</summary>
         public double Overness { get; set; }
 

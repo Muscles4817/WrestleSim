@@ -314,9 +314,17 @@ namespace WrestlingSim.Models
             Gimmick.ChangeName(name);
         }
 
+        /// <summary>
+        /// A new character. The one they had goes into <see cref="PreviousGimmicks"/>, so their
+        /// old names stay theirs. (This used to add the *new* gimmick to the history and never
+        /// make it the current one.)
+        /// </summary>
         public void ChangeGimmick(Gimmick gimmick)
-        { 
-            PreviousGimmicks.Add(gimmick);
+        {
+            ArgumentNullException.ThrowIfNull(gimmick);
+            PreviousGimmicks ??= new List<Gimmick>();
+            if (Gimmick != null) PreviousGimmicks.Add(Gimmick);
+            Gimmick = gimmick;
         }
 
         public List<string> PreviousNames()

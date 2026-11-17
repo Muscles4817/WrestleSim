@@ -315,6 +315,35 @@ else
             </section>
         }
 
+        @if (w.Gimmick is { } character)
+        {
+            @* The character, beside the booking. The booked alignment is the player's and the
+               engine never changes it; what the crowd does with it is shown next to it, and
+               the gap is what a booker acts on (docs/gimmick-plan.md §0A). *@
+            var crowd = CrowdReading.Of(w, today);
+            var meaning = CrowdReading.Meaning(character.NaturalAlignment, crowd);
+            <section class="panel">
+                <div class="panel__title">Character</div>
+                <div class="kv">
+                    <span>Booked as</span>
+                    <span><span class="badge badge--sm @character.NaturalAlignment.Badge()">@character.NaturalAlignment.Label()</span></span>
+                </div>
+                <div class="kv">
+                    <span>The crowd</span>
+                    <span class="@(CrowdReading.Crossed(character.NaturalAlignment, crowd) ? "gold" : "")">@CrowdReading.Words(crowd)</span>
+                </div>
+                @if (meaning is not null)
+                {
+                    <div class="small muted">@meaning</div>
+                }
+                <div class="kv mt">
+                    <span>The character</span>
+                    <span class="@(character.Freshness < CharacterFreshness.Worn ? "gold" : "")">@CharacterFreshness.Words(character.Freshness)</span>
+                </div>
+                <div class="small muted">@CharacterFreshness.Advice(character.Freshness)</div>
+            </section>
+        }
+
         <section class="panel">
             <div class="panel__title">Stories and titles</div>
             @{ var feuds = State.FeudBook.For(w); }
