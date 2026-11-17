@@ -437,6 +437,22 @@ Each step is reachable by the booker and legible in the report before it counts 
    - Freshness is saved per wrestler. `PopularityModifier` is gone from the model, the
      generator and all 124 entries, and `ChangeGimmick` is fixed.
 
+   Measured (`CharacterProbe`, a small world of the real roster, three years, rivals booking
+   and the player idle):
+
+   | | Start | 1 year | 2 years | 3 years |
+   |---|---|---|---|---|
+   | Signed to a television rival: share worn | 0% | 7% | 11% | 19% |
+   | Their mean appeal factor | 1.000 | 0.994 | 0.980 | 0.959 |
+   | Signed to an untelevised rival: share worn | 0% | 8% | 10% | 20% |
+   | Unsigned: share worn | 0% | 1% | 2% | 1% |
+
+   The wear is a slow drift, not a collapse. By year three a fifth of the people a rival
+   books every week are worn, because rivals do not yet rest, turn or repackage anybody. That
+   is the job of steps 4–5, and why rivals are in them. A few indie regulars reach zero, which
+   is the case those steps are for. The full suite (1,285 tests) passes, including both
+   measured-median pins.
+
    Not built, written down:
    - A new context (a move to another promotion, a new brand or division) restoring
      freshness. Contracts are signed in six places, and it belongs with the repackage work.
