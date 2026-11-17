@@ -38,7 +38,7 @@ Worth stating clearly, because several of these are subtle and correct:
 | **Show position multipliers and same-kind fatigue** | `ShowSimulator` | Card composition as a real constraint. See [04](04-booking-philosophy.md) §3.8. |
 | **Crowd mood carrying between items** | `ShowSimulator` | The crowd is a continuous state across a show, not per-match. |
 | **Runtime budget with an overrun penalty** | `Show.OverrunFraction` | A real television constraint. |
-| **Gimmick freshness that decays** | `Gimmick.Freshness` | The single most important hidden variable in wrestling, already present. |
+| **Gimmick freshness that decays** | `Gimmick.Freshness` | The single most important hidden variable in wrestling, already present. **Correction (17 Nov 2026):** present as a field only. Nothing reads or decays it. The staleness that does work is act sameness in `AudienceModel`, which is a different thing. See `docs/gimmick-plan.md` Part 4. |
 | **Roster attributes spanning most of their legal range** | `RosterAttributes_UseMostOfTheirLegalRange` test | Enforcing spread so archetypes are distinguishable — a genuinely good engineering decision. |
 
 Added by work after this list was written, and right for the same kind of reason:

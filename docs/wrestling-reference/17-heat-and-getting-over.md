@@ -310,6 +310,9 @@ This is the document with the most direct engine relevance.
 - **Freshness already exists on `Gimmick` (0.0–1.0, decays with use)** — this is the right
   idea and should be extended: freshness per *match-up*, per *stipulation*, per *faction*,
   and per *catchphrase*, with the decay periods in §4.1.
+  **Correction (17 Nov 2026):** it exists as a field, but nothing reads or decays it. Match-up and
+  stipulation freshness were built separately. Character freshness is Part 4 of
+  `docs/gimmick-plan.md`.
 - **Heat transfer on match results** (§6) is the most important missing mechanic. A win over
   a lower-status opponent should be worth almost nothing; a win over a higher-status one
   should transfer meaningfully. The sim currently scores match *quality* but not *status
