@@ -1858,6 +1858,7 @@
             ? []
             : BriefCritique.Of(brief, beats, BriefSides, Promised, RuntimeLeft)
                            .Concat(BriefCritique.Casting(brief, BriefSides))
+                           .Concat(BriefCritique.Character(brief, BriefSides))
                            .ToList();
 
     /// <summary>

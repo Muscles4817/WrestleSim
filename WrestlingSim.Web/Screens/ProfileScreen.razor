@@ -336,6 +336,7 @@ else
                 {
                     <div class="small muted">@meaning</div>
                 }
+                <div class="small mt">@CharacterTypes.Summary(w)</div>
                 <div class="kv mt">
                     <span>The character</span>
                     <span class="@(character.Freshness < CharacterFreshness.Worn ? "gold" : "")">@CharacterFreshness.Words(character.Freshness)</span>

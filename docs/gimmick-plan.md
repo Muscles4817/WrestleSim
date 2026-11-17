@@ -461,6 +461,53 @@ Each step is reachable by the booker and legible in the report before it counts 
      gimmick saved.
 2. **Characters on the card** (Part 2): type and trait weights, fit, builder hints, report lines,
    and the comedy door. *The interchangeability fix.*
+
+   **Built (17 Nov 2026).** `Engine.CharacterTypes`, one table read in three places:
+   - **The show.** Each person's standing change from a match is scaled by how their
+     character reads the result:
+     - a dominant win, a hard win or a stolen win;
+     - a close loss, a beating, or a loss the crowd forgives.
+
+     A monster beaten clean pays 1.8×, and an underdog's close loss costs 0.4×. An egotist's
+     stolen win counts 1.3×, and whoever beats one clean gets the payoff, 1.15×. Comedy reads
+     at 0.85× / 0.6×, and the mystery types pay 1.4× for a clean loss. For the realist types
+     the result counts by match quality (0.85× at one star, 1.15× at five). A loner on a team
+     reads at 0.8×. The status change says why, so it shows in the show report.
+   - **The builder.** `BriefCritique.Character` says what the booked result will do before
+     the bell. A clean loss that costs 1.4× or more is a warning.
+   - **The profile.** One line on what the character is fed by and hurt by.
+
+   **What a result means comes from the brief, not the beats.** The match's booked story, how
+   each side was booked, and the finish that actually happened. A first version measured
+   "share of the match" from the beats each side worked. A showcase came out at 57% for its
+   winner against an even contest's 67%, because who works a beat is not who is on top in it.
+   Reading the brief also makes the builder's warning and the show's consequence one reading.
+   Rivals write briefs too, so their shows pay the same prices.
+
+   **Traits:** the common ones are grouped into seven effects. Feared, resilient, respected,
+   green, takes shortcuts and protected each adjust a result. Spectacle adds on big nights.
+   95 of the 124 real wrestlers have at least one trait that now does something. About a
+   hundred rarer traits stay flavour until promos (step 3).
+
+   **The stage:** `Stage` scales how much of a character the crowd feels on each kind of show.
+   Showmen and superstars are bigger at premium events, comedy plays best at house shows, and
+   realists suit the smaller rooms. Television is 1.0 for everybody. Over the shipped roster it
+   averages 1.013 at premium events and 1.000 at house shows. The pinned box-office medians
+   read cards without audience response, so they do not move.
+
+   **Wear by type:** comedy and the mystery types wear 1.2× as fast; superstars and the
+   realist types 0.85×.
+
+   Not built, written down:
+   - **Fit** (Part 1A). For a real wrestler the shipped gimmick is their real one, so fit only
+     changes anything when the character changes. It moves to step 5, with repackaging.
+   - **The comedy door's memory.** A comedy act is a poor threat while it is one. That the
+     crowd *remembers* having laughed, after a repackage, belongs to step 5. Being booked into
+     comic promos belongs to step 3.
+   - **The rival booker does not yet book *for* characters.** It pays the same prices but does
+     not protect its monsters or give its underdogs close losses on purpose.
+   - **Place on the card.** The stage reads the kind of show, not the slot. A superstar buried
+     in the opener is not yet priced.
 3. **Promos** (Part 3):
    - the three axes in the segment builder;
    - the performer data;

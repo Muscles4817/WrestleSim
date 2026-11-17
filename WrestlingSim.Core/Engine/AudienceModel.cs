@@ -149,8 +149,11 @@ namespace WrestlingSim.Engine
         public static double Response(Audience? audience, Wrestler w, PromotionTier tier, ShowType type,
                                       int daysAhead = 0)
         {
+            // Some characters are made for the big night and some for the small room
+            // (CharacterTypes.Stage) — that is part of how much of them the crowd feels.
+            double stage = CharacterTypes.Stage(w, type);
             var act = audience?.ActOf(w);
-            if (act is null) return 1.0;
+            if (act is null) return stage;
 
             // A show booked for next month is watched next month: the act will have had that
             // long off the screen by then.
@@ -163,7 +166,7 @@ namespace WrestlingSim.Engine
                 total += weight * GroupResponse(group, sameness, act.Streak);
                 weights += weight;
             }
-            return weights <= 0 ? 1.0 : total / weights;
+            return stage * (weights <= 0 ? 1.0 : total / weights);
         }
 
         /// <summary>
@@ -179,7 +182,7 @@ namespace WrestlingSim.Engine
                 total += weight * GroupResponse(group, sameness, streak);
                 weights += weight;
             }
-            return weights <= 0 ? 1.0 : total / weights;
+            return CharacterTypes.Stage(w, type) * (weights <= 0 ? 1.0 : total / weights);
         }
 
         /// <summary>Why an act is wearing, in words, or null when it is not.</summary>

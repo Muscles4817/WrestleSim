@@ -632,8 +632,22 @@ namespace WrestlingSim.Engine
                     engineResult.Winner, engineResult.Loser, engineResult.StarRating, weight, familiarity,
                     sideCount: match.Plan.Sides.Count, story: HeatEconomy.StoryOf(feud.Intensity));
 
-            foreach (var raw in outcome.All)
+            // Each character reads the result its own way (CharacterTypes): a monster beaten
+            // clean pays more than most, an underdog's close loss costs little, a heel who
+            // steals one is doing their job. Read from who actually had the match.
+            var winners = engineResult.WinningSide.Count > 0 ? engineResult.WinningSide : [engineResult.Winner];
+            var losers  = engineResult.LosingSide.Count > 0 ? engineResult.LosingSide : [engineResult.Loser];
+
+            foreach (var unread in outcome.All)
             {
+                bool won  = winners.Contains(unread.Wrestler);
+                int  sideIndex = match.Plan.Sides.FindIndex(s => s.Members.Contains(unread.Wrestler));
+                var  side = sideIndex >= 0 ? match.Plan.Sides[sideIndex] : null;
+                var  kind = CharacterTypes.Read(won, weight, CharacterTypes.ShareFor(match.Plan.Brief, won, sideIndex));
+                var  raw  = CharacterTypes.Apply(unread, CharacterTypes.Of(
+                    unread.Wrestler, kind, engineResult.StarRating, onATeam: (side?.Members.Count ?? 1) > 1,
+                    beaten: won ? losers : null));
+
                 // Overness *won* on a brand show is scaled by what the brand is worth.
                 // Losses are not: a bad night costs the same wherever it happens, and
                 // making the B-show a safe place to lose would invert the whole point.

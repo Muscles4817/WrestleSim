@@ -53,6 +53,16 @@ namespace WrestlingSim.Tests
                 }
             }
 
+            // Real people only, so the same people are compared at both ends.
+            var real = career.Roster.Where(w => !w.IsGenerated).ToList();
+            var startOver = real.ToDictionary(w => w.Id, w => w.Overness);
+            void ByType()
+            {
+                Say("  change in overness by character type, real roster (mean, n):");
+                foreach (var g in real.GroupBy(w => w.Gimmick.Type).OrderBy(g => g.Key.ToString()))
+                    Say($"    {g.Key,-15} {g.Average(w => w.Overness - startOver[w.Id]),6:+0.0;-0.0}  n={g.Count()}");
+            }
+
             Report("start");
             var end = day.AddYears(years);
             var next = day.AddMonths(6);
@@ -61,6 +71,7 @@ namespace WrestlingSim.Tests
                 if (!career.AdvanceOneDay()) { Say("stopped: a show is due"); break; }
                 if (career.CurrentDate >= next) { Report($"after {(next.DayNumber - day.DayNumber) / 30} months"); next = next.AddMonths(6); }
             }
+            ByType();
         }
     }
 }

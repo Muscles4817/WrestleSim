@@ -61,6 +61,7 @@ namespace WrestlingSim.Engine
         /// </summary>
         public static double WearPerAppearance(Wrestler w, ShowType type) =>
             BaseWear(w.Gimmick?.Durability)
+            * CharacterTypes.WearRate(w.Gimmick?.Type)
             * (1.3 - 0.12 * Math.Clamp(w.Charisma, 0, 5))
             * (type == ShowType.HouseShow ? 0.3 : 1.0);
 
