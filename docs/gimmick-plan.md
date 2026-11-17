@@ -76,6 +76,21 @@ How promos work (`SegmentSimulator`):
 - **Rivals turn and repackage their wrestlers too, when it makes sense to.** One set of
   consequences (#102): a rival's turn is judged by the same model as the player's.
 
+**17 Nov — the open questions, answered.**
+
+- **Promos have more than two axes.** The first draft's 2×2 is replaced by Part 3's three axes:
+  form, staging (seated, roaming, set piece, physical) and register (menacing, angry, emotional,
+  fearful, funny and more). The booker sets them per segment.
+- **The writers start as a creative team rated 1–10, upgraded with money,** like a coach in a
+  football management career mode. Named writers come later.
+- **Form is chosen per segment**, pre-filled from a standing note on each wrestler.
+- **`PopularityModifier` is deleted.**
+- **A turn can be a single segment or the payoff of a build-up.** The wrestler does things
+  associated with the other alignment over weeks, building anticipation, and then turns
+  (Part 5).
+- **Fit and promo skill are shown in words that sharpen with time.**
+- **Changing a real wrestler's character is allowed, behind a toggle** (Part 6).
+
 ## 1. What a character is
 
 The gimmick has three layers. Each layer does a different job, and changing each one costs
@@ -91,7 +106,7 @@ On top of the gimmick sit three things that belong to the **performer**, not the
 come with the wrestler into any gimmick.
 
 - **Charisma.** Presence: how much people want to look at them. Unchanged.
-- **Promo skill** (new, Part 3): how well they talk, by form and register.
+- **Promo skill** (new, Part 3): how well they talk, by form, staging and register.
 - **Fit** (new, Part 1A): how much of the gimmick is really them.
 
 ### 1A. Fit
@@ -156,69 +171,88 @@ less (Part 8).
 
 ## 3. Promos as performances
 
-### 3.1 The performer: promo skill by form and register
+*Rewritten 17 Nov 2026 after the owner rejected the first draft's 2×2 (scripted or improvised
+against serious or comic) as too narrow. "Is the entire breadth of promos serious or comedic?"
+No, and it is not only scripted or improvised either.*
 
-Proposed shape (open question 1): **a 2×2 per performer**, scripted or improvised against serious
-or comic.
+### 3.1 What a promo asks of somebody
 
-| | Serious | Comic |
+Every promo is a request on several axes at once. **The booker sets them when booking the
+segment.** Each one has a default taken from the gimmick, so a quick booking needs no choices.
+
+| Axis | The options | Default |
 |---|---|---|
-| **Scripted** | Can deliver written serious material with conviction | Can land written jokes |
-| **Improvised** | Can cut a serious promo off the cuff | Can riff, work the crowd, be funny live |
+| **Form**: how much is written | Fully scripted · bullet points (beats written, words theirs) · free | The wrestler's standing note (§3.4), else bullet points |
+| **Staging**: what they are physically asked to do | Seated or still (interview, desk, sit-down) · standing in the ring · free to roam and work the crowd · a set piece (produced, props, a vignette) · physical (the promo turns into or includes a brawl) | From the segment type |
+| **Register**: what they are meant to make the audience feel | Menacing · angry · emotional or vulnerable · fearful · funny · arrogant · inspirational · cold and matter-of-fact | From the gimmick's tone |
 
-This expresses every case the owner named:
+The register list is a starting set and can grow. It replaces the gimmick's `Tone` as the thing
+that matters. Tone becomes the character's *natural* register, the default.
 
-- bad at promos: low everywhere;
-- worse at one form: one row low;
-- good improvising comedy but needs a script for serious: improvised-comic high,
-  improvised-serious low, scripted-serious fine.
+A promo out of character costs something. A Monster asked to be fearful, or a comedy act asked
+to be menacing, is working against the gimmick. Sometimes that is the point (a monster afraid of
+somebody tells a story), but it is harder to land.
 
-Charisma stays a separate thing. A magnetic person can still be a poor talker, which is the case
-managers exist for.
+### 3.2 What a performer is good at
 
-The gimmick's **tone** sets the register a promo is in by default (Humorous → comic, Serious,
-Violent or Cryptic → serious). A segment can be played against it, at a cost, using the
-performer's skill in the other column.
+A full matrix of every form × staging × register combination is 120 numbers per person. Nobody
+could research that for 124 real wrestlers, and nobody could read it. The skill is **factored**
+into pieces that can be judged from what is publicly visible, and that combine:
 
-### 3.2 The writers
+- **Form.** Two ratings: *delivery* (making written words sound like their own) and
+  *improvisation* (finding it live). Bullet points draw on both.
+- **Staging.** A rating for each: stillness (holding a seated or quiet promo), ring presence,
+  crowd work (roaming and using the crowd as a scene partner, doc 19 §3.3), set-piece acting,
+  and physicality (selling and brawling inside a promo).
+- **Register.** Each performer has **one to three natural registers**, rated, and a **range**
+  figure for everything else. A natural register can carry a **form lean** ("menacing, best
+  free"; "emotional, needs a script"). The lean is what expresses the owner's example: good at
+  improvised comedy, but needs a script when it is serious.
+- **Charisma** stays separate. It is presence, not talking.
 
-A scripted promo is only as good as what is on the page. Proposed for the first build (open
-question 2): **the promotion's creative team as a quality figure**, set by what the promotion
-spends and its tier. It also has a **range**: some rooms write excellent serious drama and poor
-comedy. Writers as named, hireable staff are the fuller version, recorded as later.
+A promo's skill reading is the performer's form rating × their staging rating × their rating
+in the register asked for. If the register has a lean, the lean adjusts the form part. Some
+people are poor everywhere. Some are superb in one corner and lost outside it. That variety *is*
+the interchangeability fix in promo form: two wrestlers with the same charisma want completely
+different promos.
 
-### 3.3 The quality of a promo
+### 3.3 The writers: a creative team you upgrade
 
-- **Scripted:** writing quality in that register × the performer's scripted skill in that
-  register × how well the material fits the gimmick. Variance comes from the people, not the
-  form.
-- **Improvised:** the performer's improvised skill in that register, partner chemistry in a
-  confrontation, and psychology for staying on the rails. Variance again comes from the people.
-- **Both can fail, in different ways.** A scripted promo can be wooden: a performer visibly
-  reciting lines they cannot sell (doc 19 §3.4: "reciting a script" kills a promo). An improvised
-  one can lose the thread or go dead. Neither form carries a built-in bonus, and the flat ×1.15
-  and the "scripted never botches" rule are removed.
-- **Ceiling and floor are properties of the people.** A great writing team with a great deliverer
-  gives the best, most consistent results. A great improviser without a script gives brilliance.
-  A poor talker improvising gives disasters, and a poor talker given a script may only be dull.
-  None of that is a rule about the form; it falls out of the inputs.
+**Decided 17 Nov.** The first build is a **creative team rated 1–10, upgraded with money**, like
+a coach in a football management career mode. Each step costs more than the last, and there is a
+weekly cost to keep it. A promotion's tier sets where it starts and caps how far it can go
+without the budget. Named, hireable writers are the later, fuller version.
 
-### 3.4 Who decides
+Writing quality matters in proportion to how much is written. It is everything in a fully
+scripted promo, part of a bullet-point one, and nothing in a free one.
 
-The player chooses at three levels (open question 3 asks which to build first):
+### 3.4 Who decides form
 
-- a **promotion default** (script everything, script nothing, or by person);
-- a **per-wrestler instruction**, e.g. "let them talk" or "script their serious material";
-- a **per-segment override** in the segment builder, which already has `IsScripted`.
+The booker chooses form per segment in the segment builder (`IsScripted` becomes the three-way
+form). To spare setting it every time, each wrestler can carry a **standing note**, such as
+"always give them free rein" or "script anything serious", which pre-fills the choice. The
+builder shows the expected read in words ("far better off the cuff when angry"). The words
+sharpen the longer somebody has worked for you, following the existing `Scouting` pattern
+(decided).
 
-The builder shows what each choice would get from these people ("X is far better off the cuff"),
-in words that sharpen the longer somebody has worked for you, following the existing `Scouting`
-pattern.
+### 3.5 The quality of a promo
 
-### 3.5 Legibility
+- **Scripted:** writing × the performer's delivery × staging × register. **Free:** the
+  performer's improvisation × staging × register, plus partner chemistry in a confrontation and
+  psychology for staying on the rails. **Bullet points:** a blend of both.
+- **Both forms can fail, in their own ways.** Scripted fails as wooden recital (doc 19 §3.4).
+  Free fails as losing the thread, rambling, or dead air. Neither form carries a built-in bonus.
+  The flat ×1.15 for unscripted and the "scripted never botches" rule are removed.
+- How consistent a promo is depends on the people. A strong writing team with a strong deliverer
+  gives reliable quality. A great improviser gives occasional brilliance. A poor talker improvising
+  gives disasters, and a poor talker given a script may only be dull. None of that is a rule about
+  the form; it comes from the inputs.
 
-The report says why a promo landed or did not: "Scripted, and it showed — every line sounded
-read," or "Handed the microphone, X found the crowd and never let go."
+### 3.6 Legibility
+
+The report says why a promo landed or did not, naming the axis that decided it: "Scripted, and it
+showed: every line sounded read." "Asked to be afraid, and nobody bought it from a man that
+size." "Given the run of the place, she found the crowd and never let go."
 
 ## 4. A character's life: freshness
 
@@ -271,7 +305,23 @@ After a turn:
 - appeal moves group by group (hardcore fans often follow a cool turn that casual fans resist);
 - the turn becomes a feud history tag, so the revenge spot exists to be booked.
 
-Teasing a turn over weeks (seeds, doc 19 §5.2 rule 1) is open question 5.
+**Building to a turn (decided 17 Nov).** A turn can be a single segment, cold. It can also be
+the payoff of a build-up, which is how the best turns work (doc 19 §5.2 rule 1: "surprise but
+makes sense in retrospect").
+
+- **Teases** are things the booker has the wrestler do that belong to the other alignment: a face
+  who cheats to win, or who shoves the referee; a heel who saves a babyface, or refuses to cheat.
+  They can be booked as finishes, match beats or segment actions, and most already exist.
+- Each tease adds **turn anticipation**. The crowd's reading drifts toward the other side, and
+  the eventual turn pays more.
+- The commentary notices ("that is twice in a month he has needed the ropes"), so the build is
+  legible while it happens.
+- **Anticipation does not keep forever.** Tease too long without paying it off, and the crowd
+  stops believing it is coming (the doc 12 §4 window). Tease and then don't turn, and the crowd
+  is left with a confused character: a half-turn, which doc 19 §5.2 rule 3 warns against.
+- A tease can also be a misdirection: the wrestler looks like they are turning and doesn't, and
+  the swerve has its own, smaller payoff. Swerves wear out fast (doc 17 §4.1: two to three a
+  year).
 
 ## 6. Repackage and evolution
 
@@ -292,9 +342,17 @@ core and periodic surface reinvention (doc 19 §6.3). It costs less, restores le
 **Names.** A new name must not be any real wrestler's ring name or real name. It is checked
 against the database, the generator's taken names and `PreviousNames`.
 
-**Real people.** Turning or repackaging a real wrestler changes the *character* inside one save.
-`RealName` and the database are untouched, so it stays within CLAUDE.md's rule. *(Owner to
-confirm.)*
+**Real people (decided 17 Nov): a toggle.** A career option, "Allow changing real wrestlers'
+characters", on by default. When it is on, the player and the rivals can turn and repackage
+anybody. A change affects only the *character* inside one save; `RealName` and the database are
+untouched, so it stays within CLAUDE.md's rule. When it is off:
+
+- real wrestlers keep the shipped name and type;
+- they can still evolve (presentation within the type);
+- they can still turn, because alignment is booking, not identity. *(Owner to confirm that turns
+  stay allowed with the toggle off.)*
+
+Generated wrestlers can always be changed.
 
 ## 7. Rivals
 
@@ -324,9 +382,16 @@ reports a rival's turns and repackages.
 
 ## 9. The roster data
 
-- **Promo skill (2×2) for all 124 real people**, judged relative to people already in the file
-  and sourced the way `roster-rubric.md` requires, with a rubric section added for it. This is
-  the largest piece of data work in the plan.
+- **Promo skill for all 124 real people**, judged relative to people already in the file and
+  sourced the way `roster-rubric.md` requires, with a rubric section added for it. Each person
+  needs:
+  - delivery and improvisation;
+  - the five staging ratings;
+  - one to three natural registers, each with an optional form lean;
+  - a range figure.
+
+  That is about ten judgements a person. They come from watching what the person is publicly
+  known for (doc 19 §3.3), and judging them is the largest piece of data work in the plan.
 - Traits reviewed so that they are meaningful, now that they will do something.
 - Generated wrestlers draw promo skill from their template, shifted like everything else.
 - **Old saves:** load with promo skill derived from charisma and psychology, fit high for the
@@ -345,10 +410,14 @@ Each step is reachable by the booker and legible in the report before it counts 
    - The doc corrections are made.
 2. **Characters on the card** (Part 2): type and trait weights, fit, builder hints, report lines,
    and the comedy door. *The interchangeability fix.*
-3. **Promos** (Part 3): the 2×2 data, the creative team, policy at the chosen levels, and the
-   rebuilt promo quality.
-4. **Turns** (Part 5), with rivals.
-5. **Repackage and evolution** (Part 6), with rivals.
+3. **Promos** (Part 3):
+   - the three axes in the segment builder;
+   - the performer data;
+   - the upgradable creative team;
+   - standing notes;
+   - the rebuilt promo quality.
+4. **Turns** (Part 5): the cold turn, teases and anticipation, with rivals.
+5. **Repackage and evolution** (Part 6): the real-people toggle, with rivals.
 6. Later, written down so as not to look finished: managers and mouthpieces (doc 19 §7);
    entrance and music as an investment (doc 19 §8); named writers as staff; motivation as a
    field; chemistry between particular pairs; markets that bring the other fan groups into a
@@ -356,15 +425,10 @@ Each step is reachable by the booker and legible in the report before it counts 
 
 ## 11. Open questions
 
-1. **Promo skill shape.** The 2×2 (scripted or improvised against serious or comic), or
-   something else?
-2. **Writers.** A creative-team figure with a range now and named staff later, or named writers
-   from the start?
-3. **Who decides scripting.** Promotion default, per wrestler, per segment: all three, or which
-   first?
-4. **`PopularityModifier`.** Delete it, or keep it as something specific?
-5. **Teasing a turn.** A one-segment turn first, or a multi-week setup from the start?
-6. **How visible.** Should fit and promo skill be shown in words that sharpen with time (like
-   potential), or as numbers?
-7. **Real people.** Confirm that turning and repackaging a real wrestler's character inside a
-   save is acceptable.
+Questions 1–7 of the first draft were answered on 17 Nov (§0A). Still open:
+
+1. **The register list.** Is the starting set right: menacing, angry, emotional or vulnerable,
+   fearful, funny, arrogant, inspirational, cold and matter-of-fact? What is missing?
+2. **Turns with the real-people toggle off.** Still allowed (alignment is booking), or locked
+   too?
+3. **The creative team's ceiling by tier.** Can an indie buy its way to 10, or does tier cap it?
