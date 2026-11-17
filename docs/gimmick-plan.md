@@ -89,7 +89,18 @@ How promos work (`SegmentSimulator`):
   associated with the other alignment over weeks, building anticipation, and then turns
   (Part 5).
 - **Fit and promo skill are shown in words that sharpen with time.**
-- **Changing a real wrestler's character is allowed, behind a toggle** (Part 6).
+- **Changing a real wrestler's character is allowed. Only renaming them sits behind a toggle**
+  (Part 6).
+
+**17 Nov — the last three.**
+
+- **The register list stands**, more or less. It can grow when a gap shows up.
+- **Real wrestlers can always be turned.** The toggle covers **names only**, because some players
+  will not want a real person's name changed.
+- **Any promotion can buy its creative team up to 10.** Tier sets where it starts, not where it
+  can end up. The 1–10 team is explicitly a **stopgap** for a writers' room (§3.3), where
+  writers have their own strengths and weaknesses. Buying the most expensive team is not the
+  answer there; combining writers is.
 
 ## 1. What a character is
 
@@ -220,8 +231,16 @@ different promos.
 
 **Decided 17 Nov.** The first build is a **creative team rated 1–10, upgraded with money**, like
 a coach in a football management career mode. Each step costs more than the last, and there is a
-weekly cost to keep it. A promotion's tier sets where it starts and caps how far it can go
-without the budget. Named, hireable writers are the later, fuller version.
+weekly cost to keep it. A promotion's tier sets where it starts. Any promotion, an indie
+included, can buy its way to 10 if it can pay.
+
+**This is a stopgap, and it is written down as one.** The intended system is a **writers' room**
+of named, hireable writers. Each writer has their own strengths and weaknesses: by register
+(superb at menace, hopeless at comedy), by staging (great set pieces, flat sit-downs), and by
+the performers they write well for. The room's quality for a given promo is drawn from the
+writers suited to it, so the decision is about the *combination* you hire to cover what your
+roster needs, not about buying the most expensive person. A 1–10 dial cannot express that, which
+is why it is temporary.
 
 Writing quality matters in proportion to how much is written. It is everything in a fully
 scripted promo, part of a bullet-point one, and nothing in a free one.
@@ -342,17 +361,14 @@ core and periodic surface reinvention (doc 19 §6.3). It costs less, restores le
 **Names.** A new name must not be any real wrestler's ring name or real name. It is checked
 against the database, the generator's taken names and `PreviousNames`.
 
-**Real people (decided 17 Nov): a toggle.** A career option, "Allow changing real wrestlers'
-characters", on by default. When it is on, the player and the rivals can turn and repackage
-anybody. A change affects only the *character* inside one save; `RealName` and the database are
-untouched, so it stays within CLAUDE.md's rule. When it is off:
+**Real people (decided 17 Nov).** Real wrestlers can be turned, repackaged and evolved like
+anybody else. A change affects only the *character* inside one save; `RealName` and the database
+are untouched, so it stays within CLAUDE.md's rule.
 
-- real wrestlers keep the shipped name and type;
-- they can still evolve (presentation within the type);
-- they can still turn, because alignment is booking, not identity. *(Owner to confirm that turns
-  stay allowed with the toggle off.)*
-
-Generated wrestlers can always be changed.
+The one thing behind a toggle is the **name**. A career option, "Allow renaming real
+wrestlers", is on by default. When it is off, a real wrestler's repackage changes type, tone,
+alignment and presentation but keeps the shipped ring name, and rivals obey the same rule.
+Generated wrestlers can always be renamed.
 
 ## 7. Rivals
 
@@ -419,16 +435,12 @@ Each step is reachable by the booker and legible in the report before it counts 
 4. **Turns** (Part 5): the cold turn, teases and anticipation, with rivals.
 5. **Repackage and evolution** (Part 6): the real-people toggle, with rivals.
 6. Later, written down so as not to look finished: managers and mouthpieces (doc 19 §7);
-   entrance and music as an investment (doc 19 §8); named writers as staff; motivation as a
+   entrance and music as an investment (doc 19 §8); **the writers' room**, which replaces the 1–10
+   team (§3.3); motivation as a
    field; chemistry between particular pairs; markets that bring the other fan groups into a
    crowd.
 
 ## 11. Open questions
 
-Questions 1–7 of the first draft were answered on 17 Nov (§0A). Still open:
-
-1. **The register list.** Is the starting set right: menacing, angry, emotional or vulnerable,
-   fearful, funny, arrogant, inspirational, cold and matter-of-fact? What is missing?
-2. **Turns with the real-people toggle off.** Still allowed (alignment is booking), or locked
-   too?
-3. **The creative team's ceiling by tier.** Can an indie buy its way to 10, or does tier cap it?
+None. Everything raised so far was answered on 17 Nov (§0A). New questions go here as the build
+turns them up.
