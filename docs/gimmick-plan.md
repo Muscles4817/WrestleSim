@@ -634,6 +634,11 @@ Each step is reachable by the booker and legible in the report before it counts 
    - **Saved:** the booked alignment (real wrestlers' gimmicks reload from the roster file, so it
      has to be), turn history, anticipation, and each segment's turn and tease.
 
+   Measured (`CharacterProbe`, three years of a small world, the player idle): rivals turned 37
+   times across 36 people, about one in a hundred performers a year. Every turn was for a reason,
+   and nobody was turned twice inside two years. Most were heel turns of worn or booed faces. The
+   full suite (1,330) passes.
+
    Not built, written down:
    - **The swerve.** A tease that deliberately does not pay off, with its own smaller payoff.
    - **Appeal moving group by group** after a turn (hardcore fans following a cool turn that
