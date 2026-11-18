@@ -498,6 +498,32 @@ Each step is reachable by the booker and legible in the report before it counts 
    **Wear by type:** comedy and the mystery types wear 1.2× as fast; superstars and the
    realist types 0.85×.
 
+   **A bug this found:** a gimmick built without a type was silently a `Monster`, the enum's
+   first value, so every test wrestler paid a monster's prices. `GimmickType.Unspecified` is
+   appended and is now the default, priced neutrally. One test caught it.
+
+   Measured (`CharacterProbe`, the same three-year small world, the real roster, against the
+   commit before step 2):
+
+   | Type (n) | Before | After |
+   |---|---|---|
+   | Underdog (9) | −18.1 | −4.2 |
+   | Showman (13) | −30.4 | −23.4 |
+   | Daredevil (9) | −37.7 | −30.3 |
+   | Superstar (8) | −15.9 | −12.0 |
+   | Egotist (16) | −22.5 | −21.5 |
+   | Monster (15) | −36.7 | −40.9 |
+   | Realist (9) | −35.0 | −38.7 |
+   | Cryptic, Cult Leader (2 each) | −6, −6 | −33, −19 |
+   | **All 124** | **−26.8** | **−25.8** |
+
+   Overness change over three years, mean points. The whole roster moves the same as before,
+   so the types change who rises and falls, not the total. Underdogs gain most, because rivals
+   hand out close losses without meaning to. Monsters and the mystery types lose more, because
+   rivals beat them clean without knowing they should not. That is the case for the rival
+   booker booking for characters, below. The three-year fall itself, about 26 points for
+   everybody, was there before this work and is not about characters.
+
    Not built, written down:
    - **Fit** (Part 1A). For a real wrestler the shipped gimmick is their real one, so fit only
      changes anything when the character changes. It moves to step 5, with repackaging.

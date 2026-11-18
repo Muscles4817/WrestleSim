@@ -122,8 +122,8 @@ namespace WrestlingSim.Engine
 
             var gimmick = new Gimmick(ringName)
             {
-                Type              = t.Gimmick?.Type ?? default,
-                PersonaDescriptor = Descriptor(t.Gimmick?.Type ?? default),
+                Type              = t.Gimmick?.Type ?? GimmickType.Unspecified,
+                PersonaDescriptor = Descriptor(t.Gimmick?.Type ?? GimmickType.Unspecified),
                 Tone              = t.Gimmick?.Tone ?? default,
                 NaturalAlignment  = t.Gimmick?.NaturalAlignment ?? default,
                 Durability        = t.Gimmick?.Durability ?? default,

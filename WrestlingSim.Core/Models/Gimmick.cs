@@ -11,7 +11,7 @@ namespace WrestlingSim.Models
     public class Gimmick
     {
         public string Name { get; set; }
-        public GimmickType Type { get; set; }                // Monster, Anti-Hero, Showman, etc.
+        public GimmickType Type { get; set; } = GimmickType.Unspecified; // Monster, Anti-Hero, Showman, etc.
         public string PersonaDescriptor { get; set; }        // "Cursed Cowboy", "Corporate Sellout"
         public GimmickTone Tone { get; set; }                // Serious, Comedic, Cryptic, etc.
         public Alignment NaturalAlignment { get; set; }      // Face, Heel, Tweener
