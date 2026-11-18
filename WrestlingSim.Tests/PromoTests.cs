@@ -162,7 +162,7 @@ namespace WrestlingSim.Tests
                                                           Promos.NaturalRegister(w.Gimmick.Tone), writing).Expected / 20.0);
             double was = shipped.Average(w => w.Charisma);
             output.WriteLine($"mean promo {now:F4} on the 0–5 scale; mean charisma {was:F4}; centring {was - now:F4} (constant {Promos.Centring})");
-            Assert.Equal(was - now, Promos.Centring, 3);
+            Assert.Equal(Promos.Centring, was - now, 3);
         }
 
         // ── The creative team ────────────────────────────────────────────────

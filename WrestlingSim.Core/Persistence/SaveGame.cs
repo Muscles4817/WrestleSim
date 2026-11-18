@@ -503,6 +503,17 @@ namespace WrestlingSim.Persistence
         /// </summary>
         public double? Freshness { get; set; }
 
+        /// <summary>
+        /// Their booked alignment, now that a turn can change it; null in a save from before
+        /// turns, which keeps the roster's. With the turn history and any teasing in progress.
+        /// </summary>
+        public Alignment? Alignment { get; set; }
+        public string? LastTurned { get; set; }
+        public int Turns { get; set; }
+        public double TurnAnticipation { get; set; }
+        public Alignment? TeasedToward { get; set; }
+        public string? TeaseSince { get; set; }
+
         /// <summary>The stock: how over they are.</summary>
         public double Overness { get; set; }
 
@@ -774,6 +785,12 @@ namespace WrestlingSim.Persistence
         public PromoForm? Form { get; set; }
         public PromoStaging? Staging { get; set; }
         public PromoRegister? Register { get; set; }
+
+        /// <summary>Who the segment turns or teases, by id, and toward what.</summary>
+        public string? TurnWho { get; set; }
+        public Alignment? TurnTo { get; set; }
+        public string? TeaseWho { get; set; }
+        public Alignment? TeaseTo { get; set; }
         public List<string> Participants { get; set; } = new();
         public List<SegmentActionDto> Actions { get; set; } = new();
         public List<FeudHistoryTag> HistoryTags { get; set; } = new();

@@ -281,6 +281,48 @@
             </div>
         }
 
+        @* A turn, or a tease toward one (docs/gimmick-plan.md Part 5). The alignment is the
+           booker's to change; what it is worth — the crowd, the moment, the build, how
+           often — is forecast here before it is booked. *@
+        <div class="mt">
+            <div class="small muted">Turn somebody</div>
+            <div class="row">
+                <select class="input input--sm" value="@(segment.Turn?.Who.Id ?? "")" @onchange="e => SetMove(e.Value?.ToString(), turn: true)">
+                    <option value="">nobody</option>
+                    @foreach (var w in segment.Participants) { <option value="@w.Id">@w.RingName</option> }
+                </select>
+                @if (segment.Turn is { } turn)
+                {
+                    <select class="input input--sm" value="@turn.To" @onchange="e => segment.Turn = turn with { To = Enum.Parse<Alignment>(e.Value!.ToString()!) }">
+                        @foreach (var a in Enum.GetValues<Alignment>().Where(a => a != turn.Who.Gimmick?.NaturalAlignment)) { <option value="@a">to @Turns.Label(a)</option> }
+                    </select>
+                }
+            </div>
+            @if (segment.Turn is { } booked && booked.Who.Gimmick?.NaturalAlignment != booked.To)
+            {
+                var forecast = Turns.Forecast(booked.Who, booked.To, Kind, Today);
+                <div class="notice notice--info mt">
+                    <strong>@booked.Who.RingName turning @Turns.Label(booked.To): @Turns.Words(forecast.Payoff).</strong>
+                    @foreach (var why in forecast.Because) { <div class="small">@why</div> }
+                </div>
+            }
+            <div class="small muted mt">Or tease one — something the other side would do</div>
+            <div class="row">
+                <select class="input input--sm" value="@(segment.Tease?.Who.Id ?? "")" @onchange="e => SetMove(e.Value?.ToString(), turn: false)">
+                    <option value="">nobody</option>
+                    @foreach (var w in segment.Participants) { <option value="@w.Id">@w.RingName</option> }
+                </select>
+                @if (segment.Tease is { } tease)
+                {
+                    <span class="small">toward @Turns.Label(tease.To)</span>
+                }
+            </div>
+            @if (segment.Tease is { } te && Turns.AnticipationWords(te.Who) is { } building)
+            {
+                <div class="small muted">@building</div>
+            }
+        </div>
+
         <div class="row mt small">
             <span class="muted">Cast:</span>
             @foreach (var w in segment.Participants)
@@ -653,4 +695,19 @@
 
     /// <summary>The promotion's creative team; exhibition writes at an ordinary level.</summary>
     private int Creative => State.Career is { } c ? Promos.CreativeOf(c.Promotion) : 5;
+
+    /// <summary>The kind of show this segment is for — a turn on a premium event is a bigger moment.</summary>
+    [Parameter] public ShowType Kind { get; set; } = ShowType.Television;
+
+    private DateOnly Today => State.Career?.CurrentDate ?? DateOnly.FromDateTime(DateTime.Today);
+
+    /// <summary>Sets who the segment turns or teases; the direction is the other side from where they stand.</summary>
+    private void SetMove(string? id, bool turn)
+    {
+        if (segment is null) return;
+        var w = segment.Participants.FirstOrDefault(p => p.Id == id);
+        AlignmentMove? move = w is null ? null
+            : new AlignmentMove(w, w.Gimmick?.NaturalAlignment == Alignment.Heel ? Alignment.Face : Alignment.Heel);
+        if (turn) segment.Turn = move; else segment.Tease = move;
+    }
 }

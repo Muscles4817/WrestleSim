@@ -600,6 +600,52 @@ Each step is reachable by the booker and legible in the report before it counts 
      - Two real names may be wrong: Talla Tonga ("Taula Fifita") and Zaria ("Daria Hodder").
        One agent recalled otherwise, from memory and unchecked.
 4. **Turns** (Part 5): the cold turn, teases and anticipation, with rivals.
+
+   **Built (18 Nov 2026).** `Engine.Turns`:
+   - **Booked as a segment.** The segment builder can turn any participant, or tease one, and
+     forecasts the turn before it is booked ("Cool Heel turning face: huge"), giving the reasons.
+     A betrayal segment is now a heel turn for a betrayer who is not already a heel.
+   - **Priced on what doc 19 §5 says decides it.** A payoff of 1.0 is an ordinary turn:
+     - **The crowd's reading:** a cheered heel turning face pays ×1.6; a booed face turning heel
+       ×1.3; turning against the crowd's feeling ×0.5–0.9.
+     - **The asymmetry:** face turns start at 0.75, heel turns at 1.0, a half-turn to tweener at
+       0.5.
+     - **The moment:** a premium event ×1.3, a house show ×0.5.
+     - **How often:** turning again inside a year pays ×0.3, inside two ×0.6, inside three ×0.85.
+     - **The build:** each tease adds 0.25 of anticipation, up to 1, worth up to ×1.8.
+     - **Comedy:** a comic character's heel turn pays ×0.5.
+   - **A turn:**
+     - flips the booked alignment;
+     - restores the character's freshness by up to 60% of the way to 0.9;
+     - clears the build;
+     - pays momentum (30 × payoff) and a little standing (3 × payoff, damped).
+
+     A big turn lifts its segment. The report and the news say who turned and how it landed.
+   - **Teases:**
+     - Booked in a segment, or arising in a match: a babyface who wins by interference, or a heel
+       who works the "allies rejected" beat.
+     - Anticipation moves the crowd's reading toward where the wrestler is heading before the turn
+       (`PerformerProfile.Favour`), and the profile says the crowd senses it coming.
+     - It halves in 45 days, and in 15 once the teasing is over 120 days old, when the crowd stops
+       believing (doc 12 §4's window).
+   - **Rivals** consider it monthly, for anybody whose crowd has crossed the booking (15% a month,
+     scaled by booking competence) or whose character is worn (6%), and not turned in two years.
+     Their turns are priced by the same `Execute`, and reported in the news.
+   - **Saved:** the booked alignment (real wrestlers' gimmicks reload from the roster file, so it
+     has to be), turn history, anticipation, and each segment's turn and tease.
+
+   Measured (`CharacterProbe`, three years of a small world, the player idle): rivals turned 37
+   times across 36 people, about one in a hundred performers a year. Every turn was for a reason,
+   and nobody was turned twice inside two years. Most were heel turns of worn or booed faces. The
+   full suite (1,330) passes.
+
+   Not built, written down:
+   - **The swerve.** A tease that deliberately does not pay off, with its own smaller payoff.
+   - **Appeal moving group by group** after a turn (hardcore fans following a cool turn that
+     casual fans resist).
+   - **A turn feud tag.** A betrayal already stamps `Betrayal`; a face turn stamps nothing yet.
+   - **Teases in the match builder as an explicit choice.** Today they arise from the finish and
+     the beats.
 5. **Repackage and evolution** (Part 6): the real-people toggle, with rivals.
 6. Later, written down so as not to look finished: managers and mouthpieces (doc 19 §7);
    entrance and music as an investment (doc 19 §8); **the writers' room**, which replaces the 1–10

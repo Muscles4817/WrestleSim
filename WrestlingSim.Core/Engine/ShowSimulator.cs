@@ -50,6 +50,9 @@ namespace WrestlingSim.Engine
         /// <summary>The promotion's creative team, 1–10, for whatever of a promo is written.</summary>
         private readonly int _creative;
 
+        /// <summary>Tonight's kind of show — a turn on a premium event is a bigger moment.</summary>
+        private ShowType _showType = ShowType.Television;
+
         public ShowSimulator(
             FeudBook feudBook,
             int? seed = null,
@@ -85,6 +88,7 @@ namespace WrestlingSim.Engine
             // Freshness is measured against the night the show happens, not the night it
             // was written — see MatchEngine.Execute.
             var showDate = DateOnly.FromDateTime(show.Date);
+            _showType = show.Type;
 
             // ── Brands ───────────────────────────────────────────────────────
             // Read once, before anything on the card has run: the crossover bonus and the
@@ -664,6 +668,16 @@ namespace WrestlingSim.Engine
                 if (change.IsMeaningful) showResult.StatusChanges.Add(change);
             }
 
+            // ── Teases ───────────────────────────────────────────────────────
+            // Something the other alignment would do (plan Part 5): a babyface who needed
+            // somebody else to win it, or a heel who turned away help.
+            if (match.Plan.Brief?.Finish == FinishKind.Interference)
+                foreach (var w in winners.Where(w => w.Gimmick?.NaturalAlignment == Alignment.Face))
+                    itemResult.Notes.Add(Turns.Tease(w, Alignment.Heel, showDate));
+            foreach (var beat in engineResult.BeatResults.Where(b => b.BeatType == BeatType.AlliesRejected))
+                if (beat.Worker is { } refuser && refuser.Gimmick?.NaturalAlignment == Alignment.Heel)
+                    itemResult.Notes.Add(Turns.Tease(refuser, Alignment.Face, showDate));
+
             // ── Championships ────────────────────────────────────────────────
             ResolveTitles(match, engineResult, weight, itemResult, showResult, showDate, showName);
 
@@ -847,6 +861,20 @@ namespace WrestlingSim.Engine
             itemResult.SegmentResult = segResult;
 
             foreach (var line in segResult.PromoLines) itemResult.Notes.Add(line);
+
+            // A turn (docs/gimmick-plan.md Part 5): the alignment the player books, priced on the
+            // crowd, the moment, the build and how often. A big one makes the segment.
+            if (segment.Turn is { } turn && turn.Who.Gimmick?.NaturalAlignment != turn.To)
+            {
+                var (change, line, payoff) = Turns.Execute(turn.Who, turn.To, _showType, showDate);
+                HeatEconomy.Apply(change);
+                showResult.StatusChanges.Add(change);
+                showResult.Turns.Add(line);
+                itemResult.Notes.Add(line);
+                segResult.AudienceImpact = Math.Min(10, segResult.AudienceImpact * (1 + 0.4 * payoff));
+            }
+            if (segment.Tease is { } tease)
+                itemResult.Notes.Add(Turns.Tease(tease.Who, tease.To, showDate));
 
             if (segResult.Botched) itemResult.Notes.Add("Botched.");
             if (segResult.Injured != null) itemResult.Notes.Add($"{segResult.Injured.RingName} injured.");

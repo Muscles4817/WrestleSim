@@ -336,6 +336,14 @@ else
                 {
                     <div class="small muted">@meaning</div>
                 }
+                @if (Turns.AnticipationWords(w) is { } coming)
+                {
+                    <div class="small gold">@coming</div>
+                }
+                @if (w.LastTurned is { } turned)
+                {
+                    <div class="small muted">Last turned @turned.ToString("MMMM yyyy")@(w.Turns > 1 ? $" — {w.Turns} turns here" : "").</div>
+                }
                 <div class="small mt">@CharacterTypes.Summary(w)</div>
                 <div class="kv mt">
                     <span>The character</span>

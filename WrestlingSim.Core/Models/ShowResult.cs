@@ -1,4 +1,4 @@
-using WrestlingSim.Engine;
+﻿using WrestlingSim.Engine;
 using WrestlingSim.Models.MatchPlan;
 using SegResult = WrestlingSim.Models.Segment.SegmentResult;
 
@@ -22,6 +22,9 @@ namespace WrestlingSim.Models
         /// star rating and starts being a consequence.
         /// </summary>
         public List<StatusChange> StatusChanges { get; set; } = new();
+
+        /// <summary>Who turned tonight, a line each (Engine.Turns).</summary>
+        public List<string> Turns { get; set; } = new();
 
         /// <summary>
         /// Every championship that moved tonight — changes, defences, and the quiet

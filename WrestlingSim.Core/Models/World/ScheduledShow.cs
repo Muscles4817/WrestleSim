@@ -1,4 +1,4 @@
-using WrestlingSim.Enums;
+﻿using WrestlingSim.Enums;
 
 namespace WrestlingSim.Models.World
 {
@@ -112,6 +112,7 @@ namespace WrestlingSim.Models.World
         public Show ToShow() => new()
         {
             Name                 = Name,
+            Type                 = Type,
             Date                 = Date.ToDateTime(TimeOnly.MinValue),
             Location             = string.IsNullOrWhiteSpace(Venue) ? "Unknown Arena" : Venue,
             AudienceSize         = Attendance,

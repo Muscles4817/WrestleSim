@@ -543,6 +543,7 @@ namespace WrestlingSim.Models.World
 
             // Characters rest while their people are off screen, wherever they work.
             CharacterFreshness.Rest(Roster, CurrentDate, 1);
+            Turns.Fade(Roster, CurrentDate, 1);
 
             // The rest of the world runs on the same clock.
             NonCompetes.RemoveAll(n => n.Until <= CurrentDate);
@@ -553,6 +554,7 @@ namespace WrestlingSim.Models.World
             if (CurrentDate.Day == 1)
             {
                 Engine.Growth.Month(this);
+                Turns.RivalMonth(this);
                 Engine.Careers.Month(this);
             }
 
@@ -735,6 +737,7 @@ namespace WrestlingSim.Models.World
             int ahead = Math.Max(0, show.Date.DayNumber - CurrentDate.DayNumber);
             AudienceModel.Decay(Audience, ahead);
             CharacterFreshness.Rest(Roster, show.Date, ahead);
+            Turns.Fade(Roster, show.Date, ahead);
 
             // Sold on the card as advertised, before anyone has wrestled.
             var house = Projection(show, daysAhead: 0);
@@ -757,6 +760,8 @@ namespace WrestlingSim.Models.World
                                     creative: Promos.CreativeOf(Promotion))
                     .Simulate(show.ToShow())
                 : new ShowResult { BudgetMinutes = show.RuntimeMinutes };
+
+            foreach (var turned in result.Turns) AddNews(turned, aboutYou: true);
 
             // A push the crowd is refusing is news to the booker who is pushing it (Part 5).
             foreach (var turned in result.StatusChanges.Where(c => c.Reason == Engine.HeatEconomy.RejectionReason))
