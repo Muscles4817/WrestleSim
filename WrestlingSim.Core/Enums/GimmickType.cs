@@ -24,6 +24,14 @@ namespace WrestlingSim.Enums
         Sellout,
         Cryptic,
         Daredevil,
-        Gimmickless
+        Gimmickless,
+
+        /// <summary>
+        /// No type given. Appended rather than first so stored names and numbers keep their
+        /// meaning, and made the default on <see cref="Models.Gimmick"/> — before it, a gimmick
+        /// built without a type was silently a <see cref="Monster"/>, the enum's first value,
+        /// and paid a monster's prices once character types priced results.
+        /// </summary>
+        Unspecified
     }
 }

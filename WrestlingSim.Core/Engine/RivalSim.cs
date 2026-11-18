@@ -1,4 +1,4 @@
-using WrestlingSim.Enums;
+﻿using WrestlingSim.Enums;
 using WrestlingSim.Models;
 using WrestlingSim.Models.World;
 
@@ -164,7 +164,8 @@ namespace WrestlingSim.Engine
             // fatigue and sharpness, injuries, feuds, belts, what each wrestler gets better at —
             // against this promotion's own feuds, belts and audience.
             var result = new ShowSimulator(rival.Feuds, seed: StableSeed.From(rival.Id, today.DayNumber, "night"),
-                                           titles: rival.Titles, tier: rival.Promotion.Tier, response: Response)
+                                           titles: rival.Titles, tier: rival.Promotion.Tier, response: Response,
+                                           creative: Promos.CreativeOf(rival.Promotion))
                 .Simulate(show.ToShow());
             if (Observed is { } observed)
                 for (int i = 0; i < show.Card.Count && i < result.Items.Count; i++)

@@ -1,4 +1,4 @@
-using WrestlingSim.Enums;
+﻿using WrestlingSim.Enums;
 using WrestlingSim.Models;
 using WrestlingSim.Models.Rumble;
 
@@ -66,6 +66,12 @@ namespace WrestlingSim.Persistence
 
         /// <summary>The active population each January's class restores (Part 3); 0 if never set.</summary>
         public int PopulationTarget { get; set; }
+
+        /// <summary>The creative team bought (docs/gimmick-plan.md §3.3); null is the tier's opening team.</summary>
+        public int? CreativeLevel { get; set; }
+
+        /// <summary>Standing notes on how each wrestler's promos are written, by wrestler id.</summary>
+        public Dictionary<string, Models.World.PromoNote>? PromoNotes { get; set; }
         public List<ShowDefinitionDto> ShowDefinitions { get; set; } = new();
         public List<FeudDto> Feuds { get; set; } = new();
         public List<ShowDto> Shows { get; set; } = new();
@@ -185,6 +191,7 @@ namespace WrestlingSim.Persistence
         public PromotionTier Tier { get; set; }
         public Region? Region { get; set; }
         public Models.World.FounderMotive Motive { get; set; }
+        public int? CreativeLevel { get; set; }
         public decimal Cash { get; set; }
         public decimal OpeningCash { get; set; }
         public double Reputation { get; set; }
@@ -490,6 +497,12 @@ namespace WrestlingSim.Persistence
         public double? Warmth { get; set; }
         public string? RejectedSince { get; set; }
 
+        /// <summary>
+        /// How worn the character is (<see cref="Engine.CharacterFreshness"/>). Null in a save
+        /// from before characters wore, which keeps the roster's value.
+        /// </summary>
+        public double? Freshness { get; set; }
+
         /// <summary>The stock: how over they are.</summary>
         public double Overness { get; set; }
 
@@ -756,6 +769,11 @@ namespace WrestlingSim.Persistence
         public SegmentType SegmentType { get; set; }
         public SegmentLocation Location { get; set; }
         public bool IsScripted { get; set; } = true;
+
+        /// <summary>How much is written; null in a save from before promos had a form, which reads <see cref="IsScripted"/>.</summary>
+        public PromoForm? Form { get; set; }
+        public PromoStaging? Staging { get; set; }
+        public PromoRegister? Register { get; set; }
         public List<string> Participants { get; set; } = new();
         public List<SegmentActionDto> Actions { get; set; } = new();
         public List<FeudHistoryTag> HistoryTags { get; set; } = new();

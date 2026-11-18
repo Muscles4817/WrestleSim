@@ -124,7 +124,7 @@ namespace WrestlingSim.Engine
         /// <summary>
         /// A gimmick's appeal to a group, 0–1. Regular has no rating in the roster and reads
         /// Casual's — the two differ in how often they watch, not in who they like. Unrated
-        /// groups read a neutral 0.5.
+        /// groups read a neutral 0.5. Less, once the character is worn.
         /// </summary>
         public static double Appeal(Wrestler w, FanGroup g)
         {
@@ -135,7 +135,9 @@ namespace WrestlingSim.Engine
                 .FirstOrDefault(r => string.Equals(r.Group, group.ToString(), StringComparison.OrdinalIgnoreCase))
                 ?.AppealScore;
 
-            return Of(g) ?? (g == FanGroup.Regular ? Of(FanGroup.Casual) : null) ?? 0.5;
+            // A worn character loses its pull on every group alike (CharacterFreshness).
+            return (Of(g) ?? (g == FanGroup.Regular ? Of(FanGroup.Casual) : null) ?? 0.5)
+                   * CharacterFreshness.Factor(w);
         }
 
         /// <summary>
@@ -147,8 +149,11 @@ namespace WrestlingSim.Engine
         public static double Response(Audience? audience, Wrestler w, PromotionTier tier, ShowType type,
                                       int daysAhead = 0)
         {
+            // Some characters are made for the big night and some for the small room
+            // (CharacterTypes.Stage) — that is part of how much of them the crowd feels.
+            double stage = CharacterTypes.Stage(w, type);
             var act = audience?.ActOf(w);
-            if (act is null) return 1.0;
+            if (act is null) return stage;
 
             // A show booked for next month is watched next month: the act will have had that
             // long off the screen by then.
@@ -161,7 +166,7 @@ namespace WrestlingSim.Engine
                 total += weight * GroupResponse(group, sameness, act.Streak);
                 weights += weight;
             }
-            return weights <= 0 ? 1.0 : total / weights;
+            return stage * (weights <= 0 ? 1.0 : total / weights);
         }
 
         /// <summary>
@@ -177,7 +182,7 @@ namespace WrestlingSim.Engine
                 total += weight * GroupResponse(group, sameness, streak);
                 weights += weight;
             }
-            return weights <= 0 ? 1.0 : total / weights;
+            return CharacterTypes.Stage(w, type) * (weights <= 0 ? 1.0 : total / weights);
         }
 
         /// <summary>Why an act is wearing, in words, or null when it is not.</summary>
@@ -321,6 +326,13 @@ namespace WrestlingSim.Engine
 
                 if (winners.Contains(w.Id)) act.Streak++;
                 else if (wrestled.Contains(w.Id)) act.Streak = 0;
+
+                // The character wears too, more slowly, and less when tonight gave it something
+                // new to say (docs/gimmick-plan.md Part 4). Tonight crossing the line is news.
+                bool wasWorn = (w.Gimmick?.Freshness ?? 1) < CharacterFreshness.Worn;
+                CharacterFreshness.Wear(w, show.Type, n);
+                if (!wasWorn && (w.Gimmick?.Freshness ?? 1) < CharacterFreshness.Worn)
+                    notes.Add((100, CharacterFreshness.WornNote(w)));
 
                 act.LastKind    = lastKind[w.Id];
                 act.LastGimmick = w.Gimmick?.Name ?? "";

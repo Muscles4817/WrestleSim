@@ -11,13 +11,12 @@ namespace WrestlingSim.Models
     public class Gimmick
     {
         public string Name { get; set; }
-        public GimmickType Type { get; set; }                // Monster, Anti-Hero, Showman, etc.
+        public GimmickType Type { get; set; } = GimmickType.Unspecified; // Monster, Anti-Hero, Showman, etc.
         public string PersonaDescriptor { get; set; }        // "Cursed Cowboy", "Corporate Sellout"
         public GimmickTone Tone { get; set; }                // Serious, Comedic, Cryptic, etc.
         public Alignment NaturalAlignment { get; set; }      // Face, Heel, Tweener
-        public int PopularityModifier { get; set; }          // Affects crowd engagement
         public GimmickDurability Durability { get; set; }    // How long before it gets stale
-        public double Freshness { get; set; }                // 0.0 to 1.0, decays over time
+        public double Freshness { get; set; } = 1.0;         // 0.0 to 1.0: how worn the character is; a new one is fresh. See Engine.CharacterFreshness
         public List<string> GimmickTraits { get; set; }       // Optional: extra flavor flags
         public List<FanGroupAppeal> AppealRatings { get; set; } // Different fanbase responses
         public List<string> PreviousNames { get; set; }

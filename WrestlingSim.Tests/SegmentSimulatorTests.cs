@@ -95,13 +95,23 @@ namespace WrestlingSim.Tests
 
         // ── Botch ────────────────────────────────────────────────────────────
 
+        /// <summary>
+        /// The rule this replaced said a scripted segment could never botch (owner, 17 Nov 2026:
+        /// it cannot be right — a poor talker given a script reads it like a hostage, and bad
+        /// writing dies in anybody's mouth). Both forms can fall apart; who is in it decides.
+        /// </summary>
         [Fact]
-        public void ScriptedSegment_NeverBotches()
+        public void AScriptedPromoCanBombToo_WhenThePeopleAreWrongForIt()
         {
-            var speaker = TestRoster.Make("Green Rookie", psychology: 20);
+            var speaker = TestRoster.Make("Wooden", charisma: 0.8, psychology: 20);
 
-            for (int seed = 0; seed < 400; seed++)
-                Assert.False(new SegmentSimulator(seed).Simulate(Promo(speaker, scripted: true)).Botched);
+            int botches = Enumerable.Range(0, 400)
+                .Count(seed => new SegmentSimulator(seed, creative: 1).Simulate(Promo(speaker, scripted: true)).Botched);
+            Assert.True(botches > 0, "A poor reader with no writers behind them should be able to bomb a scripted promo.");
+
+            var pro = TestRoster.Make("Pro", charisma: 4.5);
+            Assert.Equal(0, Enumerable.Range(0, 400)
+                .Count(seed => new SegmentSimulator(seed, creative: 9).Simulate(Promo(pro, scripted: true)).Botched));
         }
 
         [Fact]
@@ -149,11 +159,9 @@ namespace WrestlingSim.Tests
         {
             // Regression: overness was clamped to 0.5..3.0 and only ever added, so a promo
             // was free overness however badly it went.
-            var speaker = TestRoster.Make("Green Rookie", overness: 50, charisma: 4.0, psychology: 20);
-
             for (int seed = 0; seed < 600; seed++)
             {
-                var subject = TestRoster.Make("Green Rookie", overness: 50, charisma: 4.0, psychology: 20);
+                var subject = TestRoster.Make("Green Rookie", overness: 50, charisma: 1.0, psychology: 20);
                 var result  = new SegmentSimulator(seed).Simulate(Promo(subject, scripted: false));
 
                 if (!result.Botched) continue;

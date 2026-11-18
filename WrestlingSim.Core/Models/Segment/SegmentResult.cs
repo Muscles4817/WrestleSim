@@ -1,4 +1,4 @@
-using WrestlingSim.Enums;
+﻿using WrestlingSim.Enums;
 
 namespace WrestlingSim.Models.Segment
 {
@@ -29,6 +29,12 @@ namespace WrestlingSim.Models.Segment
 
         /// <summary>Play-by-play lines for the UI to render.</summary>
         public List<string> Commentary { get; set; } = new();
+
+        /// <summary>How each speaker's promo came out, 0–100 (Engine.Promos).</summary>
+        public Dictionary<Wrestler, double> Promos { get; } = new();
+
+        /// <summary>What decided a promo, when it is worth saying — for the show report.</summary>
+        public List<string> PromoLines { get; } = new();
 
         /// <summary>Audience impact expressed on the show layer's 0–100 scale.</summary>
         public double Score => AudienceImpact * 10;

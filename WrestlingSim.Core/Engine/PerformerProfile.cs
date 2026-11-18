@@ -246,7 +246,8 @@ namespace WrestlingSim.Engine
         {
             var ratings = w.Gimmick?.AppealRatings;
             if (ratings == null || ratings.Count == 0) return null;
-            return Math.Clamp(ratings.Average(a => a.AppealScore), 0, 1);
+            // A worn character loses its pull (CharacterFreshness); 1.0 until it is worn.
+            return Math.Clamp(ratings.Average(a => a.AppealScore) * CharacterFreshness.Factor(w), 0, 1);
         }
     }
 }

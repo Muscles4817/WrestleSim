@@ -191,6 +191,48 @@ namespace WrestlingSim.Engine
             return notes;
         }
 
+        /// <summary>
+        /// What this result will mean to the characters in it, before the bell — the same table
+        /// the show reads after it (<see cref="CharacterTypes"/>), so the warning and the
+        /// consequence cannot disagree. Said only where the character changes the price by a
+        /// fifth or more: a monster being beaten clean, an underdog squashing somebody, a heel
+        /// whose stolen win is the character working.
+        /// </summary>
+        public static IReadOnlyList<BookingNote> Character(MatchBrief brief, IReadOnlyList<MatchSide> sides)
+        {
+            var notes = new List<BookingNote>();
+            if (brief.WinningSide < 0 || brief.WinningSide >= sides.Count) return notes;
+
+            for (int i = 0; i < sides.Count; i++)
+            {
+                bool won = i == brief.WinningSide;
+                var kind = Expected(brief, won, i);
+                foreach (var w in sides[i].Members)
+                {
+                    var effect = CharacterTypes.Of(w, kind, stars: 3.0, onATeam: sides[i].Members.Count > 1,
+                                                   beaten: won ? sides.Where((_, j) => j != i).SelectMany(s => s.Members).ToList() : null);
+                    if (CharacterTypes.Ahead(w, effect) is not { } ahead) continue;
+
+                    // A heavy price on a loss is worth a warning; anything else is a note.
+                    bool costly = !CharacterTypes.IsWin(kind) && effect.Multiplier >= 1.4;
+                    notes.Add(new BookingNote(costly ? NoteWeight.Warning : NoteWeight.Note, ahead));
+                }
+            }
+            return notes;
+        }
+
+        /// <summary>The result a brief asks for, read the way a character reads one.</summary>
+        public static CharacterTypes.ResultKind Expected(MatchBrief brief, bool won, int side)
+        {
+            var weight = brief.Finish switch
+            {
+                FinishKind.Stolen => FinishWeight.Fluke,
+                FinishKind.Interference or FinishKind.Disqualification or FinishKind.CountOut => FinishWeight.Protected,
+                _ => FinishWeight.Decisive
+            };
+            return CharacterTypes.Read(won, weight, CharacterTypes.ShareFor(brief, won, side));
+        }
+
         /// <summary>First letter up, for a sentence that starts with one of the Name() phrases.</summary>
         private static string Capitalise(this string text) =>
             string.IsNullOrEmpty(text) ? text : char.ToUpperInvariant(text[0]) + text[1..];

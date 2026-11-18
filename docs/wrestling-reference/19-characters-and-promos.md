@@ -285,5 +285,12 @@ Small things with disproportionate effect:
   promotion's scripting policy determining which one is used. A promotion that scripts
   everything should get consistent mid-range results; one that doesn't should get high
   variance. That single choice reproduces a real industry debate as a game decision.
+  > **Correction (owner, 17 Nov 2026):** this forces the outcome by form, and that is wrong.
+  > Scripting does not cap the ceiling and improvising does not set the variance. Both can be
+  > superb and both can be awful, depending on who is involved: the writers' quality, and each
+  > performer's skill at *that* form in *that* register. Some people are poor at promos
+  > altogether. Some are worse at one form. Some are good at improvised comedy but need a script
+  > for serious material. See `docs/gimmick-plan.md` §0A and Part 3. The code had the same flaw:
+  > a flat ×1.15 for unscripted, and scripted promos could never botch.
 - **Music/entrance as a separate presentation value** that contributes to crowd energy at
   the start of a match, and which the player can invest in.

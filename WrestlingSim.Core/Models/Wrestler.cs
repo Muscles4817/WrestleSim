@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -201,6 +201,13 @@ namespace WrestlingSim.Models
         public MentalAttributes Mental { get; set; } = new();
         public Gimmick Gimmick { get; set; }
         public double Charisma { get; set; }
+
+        /// <summary>
+        /// How they talk, by form, staging and register (docs/gimmick-plan.md Part 3). Null for
+        /// anybody not yet judged, who reads as <see cref="Engine.Promos.Derived"/> — their
+        /// charisma, in their gimmick's natural note.
+        /// </summary>
+        public Models.Person.PromoSkills? Promo { get; set; }
         public List<Move> Moveset { get; set; }
         public List<Signature> Signature { get; set; }
         public WrestlingStyle Style { get; set; }
@@ -314,9 +321,17 @@ namespace WrestlingSim.Models
             Gimmick.ChangeName(name);
         }
 
+        /// <summary>
+        /// A new character. The one they had goes into <see cref="PreviousGimmicks"/>, so their
+        /// old names stay theirs. (This used to add the *new* gimmick to the history and never
+        /// make it the current one.)
+        /// </summary>
         public void ChangeGimmick(Gimmick gimmick)
-        { 
-            PreviousGimmicks.Add(gimmick);
+        {
+            ArgumentNullException.ThrowIfNull(gimmick);
+            PreviousGimmicks ??= new List<Gimmick>();
+            if (Gimmick != null) PreviousGimmicks.Add(Gimmick);
+            Gimmick = gimmick;
         }
 
         public List<string> PreviousNames()

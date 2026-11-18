@@ -133,6 +133,17 @@
                             @if (w.Gimmick is { } g)
                             {
                                 <span class="badge badge--sm @g.NaturalAlignment.Badge()">@g.NaturalAlignment.Label()</span>
+                                @* Only when the crowd has gone the other way from the booking,
+                                   or the character is worn: on every row it would be furniture. *@
+                                var crowd = CrowdReading.Of(w, State.Career?.CurrentDate);
+                                @if (CrowdReading.Crossed(g.NaturalAlignment, crowd))
+                                {
+                                    <span class="badge badge--sm badge--gold">@(crowd == CrowdReading.Reaction.Cheering ? "crowd cheers" : "crowd boos")</span>
+                                }
+                                @if (g.Freshness < CharacterFreshness.Worn)
+                                {
+                                    <span class="badge badge--sm badge--muted">character worn</span>
+                                }
                             }
                             @* And which division, but only while the list holds both. Once the
                                filter is on one of them the badge is on every row and says

@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using WrestlingSim.Engine;
 using WrestlingSim.Enums;
@@ -81,8 +81,13 @@ namespace WrestlingSim.Persistence
             World     = career.WorldChoice is { } wc ? new WorldChoiceDto { Size = wc.Size, Source = wc.Source, Seed = wc.Seed } : null,
             Region    = career.Promotion.Region,
             PopulationTarget = career.PopulationTarget,
+            CreativeLevel    = career.Promotion.CreativeLevel,
+            PromoNotes       = career.PromoNotes.Count > 0 ? new Dictionary<string, Models.World.PromoNote>(career.PromoNotes) : null,
 
-            // Only state that actually changes. Everything else comes from the roster.
+            // Only state that actually changes. Everything else comes from the roster. Not rounded:
+            // the day after a reload has to be the same day it would have been
+            // (PlannerTests.WhatItWantsAndWhatItDecidedSurviveASave), and a third decimal of
+            // overness was enough to tip a rival's decision once characters priced results.
             Wrestlers = career.Roster
                 .Select(w => new WrestlerStateDto
                 {
@@ -99,11 +104,12 @@ namespace WrestlingSim.Persistence
                     Development    = w.IsGenerated ? null : w.Development,
                     RetiredOn      = w.RetiredOn is { } r ? Iso(r) : null,
                     PartTimeSince  = w.PartTimeSince is { } pt ? Iso(pt) : null,
-                    Favoured       = Math.Round(w.Favoured, 3),
-                    Warmth         = Math.Round(w.Warmth, 1),
+                    Favoured       = w.Favoured,
+                    Warmth         = w.Warmth,
                     RejectedSince  = w.RejectedSince is { } rj ? Iso(rj) : null,
-                    Overness       = Math.Round(w.Overness, 3),
-                    Momentum       = Math.Round(w.Momentum, 3),
+                    Freshness      = w.Gimmick is { } gim ? gim.Freshness : null,
+                    Overness       = w.Overness,
+                    Momentum       = w.Momentum,
                     LastAppearance = w.LastAppearance is { } seen ? Iso(seen) : null,
                     TouringUntil   = w.TouringUntil is { } road ? Iso(road) : null,
                     Fatigue        = w.Fatigue,
@@ -137,6 +143,7 @@ namespace WrestlingSim.Persistence
                 Tier        = r.Promotion.Tier,
                 Region      = r.Promotion.Region,
                 Motive      = r.Motive,
+                CreativeLevel = r.Promotion.CreativeLevel,
                 Cash        = r.Books.Cash,
                 OpeningCash = r.Books.OpeningCash,
                 Reputation  = Math.Round(r.Books.Reputation, 4),
@@ -338,6 +345,9 @@ namespace WrestlingSim.Persistence
                 SegmentType  = s.Type,
                 Location     = s.Location,
                 IsScripted   = s.IsScripted,
+                Form         = s.Form,
+                Staging      = s.Staging,
+                Register     = s.Register,
                 Participants = s.Participants.Select(p => p.Id).ToList(),
                 HistoryTags  = new List<FeudHistoryTag>(s.HistoryTags),
                 Actions = s.Actions.Select(a => new SegmentActionDto
@@ -570,12 +580,13 @@ namespace WrestlingSim.Persistence
                 if (state.Favoured is { } fav) w.Favoured = fav;
                 if (state.Warmth is { } warm) w.Warmth = warm;
                 w.RejectedSince = string.IsNullOrEmpty(state.RejectedSince) ? null : ParseDate(state.RejectedSince);
+                if (state.Freshness is { } fresh && w.Gimmick is { } gimmick) gimmick.Freshness = Math.Clamp(fresh, 0, 1);
             }
 
             var career = new Career
             {
                 Id          = string.IsNullOrWhiteSpace(dto.CareerId) ? Guid.NewGuid().ToString("N") : dto.CareerId,
-                Promotion   = new Promotion { Name = dto.PromotionName, Tier = dto.Tier, Region = dto.Region },
+                Promotion   = new Promotion { Name = dto.PromotionName, Tier = dto.Tier, Region = dto.Region, CreativeLevel = dto.CreativeLevel },
                 WorldChoice = dto.World is { } wc ? new Engine.WorldChoice(wc.Size, wc.Source, wc.Seed) : null,
                 PopulationTarget = dto.PopulationTarget,
                 CurrentDate = ParseDate(dto.CurrentDate),
@@ -583,6 +594,9 @@ namespace WrestlingSim.Persistence
                 Roster      = roster.ToList(),
                 LastPlayedUtc = dto.LastPlayedUtc
             };
+
+            if (dto.PromoNotes is { } notes)
+                foreach (var (id, note) in notes) career.PromoNotes[id] = note;
 
             // A career saved before money existed opens its books today. Opening them at the
             // start date instead would claim takings for shows nobody kept the books on.
@@ -628,7 +642,7 @@ namespace WrestlingSim.Persistence
                     career.Rivals.Add(new RivalPromotion
                     {
                         Id        = r.Id,
-                        Promotion = new Promotion { Name = r.Name, Tier = r.Tier, Region = r.Region },
+                        Promotion = new Promotion { Name = r.Name, Tier = r.Tier, Region = r.Region, CreativeLevel = r.CreativeLevel },
                         Motive    = r.Motive,
                         Books     = new CareerBooks { Cash = r.Cash, OpeningCash = r.OpeningCash, Reputation = r.Reputation },
                         Television = r.Television is { } rtv ? FromDto(rtv) : null,
@@ -1312,6 +1326,9 @@ namespace WrestlingSim.Persistence
 
             var segment = new SegmentModel(
                 dto.SegmentName ?? "Segment", dto.SegmentType, dto.Location, dto.IsScripted);
+            if (dto.Form is { } form) segment.Form = form;
+            segment.Staging  = dto.Staging;
+            segment.Register = dto.Register;
 
             foreach (var id in dto.Participants)
                 if (byId.TryGetValue(id, out var p)) segment.AddParticipant(p);

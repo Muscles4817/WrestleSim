@@ -1,4 +1,4 @@
-using WrestlingSim.Enums;
+﻿using WrestlingSim.Enums;
 using WrestlingSim.Models;
 using WrestlingSim.Models.Segment;
 
@@ -16,9 +16,13 @@ namespace WrestlingSim.Engine
     {
         private readonly Random _rand;
 
-        public SegmentSimulator(int? seed = null)
+        /// <summary>The promotion's creative team, 1–10 (Promos), for whatever of a promo is written.</summary>
+        private readonly int _creative;
+
+        public SegmentSimulator(int? seed = null, int creative = 5)
         {
             _rand = seed.HasValue ? new Random(seed.Value) : Random.Shared;
+            _creative = Math.Clamp(creative, Promos.MinCreative, Promos.MaxCreative);
         }
 
         // ── Public entry point ───────────────────────────────────────────────
@@ -40,6 +44,9 @@ namespace WrestlingSim.Engine
             double baseImpact    = 0;
             double verbalTotal   = 0;
             int    verbalCount   = 0;
+            double worstPromo    = 100;
+            string? worstLine    = null;
+            var    staging       = Promos.StagingOf(segment);
             double actionHeat    = 0;
             double improvRisk    = 0;
             double injuryRisk    = 0;
@@ -49,42 +56,66 @@ namespace WrestlingSim.Engine
                 baseImpact += ImpactOf(action);
                 actionHeat += action.HeatImpact;
 
+                result.Commentary.Add(Describe(action));
+
                 if (IsVerbal(action.ActionType))
                 {
-                    verbalTotal += action.Performer.Charisma;
+                    // A promo is a performance (docs/gimmick-plan.md Part 3): what is written,
+                    // where, in what note, by whom. Charisma is in it as presence; the rest is
+                    // the person's skill at exactly this, and the writers' for what is written.
+                    var register = Promos.RegisterFor(segment, action.Performer);
+                    var reading  = Promos.Read(action.Performer, segment.Form, staging, register, Promos.Writing(_creative));
+                    double cut   = Promos.Cut(reading, _rand);
+                    result.Promos[action.Performer] = cut;
+
+                    verbalTotal += Promos.OnSegmentScale(cut);     // the 0–5 scale charisma used to fill
                     verbalCount++;
 
-                    // Talking at somebody builds a feud too. Only physical actions carry
-                    // HeatImpact from the factory, which left promo-driven angles unable
-                    // to move a feud at all.
+                    if (Promos.Line(action.Performer, segment.Form, staging, register, reading, cut) is { } line)
+                    {
+                        result.Commentary.Add(line);
+                        result.PromoLines.Add(line);
+                    }
+                    if (cut < worstPromo) { worstPromo = cut; worstLine = Promos.Line(action.Performer, segment.Form, staging, register, reading, cut); }
+
+                    // Talking at somebody builds a feud too, by how well it was said.
                     if (segment.Participants.Count >= 2)
-                        actionHeat += VerbalHeat(action.Performer);
+                        actionHeat += VerbalHeat(cut);
+                }
+                else
+                {
+                    improvRisk += ImprovRiskOf(action, segment);
                 }
 
-                improvRisk += ImprovRiskOf(action, segment);
                 injuryRisk += InjuryRiskOf(action);
-
-                result.Commentary.Add(Describe(action));
             }
 
-            // Charisma lifts talking segments; it does nothing for a run-in.
+            // How well it was said lifts talking segments; it does nothing for a run-in.
             double charismaFactor = verbalCount > 0 ? verbalTotal / verbalCount : 0;
             double impact = baseImpact + charismaFactor * 0.5;
 
             // Where it happens matters. The ring is the biggest stage; a GM office is not.
             impact *= LocationModifier(segment.Location);
 
-            // Unscripted is a real trade-off: rawer and more memorable, but it can fall apart.
-            if (!segment.IsScripted) impact *= 1.15;
+            // No bonus for either form (owner, 17 Nov 2026). Unscripted used to get ×1.15 here,
+            // and a scripted promo could not go wrong: the form was deciding what the people
+            // in it should.
 
             // ── Botch ────────────────────────────────────────────────────────
-            // Risk is a straight percentage. The old version gated on improvRisk > 15,
-            // which a single-action promo could never reach, so promos could not botch.
-            if (improvRisk > 0 && _rand.Next(0, 100) < improvRisk)
+            // A promo falls apart when somebody in it bombs — scripted or not; a script read
+            // badly dies as surely as dead air. A planned brawl worked loose can still go wrong
+            // the old way: psychology, when nothing is planned.
+            if (worstPromo < Promos.Bombed)
             {
                 result.Botched = true;
                 impact *= 0.6;
-                result.Commentary.Add("The segment falls apart — a blown line and dead air. The crowd cools off.");
+                if (worstLine is null) result.Commentary.Add("The segment falls apart. The crowd cools off.");
+            }
+            else if (improvRisk > 0 && _rand.Next(0, 100) < improvRisk)
+            {
+                result.Botched = true;
+                impact *= 0.6;
+                result.Commentary.Add("The segment falls apart — a spot is blown and the brawl goes nowhere. The crowd cools off.");
             }
 
             result.AudienceImpact = Math.Clamp(impact, 0, 10);
@@ -143,11 +174,11 @@ namespace WrestlingSim.Engine
             type is SegmentActionType.Talk or SegmentActionType.Interrupt;
 
         /// <summary>
-        /// Feud heat generated by talking at a rival. Scales with charisma, so a great
+        /// Feud heat generated by talking at a rival. Scales with how well it was said, so a great
         /// promo builds a programme faster than a bad one — but never as fast as a chair shot.
         /// </summary>
-        private static double VerbalHeat(Wrestler performer) =>
-            0.8 + performer.Charisma * 0.4;
+        private static double VerbalHeat(double promo) =>
+            0.8 + Promos.OnSegmentScale(promo) * 0.4;
 
         /// <summary>
         /// Wires up the previously-dead SegmentLocation axis. A backstage promo is
@@ -167,7 +198,7 @@ namespace WrestlingSim.Engine
 
         private static double ImprovRiskOf(SegmentAction action, Segment segment)
         {
-            if (segment.IsScripted) return 0;
+            if (segment.Form != PromoForm.Free) return 0;
 
             // Psychology is what keeps an unscripted segment on the rails.
             double psych = action.Performer.Mental?.Psychology ?? 0;

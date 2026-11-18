@@ -1,4 +1,4 @@
-using WrestlingSim.Enums;
+﻿using WrestlingSim.Enums;
 using WrestlingSim.Models;
 using WrestlingSim.Models.Segment;
 using WrestlingSim.Models.World;
@@ -47,6 +47,9 @@ namespace WrestlingSim.Engine
         /// <summary>Most a card can lose for running past its allotted runtime.</summary>
         private const double MaxOverrunPenalty = 0.35;
 
+        /// <summary>The promotion's creative team, 1–10, for whatever of a promo is written.</summary>
+        private readonly int _creative;
+
         public ShowSimulator(
             FeudBook feudBook,
             int? seed = null,
@@ -54,8 +57,10 @@ namespace WrestlingSim.Engine
             BrandContext? brands = null,
             StipulationBook? stipulations = null,
             PromotionTier tier = PromotionTier.Established,
-            Func<Wrestler, double>? response = null)
+            Func<Wrestler, double>? response = null,
+            int creative = 5)
         {
+            _creative     = creative;
             _response     = response;
             _tier         = tier;
             _feudBook     = feudBook;
@@ -632,8 +637,22 @@ namespace WrestlingSim.Engine
                     engineResult.Winner, engineResult.Loser, engineResult.StarRating, weight, familiarity,
                     sideCount: match.Plan.Sides.Count, story: HeatEconomy.StoryOf(feud.Intensity));
 
-            foreach (var raw in outcome.All)
+            // Each character reads the result its own way (CharacterTypes): a monster beaten
+            // clean pays more than most, an underdog's close loss costs little, a heel who
+            // steals one is doing their job. Read from who actually had the match.
+            var winners = engineResult.WinningSide.Count > 0 ? engineResult.WinningSide : [engineResult.Winner];
+            var losers  = engineResult.LosingSide.Count > 0 ? engineResult.LosingSide : [engineResult.Loser];
+
+            foreach (var unread in outcome.All)
             {
+                bool won  = winners.Contains(unread.Wrestler);
+                int  sideIndex = match.Plan.Sides.FindIndex(s => s.Members.Contains(unread.Wrestler));
+                var  side = sideIndex >= 0 ? match.Plan.Sides[sideIndex] : null;
+                var  kind = CharacterTypes.Read(won, weight, CharacterTypes.ShareFor(match.Plan.Brief, won, sideIndex));
+                var  raw  = CharacterTypes.Apply(unread, CharacterTypes.Of(
+                    unread.Wrestler, kind, engineResult.StarRating, onATeam: (side?.Members.Count ?? 1) > 1,
+                    beaten: won ? losers : null));
+
                 // Overness *won* on a brand show is scaled by what the brand is worth.
                 // Losses are not: a bad night costs the same wherever it happens, and
                 // making the B-show a safe place to lose would invert the whole point.
@@ -824,8 +843,10 @@ namespace WrestlingSim.Engine
         private double RunSegment(Segment segment, CardItemResult itemResult, ShowResult showResult,
             DateOnly showDate)
         {
-            var segResult = new SegmentSimulator(_seed).Simulate(segment);
+            var segResult = new SegmentSimulator(_seed, _creative).Simulate(segment);
             itemResult.SegmentResult = segResult;
+
+            foreach (var line in segResult.PromoLines) itemResult.Notes.Add(line);
 
             if (segResult.Botched) itemResult.Notes.Add("Botched.");
             if (segResult.Injured != null) itemResult.Notes.Add($"{segResult.Injured.RingName} injured.");

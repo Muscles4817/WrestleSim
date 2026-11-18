@@ -1,4 +1,4 @@
-@inject GameState State
+﻿@inject GameState State
 @inject ViewScroll Scroll
 
 <div class="steps">
@@ -224,23 +224,62 @@
         <div class="row small">
             <span class="badge">@segment.Type</span>
             <span class="badge">@segment.Location @Shown.Factor(LocationMultiplier(segment.Location))</span>
-            <label class="check spacer">
-                <input type="checkbox" checked="@segment.IsScripted"
-                       @onchange="e => segment.IsScripted = (bool)(e.Value ?? true)" />
-                Scripted
-            </label>
         </div>
 
-        <div class="notice @(segment.IsScripted ? "notice--info" : "notice--warn") mt">
-            @if (segment.IsScripted)
-            {
-                <text>Scripted: no botch risk, no rawness bonus.</text>
-            }
-            else
-            {
-                <text><strong>Unscripted:</strong> +15% crowd reaction, but low-Psychology performers can botch — which costs impact, heat <em>and</em> popularity.</text>
-            }
+        @* The three things a promo asks (docs/gimmick-plan.md Part 3). No form is safer or
+           better by rule: what each gets depends on the writers and on these people, and the
+           read below says which. *@
+        <div class="mt">
+            <div class="small muted">How much is written</div>
+            <div class="row">
+                @foreach (var form in Enum.GetValues<PromoForm>())
+                {
+                    var f = form;
+                    <button class="chip @(segment.Form == f ? "is-active" : "")" @onclick="() => segment.Form = f">@Promos.Name(f)</button>
+                }
+            </div>
+            <div class="small muted mt">What it asks of them physically</div>
+            <div class="row">
+                <button class="chip @(segment.Staging is null ? "is-active" : "")" @onclick="() => segment.Staging = null">as the segment goes (@Promos.Name(Promos.StagingOf(new SegmentModel("", segment.Type, segment.Location, true))))</button>
+                @foreach (var staging in Enum.GetValues<PromoStaging>())
+                {
+                    var st = staging;
+                    <button class="chip @(segment.Staging == st ? "is-active" : "")" @onclick="() => segment.Staging = st">@Promos.Name(st)</button>
+                }
+            </div>
+            <div class="small muted mt">What it should make the crowd feel</div>
+            <div class="row">
+                <button class="chip @(segment.Register is null ? "is-active" : "")" @onclick="() => segment.Register = null">each in their own note</button>
+                @foreach (var register in Enum.GetValues<PromoRegister>())
+                {
+                    var rg = register;
+                    <button class="chip @(segment.Register == rg ? "is-active" : "")" @onclick="() => segment.Register = rg">@Promos.Name(rg)</button>
+                }
+            </div>
         </div>
+
+        @if (Speakers.Count > 0)
+        {
+            <div class="notice notice--info mt">
+                @foreach (var w in Speakers)
+                {
+                    var register = Promos.RegisterFor(segment, w);
+                    var reading = Promos.Read(w, segment.Form, Promos.StagingOf(segment), register, Promos.Writing(Creative));
+                    <div>@Promos.Expect(w, segment.Form, Promos.StagingOf(segment), register, reading)</div>
+                    @if (State.Career?.NotedForm(w, register) is { } noted && noted != segment.Form)
+                    {
+                        <div class="small muted">
+                            Your note on @w.RingName says @Promos.Name(noted) for this.
+                            <button class="btn btn--sm btn--ghost" @onclick="() => segment.Form = noted">Use it</button>
+                        </div>
+                    }
+                }
+                @if (segment.Form != PromoForm.Free)
+                {
+                    <div class="small muted">Written by @Promos.CreativeWords(Creative).ToLowerInvariant() (level @Creative).</div>
+                }
+            </div>
+        }
 
         <div class="row mt small">
             <span class="muted">Cast:</span>
@@ -605,4 +644,13 @@
         SegmentLocation.GMOffice   => 0.80,
         _                          => 1.00
     };
+
+    /// <summary>Everybody who talks in this segment, in order.</summary>
+    private List<Wrestler> Speakers =>
+        segment is null ? [] : segment.Actions
+            .Where(a => a.ActionType is SegmentActionType.Talk or SegmentActionType.Interrupt && a.Performer is not null)
+            .Select(a => a.Performer).Distinct().ToList();
+
+    /// <summary>The promotion's creative team; exhibition writes at an ordinary level.</summary>
+    private int Creative => State.Career is { } c ? Promos.CreativeOf(c.Promotion) : 5;
 }

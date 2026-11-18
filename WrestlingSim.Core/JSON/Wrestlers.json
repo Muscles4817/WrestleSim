@@ -6,6 +6,7 @@
     "DebutedIn": 2013,
     "Overness": 95,
     "Charisma": 4.5,
+    "Promo": {"Delivery": 78, "Improvisation": 76, "Stillness": 76, "RingPresence": 92, "CrowdWork": 90, "SetPiece": 82, "Physicality": 92, "Registers": [{"Register": "Menacing", "Rating": 90}, {"Register": "Arrogant", "Rating": 82}], "Range": 64},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -13,8 +14,7 @@
       "Type": "AntiHero",
       "PersonaDescriptor": "Brutal Enforcer",
       "Tone": "Serious",
-      "NaturalAlignment": "Heel",
-      "PopularityModifier": 10,
+      "NaturalAlignment": "Face",
       "Durability": "LongTerm",
       "Freshness": 0.9,
       "GimmickTraits": [
@@ -101,6 +101,7 @@
     "DebutedIn": 2002,
     "Overness": 95,
     "Charisma": 4.7,
+    "Promo": {"Delivery": 90, "Improvisation": 92, "Stillness": 88, "RingPresence": 93, "CrowdWork": 88, "SetPiece": 82, "Physicality": 86, "Registers": [{"Register": "Arrogant", "Rating": 93}, {"Register": "Angry", "Rating": 90, "Lean": "Free"}, {"Register": "Funny", "Rating": 85}], "Range": 80},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -108,8 +109,7 @@
       "Type": "Superstar",
       "PersonaDescriptor": "The Man",
       "Tone": "Arrogant",
-      "NaturalAlignment": "Face",
-      "PopularityModifier": 12,
+      "NaturalAlignment": "Heel",
       "Durability": "LongTerm",
       "Freshness": 0.88,
       "GimmickTraits": [
@@ -196,6 +196,7 @@
     "DebutedIn": 2012,
     "Overness": 92,
     "Charisma": 4.3,
+    "Promo": {"Delivery": 80, "Improvisation": 66, "Stillness": 74, "RingPresence": 86, "CrowdWork": 74, "SetPiece": 84, "Physicality": 80, "Registers": [{"Register": "Arrogant", "Rating": 88}, {"Register": "Emotional", "Rating": 72, "Lean": "Scripted"}], "Range": 64},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -203,8 +204,7 @@
       "Type": "Egotist",
       "PersonaDescriptor": "The Queen",
       "Tone": "Arrogant",
-      "NaturalAlignment": "Heel",
-      "PopularityModifier": 9,
+      "NaturalAlignment": "Face",
       "Durability": "LongTerm",
       "Freshness": 0.8,
       "GimmickTraits": [
@@ -289,6 +289,7 @@
     "DebutedIn": 2016,
     "Overness": 90,
     "Charisma": 4.2,
+    "Promo": {"Delivery": 74, "Improvisation": 62, "Stillness": 70, "RingPresence": 82, "CrowdWork": 84, "SetPiece": 78, "Physicality": 82, "Registers": [{"Register": "Inspirational", "Rating": 80, "Lean": "Scripted"}, {"Register": "Emotional", "Rating": 74, "Lean": "Scripted"}, {"Register": "Arrogant", "Rating": 64}], "Range": 62},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -297,7 +298,6 @@
       "PersonaDescriptor": "The EST",
       "Tone": "Inspirational",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 8,
       "Durability": "LongTerm",
       "Freshness": 0.85,
       "GimmickTraits": [
@@ -382,6 +382,7 @@
     "DebutedIn": 2004,
     "Overness": 85,
     "Charisma": 3.8,
+    "Promo": {"Delivery": 60, "Improvisation": 62, "Stillness": 55, "RingPresence": 70, "CrowdWork": 66, "SetPiece": 82, "Physicality": 84, "Registers": [{"Register": "Funny", "Rating": 78, "Lean": "Free"}, {"Register": "Menacing", "Rating": 76}], "Range": 55},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -390,7 +391,6 @@
       "PersonaDescriptor": "The Empress of Tomorrow",
       "Tone": "Chaotic",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 7,
       "Durability": "LongTerm",
       "Freshness": 0.82,
       "GimmickTraits": [
@@ -477,6 +477,7 @@
     "DebutedIn": 2008,
     "Overness": 83,
     "Charisma": 4.1,
+    "Promo": {"Delivery": 82, "Improvisation": 80, "Stillness": 78, "RingPresence": 82, "CrowdWork": 84, "SetPiece": 82, "Physicality": 74, "Registers": [{"Register": "Arrogant", "Rating": 86}, {"Register": "Funny", "Rating": 82, "Lean": "Free"}, {"Register": "Emotional", "Rating": 76}], "Range": 76},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -484,13 +485,13 @@
       "Type": "Rebel",
       "PersonaDescriptor": "Role Model",
       "Tone": "SelfRighteous",
-      "NaturalAlignment": "Heel",
-      "PopularityModifier": 6,
+      "NaturalAlignment": "Face",
       "Durability": "MediumTerm",
       "Freshness": 0.78,
       "GimmickTraits": [
-        "Manipulative",
-        "Calculating"
+        "Veteran",
+        "Resilient",
+        "Unpredictable"
       ],
       "AppealRatings": [
         {
@@ -572,6 +573,7 @@
     "DebutedIn": 2007,
     "Overness": 85,
     "Charisma": 3.5,
+    "Promo": {"Delivery": 40, "Improvisation": 32, "Stillness": 48, "RingPresence": 55, "CrowdWork": 72, "SetPiece": 66, "Physicality": 76, "Registers": [{"Register": "Emotional", "Rating": 60}, {"Register": "Arrogant", "Rating": 52}], "Range": 38},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -580,7 +582,6 @@
       "PersonaDescriptor": "The Genius of the Sky",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 5,
       "Durability": "MediumTerm",
       "Freshness": 0.86,
       "GimmickTraits": [
@@ -667,6 +668,7 @@
     "DebutedIn": 2015,
     "Overness": 89,
     "Charisma": 4.2,
+    "Promo": {"Delivery": 80, "Improvisation": 72, "Stillness": 78, "RingPresence": 80, "CrowdWork": 76, "SetPiece": 86, "Physicality": 76, "Registers": [{"Register": "Emotional", "Rating": 82}, {"Register": "Arrogant", "Rating": 76}, {"Register": "Funny", "Rating": 74}], "Range": 66},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -675,7 +677,6 @@
       "PersonaDescriptor": "Revenge Tour",
       "Tone": "Chaotic",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 7,
       "Durability": "MediumTerm",
       "Freshness": 0.9,
       "GimmickTraits": [
@@ -760,15 +761,15 @@
     "DebutedIn": 2015,
     "Overness": 58,
     "Charisma": 2.5,
+    "Promo": {"Delivery": 50, "Improvisation": 46, "Stillness": 60, "RingPresence": 48, "CrowdWork": 36, "SetPiece": 56, "Physicality": 76, "Registers": [{"Register": "Cold", "Rating": 64}, {"Register": "Menacing", "Rating": 60}], "Range": 32},
     "Style": "Grappler",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Shayna Baszler",
-      "Type": "Rebel",
+      "Type": "Realist",
       "PersonaDescriptor": "Queen of Spades",
       "Tone": "Serious",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 6,
       "Durability": "LongTerm",
       "Freshness": 0.85,
       "GimmickTraits": [
@@ -853,6 +854,7 @@
     "DebutedIn": 2013,
     "Overness": 76,
     "Charisma": 3.2,
+    "Promo": {"Delivery": 58, "Improvisation": 54, "Stillness": 56, "RingPresence": 62, "CrowdWork": 60, "SetPiece": 62, "Physicality": 82, "Registers": [{"Register": "Angry", "Rating": 62}, {"Register": "Inspirational", "Rating": 58}], "Range": 42},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -860,8 +862,7 @@
       "Type": "Monster",
       "PersonaDescriptor": "Big Mami Cool",
       "Tone": "Serious",
-      "NaturalAlignment": "Face",
-      "PopularityModifier": 4,
+      "NaturalAlignment": "Heel",
       "Durability": "MediumTerm",
       "Freshness": 0.8,
       "GimmickTraits": [
@@ -948,6 +949,7 @@
     "DebutedIn": 2010,
     "Overness": 48,
     "Charisma": 4.0,
+    "Promo": {"Delivery": 82, "Improvisation": 78, "Stillness": 72, "RingPresence": 80, "CrowdWork": 74, "SetPiece": 76, "Physicality": 58, "Registers": [{"Register": "Arrogant", "Rating": 84}, {"Register": "Angry", "Rating": 72}, {"Register": "Emotional", "Rating": 68}], "Range": 66},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -956,7 +958,6 @@
       "PersonaDescriptor": "Queen of the Ring",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 5,
       "Durability": "MediumTerm",
       "Freshness": 0.82,
       "GimmickTraits": [
@@ -1043,6 +1044,7 @@
     "DebutedIn": 2007,
     "Overness": 50,
     "Charisma": 3.4,
+    "Promo": {"Delivery": 64, "Improvisation": 62, "Stillness": 60, "RingPresence": 66, "CrowdWork": 70, "SetPiece": 66, "Physicality": 82, "Registers": [{"Register": "Menacing", "Rating": 66}, {"Register": "Funny", "Rating": 68}], "Range": 54},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -1051,7 +1053,6 @@
       "PersonaDescriptor": "Scottish Wrecking Ball",
       "Tone": "Violent",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 3,
       "Durability": "MediumTerm",
       "Freshness": 0.72,
       "GimmickTraits": [
@@ -1139,6 +1140,7 @@
     "DebutedIn": 2013,
     "Overness": 36,
     "Charisma": 2.8,
+    "Promo": {"Delivery": 58, "Improvisation": 56, "Stillness": 60, "RingPresence": 58, "CrowdWork": 58, "SetPiece": 60, "Physicality": 64, "Registers": [{"Register": "Emotional", "Rating": 64}, {"Register": "Inspirational", "Rating": 60}], "Range": 48},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -1147,7 +1149,6 @@
       "PersonaDescriptor": "The Girl With the Shiniest Wizards",
       "Tone": "Inspirational",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 2,
       "Durability": "MediumTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
@@ -1235,6 +1236,7 @@
     "DebutedIn": 2018,
     "Overness": 26,
     "Charisma": 2.6,
+    "Promo": {"Delivery": 48, "Improvisation": 46, "Stillness": 46, "RingPresence": 52, "CrowdWork": 58, "SetPiece": 56, "Physicality": 62, "Registers": [{"Register": "Funny", "Rating": 52}, {"Register": "Inspirational", "Rating": 50}], "Range": 40},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -1243,7 +1245,6 @@
       "PersonaDescriptor": "Lightning in a Bottle",
       "Tone": "Humorous",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 1,
       "Durability": "ShortTerm",
       "Freshness": 0.95,
       "GimmickTraits": [
@@ -1331,6 +1332,7 @@
     "DebutedIn": 2017,
     "Overness": 24,
     "Charisma": 2.2,
+    "Promo": {"Delivery": 46, "Improvisation": 38, "Stillness": 46, "RingPresence": 44, "CrowdWork": 38, "SetPiece": 52, "Physicality": 52, "Registers": [{"Register": "Cold", "Rating": 50}], "Range": 34},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -1339,7 +1341,6 @@
       "PersonaDescriptor": "Legado Enforcer",
       "Tone": "Serious",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 0,
       "Durability": "ShortTerm",
       "Freshness": 0.75,
       "GimmickTraits": [
@@ -1401,7 +1402,7 @@
     ],
     "Signature": [
       {
-        "Name": "Barrio Buster",
+        "Name": "Gigi Driver",
         "Move": {
           "Name": "Fireman's Carry Slam",
           "Types": [
@@ -1424,6 +1425,7 @@
     "DebutedIn": 2010,
     "Overness": 96,
     "Charisma": 4.6,
+    "Promo": {"Delivery": 88, "Improvisation": 76, "Stillness": 95, "RingPresence": 92, "CrowdWork": 86, "SetPiece": 88, "Physicality": 86, "Registers": [{"Register": "Cold", "Rating": 94}, {"Register": "Arrogant", "Rating": 92}, {"Register": "Menacing", "Rating": 90}], "Range": 62},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -1432,7 +1434,6 @@
       "PersonaDescriptor": "The Tribal Chief",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 12,
       "Durability": "LongTerm",
       "Freshness": 0.86,
       "GimmickTraits": [
@@ -1520,6 +1521,7 @@
     "DebutedIn": 2006,
     "Overness": 93,
     "Charisma": 4.5,
+    "Promo": {"Delivery": 92, "Improvisation": 74, "Stillness": 90, "RingPresence": 90, "CrowdWork": 84, "SetPiece": 88, "Physicality": 72, "Registers": [{"Register": "Inspirational", "Rating": 93, "Lean": "Scripted"}, {"Register": "Emotional", "Rating": 90, "Lean": "Scripted"}, {"Register": "Arrogant", "Rating": 78}], "Range": 74},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -1528,7 +1530,6 @@
       "PersonaDescriptor": "The American Nightmare",
       "Tone": "Inspirational",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 11,
       "Durability": "LongTerm",
       "Freshness": 0.9,
       "GimmickTraits": [
@@ -1615,6 +1616,7 @@
     "DebutedIn": 2004,
     "Overness": 90,
     "Charisma": 4.8,
+    "Promo": {"Delivery": 92, "Improvisation": 90, "Stillness": 90, "RingPresence": 95, "CrowdWork": 96, "SetPiece": 90, "Physicality": 88, "Registers": [{"Register": "Arrogant", "Rating": 95}, {"Register": "Angry", "Rating": 90}, {"Register": "Funny", "Rating": 86}], "Range": 86},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -1623,7 +1625,6 @@
       "PersonaDescriptor": "The Visionary",
       "Tone": "Chaotic",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 10,
       "Durability": "LongTerm",
       "Freshness": 0.84,
       "GimmickTraits": [
@@ -1711,6 +1712,7 @@
     "DebutedIn": 2000,
     "Overness": 88,
     "Charisma": 4.2,
+    "Promo": {"Delivery": 80, "Improvisation": 70, "Stillness": 88, "RingPresence": 80, "CrowdWork": 70, "SetPiece": 82, "Physicality": 88, "Registers": [{"Register": "Menacing", "Rating": 90}, {"Register": "Cold", "Rating": 88}, {"Register": "Emotional", "Rating": 66, "Lean": "Scripted"}], "Range": 55},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -1718,8 +1720,7 @@
       "Type": "Realist",
       "PersonaDescriptor": "The Viper",
       "Tone": "Serious",
-      "NaturalAlignment": "Face",
-      "PopularityModifier": 9,
+      "NaturalAlignment": "Heel",
       "Durability": "LongTerm",
       "Freshness": 0.66,
       "GimmickTraits": [
@@ -1807,6 +1808,7 @@
     "DebutedIn": 2005,
     "Overness": 86,
     "Charisma": 3.2,
+    "Promo": {"Delivery": 80, "Improvisation": 52, "Stillness": 82, "RingPresence": 76, "CrowdWork": 44, "SetPiece": 70, "Physicality": 72, "Registers": [{"Register": "Cold", "Rating": 84}, {"Register": "Arrogant", "Rating": 78}, {"Register": "Menacing", "Rating": 74}], "Range": 48},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -1815,7 +1817,6 @@
       "PersonaDescriptor": "The Ring General",
       "Tone": "Serious",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 8,
       "Durability": "LongTerm",
       "Freshness": 0.88,
       "GimmickTraits": [
@@ -1903,6 +1904,7 @@
     "DebutedIn": 2001,
     "Overness": 83,
     "Charisma": 4.1,
+    "Promo": {"Delivery": 86, "Improvisation": 82, "Stillness": 82, "RingPresence": 86, "CrowdWork": 78, "SetPiece": 80, "Physicality": 88, "Registers": [{"Register": "Angry", "Rating": 90}, {"Register": "Arrogant", "Rating": 82}, {"Register": "Inspirational", "Rating": 78}], "Range": 76},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -1911,7 +1913,6 @@
       "PersonaDescriptor": "The Scottish Warrior",
       "Tone": "SelfRighteous",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 7,
       "Durability": "LongTerm",
       "Freshness": 0.8,
       "GimmickTraits": [
@@ -1998,6 +1999,7 @@
     "DebutedIn": 2002,
     "Overness": 91,
     "Charisma": 4.4,
+    "Promo": {"Delivery": 88, "Improvisation": 86, "Stillness": 90, "RingPresence": 86, "CrowdWork": 86, "SetPiece": 86, "Physicality": 78, "Registers": [{"Register": "Emotional", "Rating": 94}, {"Register": "Funny", "Rating": 88}, {"Register": "Inspirational", "Rating": 86}], "Range": 86},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -2006,7 +2008,6 @@
       "PersonaDescriptor": "The Underdog from the Underground",
       "Tone": "Inspirational",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 8,
       "Durability": "LongTerm",
       "Freshness": 0.88,
       "GimmickTraits": [
@@ -2094,6 +2095,7 @@
     "DebutedIn": 2003,
     "Overness": 77,
     "Charisma": 4.9,
+    "Promo": {"Delivery": 92, "Improvisation": 97, "Stillness": 82, "RingPresence": 98, "CrowdWork": 99, "SetPiece": 84, "Physicality": 80, "Registers": [{"Register": "Arrogant", "Rating": 97}, {"Register": "Funny", "Rating": 88, "Lean": "Free"}], "Range": 72},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -2102,7 +2104,6 @@
       "PersonaDescriptor": "The Megastar",
       "Tone": "Arrogant",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 9,
       "Durability": "MediumTerm",
       "Freshness": 0.94,
       "GimmickTraits": [
@@ -2191,6 +2192,7 @@
     "DebutedIn": 2000,
     "Overness": 74,
     "Charisma": 4.3,
+    "Promo": {"Delivery": 86, "Improvisation": 90, "Stillness": 84, "RingPresence": 88, "CrowdWork": 86, "SetPiece": 82, "Physicality": 90, "Registers": [{"Register": "Angry", "Rating": 92}, {"Register": "Funny", "Rating": 88, "Lean": "Free"}, {"Register": "Arrogant", "Rating": 86}], "Range": 84},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -2199,7 +2201,6 @@
       "PersonaDescriptor": "The Prizefighter",
       "Tone": "Violent",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 6,
       "Durability": "LongTerm",
       "Freshness": 0.76,
       "GimmickTraits": [
@@ -2287,6 +2288,7 @@
     "DebutedIn": 2016,
     "Overness": 79,
     "Charisma": 3.3,
+    "Promo": {"Delivery": 62, "Improvisation": 58, "Stillness": 48, "RingPresence": 66, "CrowdWork": 56, "SetPiece": 66, "Physicality": 90, "Registers": [{"Register": "Angry", "Rating": 74}, {"Register": "Menacing", "Rating": 70}], "Range": 40},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -2295,13 +2297,12 @@
       "PersonaDescriptor": "The Freak Athlete",
       "Tone": "Violent",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 5,
       "Durability": "ShortTerm",
       "Freshness": 0.96,
       "GimmickTraits": [
         "Explosive",
         "Legacy",
-        "Green"
+        "Dominant"
       ],
       "AppealRatings": [
         {
@@ -2381,20 +2382,21 @@
     "DebutedIn": 2003,
     "Overness": 55,
     "Charisma": 2.9,
+    "Promo": {"Delivery": 60, "Improvisation": 52, "Stillness": 58, "RingPresence": 56, "CrowdWork": 54, "SetPiece": 62, "Physicality": 62, "Registers": [{"Register": "Arrogant", "Rating": 64}, {"Register": "Inspirational", "Rating": 50, "Lean": "Scripted"}], "Range": 46},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Ricochet",
       "Type": "Daredevil",
       "PersonaDescriptor": "The One and Only",
-      "Tone": "Serious",
-      "NaturalAlignment": "Face",
-      "PopularityModifier": 3,
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Heel",
       "Durability": "MediumTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
         "Gravity-Defying",
-        "Understated"
+        "Smug",
+        "Despised"
       ],
       "AppealRatings": [
         {
@@ -2473,18 +2475,18 @@
     "RealName": "Charles Betts",
     "Division": "Mens",
     "BornIn": 1986,
-    "DebutedIn": 2003,
+    "DebutedIn": 2013,
     "Overness": 70,
     "Charisma": 3.0,
+    "Promo": {"Delivery": 68, "Improvisation": 58, "Stillness": 64, "RingPresence": 64, "CrowdWork": 58, "SetPiece": 66, "Physicality": 62, "Registers": [{"Register": "Arrogant", "Rating": 70}, {"Register": "Funny", "Rating": 62, "Lean": "Scripted"}], "Range": 58},
     "Style": "Grappler",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Chad Gable",
-      "Type": "Egotist",
+      "Type": "Traditionalist",
       "PersonaDescriptor": "The Master of the Amateurs",
-      "Tone": "Arrogant",
-      "NaturalAlignment": "Heel",
-      "PopularityModifier": 2,
+      "Tone": "Serious",
+      "NaturalAlignment": "Face",
       "Durability": "MediumTerm",
       "Freshness": 0.84,
       "GimmickTraits": [
@@ -2571,6 +2573,7 @@
     "DebutedIn": 2015,
     "Overness": 54,
     "Charisma": 3.6,
+    "Promo": {"Delivery": 52, "Improvisation": 62, "Stillness": 48, "RingPresence": 70, "CrowdWork": 82, "SetPiece": 80, "Physicality": 82, "Registers": [{"Register": "Funny", "Rating": 84, "Lean": "Free"}], "Range": 34},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -2579,7 +2582,6 @@
       "PersonaDescriptor": "The Wiggle",
       "Tone": "Humorous",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 4,
       "Durability": "ShortTerm",
       "Freshness": 0.68,
       "GimmickTraits": [
@@ -2667,6 +2669,7 @@
     "DebutedIn": 2005,
     "Overness": 40,
     "Charisma": 2.4,
+    "Promo": {"Delivery": 45, "Improvisation": 40, "Stillness": 35, "RingPresence": 45, "CrowdWork": 60, "SetPiece": 55, "Physicality": 55, "Registers": [{"Register": "Funny", "Rating": 62, "Lean": "Free"}, {"Register": "Angry", "Rating": 45}], "Range": 35},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -2675,7 +2678,6 @@
       "PersonaDescriptor": "The Stamina Monster",
       "Tone": "Humorous",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 1,
       "Durability": "MediumTerm",
       "Freshness": 0.6,
       "GimmickTraits": [
@@ -2760,6 +2762,7 @@
     "DebutedIn": 2019,
     "Overness": 23,
     "Charisma": 1.6,
+    "Promo": {"Delivery": 30, "Improvisation": 26, "Stillness": 36, "RingPresence": 34, "CrowdWork": 28, "SetPiece": 44, "Physicality": 62, "Registers": [{"Register": "Angry", "Rating": 40}], "Range": 20},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -2768,7 +2771,6 @@
       "PersonaDescriptor": "The Troubled Giant",
       "Tone": "Melancholic",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 0,
       "Durability": "ShortTerm",
       "Freshness": 0.72,
       "GimmickTraits": [
@@ -2854,21 +2856,21 @@
     "DebutedIn": 1997,
     "Overness": 89,
     "Charisma": 4.6,
+    "Promo": {"Delivery": 90, "Improvisation": 95, "Stillness": 92, "RingPresence": 95, "CrowdWork": 92, "SetPiece": 82, "Physicality": 80, "Registers": [{"Register": "Angry", "Rating": 94}, {"Register": "Arrogant", "Rating": 92}, {"Register": "Emotional", "Rating": 88}], "Range": 88},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "CM Punk",
-      "Type": "CultLeader",
-      "PersonaDescriptor": "Shepherd of the Lost",
+      "Type": "Rebel",
+      "PersonaDescriptor": "The Best in the World",
       "Tone": "SelfRighteous",
-      "NaturalAlignment": "Heel",
-      "PopularityModifier": 9,
+      "NaturalAlignment": "Face",
       "Durability": "LongTerm",
       "Freshness": 0.88,
       "GimmickTraits": [
         "Magnetic",
-        "Manipulative",
-        "Feared"
+        "Outspoken",
+        "Straight Edge"
       ],
       "AppealRatings": [
         {
@@ -2929,7 +2931,7 @@
     ],
     "Signature": [
       {
-        "Name": "The Reckoning",
+        "Name": "GTS",
         "Move": {
           "Name": "Spinning Heel Kick",
           "Types": [
@@ -2952,15 +2954,15 @@
     "DebutedIn": 2005,
     "Overness": 82,
     "Charisma": 3.6,
+    "Promo": {"Delivery": 72, "Improvisation": 64, "Stillness": 72, "RingPresence": 70, "CrowdWork": 66, "SetPiece": 76, "Physicality": 78, "Registers": [{"Register": "Menacing", "Rating": 74}, {"Register": "Cold", "Rating": 70}, {"Register": "Inspirational", "Rating": 62, "Lean": "Scripted"}], "Range": 55},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Damian Priest",
       "Type": "Traditionalist",
-      "PersonaDescriptor": "The Last Honest Man",
+      "PersonaDescriptor": "The Archer of Infamy",
       "Tone": "Serious",
-      "NaturalAlignment": "Face",
-      "PopularityModifier": 5,
+      "NaturalAlignment": "Heel",
       "Durability": "LongTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
@@ -3023,7 +3025,7 @@
     ],
     "Signature": [
       {
-        "Name": "The Long Count",
+        "Name": "South of Heaven",
         "Move": {
           "Name": "Cross Armbreaker",
           "Types": [
@@ -3046,21 +3048,21 @@
     "DebutedIn": 2002,
     "Overness": 78,
     "Charisma": 3.2,
+    "Promo": {"Delivery": 52, "Improvisation": 50, "Stillness": 60, "RingPresence": 70, "CrowdWork": 72, "SetPiece": 78, "Physicality": 82, "Registers": [{"Register": "Menacing", "Rating": 72}, {"Register": "Cold", "Rating": 70, "Lean": "Scripted"}], "Range": 44},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Shinsuke Nakamura",
-      "Type": "Realist",
-      "PersonaDescriptor": "The Purist",
+      "Type": "Showman",
+      "PersonaDescriptor": "The King of Strong Style",
       "Tone": "Serious",
       "NaturalAlignment": "Tweener",
-      "PopularityModifier": 4,
       "Durability": "MediumTerm",
       "Freshness": 0.8,
       "GimmickTraits": [
         "Stiff",
-        "Uncompromising",
-        "No Wasted Motion"
+        "Eccentric",
+        "Charismatic"
       ],
       "AppealRatings": [
         {
@@ -3121,7 +3123,7 @@
     ],
     "Signature": [
       {
-        "Name": "Last Bell",
+        "Name": "Kinshasa",
         "Move": {
           "Name": "Bridging Dragon Suplex",
           "Types": [
@@ -3144,21 +3146,21 @@
     "DebutedIn": 2001,
     "Overness": 76,
     "Charisma": 4.4,
+    "Promo": {"Delivery": 74, "Improvisation": 62, "Stillness": 72, "RingPresence": 78, "CrowdWork": 70, "SetPiece": 92, "Physicality": 78, "Registers": [{"Register": "Menacing", "Rating": 80}, {"Register": "Arrogant", "Rating": 76}, {"Register": "Cold", "Rating": 72}], "Range": 60},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Finn Balor",
-      "Type": "Sellout",
-      "PersonaDescriptor": "The Corporate Signing",
-      "Tone": "Arrogant",
-      "NaturalAlignment": "Heel",
-      "PopularityModifier": 6,
+      "Type": "AntiHero",
+      "PersonaDescriptor": "The Prince",
+      "Tone": "Serious",
+      "NaturalAlignment": "Face",
       "Durability": "MediumTerm",
       "Freshness": 0.76,
       "GimmickTraits": [
-        "Smug",
-        "Well-Connected",
-        "Takes Shortcuts"
+        "Veteran",
+        "Vengeful",
+        "Demon Alter Ego"
       ],
       "AppealRatings": [
         {
@@ -3219,7 +3221,7 @@
     ],
     "Signature": [
       {
-        "Name": "The Severance",
+        "Name": "Coup de Grace",
         "Move": {
           "Name": "Uranage Slam",
           "Types": [
@@ -3242,21 +3244,21 @@
     "DebutedIn": 2007,
     "Overness": 69,
     "Charisma": 3.1,
+    "Promo": {"Delivery": 56, "Improvisation": 58, "Stillness": 60, "RingPresence": 70, "CrowdWork": 92, "SetPiece": 66, "Physicality": 76, "Registers": [{"Register": "Emotional", "Rating": 70}, {"Register": "Angry", "Rating": 64}, {"Register": "Inspirational", "Rating": 60}], "Range": 44},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Jey Uso",
-      "Type": "Loner",
-      "PersonaDescriptor": "The Coal-Country Bruiser",
+      "Type": "Showman",
+      "PersonaDescriptor": "Main Event Jey Uso",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 3,
       "Durability": "LongTerm",
       "Freshness": 0.66,
       "GimmickTraits": [
-        "Hard-Nosed",
-        "Unglamorous",
-        "Dependable"
+        "Charismatic",
+        "Crowd Favourite",
+        "Family Loyalty"
       ],
       "AppealRatings": [
         {
@@ -3313,7 +3315,7 @@
     ],
     "Signature": [
       {
-        "Name": "Pit Closer",
+        "Name": "Uso Splash",
         "Move": {
           "Name": "Short-Range Lariat",
           "Types": [
@@ -3336,21 +3338,21 @@
     "DebutedIn": 2002,
     "Overness": 60,
     "Charisma": 3.4,
+    "Promo": {"Delivery": 72, "Improvisation": 70, "Stillness": 66, "RingPresence": 72, "CrowdWork": 70, "SetPiece": 72, "Physicality": 84, "Registers": [{"Register": "Angry", "Rating": 72}, {"Register": "Funny", "Rating": 66, "Lean": "Free"}, {"Register": "Arrogant", "Rating": 68}], "Range": 58},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Sheamus",
-      "Type": "DarkPersona",
-      "PersonaDescriptor": "Keeper of Quiet Rooms",
-      "Tone": "Cryptic",
-      "NaturalAlignment": "Heel",
-      "PopularityModifier": 4,
+      "Type": "Traditionalist",
+      "PersonaDescriptor": "The Celtic Warrior",
+      "Tone": "Serious",
+      "NaturalAlignment": "Face",
       "Durability": "MediumTerm",
       "Freshness": 0.74,
       "GimmickTraits": [
-        "Unsettling",
-        "Patient",
-        "Never Speaks"
+        "Brawler",
+        "Hard-Hitting",
+        "Loud"
       ],
       "AppealRatings": [
         {
@@ -3411,7 +3413,7 @@
     ],
     "Signature": [
       {
-        "Name": "The Quiet Hour",
+        "Name": "Brogue Kick",
         "Move": {
           "Name": "Rear Naked Choke",
           "Types": [
@@ -3434,6 +3436,7 @@
     "DebutedIn": 2015,
     "Overness": 66,
     "Charisma": 4.6,
+    "Promo": {"Delivery": 86, "Improvisation": 88, "Stillness": 72, "RingPresence": 90, "CrowdWork": 92, "SetPiece": 84, "Physicality": 76, "Registers": [{"Register": "Arrogant", "Rating": 88}, {"Register": "Funny", "Rating": 84}, {"Register": "Inspirational", "Rating": 74}], "Range": 70},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -3441,14 +3444,13 @@
       "Type": "Showman",
       "PersonaDescriptor": "The Main Event Mind",
       "Tone": "Arrogant",
-      "NaturalAlignment": "Heel",
-      "PopularityModifier": 7,
+      "NaturalAlignment": "Tweener",
       "Durability": "MediumTerm",
       "Freshness": 0.82,
       "GimmickTraits": [
         "Loud",
         "Self-Mythologising",
-        "All Talk"
+        "Athletic"
       ],
       "AppealRatings": [
         {
@@ -3509,7 +3511,7 @@
     ],
     "Signature": [
       {
-        "Name": "The Highlight",
+        "Name": "Frog Splash",
         "Move": {
           "Name": "Superkick",
           "Types": [
@@ -3532,6 +3534,7 @@
     "DebutedIn": 2007,
     "Overness": 62,
     "Charisma": 4.3,
+    "Promo": {"Delivery": 80, "Improvisation": 82, "Stillness": 72, "RingPresence": 84, "CrowdWork": 86, "SetPiece": 78, "Physicality": 82, "Registers": [{"Register": "Funny", "Rating": 84}, {"Register": "Arrogant", "Rating": 78}, {"Register": "Angry", "Rating": 72}], "Range": 72},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -3540,13 +3543,12 @@
       "PersonaDescriptor": "The Merch Table Hero",
       "Tone": "Humorous",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 5,
       "Durability": "ShortTerm",
       "Freshness": 0.78,
       "GimmickTraits": [
-        "Goofy",
+        "Fun-Loving",
         "Beloved",
-        "Harmless"
+        "Family Loyalist"
       ],
       "AppealRatings": [
         {
@@ -3611,7 +3613,7 @@
     ],
     "Signature": [
       {
-        "Name": "Last Call",
+        "Name": "Uso Splash",
         "Move": {
           "Name": "Diving Elbow Drop",
           "Types": [
@@ -3634,6 +3636,7 @@
     "DebutedIn": 2007,
     "Overness": 64,
     "Charisma": 2.2,
+    "Promo": {"Delivery": 46, "Improvisation": 52, "Stillness": 42, "RingPresence": 48, "CrowdWork": 44, "SetPiece": 45, "Physicality": 66, "Registers": [{"Register": "Menacing", "Rating": 55}, {"Register": "Arrogant", "Rating": 50}], "Range": 36},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -3642,7 +3645,6 @@
       "PersonaDescriptor": "The Quarry Giant",
       "Tone": "Violent",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 3,
       "Durability": "MediumTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
@@ -3705,7 +3707,7 @@
     ],
     "Signature": [
       {
-        "Name": "Rockfall",
+        "Name": "Tsunami",
         "Move": {
           "Name": "Sit-Out Powerbomb",
           "Types": [
@@ -3728,21 +3730,21 @@
     "DebutedIn": 2012,
     "Overness": 55,
     "Charisma": 2.6,
+    "Promo": {"Delivery": 62, "Improvisation": 50, "Stillness": 58, "RingPresence": 58, "CrowdWork": 48, "SetPiece": 66, "Physicality": 76, "Registers": [{"Register": "Angry", "Rating": 70}, {"Register": "Emotional", "Rating": 66}, {"Register": "Menacing", "Rating": 60}], "Range": 42},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Ilja Dragunov",
       "Type": "Realist",
-      "PersonaDescriptor": "The Shoot-Style Import",
+      "PersonaDescriptor": "The Mad Dragon",
       "Tone": "Serious",
-      "NaturalAlignment": "Heel",
-      "PopularityModifier": 2,
+      "NaturalAlignment": "Face",
       "Durability": "MediumTerm",
       "Freshness": 0.72,
       "GimmickTraits": [
-        "Legitimate",
-        "Cold",
-        "Wrist Control"
+        "Intense",
+        "Hard-hitting",
+        "Emotional"
       ],
       "AppealRatings": [
         {
@@ -3803,7 +3805,7 @@
     ],
     "Signature": [
       {
-        "Name": "The Referee Stoppage",
+        "Name": "Torpedo Moscow",
         "Move": {
           "Name": "Cross-Face Chickenwing",
           "Types": [
@@ -3826,6 +3828,7 @@
     "DebutedIn": 2008,
     "Overness": 70,
     "Charisma": 4.0,
+    "Promo": {"Delivery": 84, "Improvisation": 70, "Stillness": 78, "RingPresence": 82, "CrowdWork": 74, "SetPiece": 82, "Physicality": 76, "Registers": [{"Register": "Arrogant", "Rating": 88}, {"Register": "Cold", "Rating": 72}], "Range": 64},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -3834,7 +3837,6 @@
       "PersonaDescriptor": "Old Money",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 5,
       "Durability": "MediumTerm",
       "Freshness": 0.75,
       "GimmickTraits": [
@@ -3897,7 +3899,7 @@
     ],
     "Signature": [
       {
-        "Name": "The Inheritance",
+        "Name": "Figure-Four Leglock",
         "Move": {
           "Name": "Figure-Four Leglock",
           "Types": [
@@ -3921,15 +3923,15 @@
     "DebutedIn": 2012,
     "Overness": 58,
     "Charisma": 3.5,
+    "Promo": {"Delivery": 64, "Improvisation": 60, "Stillness": 62, "RingPresence": 64, "CrowdWork": 72, "SetPiece": 70, "Physicality": 68, "Registers": [{"Register": "Funny", "Rating": 68}, {"Register": "Inspirational", "Rating": 58}], "Range": 55},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Angelo Dawkins",
       "Type": "Underdog",
       "PersonaDescriptor": "Never Quite The Guy",
-      "Tone": "Melancholic",
-      "NaturalAlignment": "Face",
-      "PopularityModifier": 3,
+      "Tone": "Serious",
+      "NaturalAlignment": "Tweener",
       "Durability": "LongTerm",
       "Freshness": 0.6,
       "GimmickTraits": [
@@ -3992,7 +3994,7 @@
     ],
     "Signature": [
       {
-        "Name": "One More Round",
+        "Name": "Bridging Fisherman Suplex",
         "Move": {
           "Name": "Bridging Fisherman Suplex",
           "Types": [
@@ -4016,21 +4018,21 @@
     "DebutedIn": 2014,
     "Overness": 59,
     "Charisma": 3.9,
+    "Promo": {"Delivery": 80, "Improvisation": 76, "Stillness": 76, "RingPresence": 80, "CrowdWork": 72, "SetPiece": 74, "Physicality": 62, "Registers": [{"Register": "Arrogant", "Rating": 82}, {"Register": "Cold", "Rating": 70}, {"Register": "Emotional", "Rating": 66}], "Range": 64},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Carmelo Hayes",
-      "Type": "Rebel",
-      "PersonaDescriptor": "The Sound And The Fury",
-      "Tone": "Chaotic",
-      "NaturalAlignment": "Face",
-      "PopularityModifier": 4,
+      "Type": "Egotist",
+      "PersonaDescriptor": "Him",
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Heel",
       "Durability": "ShortTerm",
       "Freshness": 0.84,
       "GimmickTraits": [
-        "Reckless",
-        "Anti-Authority",
-        "Buzzy"
+        "Confident",
+        "Smooth",
+        "Opportunistic"
       ],
       "AppealRatings": [
         {
@@ -4091,7 +4093,7 @@
     ],
     "Signature": [
       {
-        "Name": "Feedback",
+        "Name": "Nothing But Net",
         "Move": {
           "Name": "Shooting Star Press",
           "Types": [
@@ -4114,6 +4116,7 @@
     "DebutedIn": 2012,
     "Overness": 61,
     "Charisma": 2.8,
+    "Promo": {"Delivery": 62, "Improvisation": 55, "Stillness": 58, "RingPresence": 62, "CrowdWork": 55, "SetPiece": 60, "Physicality": 60, "Registers": [{"Register": "Arrogant", "Rating": 66}, {"Register": "Angry", "Rating": 58}], "Range": 50},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -4122,7 +4125,6 @@
       "PersonaDescriptor": "The Drifter",
       "Tone": "Melancholic",
       "NaturalAlignment": "Tweener",
-      "PopularityModifier": 2,
       "Durability": "MediumTerm",
       "Freshness": 0.62,
       "GimmickTraits": [
@@ -4185,7 +4187,7 @@
     ],
     "Signature": [
       {
-        "Name": "Last Stop",
+        "Name": "End of Days",
         "Move": {
           "Name": "Spinning Backfist",
           "Types": [
@@ -4208,21 +4210,21 @@
     "DebutedIn": 2005,
     "Overness": 45,
     "Charisma": 3.3,
+    "Promo": {"Delivery": 68, "Improvisation": 70, "Stillness": 64, "RingPresence": 66, "CrowdWork": 72, "SetPiece": 68, "Physicality": 56, "Registers": [{"Register": "Funny", "Rating": 74, "Lean": "Free"}, {"Register": "Emotional", "Rating": 62}], "Range": 54},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Xavier Woods",
-      "Type": "Traditionalist",
-      "PersonaDescriptor": "The Territory Kid",
-      "Tone": "Inspirational",
-      "NaturalAlignment": "Face",
-      "PopularityModifier": 2,
+      "Type": "Sellout",
+      "PersonaDescriptor": "New Day's Gamer",
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Heel",
       "Durability": "MediumTerm",
       "Freshness": 0.68,
       "GimmickTraits": [
-        "Earnest",
-        "Fundamentals First",
-        "Still Learning"
+        "Gamer",
+        "Smug",
+        "Veteran"
       ],
       "AppealRatings": [
         {
@@ -4279,7 +4281,7 @@
     ],
     "Signature": [
       {
-        "Name": "Homecoming",
+        "Name": "Backwoods",
         "Move": {
           "Name": "Rolling Cradle",
           "Types": [
@@ -4317,21 +4319,21 @@
     "DebutedIn": 2011,
     "Overness": 36,
     "Charisma": 3.7,
+    "Promo": {"Delivery": 56, "Improvisation": 48, "Stillness": 52, "RingPresence": 60, "CrowdWork": 66, "SetPiece": 70, "Physicality": 74, "Registers": [{"Register": "Arrogant", "Rating": 64}, {"Register": "Funny", "Rating": 60}], "Range": 46},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Giovanni Vinci",
-      "Type": "Sellout",
-      "PersonaDescriptor": "The Insurance Salesman",
-      "Tone": "SelfRighteous",
+      "Type": "Egotist",
+      "PersonaDescriptor": "Vain Italian model",
+      "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 2,
       "Durability": "ShortTerm",
       "Freshness": 0.66,
       "GimmickTraits": [
-        "Weaselly",
-        "Litigious",
-        "Talks Too Much"
+        "Vain",
+        "Wealthy",
+        "Powerhouse"
       ],
       "AppealRatings": [
         {
@@ -4388,7 +4390,7 @@
     ],
     "Signature": [
       {
-        "Name": "Fine Print",
+        "Name": "Handful Of Tights",
         "Move": {
           "Name": "Handful Of Tights",
           "Types": [
@@ -4411,15 +4413,15 @@
     "DebutedIn": 2012,
     "Overness": 43,
     "Charisma": 3.0,
+    "Promo": {"Delivery": 52, "Improvisation": 45, "Stillness": 50, "RingPresence": 52, "CrowdWork": 55, "SetPiece": 60, "Physicality": 60, "Registers": [{"Register": "Inspirational", "Rating": 58}, {"Register": "Funny", "Rating": 50}], "Range": 45},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Axiom",
       "Type": "Underdog",
-      "PersonaDescriptor": "The Kid From The Parking Lot",
+      "PersonaDescriptor": "Masked Spanish High-Flyer",
       "Tone": "Inspirational",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 2,
       "Durability": "ShortTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
@@ -4486,7 +4488,7 @@
     ],
     "Signature": [
       {
-        "Name": "Parking Lot Special",
+        "Name": "Golden Ratio",
         "Move": {
           "Name": "450 Splash",
           "Types": [
@@ -4510,21 +4512,21 @@
     "DebutedIn": 2018,
     "Overness": 41,
     "Charisma": 2.7,
+    "Promo": {"Delivery": 54, "Improvisation": 50, "Stillness": 54, "RingPresence": 52, "CrowdWork": 50, "SetPiece": 58, "Physicality": 60, "Registers": [{"Register": "Arrogant", "Rating": 54}], "Range": 42},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Nathan Frazer",
-      "Type": "Cryptic",
-      "PersonaDescriptor": "The Signal From The Dark",
-      "Tone": "Cryptic",
-      "NaturalAlignment": "Heel",
-      "PopularityModifier": 1,
+      "Type": "Daredevil",
+      "PersonaDescriptor": "High-Flying Tag Specialist",
+      "Tone": "Serious",
+      "NaturalAlignment": "Face",
       "Durability": "ShortTerm",
       "Freshness": 0.8,
       "GimmickTraits": [
-        "Obscure",
-        "Twitching",
-        "Unreadable"
+        "Acrobatic",
+        "Fearless",
+        "Team Player"
       ],
       "AppealRatings": [
         {
@@ -4585,7 +4587,7 @@
     ],
     "Signature": [
       {
-        "Name": "Dead Air",
+        "Name": "Phoenix Splash",
         "Move": {
           "Name": "Bicycle Knee Strike",
           "Types": [
@@ -4608,21 +4610,21 @@
     "DebutedIn": 2001,
     "Overness": 38,
     "Charisma": 3.6,
+    "Promo": {"Delivery": 64, "Improvisation": 62, "Stillness": 50, "RingPresence": 62, "CrowdWork": 74, "SetPiece": 76, "Physicality": 76, "Registers": [{"Register": "Funny", "Rating": 74}, {"Register": "Menacing", "Rating": 56}], "Range": 50},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Ivar",
-      "Type": "Comedy",
-      "PersonaDescriptor": "The Lunchpail",
-      "Tone": "Humorous",
+      "Type": "Monster",
+      "PersonaDescriptor": "The War Raider",
+      "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 2,
       "Durability": "ShortTerm",
       "Freshness": 0.72,
       "GimmickTraits": [
-        "Lovable",
-        "Clumsy",
-        "Enormous Appetite"
+        "Viking",
+        "Agile Big Man",
+        "Hard-Hitting"
       ],
       "AppealRatings": [
         {
@@ -4687,7 +4689,7 @@
     ],
     "Signature": [
       {
-        "Name": "The Lunch Break",
+        "Name": "Running Senton",
         "Move": {
           "Name": "Running Senton",
           "Types": [
@@ -4710,21 +4712,21 @@
     "DebutedIn": 2006,
     "Overness": 44,
     "Charisma": 2.9,
+    "Promo": {"Delivery": 62, "Improvisation": 60, "Stillness": 60, "RingPresence": 62, "CrowdWork": 66, "SetPiece": 60, "Physicality": 60, "Registers": [{"Register": "Emotional", "Rating": 70}, {"Register": "Inspirational", "Rating": 66}, {"Register": "Funny", "Rating": 64}], "Range": 54},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Kofi Kingston",
-      "Type": "Realist",
-      "PersonaDescriptor": "The Trainer's Son",
-      "Tone": "Serious",
-      "NaturalAlignment": "Face",
-      "PopularityModifier": 1,
+      "Type": "Sellout",
+      "PersonaDescriptor": "New Day Veteran",
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Heel",
       "Durability": "MediumTerm",
       "Freshness": 0.64,
       "GimmickTraits": [
-        "Studious",
-        "Unmarketable",
-        "Excellent Hands"
+        "Veteran",
+        "Smug",
+        "Tag Team Specialist"
       ],
       "AppealRatings": [
         {
@@ -4781,7 +4783,7 @@
     ],
     "Signature": [
       {
-        "Name": "The Chalkboard",
+        "Name": "Trouble in Paradise",
         "Move": {
           "Name": "Double Underhook Suplex",
           "Types": [
@@ -4819,6 +4821,7 @@
     "DebutedIn": 2006,
     "Overness": 24,
     "Charisma": 2.2,
+    "Promo": {"Delivery": 46, "Improvisation": 42, "Stillness": 48, "RingPresence": 44, "CrowdWork": 40, "SetPiece": 52, "Physicality": 55, "Registers": [{"Register": "Arrogant", "Rating": 48}, {"Register": "Cold", "Rating": 45}], "Range": 35},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -4827,7 +4830,6 @@
       "PersonaDescriptor": "Just A Guy In Trunks",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 0,
       "Durability": "ShortTerm",
       "Freshness": 0.5,
       "GimmickTraits": [
@@ -4890,7 +4892,7 @@
     ],
     "Signature": [
       {
-        "Name": "The Payoff",
+        "Name": "Swinging Neckbreaker",
         "Move": {
           "Name": "Swinging Neckbreaker",
           "Types": [
@@ -4914,21 +4916,21 @@
     "DebutedIn": 2019,
     "Overness": 52,
     "Charisma": 2.9,
+    "Promo": {"Delivery": 66, "Improvisation": 56, "Stillness": 64, "RingPresence": 60, "CrowdWork": 52, "SetPiece": 72, "Physicality": 66, "Registers": [{"Register": "Arrogant", "Rating": 66}, {"Register": "Menacing", "Rating": 60, "Lean": "Scripted"}, {"Register": "Funny", "Rating": 58}], "Range": 46},
     "Style": "Grappler",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Tony D'Angelo",
-      "Type": "Egotist",
-      "PersonaDescriptor": "The Local Hero, Allegedly",
-      "Tone": "Arrogant",
-      "NaturalAlignment": "Heel",
-      "PopularityModifier": 0,
+      "Type": "Realist",
+      "PersonaDescriptor": "The Don of NXT",
+      "Tone": "Serious",
+      "NaturalAlignment": "Face",
       "Durability": "ShortTerm",
       "Freshness": 0.58,
       "GimmickTraits": [
-        "Deluded",
-        "Preening",
-        "Thin-Skinned"
+        "Streetwise",
+        "Loyal",
+        "Tough"
       ],
       "AppealRatings": [
         {
@@ -4985,7 +4987,7 @@
     ],
     "Signature": [
       {
-        "Name": "Standing Ovation",
+        "Name": "Dead to Rights",
         "Move": {
           "Name": "Spinning Back Kick",
           "Types": [
@@ -5008,20 +5010,20 @@
     "DebutedIn": 2003,
     "Overness": 35,
     "Charisma": 2.0,
+    "Promo": {"Delivery": 40, "Improvisation": 34, "Stillness": 38, "RingPresence": 42, "CrowdWork": 40, "SetPiece": 56, "Physicality": 72, "Registers": [{"Register": "Angry", "Rating": 52}, {"Register": "Menacing", "Rating": 50}], "Range": 30},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Erik",
       "Type": "Monster",
-      "PersonaDescriptor": "The Warehouse",
+      "PersonaDescriptor": "War Raider",
       "Tone": "Violent",
-      "NaturalAlignment": "Heel",
-      "PopularityModifier": 1,
+      "NaturalAlignment": "Face",
       "Durability": "ShortTerm",
       "Freshness": 0.6,
       "GimmickTraits": [
         "Immovable",
-        "Green",
+        "Veteran",
         "Blunt Instrument"
       ],
       "AppealRatings": [
@@ -5079,7 +5081,7 @@
     ],
     "Signature": [
       {
-        "Name": "Loading Dock",
+        "Name": "Military Press Slam",
         "Move": {
           "Name": "Military Press Slam",
           "Types": [
@@ -5102,21 +5104,21 @@
     "DebutedIn": 2021,
     "Overness": 89,
     "Charisma": 4.8,
+    "Promo": {"Delivery": 80, "Improvisation": 80, "Stillness": 72, "RingPresence": 90, "CrowdWork": 92, "SetPiece": 88, "Physicality": 74, "Registers": [{"Register": "Arrogant", "Rating": 90}, {"Register": "Funny", "Rating": 80, "Lean": "Free"}], "Range": 62},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Tiffany Stratton",
-      "Type": "Rebel",
-      "PersonaDescriptor": "Loudest Woman In The Building",
-      "Tone": "Chaotic",
-      "NaturalAlignment": "Face",
-      "PopularityModifier": 10,
+      "Type": "Egotist",
+      "PersonaDescriptor": "Spoiled Daddy's Girl",
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Heel",
       "Durability": "MediumTerm",
       "Freshness": 0.9,
       "GimmickTraits": [
-        "Fearless",
-        "Mouthy",
-        "Beloved"
+        "Spoiled",
+        "Glamorous",
+        "Athletic"
       ],
       "AppealRatings": [
         {
@@ -5177,7 +5179,7 @@
     ],
     "Signature": [
       {
-        "Name": "Riot Act",
+        "Name": "Prettiest Moonsault Ever",
         "Move": {
           "Name": "Discus Lariat",
           "Types": [
@@ -5200,21 +5202,21 @@
     "DebutedIn": 2021,
     "Overness": 84,
     "Charisma": 3.0,
+    "Promo": {"Delivery": 55, "Improvisation": 45, "Stillness": 58, "RingPresence": 66, "CrowdWork": 52, "SetPiece": 74, "Physicality": 72, "Registers": [{"Register": "Arrogant", "Rating": 64}, {"Register": "Cold", "Rating": 60}, {"Register": "Menacing", "Rating": 58}], "Range": 40},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Jade Cargill",
       "Type": "Monster",
-      "PersonaDescriptor": "The Iron Mountain",
+      "PersonaDescriptor": "Storm-Inspired Powerhouse",
       "Tone": "Serious",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 7,
       "Durability": "LongTerm",
       "Freshness": 0.82,
       "GimmickTraits": [
         "Towering",
         "Merciless",
-        "Never Pinned Clean"
+        "Imposing"
       ],
       "AppealRatings": [
         {
@@ -5271,7 +5273,7 @@
     ],
     "Signature": [
       {
-        "Name": "Glacier Drop",
+        "Name": "Jaded",
         "Move": {
           "Name": "Sit-Out Chokebomb",
           "Types": [
@@ -5294,20 +5296,20 @@
     "DebutedIn": 2015,
     "Overness": 80,
     "Charisma": 4.6,
+    "Promo": {"Delivery": 76, "Improvisation": 70, "Stillness": 66, "RingPresence": 84, "CrowdWork": 80, "SetPiece": 82, "Physicality": 92, "Registers": [{"Register": "Arrogant", "Rating": 86}, {"Register": "Funny", "Rating": 74, "Lean": "Free"}], "Range": 58},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Nia Jax",
-      "Type": "Showman",
-      "PersonaDescriptor": "The Golden Hour",
+      "Type": "Monster",
+      "PersonaDescriptor": "The Irresistible Force",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 8,
       "Durability": "MediumTerm",
       "Freshness": 0.85,
       "GimmickTraits": [
-        "Glamorous",
-        "Photogenic",
+        "Powerhouse",
+        "Bully",
         "Ruthless"
       ],
       "AppealRatings": [
@@ -5369,7 +5371,7 @@
     ],
     "Signature": [
       {
-        "Name": "Golden Hour",
+        "Name": "Annihilator",
         "Move": {
           "Name": "Corkscrew Moonsault",
           "Types": [
@@ -5392,15 +5394,15 @@
     "DebutedIn": 2015,
     "Overness": 77,
     "Charisma": 3.3,
+    "Promo": {"Delivery": 62, "Improvisation": 55, "Stillness": 64, "RingPresence": 62, "CrowdWork": 60, "SetPiece": 66, "Physicality": 62, "Registers": [{"Register": "Inspirational", "Rating": 62}, {"Register": "Emotional", "Rating": 60}], "Range": 48},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Lyra Valkyria",
       "Type": "Traditionalist",
-      "PersonaDescriptor": "The Textbook",
+      "PersonaDescriptor": "Irish High-Flyer",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 5,
       "Durability": "LongTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
@@ -5463,7 +5465,7 @@
     ],
     "Signature": [
       {
-        "Name": "Chapter And Verse",
+        "Name": "Nightwing",
         "Move": {
           "Name": "Bridging Tiger Suplex",
           "Types": [
@@ -5486,21 +5488,21 @@
     "DebutedIn": 2014,
     "Overness": 84,
     "Charisma": 3.4,
+    "Promo": {"Delivery": 74, "Improvisation": 72, "Stillness": 62, "RingPresence": 72, "CrowdWork": 76, "SetPiece": 74, "Physicality": 50, "Registers": [{"Register": "Funny", "Rating": 84, "Lean": "Free"}, {"Register": "Arrogant", "Rating": 72}], "Range": 48},
     "Style": "Grappler",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Chelsea Green",
-      "Type": "Loner",
-      "PersonaDescriptor": "The Cold Read",
-      "Tone": "Melancholic",
-      "NaturalAlignment": "Tweener",
-      "PopularityModifier": 4,
+      "Type": "Comedy",
+      "PersonaDescriptor": "The Comedic Karen",
+      "Tone": "Humorous",
+      "NaturalAlignment": "Heel",
       "Durability": "MediumTerm",
       "Freshness": 0.76,
       "GimmickTraits": [
-        "Detached",
-        "Analytical",
-        "Friendless"
+        "Entitled",
+        "Complainer",
+        "Comedic"
       ],
       "AppealRatings": [
         {
@@ -5557,7 +5559,7 @@
     ],
     "Signature": [
       {
-        "Name": "Full Stop",
+        "Name": "Unprettier",
         "Move": {
           "Name": "Inverted Cloverleaf",
           "Types": [
@@ -5580,21 +5582,21 @@
     "DebutedIn": 2018,
     "Overness": 71,
     "Charisma": 4.0,
+    "Promo": {"Delivery": 76, "Improvisation": 70, "Stillness": 74, "RingPresence": 76, "CrowdWork": 74, "SetPiece": 74, "Physicality": 70, "Registers": [{"Register": "Emotional", "Rating": 78}, {"Register": "Arrogant", "Rating": 76}, {"Register": "Inspirational", "Rating": 70}], "Range": 62},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Roxanne Perez",
-      "Type": "Underdog",
-      "PersonaDescriptor": "Smallest Person In The Building",
-      "Tone": "Inspirational",
-      "NaturalAlignment": "Face",
-      "PopularityModifier": 6,
+      "Type": "Egotist",
+      "PersonaDescriptor": "The Prodigy",
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Heel",
       "Durability": "MediumTerm",
       "Freshness": 0.8,
       "GimmickTraits": [
         "Tiny",
-        "Relentless",
-        "Crowd Favourite"
+        "Scheming",
+        "Cocky"
       ],
       "AppealRatings": [
         {
@@ -5655,7 +5657,7 @@
     ],
     "Signature": [
       {
-        "Name": "Little Bird",
+        "Name": "Pop Rox",
         "Move": {
           "Name": "Diving Double Stomp",
           "Types": [
@@ -5678,15 +5680,15 @@
     "DebutedIn": 2009,
     "Overness": 80,
     "Charisma": 3.7,
+    "Promo": {"Delivery": 56, "Improvisation": 50, "Stillness": 52, "RingPresence": 72, "CrowdWork": 84, "SetPiece": 70, "Physicality": 84, "Registers": [{"Register": "Inspirational", "Rating": 68}, {"Register": "Emotional", "Rating": 64}], "Range": 46},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Stephanie Vaquer",
       "Type": "Daredevil",
-      "PersonaDescriptor": "La Tormenta",
+      "PersonaDescriptor": "La Primera",
       "Tone": "Chaotic",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 5,
       "Durability": "ShortTerm",
       "Freshness": 0.86,
       "GimmickTraits": [
@@ -5753,7 +5755,7 @@
     ],
     "Signature": [
       {
-        "Name": "Tormenta",
+        "Name": "SVB",
         "Move": {
           "Name": "Spanish Fly",
           "Types": [
@@ -5777,21 +5779,21 @@
     "DebutedIn": 2009,
     "Overness": 44,
     "Charisma": 3.5,
+    "Promo": {"Delivery": 64, "Improvisation": 56, "Stillness": 66, "RingPresence": 62, "CrowdWork": 52, "SetPiece": 74, "Physicality": 72, "Registers": [{"Register": "Menacing", "Rating": 70}, {"Register": "Cold", "Rating": 64}], "Range": 50},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Alba Fyre",
       "Type": "DarkPersona",
-      "PersonaDescriptor": "The Girl In The Polaroid",
+      "PersonaDescriptor": "Scottish Hardcore Brawler",
       "Tone": "Cryptic",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 4,
       "Durability": "MediumTerm",
       "Freshness": 0.78,
       "GimmickTraits": [
-        "Eerie",
-        "Nostalgic",
-        "Vacant Stare"
+        "Hardcore",
+        "Fearless",
+        "Scottish"
       ],
       "AppealRatings": [
         {
@@ -5852,7 +5854,7 @@
     ],
     "Signature": [
       {
-        "Name": "Flashbulb",
+        "Name": "Gory Bomb",
         "Move": {
           "Name": "Busaiku Knee",
           "Types": [
@@ -5876,6 +5878,7 @@
     "DebutedIn": 2009,
     "Overness": 70,
     "Charisma": 3.2,
+    "Promo": {"Delivery": 52, "Improvisation": 50, "Stillness": 52, "RingPresence": 58, "CrowdWork": 58, "SetPiece": 60, "Physicality": 80, "Registers": [{"Register": "Angry", "Rating": 62}], "Range": 36},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -5883,8 +5886,7 @@
       "Type": "AntiHero",
       "PersonaDescriptor": "The Bouncer",
       "Tone": "Serious",
-      "NaturalAlignment": "Tweener",
-      "PopularityModifier": 3,
+      "NaturalAlignment": "Heel",
       "Durability": "MediumTerm",
       "Freshness": 0.72,
       "GimmickTraits": [
@@ -5947,7 +5949,7 @@
     ],
     "Signature": [
       {
-        "Name": "Closing Time",
+        "Name": "Head Kick",
         "Move": {
           "Name": "Head Kick",
           "Types": [
@@ -5970,21 +5972,21 @@
     "DebutedIn": 2012,
     "Overness": 52,
     "Charisma": 2.8,
+    "Promo": {"Delivery": 46, "Improvisation": 36, "Stillness": 50, "RingPresence": 54, "CrowdWork": 64, "SetPiece": 66, "Physicality": 62, "Registers": [{"Register": "Funny", "Rating": 58}, {"Register": "Arrogant", "Rating": 50}], "Range": 36},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Kairi Sane",
-      "Type": "Realist",
-      "PersonaDescriptor": "The Shooter",
+      "Type": "Showman",
+      "PersonaDescriptor": "The Pirate Princess",
       "Tone": "Serious",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 2,
       "Durability": "MediumTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
-        "Legitimate",
-        "Humourless",
-        "Dangerous"
+        "Flamboyant",
+        "Agile",
+        "Sneaky"
       ],
       "AppealRatings": [
         {
@@ -6041,7 +6043,7 @@
     ],
     "Signature": [
       {
-        "Name": "The Clinic",
+        "Name": "Insane Elbow",
         "Move": {
           "Name": "Arm-Trap Crossface",
           "Types": [
@@ -6064,21 +6066,21 @@
     "DebutedIn": 2007,
     "Overness": 42,
     "Charisma": 4.2,
+    "Promo": {"Delivery": 72, "Improvisation": 76, "Stillness": 76, "RingPresence": 72, "CrowdWork": 70, "SetPiece": 74, "Physicality": 80, "Registers": [{"Register": "Funny", "Rating": 80, "Lean": "Free"}, {"Register": "Arrogant", "Rating": 74}], "Range": 66},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Dakota Kai",
-      "Type": "Comedy",
-      "PersonaDescriptor": "The Bingo Hall Legend",
-      "Tone": "Humorous",
+      "Type": "Realist",
+      "PersonaDescriptor": "Captain of Team Kick",
+      "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 5,
       "Durability": "LongTerm",
       "Freshness": 0.68,
       "GimmickTraits": [
         "Veteran",
-        "Deadpan",
-        "Hits Harder Than She Looks"
+        "Hard-Kicking",
+        "Resilient"
       ],
       "AppealRatings": [
         {
@@ -6139,7 +6141,7 @@
     ],
     "Signature": [
       {
-        "Name": "Last Orders",
+        "Name": "Kairopractor",
         "Move": {
           "Name": "Bionic Elbow",
           "Types": [
@@ -6163,21 +6165,21 @@
     "DebutedIn": 2013,
     "Overness": 42,
     "Charisma": 4.1,
+    "Promo": {"Delivery": 72, "Improvisation": 60, "Stillness": 78, "RingPresence": 70, "CrowdWork": 58, "SetPiece": 88, "Physicality": 68, "Registers": [{"Register": "Menacing", "Rating": 80}, {"Register": "Cold", "Rating": 72}], "Range": 46},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Isla Dawn",
-      "Type": "Egotist",
-      "PersonaDescriptor": "Trust-Fund Terror",
-      "Tone": "Arrogant",
+      "Type": "DarkPersona",
+      "PersonaDescriptor": "The Occult Witch",
+      "Tone": "Cryptic",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 4,
       "Durability": "MediumTerm",
       "Freshness": 0.76,
       "GimmickTraits": [
-        "Spoiled",
-        "Vicious",
-        "Buys Her Way Out"
+        "Occult",
+        "Mystic",
+        "Vicious"
       ],
       "AppealRatings": [
         {
@@ -6238,7 +6240,7 @@
     ],
     "Signature": [
       {
-        "Name": "The Allowance",
+        "Name": "Reverse Figure-Four",
         "Move": {
           "Name": "Reverse Figure-Four",
           "Types": [
@@ -6261,21 +6263,21 @@
     "DebutedIn": 2013,
     "Overness": 47,
     "Charisma": 3.8,
+    "Promo": {"Delivery": 62, "Improvisation": 54, "Stillness": 60, "RingPresence": 66, "CrowdWork": 58, "SetPiece": 74, "Physicality": 82, "Registers": [{"Register": "Arrogant", "Rating": 64, "Lean": "Scripted"}, {"Register": "Cold", "Rating": 60}], "Range": 50},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Zoey Stark",
-      "Type": "Sellout",
-      "PersonaDescriptor": "The Ratings Darling",
-      "Tone": "SelfRighteous",
+      "Type": "Daredevil",
+      "PersonaDescriptor": "Z360 specialist",
+      "Tone": "Serious",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 3,
       "Durability": "ShortTerm",
       "Freshness": 0.72,
       "GimmickTraits": [
-        "Media-Trained",
-        "Insincere",
-        "Protected"
+        "Athletic",
+        "Aggressive",
+        "Opportunistic"
       ],
       "AppealRatings": [
         {
@@ -6336,7 +6338,7 @@
     ],
     "Signature": [
       {
-        "Name": "Prime Time",
+        "Name": "Z360",
         "Move": {
           "Name": "Fisherman Neckbreaker",
           "Types": [
@@ -6359,15 +6361,15 @@
     "DebutedIn": 2002,
     "Overness": 53,
     "Charisma": 3.1,
+    "Promo": {"Delivery": 58, "Improvisation": 52, "Stillness": 60, "RingPresence": 55, "CrowdWork": 58, "SetPiece": 62, "Physicality": 66, "Registers": [{"Register": "Emotional", "Rating": 62}, {"Register": "Funny", "Rating": 55}], "Range": 50},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Candice LeRae",
       "Type": "Daredevil",
-      "PersonaDescriptor": "All Risk, No Reward",
+      "PersonaDescriptor": "The Poison Pixie",
       "Tone": "Chaotic",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 2,
       "Durability": "ShortTerm",
       "Freshness": 0.82,
       "GimmickTraits": [
@@ -6434,7 +6436,7 @@
     ],
     "Signature": [
       {
-        "Name": "No Brakes",
+        "Name": "Lionsault",
         "Move": {
           "Name": "Swanton Bomb",
           "Types": [
@@ -6457,21 +6459,21 @@
     "DebutedIn": 2012,
     "Overness": 40,
     "Charisma": 1.9,
+    "Promo": {"Delivery": 38, "Improvisation": 32, "Stillness": 42, "RingPresence": 38, "CrowdWork": 30, "SetPiece": 48, "Physicality": 58, "Registers": [{"Register": "Cold", "Rating": 50}, {"Register": "Menacing", "Rating": 48}], "Range": 30},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Blair Davenport",
-      "Type": "Monster",
+      "Type": "Realist",
       "PersonaDescriptor": "The Standing Stone",
       "Tone": "Serious",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 1,
       "Durability": "MediumTerm",
       "Freshness": 0.64,
       "GimmickTraits": [
-        "Immovable",
-        "Wordless",
-        "Sheer Mass"
+        "Stiff Striker",
+        "Vicious",
+        "Entitled"
       ],
       "AppealRatings": [
         {
@@ -6528,7 +6530,7 @@
     ],
     "Signature": [
       {
-        "Name": "Standing Stone",
+        "Name": "Spinning Side Slam",
         "Move": {
           "Name": "Spinning Side Slam",
           "Types": [
@@ -6551,21 +6553,21 @@
     "DebutedIn": 2023,
     "Overness": 56,
     "Charisma": 3.4,
+    "Promo": {"Delivery": 64, "Improvisation": 58, "Stillness": 60, "RingPresence": 66, "CrowdWork": 72, "SetPiece": 72, "Physicality": 62, "Registers": [{"Register": "Funny", "Rating": 66}, {"Register": "Inspirational", "Rating": 66}], "Range": 54},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Maxxine Dupri",
       "Type": "Underdog",
-      "PersonaDescriptor": "Never Beaten, Never Booked",
+      "PersonaDescriptor": "Former Women's Intercontinental Champion",
       "Tone": "Inspirational",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 2,
       "Durability": "MediumTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
-        "Overlooked",
-        "Technically Sound",
-        "Patient"
+        "Determined",
+        "Upbeat",
+        "Improving"
       ],
       "AppealRatings": [
         {
@@ -6622,7 +6624,7 @@
     ],
     "Signature": [
       {
-        "Name": "Second Wind",
+        "Name": "Bridging Half Nelson Suplex",
         "Move": {
           "Name": "Bridging Half Nelson Suplex",
           "Types": [
@@ -6645,6 +6647,7 @@
     "DebutedIn": 2018,
     "Overness": 38,
     "Charisma": 3.6,
+    "Promo": {"Delivery": 72, "Improvisation": 66, "Stillness": 64, "RingPresence": 72, "CrowdWork": 66, "SetPiece": 66, "Physicality": 64, "Registers": [{"Register": "Arrogant", "Rating": 72}, {"Register": "Angry", "Rating": 68}], "Range": 58},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -6653,7 +6656,6 @@
       "PersonaDescriptor": "The Bar-Fight Champion",
       "Tone": "Chaotic",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 2,
       "Durability": "ShortTerm",
       "Freshness": 0.78,
       "GimmickTraits": [
@@ -6716,7 +6718,7 @@
     ],
     "Signature": [
       {
-        "Name": "Glass House",
+        "Name": "Jaded",
         "Move": {
           "Name": "Discus Forearm",
           "Types": [
@@ -6740,21 +6742,21 @@
     "DebutedIn": 2018,
     "Overness": 63,
     "Charisma": 2.5,
+    "Promo": {"Delivery": 56, "Improvisation": 52, "Stillness": 52, "RingPresence": 56, "CrowdWork": 50, "SetPiece": 58, "Physicality": 60, "Registers": [{"Register": "Arrogant", "Rating": 62}, {"Register": "Cold", "Rating": 54}], "Range": 46},
     "Style": "Grappler",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Jacy Jayne",
-      "Type": "Loner",
-      "PersonaDescriptor": "Speaks To No One",
-      "Tone": "Melancholic",
+      "Type": "Egotist",
+      "PersonaDescriptor": "Leader of Fatal Influence",
+      "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 1,
       "Durability": "MediumTerm",
       "Freshness": 0.66,
       "GimmickTraits": [
-        "Silent",
-        "Withdrawn",
-        "Sudden"
+        "Mouthy",
+        "Cunning",
+        "Ringleader"
       ],
       "AppealRatings": [
         {
@@ -6811,7 +6813,7 @@
     ],
     "Signature": [
       {
-        "Name": "Nothing To Say",
+        "Name": "Dragon Sleeper",
         "Move": {
           "Name": "Dragon Sleeper",
           "Types": [
@@ -6835,15 +6837,15 @@
     "DebutedIn": 2022,
     "Overness": 56,
     "Charisma": 3.5,
+    "Promo": {"Delivery": 62, "Improvisation": 60, "Stillness": 58, "RingPresence": 66, "CrowdWork": 74, "SetPiece": 70, "Physicality": 66, "Registers": [{"Register": "Funny", "Rating": 70}, {"Register": "Inspirational", "Rating": 64}], "Range": 38},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Sol Ruca",
-      "Type": "Comedy",
-      "PersonaDescriptor": "The Enthusiast",
-      "Tone": "Humorous",
+      "Type": "Daredevil",
+      "PersonaDescriptor": "The Surfer",
+      "Tone": "Inspirational",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 1,
       "Durability": "ShortTerm",
       "Freshness": 0.74,
       "GimmickTraits": [
@@ -6910,7 +6912,7 @@
     ],
     "Signature": [
       {
-        "Name": "Big Finish",
+        "Name": "Sol Snatcher",
         "Move": {
           "Name": "Diving Crossbody",
           "Types": [
@@ -6934,21 +6936,21 @@
     "DebutedIn": 2020,
     "Overness": 34,
     "Charisma": 2.0,
+    "Promo": {"Delivery": 42, "Improvisation": 36, "Stillness": 40, "RingPresence": 42, "CrowdWork": 38, "SetPiece": 58, "Physicality": 78, "Registers": [{"Register": "Angry", "Rating": 56}, {"Register": "Cold", "Rating": 52}], "Range": 32},
     "Style": "Grappler",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Ivy Nile",
       "Type": "Monster",
-      "PersonaDescriptor": "Hired Muscle",
+      "PersonaDescriptor": "The Pitbull",
       "Tone": "Violent",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 0,
       "Durability": "ShortTerm",
       "Freshness": 0.6,
       "GimmickTraits": [
-        "Blunt",
-        "Heavy-Handed",
-        "Silent"
+        "Intense",
+        "Athletic",
+        "Submission Specialist"
       ],
       "AppealRatings": [
         {
@@ -7005,7 +7007,7 @@
     ],
     "Signature": [
       {
-        "Name": "Payday",
+        "Name": "Diamond Chain Lock",
         "Move": {
           "Name": "Torture Rack",
           "Types": [
@@ -7029,21 +7031,21 @@
     "DebutedIn": 2021,
     "Overness": 43,
     "Charisma": 3.2,
+    "Promo": {"Delivery": 64, "Improvisation": 56, "Stillness": 54, "RingPresence": 64, "CrowdWork": 70, "SetPiece": 66, "Physicality": 60, "Registers": [{"Register": "Funny", "Rating": 68}, {"Register": "Emotional", "Rating": 64}, {"Register": "Arrogant", "Rating": 58}], "Range": 48},
     "Style": "Grappler",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Thea Hail",
-      "Type": "Egotist",
-      "PersonaDescriptor": "The Model",
-      "Tone": "Arrogant",
-      "NaturalAlignment": "Heel",
-      "PopularityModifier": 0,
+      "Type": "Underdog",
+      "PersonaDescriptor": "Chase U's Biggest Fan",
+      "Tone": "Humorous",
+      "NaturalAlignment": "Face",
       "Durability": "ShortTerm",
       "Freshness": 0.62,
       "GimmickTraits": [
-        "Vain",
-        "Sneering",
-        "Untested"
+        "Enthusiastic",
+        "Excitable",
+        "Young"
       ],
       "AppealRatings": [
         {
@@ -7124,21 +7126,21 @@
     "DebutedIn": 2023,
     "Overness": 29,
     "Charisma": 2.4,
+    "Promo": {"Delivery": 46, "Improvisation": 40, "Stillness": 48, "RingPresence": 46, "CrowdWork": 44, "SetPiece": 54, "Physicality": 52, "Registers": [{"Register": "Inspirational", "Rating": 48}], "Range": 38},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Karmen Petrovic",
-      "Type": "Gimmickless",
-      "PersonaDescriptor": "Local Talent",
+      "Type": "Traditionalist",
+      "PersonaDescriptor": "Karate Black Belt",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 0,
       "Durability": "ShortTerm",
       "Freshness": 0.5,
       "GimmickTraits": [
-        "Unbranded",
-        "Competent",
-        "Forgettable"
+        "Martial Artist",
+        "Disciplined",
+        "Striker"
       ],
       "AppealRatings": [
         {
@@ -7195,7 +7197,7 @@
     ],
     "Signature": [
       {
-        "Name": "Clean Finish",
+        "Name": "Victory Roll",
         "Move": {
           "Name": "Victory Roll",
           "Types": [
@@ -7219,20 +7221,20 @@
     "DebutedIn": 2019,
     "Overness": 37,
     "Charisma": 2.6,
+    "Promo": {"Delivery": 50, "Improvisation": 52, "Stillness": 50, "RingPresence": 52, "CrowdWork": 60, "SetPiece": 54, "Physicality": 58, "Registers": [{"Register": "Inspirational", "Rating": 54}, {"Register": "Funny", "Rating": 52}], "Range": 42},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Wren Sinclair",
       "Type": "Underdog",
-      "PersonaDescriptor": "Still Learning",
+      "PersonaDescriptor": "Catch-wrestling technician",
       "Tone": "Inspirational",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 0,
       "Durability": "ShortTerm",
       "Freshness": 0.56,
       "GimmickTraits": [
-        "Green",
-        "Willing",
+        "Technical",
+        "Scrappy",
         "Improving"
       ],
       "AppealRatings": [
@@ -7290,7 +7292,7 @@
     ],
     "Signature": [
       {
-        "Name": "First Step",
+        "Name": "Fisherman Suplex",
         "Move": {
           "Name": "Fisherman Suplex",
           "Types": [
@@ -7313,6 +7315,7 @@
     "DebutedIn": 2020,
     "Overness": 72,
     "Charisma": 4.4,
+    "Promo": {"Delivery": 84, "Improvisation": 84, "Stillness": 76, "RingPresence": 88, "CrowdWork": 92, "SetPiece": 78, "Physicality": 78, "Registers": [{"Register": "Arrogant", "Rating": 86}, {"Register": "Funny", "Rating": 80}, {"Register": "Angry", "Rating": 74}], "Range": 64},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -7321,7 +7324,6 @@
       "PersonaDescriptor": "Whoop That Trick",
       "Tone": "Arrogant",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 9,
       "Durability": "LongTerm",
       "Freshness": 0.84,
       "GimmickTraits": [
@@ -7409,6 +7411,7 @@
     "DebutedIn": 2007,
     "Overness": 70,
     "Charisma": 4.3,
+    "Promo": {"Delivery": 60, "Improvisation": 52, "Stillness": 50, "RingPresence": 84, "CrowdWork": 94, "SetPiece": 82, "Physicality": 86, "Registers": [{"Register": "Menacing", "Rating": 80}, {"Register": "Inspirational", "Rating": 74}], "Range": 46},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -7417,7 +7420,6 @@
       "PersonaDescriptor": "Cero Miedo",
       "Tone": "Violent",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 10,
       "Durability": "LongTerm",
       "Freshness": 0.82,
       "GimmickTraits": [
@@ -7510,6 +7512,7 @@
     "DebutedIn": 2006,
     "Overness": 64,
     "Charisma": 3.9,
+    "Promo": {"Delivery": 82, "Improvisation": 78, "Stillness": 78, "RingPresence": 80, "CrowdWork": 70, "SetPiece": 84, "Physicality": 66, "Registers": [{"Register": "Arrogant", "Rating": 85}, {"Register": "Funny", "Rating": 74}, {"Register": "Angry", "Rating": 68}], "Range": 62},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -7518,7 +7521,6 @@
       "PersonaDescriptor": "All Ego",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 6,
       "Durability": "MediumTerm",
       "Freshness": 0.76,
       "GimmickTraits": [
@@ -7606,6 +7608,7 @@
     "DebutedIn": 2018,
     "Overness": 60,
     "Charisma": 4.0,
+    "Promo": {"Delivery": 66, "Improvisation": 70, "Stillness": 60, "RingPresence": 74, "CrowdWork": 84, "SetPiece": 68, "Physicality": 82, "Registers": [{"Register": "Inspirational", "Rating": 74}, {"Register": "Funny", "Rating": 62, "Lean": "Free"}], "Range": 54},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -7614,7 +7617,6 @@
       "PersonaDescriptor": "The Young OG",
       "Tone": "Inspirational",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 11,
       "Durability": "MediumTerm",
       "Freshness": 0.94,
       "GimmickTraits": [
@@ -7706,6 +7708,7 @@
     "DebutedIn": 2008,
     "Overness": 58,
     "Charisma": 3.4,
+    "Promo": {"Delivery": 52, "Improvisation": 54, "Stillness": 56, "RingPresence": 64, "CrowdWork": 72, "SetPiece": 62, "Physicality": 84, "Registers": [{"Register": "Menacing", "Rating": 70}, {"Register": "Arrogant", "Rating": 62}], "Range": 44},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -7714,7 +7717,6 @@
       "PersonaDescriptor": "Guerrilla of Destiny",
       "Tone": "Violent",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 4,
       "Durability": "LongTerm",
       "Freshness": 0.68,
       "GimmickTraits": [
@@ -7802,6 +7804,7 @@
     "DebutedIn": 2016,
     "Overness": 48,
     "Charisma": 2.8,
+    "Promo": {"Delivery": 36, "Improvisation": 30, "Stillness": 56, "RingPresence": 54, "CrowdWork": 34, "SetPiece": 64, "Physicality": 82, "Registers": [{"Register": "Menacing", "Rating": 66}], "Range": 24},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -7810,7 +7813,6 @@
       "PersonaDescriptor": "The Tongan Giant",
       "Tone": "Serious",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 3,
       "Durability": "MediumTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
@@ -7899,6 +7901,7 @@
     "DebutedIn": 2019,
     "Overness": 44,
     "Charisma": 3.6,
+    "Promo": {"Delivery": 68, "Improvisation": 64, "Stillness": 58, "RingPresence": 70, "CrowdWork": 76, "SetPiece": 68, "Physicality": 56, "Registers": [{"Register": "Arrogant", "Rating": 72}, {"Register": "Funny", "Rating": 62}], "Range": 56},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -7907,7 +7910,6 @@
       "PersonaDescriptor": "The Fabulous One",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 4,
       "Durability": "MediumTerm",
       "Freshness": 0.72,
       "GimmickTraits": [
@@ -7993,6 +7995,7 @@
     "DebutedIn": 2005,
     "Overness": 66,
     "Charisma": 3.8,
+    "Promo": {"Delivery": 48, "Improvisation": 42, "Stillness": 46, "RingPresence": 70, "CrowdWork": 80, "SetPiece": 74, "Physicality": 82, "Registers": [{"Register": "Inspirational", "Rating": 64}], "Range": 40},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -8001,7 +8004,6 @@
       "PersonaDescriptor": "The King of Flight",
       "Tone": "Chaotic",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 9,
       "Durability": "LongTerm",
       "Freshness": 0.86,
       "GimmickTraits": [
@@ -8094,6 +8096,7 @@
     "DebutedIn": 2017,
     "Overness": 55,
     "Charisma": 4.2,
+    "Promo": {"Delivery": 84, "Improvisation": 84, "Stillness": 78, "RingPresence": 86, "CrowdWork": 84, "SetPiece": 74, "Physicality": 58, "Registers": [{"Register": "Arrogant", "Rating": 88}, {"Register": "Funny", "Rating": 80, "Lean": "Free"}], "Range": 60},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -8102,7 +8105,6 @@
       "PersonaDescriptor": "The Aussie Icon",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 7,
       "Durability": "MediumTerm",
       "Freshness": 0.8,
       "GimmickTraits": [
@@ -8190,6 +8192,7 @@
     "DebutedIn": 2022,
     "Overness": 46,
     "Charisma": 3.4,
+    "Promo": {"Delivery": 64, "Improvisation": 56, "Stillness": 62, "RingPresence": 64, "CrowdWork": 58, "SetPiece": 64, "Physicality": 70, "Registers": [{"Register": "Arrogant", "Rating": 64}, {"Register": "Inspirational", "Rating": 62}], "Range": 42},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -8198,7 +8201,6 @@
       "PersonaDescriptor": "One of a Kind",
       "Tone": "Serious",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 5,
       "Durability": "MediumTerm",
       "Freshness": 0.84,
       "GimmickTraits": [
@@ -8283,6 +8285,7 @@
     "DebutedIn": 2020,
     "Overness": 44,
     "Charisma": 3.0,
+    "Promo": {"Delivery": 56, "Improvisation": 50, "Stillness": 56, "RingPresence": 60, "CrowdWork": 50, "SetPiece": 62, "Physicality": 82, "Registers": [{"Register": "Menacing", "Rating": 60}], "Range": 40},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -8291,7 +8294,6 @@
       "PersonaDescriptor": "The Australian Powerhouse",
       "Tone": "Violent",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 4,
       "Durability": "MediumTerm",
       "Freshness": 0.82,
       "GimmickTraits": [
@@ -8380,6 +8382,7 @@
     "DebutedIn": 2017,
     "Overness": 42,
     "Charisma": 3.2,
+    "Promo": {"Delivery": 64, "Improvisation": 60, "Stillness": 60, "RingPresence": 64, "CrowdWork": 60, "SetPiece": 62, "Physicality": 58, "Registers": [{"Register": "Arrogant", "Rating": 68}], "Range": 50},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -8388,7 +8391,6 @@
       "PersonaDescriptor": "The Vanity Project",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 4,
       "Durability": "MediumTerm",
       "Freshness": 0.9,
       "GimmickTraits": [
@@ -8476,6 +8478,7 @@
     "DebutedIn": 2021,
     "Overness": 32,
     "Charisma": 3.0,
+    "Promo": {"Delivery": 55, "Improvisation": 50, "Stillness": 50, "RingPresence": 55, "CrowdWork": 58, "SetPiece": 62, "Physicality": 58, "Registers": [{"Register": "Arrogant", "Rating": 60}, {"Register": "Funny", "Rating": 55}], "Range": 45},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -8484,7 +8487,6 @@
       "PersonaDescriptor": "Swipe Right",
       "Tone": "Humorous",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 3,
       "Durability": "ShortTerm",
       "Freshness": 0.88,
       "GimmickTraits": [
@@ -8585,6 +8587,7 @@
     "DebutedIn": 2019,
     "Overness": 31,
     "Charisma": 3.1,
+    "Promo": {"Delivery": 60, "Improvisation": 58, "Stillness": 54, "RingPresence": 62, "CrowdWork": 64, "SetPiece": 58, "Physicality": 58, "Registers": [{"Register": "Arrogant", "Rating": 64}, {"Register": "Funny", "Rating": 58}], "Range": 46},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -8593,7 +8596,6 @@
       "PersonaDescriptor": "Swipe Right",
       "Tone": "Humorous",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 3,
       "Durability": "ShortTerm",
       "Freshness": 0.86,
       "GimmickTraits": [
@@ -8697,6 +8699,7 @@
     "DebutedIn": 2020,
     "Overness": 85,
     "Charisma": 4.2,
+    "Promo": {"Delivery": 78, "Improvisation": 72, "Stillness": 70, "RingPresence": 86, "CrowdWork": 90, "SetPiece": 80, "Physicality": 74, "Registers": [{"Register": "Arrogant", "Rating": 88}, {"Register": "Fearful", "Rating": 80, "Lean": "Free"}], "Range": 66},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -8705,7 +8708,6 @@
       "PersonaDescriptor": "Dirty Dom",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 8,
       "Durability": "LongTerm",
       "Freshness": 0.82,
       "GimmickTraits": [
@@ -8797,6 +8799,7 @@
     "DebutedIn": 2012,
     "Overness": 80,
     "Charisma": 3.4,
+    "Promo": {"Delivery": 62, "Improvisation": 70, "Stillness": 58, "RingPresence": 70, "CrowdWork": 60, "SetPiece": 64, "Physicality": 86, "Registers": [{"Register": "Menacing", "Rating": 80}, {"Register": "Angry", "Rating": 76}], "Range": 46},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -8804,8 +8807,7 @@
       "Type": "Monster",
       "PersonaDescriptor": "The Samoan Werewolf",
       "Tone": "Violent",
-      "NaturalAlignment": "Tweener",
-      "PopularityModifier": 8,
+      "NaturalAlignment": "Heel",
       "Durability": "LongTerm",
       "Freshness": 0.9,
       "GimmickTraits": [
@@ -8906,6 +8908,7 @@
     "DebutedIn": 2018,
     "Overness": 78,
     "Charisma": 3.0,
+    "Promo": {"Delivery": 56, "Improvisation": 44, "Stillness": 66, "RingPresence": 56, "CrowdWork": 42, "SetPiece": 66, "Physicality": 82, "Registers": [{"Register": "Cold", "Rating": 70}, {"Register": "Menacing", "Rating": 68}], "Range": 40},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -8913,8 +8916,7 @@
       "Type": "Egotist",
       "PersonaDescriptor": "The Enforcer",
       "Tone": "Serious",
-      "NaturalAlignment": "Heel",
-      "PopularityModifier": 4,
+      "NaturalAlignment": "Face",
       "Durability": "MediumTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
@@ -9002,6 +9004,7 @@
     "DebutedIn": 2022,
     "Overness": 82,
     "Charisma": 3.8,
+    "Promo": {"Delivery": 76, "Improvisation": 62, "Stillness": 78, "RingPresence": 82, "CrowdWork": 64, "SetPiece": 74, "Physicality": 84, "Registers": [{"Register": "Menacing", "Rating": 80}, {"Register": "Cold", "Rating": 78}, {"Register": "Arrogant", "Rating": 68}], "Range": 48},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -9010,7 +9013,6 @@
       "PersonaDescriptor": "Dominant Powerhouse",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 9,
       "Durability": "LongTerm",
       "Freshness": 0.95,
       "GimmickTraits": [
@@ -9100,6 +9102,7 @@
     "DebutedIn": 2017,
     "Overness": 66,
     "Charisma": 3.4,
+    "Promo": {"Delivery": 42, "Improvisation": 30, "Stillness": 50, "RingPresence": 62, "CrowdWork": 60, "SetPiece": 76, "Physicality": 84, "Registers": [{"Register": "Menacing", "Rating": 72}, {"Register": "Cold", "Rating": 66}], "Range": 40},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -9108,7 +9111,6 @@
       "PersonaDescriptor": "Beautiful Madness",
       "Tone": "Violent",
       "NaturalAlignment": "Tweener",
-      "PopularityModifier": 5,
       "Durability": "MediumTerm",
       "Freshness": 0.8,
       "GimmickTraits": [
@@ -9213,6 +9215,7 @@
     "DebutedIn": 2012,
     "Overness": 66,
     "Charisma": 4.4,
+    "Promo": {"Delivery": 84, "Improvisation": 86, "Stillness": 78, "RingPresence": 88, "CrowdWork": 84, "SetPiece": 74, "Physicality": 66, "Registers": [{"Register": "Arrogant", "Rating": 88}, {"Register": "Funny", "Rating": 80}, {"Register": "Emotional", "Rating": 70}], "Range": 64},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -9221,7 +9224,6 @@
       "PersonaDescriptor": "Smooth-Talking Showman",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 6,
       "Durability": "MediumTerm",
       "Freshness": 0.82,
       "GimmickTraits": [
@@ -9313,6 +9315,7 @@
     "DebutedIn": 2012,
     "Overness": 66,
     "Charisma": 3.3,
+    "Promo": {"Delivery": 64, "Improvisation": 60, "Stillness": 64, "RingPresence": 64, "CrowdWork": 58, "SetPiece": 62, "Physicality": 74, "Registers": [{"Register": "Angry", "Rating": 64}, {"Register": "Inspirational", "Rating": 62}], "Range": 50},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -9321,7 +9324,6 @@
       "PersonaDescriptor": "Powerhouse Brawler",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 5,
       "Durability": "MediumTerm",
       "Freshness": 0.82,
       "GimmickTraits": [
@@ -9407,6 +9409,7 @@
     "DebutedIn": 2021,
     "Overness": 90,
     "Charisma": 4.4,
+    "Promo": {"Delivery": 74, "Improvisation": 70, "Stillness": 76, "RingPresence": 78, "CrowdWork": 80, "SetPiece": 90, "Physicality": 82, "Registers": [{"Register": "Arrogant", "Rating": 88}, {"Register": "Funny", "Rating": 68}], "Range": 52},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -9415,7 +9418,6 @@
       "PersonaDescriptor": "Celebrity Crossover Star",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 8,
       "Durability": "MediumTerm",
       "Freshness": 0.78,
       "GimmickTraits": [
@@ -9505,6 +9507,7 @@
     "DebutedIn": 2022,
     "Overness": 47,
     "Charisma": 3.4,
+    "Promo": {"Delivery": 74, "Improvisation": 72, "Stillness": 66, "RingPresence": 74, "CrowdWork": 76, "SetPiece": 64, "Physicality": 74, "Registers": [{"Register": "Arrogant", "Rating": 76}, {"Register": "Angry", "Rating": 68}], "Range": 56},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -9513,7 +9516,6 @@
       "PersonaDescriptor": "Hip-Attack Bruiser",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 4,
       "Durability": "MediumTerm",
       "Freshness": 0.9,
       "GimmickTraits": [
@@ -9599,6 +9601,7 @@
     "DebutedIn": 2008,
     "Overness": 68,
     "Charisma": 3.6,
+    "Promo": {"Delivery": 64, "Improvisation": 70, "Stillness": 60, "RingPresence": 70, "CrowdWork": 80, "SetPiece": 74, "Physicality": 86, "Registers": [{"Register": "Funny", "Rating": 80, "Lean": "Free"}, {"Register": "Menacing", "Rating": 74}], "Range": 56},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -9607,7 +9610,6 @@
       "PersonaDescriptor": "The Bulgarian Brute",
       "Tone": "Violent",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 4,
       "Durability": "MediumTerm",
       "Freshness": 0.6,
       "GimmickTraits": [
@@ -9716,6 +9718,7 @@
     "DebutedIn": 2022,
     "Overness": 52,
     "Charisma": 3.3,
+    "Promo": {"Delivery": 62, "Improvisation": 52, "Stillness": 62, "RingPresence": 62, "CrowdWork": 68, "SetPiece": 70, "Physicality": 72, "Registers": [{"Register": "Emotional", "Rating": 66, "Lean": "Scripted"}, {"Register": "Angry", "Rating": 62}], "Range": 50},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -9724,7 +9727,6 @@
       "PersonaDescriptor": "Former Bellator Fighter",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 5,
       "Durability": "MediumTerm",
       "Freshness": 0.88,
       "GimmickTraits": [
@@ -9814,6 +9816,7 @@
     "DebutedIn": 2015,
     "Overness": 83,
     "Charisma": 4.8,
+    "Promo": {"Delivery": 94, "Improvisation": 95, "Stillness": 94, "RingPresence": 96, "CrowdWork": 92, "SetPiece": 84, "Physicality": 72, "Registers": [{"Register": "Arrogant", "Rating": 98}, {"Register": "Emotional", "Rating": 88}, {"Register": "Funny", "Rating": 84, "Lean": "Free"}], "Range": 86},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -9822,7 +9825,6 @@
       "PersonaDescriptor": "The One True Champion",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 8,
       "Durability": "LongTerm",
       "Freshness": 0.85,
       "GimmickTraits": [
@@ -9912,6 +9914,7 @@
     "DebutedIn": 2008,
     "Overness": 80,
     "Charisma": 4.3,
+    "Promo": {"Delivery": 84, "Improvisation": 80, "Stillness": 86, "RingPresence": 84, "CrowdWork": 80, "SetPiece": 86, "Physicality": 86, "Registers": [{"Register": "Emotional", "Rating": 92}, {"Register": "Angry", "Rating": 86}, {"Register": "Funny", "Rating": 74}], "Range": 76},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -9920,7 +9923,6 @@
       "PersonaDescriptor": "The Anxious Millennial Cowboy",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 8,
       "Durability": "LongTerm",
       "Freshness": 0.82,
       "GimmickTraits": [
@@ -10010,6 +10012,7 @@
     "DebutedIn": 2009,
     "Overness": 76,
     "Charisma": 4.5,
+    "Promo": {"Delivery": 90, "Improvisation": 86, "Stillness": 90, "RingPresence": 90, "CrowdWork": 86, "SetPiece": 88, "Physicality": 84, "Registers": [{"Register": "Menacing", "Rating": 92}, {"Register": "Cold", "Rating": 86}, {"Register": "Arrogant", "Rating": 84}], "Range": 76},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -10017,8 +10020,7 @@
       "Type": "Showman",
       "PersonaDescriptor": "Swerve the Realest",
       "Tone": "Serious",
-      "NaturalAlignment": "Face",
-      "PopularityModifier": 7,
+      "NaturalAlignment": "Heel",
       "Durability": "LongTerm",
       "Freshness": 0.84,
       "GimmickTraits": [
@@ -10124,6 +10126,7 @@
     "DebutedIn": 2000,
     "Overness": 85,
     "Charisma": 4.0,
+    "Promo": {"Delivery": 76, "Improvisation": 72, "Stillness": 74, "RingPresence": 78, "CrowdWork": 72, "SetPiece": 84, "Physicality": 76, "Registers": [{"Register": "Funny", "Rating": 80}, {"Register": "Emotional", "Rating": 76}, {"Register": "Arrogant", "Rating": 76}], "Range": 72},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -10131,8 +10134,7 @@
       "Type": "Superstar",
       "PersonaDescriptor": "The Cleaner",
       "Tone": "Inspirational",
-      "NaturalAlignment": "Face",
-      "PopularityModifier": 9,
+      "NaturalAlignment": "Tweener",
       "Durability": "LongTerm",
       "Freshness": 0.78,
       "GimmickTraits": [
@@ -10151,7 +10153,6 @@
         }
       ],
       "PreviousNames": [
-        "Scott Carpenter"
       ]
     },
     "RingSkills": {
@@ -10221,6 +10222,7 @@
     "DebutedIn": 2012,
     "Overness": 81,
     "Charisma": 4.0,
+    "Promo": {"Delivery": 66, "Improvisation": 74, "Stillness": 64, "RingPresence": 76, "CrowdWork": 78, "SetPiece": 78, "Physicality": 82, "Registers": [{"Register": "Emotional", "Rating": 76, "Lean": "Free"}, {"Register": "Arrogant", "Rating": 72}], "Range": 60},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -10229,7 +10231,6 @@
       "PersonaDescriptor": "The Aerial Assassin",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 8,
       "Durability": "LongTerm",
       "Freshness": 0.86,
       "GimmickTraits": [
@@ -10335,6 +10336,7 @@
     "DebutedIn": 2004,
     "Overness": 87,
     "Charisma": 4.5,
+    "Promo": {"Delivery": 76, "Improvisation": 92, "Stillness": 88, "RingPresence": 88, "CrowdWork": 82, "SetPiece": 80, "Physicality": 95, "Registers": [{"Register": "Angry", "Rating": 92}, {"Register": "Menacing", "Rating": 88}, {"Register": "Emotional", "Rating": 80, "Lean": "Free"}], "Range": 72},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -10342,8 +10344,7 @@
       "Type": "Rebel",
       "PersonaDescriptor": "The Death Rider",
       "Tone": "Violent",
-      "NaturalAlignment": "Face",
-      "PopularityModifier": 8,
+      "NaturalAlignment": "Heel",
       "Durability": "LongTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
@@ -10432,6 +10433,7 @@
     "DebutedIn": 2014,
     "Overness": 75,
     "Charisma": 3.3,
+    "Promo": {"Delivery": 64, "Improvisation": 58, "Stillness": 72, "RingPresence": 56, "CrowdWork": 48, "SetPiece": 86, "Physicality": 84, "Registers": [{"Register": "Emotional", "Rating": 70}, {"Register": "Cold", "Rating": 62}], "Range": 44},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -10440,7 +10442,6 @@
       "PersonaDescriptor": "Skateboarding Daredevil",
       "Tone": "Melancholic",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 7,
       "Durability": "LongTerm",
       "Freshness": 0.8,
       "GimmickTraits": [
@@ -10529,6 +10530,7 @@
     "DebutedIn": 2004,
     "Overness": 82,
     "Charisma": 3.4,
+    "Promo": {"Delivery": 58, "Improvisation": 45, "Stillness": 56, "RingPresence": 72, "CrowdWork": 74, "SetPiece": 78, "Physicality": 64, "Registers": [{"Register": "Arrogant", "Rating": 76}, {"Register": "Funny", "Rating": 60}], "Range": 40},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -10537,7 +10539,6 @@
       "PersonaDescriptor": "The Rainmaker",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 7,
       "Durability": "LongTerm",
       "Freshness": 0.72,
       "GimmickTraits": [
@@ -10626,6 +10627,7 @@
     "DebutedIn": 2010,
     "Overness": 88,
     "Charisma": 4.3,
+    "Promo": {"Delivery": 80, "Improvisation": 72, "Stillness": 76, "RingPresence": 86, "CrowdWork": 84, "SetPiece": 88, "Physicality": 72, "Registers": [{"Register": "Arrogant", "Rating": 88}, {"Register": "Emotional", "Rating": 74}], "Range": 62},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -10634,7 +10636,6 @@
       "PersonaDescriptor": "The CEO",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 9,
       "Durability": "LongTerm",
       "Freshness": 0.76,
       "GimmickTraits": [
@@ -10739,6 +10740,7 @@
     "DebutedIn": 2009,
     "Overness": 74,
     "Charisma": 4.5,
+    "Promo": {"Delivery": 94, "Improvisation": 84, "Stillness": 86, "RingPresence": 88, "CrowdWork": 84, "SetPiece": 96, "Physicality": 72, "Registers": [{"Register": "Funny", "Rating": 95}, {"Register": "Arrogant", "Rating": 86}, {"Register": "Emotional", "Rating": 80}], "Range": 84},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -10747,7 +10749,6 @@
       "PersonaDescriptor": "Timeless",
       "Tone": "Humorous",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 8,
       "Durability": "MediumTerm",
       "Freshness": 0.76,
       "GimmickTraits": [
@@ -10836,6 +10837,7 @@
     "DebutedIn": 2016,
     "Overness": 64,
     "Charisma": 3.2,
+    "Promo": {"Delivery": 52, "Improvisation": 50, "Stillness": 50, "RingPresence": 56, "CrowdWork": 60, "SetPiece": 66, "Physicality": 76, "Registers": [{"Register": "Funny", "Rating": 62}, {"Register": "Emotional", "Rating": 56}], "Range": 40},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -10844,7 +10846,6 @@
       "PersonaDescriptor": "Triple Crown Powerhouse",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 4,
       "Durability": "MediumTerm",
       "Freshness": 0.74,
       "GimmickTraits": [
@@ -10933,6 +10934,7 @@
     "DebutedIn": 1999,
     "Overness": 78,
     "Charisma": 4.2,
+    "Promo": {"Delivery": 86, "Improvisation": 86, "Stillness": 92, "RingPresence": 86, "CrowdWork": 70, "SetPiece": 82, "Physicality": 90, "Registers": [{"Register": "Menacing", "Rating": 94}, {"Register": "Cold", "Rating": 86}, {"Register": "Funny", "Rating": 70}], "Range": 72},
     "Style": "Grappler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -10941,7 +10943,6 @@
       "PersonaDescriptor": "The Samoan Submission Machine",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 5,
       "Durability": "MediumTerm",
       "Freshness": 0.6,
       "GimmickTraits": [
@@ -11031,15 +11032,15 @@
     "DebutedIn": 2004,
     "Overness": 72,
     "Charisma": 3.9,
+    "Promo": {"Delivery": 76, "Improvisation": 76, "Stillness": 70, "RingPresence": 78, "CrowdWork": 80, "SetPiece": 74, "Physicality": 80, "Registers": [{"Register": "Arrogant", "Rating": 82}, {"Register": "Funny", "Rating": 72, "Lean": "Free"}], "Range": 62},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Nic Nemeth",
       "Type": "Showman",
-      "PersonaDescriptor": "The Natural",
+      "PersonaDescriptor": "The Wanted Man",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 6,
       "Durability": "MediumTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
@@ -11129,6 +11130,7 @@
     "DebutedIn": 1994,
     "Overness": 80,
     "Charisma": 3.6,
+    "Promo": {"Delivery": 52, "Improvisation": 50, "Stillness": 56, "RingPresence": 66, "CrowdWork": 82, "SetPiece": 78, "Physicality": 74, "Registers": [{"Register": "Emotional", "Rating": 64}, {"Register": "Inspirational", "Rating": 60}], "Range": 42},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -11137,7 +11139,6 @@
       "PersonaDescriptor": "Ladder-Match Daredevil",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 9,
       "Durability": "LongTerm",
       "Freshness": 0.55,
       "GimmickTraits": [
@@ -11227,6 +11228,7 @@
     "DebutedIn": 1992,
     "Overness": 76,
     "Charisma": 4.3,
+    "Promo": {"Delivery": 84, "Improvisation": 74, "Stillness": 76, "RingPresence": 80, "CrowdWork": 78, "SetPiece": 96, "Physicality": 72, "Registers": [{"Register": "Funny", "Rating": 88}, {"Register": "Emotional", "Rating": 76}, {"Register": "Menacing", "Rating": 70}], "Range": 80},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -11235,7 +11237,6 @@
       "PersonaDescriptor": "Broken",
       "Tone": "Chaotic",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 6,
       "Durability": "LongTerm",
       "Freshness": 0.55,
       "GimmickTraits": [
@@ -11325,6 +11326,7 @@
     "DebutedIn": 2012,
     "Overness": 56,
     "Charisma": 3.3,
+    "Promo": {"Delivery": 66, "Improvisation": 62, "Stillness": 64, "RingPresence": 68, "CrowdWork": 56, "SetPiece": 66, "Physicality": 78, "Registers": [{"Register": "Arrogant", "Rating": 70}, {"Register": "Angry", "Rating": 68}], "Range": 50},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -11332,8 +11334,7 @@
       "Type": "Loner",
       "PersonaDescriptor": "The System's Exile",
       "Tone": "Serious",
-      "NaturalAlignment": "Tweener",
-      "PopularityModifier": 3,
+      "NaturalAlignment": "Face",
       "Durability": "MediumTerm",
       "Freshness": 0.6,
       "GimmickTraits": [
@@ -11422,6 +11423,7 @@
     "DebutedIn": 1998,
     "Overness": 57,
     "Charisma": 3.6,
+    "Promo": {"Delivery": 72, "Improvisation": 70, "Stillness": 70, "RingPresence": 72, "CrowdWork": 66, "SetPiece": 66, "Physicality": 64, "Registers": [{"Register": "Arrogant", "Rating": 74}, {"Register": "Funny", "Rating": 62}], "Range": 64},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -11430,7 +11432,6 @@
       "PersonaDescriptor": "The Elite Hunter",
       "Tone": "Arrogant",
       "NaturalAlignment": "Tweener",
-      "PopularityModifier": 2,
       "Durability": "MediumTerm",
       "Freshness": 0.6,
       "GimmickTraits": [
@@ -11520,6 +11521,7 @@
     "DebutedIn": 2003,
     "Overness": 62,
     "Charisma": 4.2,
+    "Promo": {"Delivery": 86, "Improvisation": 80, "Stillness": 84, "RingPresence": 82, "CrowdWork": 74, "SetPiece": 82, "Physicality": 66, "Registers": [{"Register": "Emotional", "Rating": 86}, {"Register": "Arrogant", "Rating": 80}, {"Register": "Funny", "Rating": 72}], "Range": 72},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -11528,7 +11530,6 @@
       "PersonaDescriptor": "Self-Styled Politician",
       "Tone": "SelfRighteous",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 5,
       "Durability": "MediumTerm",
       "Freshness": 0.72,
       "GimmickTraits": [
@@ -11618,6 +11619,7 @@
     "DebutedIn": 2019,
     "Overness": 54,
     "Charisma": 3.2,
+    "Promo": {"Delivery": 56, "Improvisation": 54, "Stillness": 50, "RingPresence": 60, "CrowdWork": 70, "SetPiece": 62, "Physicality": 74, "Registers": [{"Register": "Inspirational", "Rating": 64}, {"Register": "Arrogant", "Rating": 58}], "Range": 46},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -11626,7 +11628,6 @@
       "PersonaDescriptor": "Youngest X Division Champion",
       "Tone": "Inspirational",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 8,
       "Durability": "MediumTerm",
       "Freshness": 0.95,
       "GimmickTraits": [
@@ -11714,6 +11715,7 @@
     "DebutedIn": 2002,
     "Overness": 45,
     "Charisma": 3.0,
+    "Promo": {"Delivery": 60, "Improvisation": 56, "Stillness": 62, "RingPresence": 58, "CrowdWork": 52, "SetPiece": 58, "Physicality": 74, "Registers": [{"Register": "Angry", "Rating": 66}, {"Register": "Emotional", "Rating": 64}], "Range": 48},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -11722,7 +11724,6 @@
       "PersonaDescriptor": "Leader of The System",
       "Tone": "Serious",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 2,
       "Durability": "MediumTerm",
       "Freshness": 0.6,
       "GimmickTraits": [
@@ -11810,15 +11811,15 @@
     "DebutedIn": 2014,
     "Overness": 57,
     "Charisma": 3.7,
+    "Promo": {"Delivery": 64, "Improvisation": 62, "Stillness": 56, "RingPresence": 68, "CrowdWork": 80, "SetPiece": 74, "Physicality": 70, "Registers": [{"Register": "Funny", "Rating": 66}, {"Register": "Angry", "Rating": 62}], "Range": 50},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Shotzi Blackheart",
       "Type": "Rebel",
-      "PersonaDescriptor": "Indy God",
+      "PersonaDescriptor": "The Ballsy Badass",
       "Tone": "Chaotic",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 5,
       "Durability": "MediumTerm",
       "Freshness": 0.8,
       "GimmickTraits": [
@@ -11907,6 +11908,7 @@
     "DebutedIn": 2015,
     "Overness": 64,
     "Charisma": 3.6,
+    "Promo": {"Delivery": 64, "Improvisation": 68, "Stillness": 66, "RingPresence": 66, "CrowdWork": 64, "SetPiece": 62, "Physicality": 78, "Registers": [{"Register": "Angry", "Rating": 66}, {"Register": "Funny", "Rating": 64, "Lean": "Free"}], "Range": 56},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -11915,7 +11917,6 @@
       "PersonaDescriptor": "Hard-hitting Brit",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
-      "PopularityModifier": 4,
       "Durability": "LongTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
@@ -12005,6 +12006,7 @@
     "DebutedIn": 2019,
     "Overness": 64,
     "Charisma": 4.0,
+    "Promo": {"Delivery": 80, "Improvisation": 70, "Stillness": 76, "RingPresence": 76, "CrowdWork": 72, "SetPiece": 88, "Physicality": 82, "Registers": [{"Register": "Arrogant", "Rating": 84}, {"Register": "Menacing", "Rating": 76, "Lean": "Scripted"}, {"Register": "Funny", "Rating": 72}], "Range": 68},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -12013,7 +12015,6 @@
       "PersonaDescriptor": "Glamorous starlet",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
-      "PopularityModifier": 4,
       "Durability": "MediumTerm",
       "Freshness": 0.85,
       "GimmickTraits": [

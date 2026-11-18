@@ -1,4 +1,4 @@
-using WrestlingSim.Enums;
+﻿using WrestlingSim.Enums;
 
 namespace WrestlingSim.Models.World
 {
@@ -13,6 +13,12 @@ namespace WrestlingSim.Models.World
     {
         public string Name { get; set; } = "New Promotion";
         public PromotionTier Tier { get; set; } = PromotionTier.Independent;
+
+        /// <summary>
+        /// The creative team, 1–10 (docs/gimmick-plan.md §3.3). Null is the tier's opening team
+        /// (<see cref="Engine.Promos.StartingCreative"/>); set once the booker buys a level.
+        /// </summary>
+        public int? CreativeLevel { get; set; }
 
         /// <summary>
         /// Where it runs. Null means nowhere in particular — a promotion made before regions

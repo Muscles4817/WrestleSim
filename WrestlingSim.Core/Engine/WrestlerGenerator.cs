@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using WrestlingSim.Enums;
 using WrestlingSim.Models;
 
@@ -122,11 +122,10 @@ namespace WrestlingSim.Engine
 
             var gimmick = new Gimmick(ringName)
             {
-                Type              = t.Gimmick?.Type ?? default,
-                PersonaDescriptor = Descriptor(t.Gimmick?.Type ?? default),
+                Type              = t.Gimmick?.Type ?? GimmickType.Unspecified,
+                PersonaDescriptor = Descriptor(t.Gimmick?.Type ?? GimmickType.Unspecified),
                 Tone              = t.Gimmick?.Tone ?? default,
                 NaturalAlignment  = t.Gimmick?.NaturalAlignment ?? default,
-                PopularityModifier = t.Gimmick?.PopularityModifier ?? 0,
                 Durability        = t.Gimmick?.Durability ?? default,
                 Freshness         = Math.Round(0.5 + 0.5 * _rng.NextDouble(), 2),
                 GimmickTraits     = [.. t.Gimmick?.GimmickTraits ?? []],
@@ -166,6 +165,7 @@ namespace WrestlingSim.Engine
                     RingIQ     = Rating(t.Mental.RingIQ, 20),
                     Toughness  = Rating(t.Mental.Toughness, 0)
                 },
+                Promo       = PromoFrom(t, realName, Math.Clamp(t.Charisma + shift * 0.8, 1.0, 5.0)),
                 Moveset     = Clone(t.Moveset) ?? [],
                 Signature   = (Clone(t.Signature) ?? []).Select(s =>
                 {
@@ -185,6 +185,25 @@ namespace WrestlingSim.Engine
                 Growth.Reage(w, tAge, age, tYears, _year - debutedIn);
             }
             return w;
+        }
+
+        /// <summary>
+        /// The real wrestler's promo shape — where they are strong and weak — moved to this
+        /// person's charisma and jittered. From its own stream, seeded by the name, so adding it
+        /// moved no other generated number and no generated world.
+        /// </summary>
+        private static Models.Person.PromoSkills? PromoFrom(Wrestler t, string realName, double charisma)
+        {
+            if (t.Promo is not { } p) return null;
+            var rng = new Random(StableSeed.From(realName, "promo"));
+            int shift = (int)Math.Round((charisma - t.Charisma) * 20);
+            int Move(int v) => Math.Clamp(v + shift + rng.Next(-6, 7), 5, 100);
+            var c = p.Clone();
+            c.Delivery = Move(c.Delivery); c.Improvisation = Move(c.Improvisation);
+            c.Stillness = Move(c.Stillness); c.RingPresence = Move(c.RingPresence); c.CrowdWork = Move(c.CrowdWork);
+            c.SetPiece = Move(c.SetPiece); c.Physicality = Move(c.Physicality); c.Range = Move(c.Range);
+            foreach (var r in c.Registers) r.Rating = Move(r.Rating);
+            return c;
         }
 
         private double Jitter(double spread) => (_rng.NextDouble() + _rng.NextDouble() - 1.0) * spread;

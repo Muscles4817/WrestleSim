@@ -1,4 +1,4 @@
-@*
+﻿@*
     One wrestler, everything the game knows about them. Opened from any name.
 
     There was no such screen: a roster row did not open, so "who is this, how good are they,
@@ -315,6 +315,70 @@ else
             </section>
         }
 
+        @if (w.Gimmick is { } character)
+        {
+            @* The character, beside the booking. The booked alignment is the player's and the
+               engine never changes it; what the crowd does with it is shown next to it, and
+               the gap is what a booker acts on (docs/gimmick-plan.md §0A). *@
+            var crowd = CrowdReading.Of(w, today);
+            var meaning = CrowdReading.Meaning(character.NaturalAlignment, crowd);
+            <section class="panel">
+                <div class="panel__title">Character</div>
+                <div class="kv">
+                    <span>Booked as</span>
+                    <span><span class="badge badge--sm @character.NaturalAlignment.Badge()">@character.NaturalAlignment.Label()</span></span>
+                </div>
+                <div class="kv">
+                    <span>The crowd</span>
+                    <span class="@(CrowdReading.Crossed(character.NaturalAlignment, crowd) ? "gold" : "")">@CrowdReading.Words(crowd)</span>
+                </div>
+                @if (meaning is not null)
+                {
+                    <div class="small muted">@meaning</div>
+                }
+                <div class="small mt">@CharacterTypes.Summary(w)</div>
+                <div class="kv mt">
+                    <span>The character</span>
+                    <span class="@(character.Freshness < CharacterFreshness.Worn ? "gold" : "")">@CharacterFreshness.Words(character.Freshness)</span>
+                </div>
+                <div class="small muted">@CharacterFreshness.Advice(character.Freshness)</div>
+            </section>
+        }
+
+        @* How they talk (docs/gimmick-plan.md Part 3), in words that sharpen with time, and
+           the standing note that pre-fills how their promos are written. *@
+        @{ var promo = Promos.Describe(career, w); }
+        <section class="panel">
+            <div class="panel__title">On the microphone</div>
+            @foreach (var line in promo.Lines)
+            {
+                <div class="kv"><span>@line.Label</span><span>@line.Words</span></div>
+            }
+            <div class="small muted">@promo.Knowledge</div>
+            @if (career is not null)
+            {
+                var note = career.PromoNotes.TryGetValue(w.Id, out var n) ? n : null;
+                <div class="kv mt">
+                    <span>Write their promos</span>
+                    <select class="input input--sm" value="@(note?.Usual.ToString() ?? "")" @onchange="e => SetNote(w, e.Value?.ToString(), serious: false)">
+                        <option value="">no note</option>
+                        @foreach (var f in Enum.GetValues<PromoForm>()) { <option value="@f">@Promos.Name(f)</option> }
+                    </select>
+                </div>
+                @if (note is not null)
+                {
+                    <div class="kv">
+                        <span>Anything serious</span>
+                        <select class="input input--sm" value="@(note.Serious?.ToString() ?? "")" @onchange="e => SetNote(w, e.Value?.ToString(), serious: true)">
+                            <option value="">the same</option>
+                            @foreach (var f in Enum.GetValues<PromoForm>()) { <option value="@f">@Promos.Name(f)</option> }
+                        </select>
+                    </div>
+                }
+                <div class="small muted">A note pre-fills the segment builder. You can still book any promo any way.</div>
+            }
+        </section>
+
         <section class="panel">
             <div class="panel__title">Stories and titles</div>
             @{ var feuds = State.FeudBook.For(w); }
@@ -450,5 +514,20 @@ else
         w.TouringUntil = null;
         await State.SaveAsync();
         State.Notify();
+    }
+
+    /// <summary>Sets or clears a standing note on how this wrestler's promos are written.</summary>
+    private async Task SetNote(Wrestler w, string? value, bool serious)
+    {
+        if (State.Career is not { } career) return;
+        PromoForm? form = Enum.TryParse<PromoForm>(value, out var f) ? f : null;
+        if (!serious)
+        {
+            if (form is null) career.PromoNotes.Remove(w.Id);
+            else if (career.PromoNotes.TryGetValue(w.Id, out var existing)) existing.Usual = form.Value;
+            else career.PromoNotes[w.Id] = new PromoNote { Usual = form.Value };
+        }
+        else if (career.PromoNotes.TryGetValue(w.Id, out var note)) note.Serious = form;
+        await State.SaveAsync();
     }
 }
