@@ -213,7 +213,7 @@ namespace WrestlingSim.Engine
         /// it; <c>ATypicalPromoLandsWhereATypicalPromoDid</c> fails when the two part company —
         /// re-measure, do not widen.
         /// </summary>
-        public const double Centring = 0.309;
+        public const double Centring = 0.298;
 
         /// <summary>A promo's value on the 0–5 scale a segment reads.</summary>
         public static double OnSegmentScale(double promo) => Math.Max(0, promo / 20.0 + Centring);

@@ -572,7 +572,8 @@ Each step is reachable by the booker and legible in the report before it counts 
      - a year: the exact word and each note's form lean.
    - **Calibration:** a promo's 0–100 meets the segment's old 0–5 charisma scale through
      `Promos.Centring`, measured: the shipped roster's mean charisma (3.569) less its mean
-     promo at bullet points with established-tier writers (3.261) = 0.309. It is pinned the way
+     promo at bullet points with established-tier writers (3.261) = 0.309. *Re-measured 18 Nov
+     after the roster accuracy pass changed 21 tones (and so 21 natural notes): 3.271, 0.298.* It is pinned the way
      `TypicalInvestment` is. Both forms give the same mean impact for a person equally good at
      each (3.747 and 3.747).
    - **The data:** all 124 real wrestlers judged on the promo rubric (`docs/roster-rubric.md`)

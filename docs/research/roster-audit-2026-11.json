@@ -1,0 +1,3008 @@
+{
+ "date": "2026-11-18",
+ "applied": [
+  {
+   "RealName": "Carlos Ruiz",
+   "RingName": "Axiom",
+   "Field": "Signature",
+   "Current": [
+    "Parking Lot Special"
+   ],
+   "Proposed": [
+    "Golden Ratio"
+   ],
+   "Why": "Axiom's finisher is the Golden Ratio; 'Parking Lot Special' is not a move he uses.",
+   "Sources": [
+    "https://www.cagematch.net/?id=2&nr=18852",
+    "https://www.thesmackdownhotel.com/roster/wrestlers-finishers"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Carlos Ruiz",
+   "RingName": "Axiom",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "The Kid From The Parking Lot",
+   "Proposed": "Masked Spanish High-Flyer",
+   "Why": "No source uses 'The Kid From The Parking Lot'; he is presented as a masked high-flyer from Madrid (formerly A-Kid).",
+   "Sources": [
+    "https://www.wwe.com/superstars/axiom",
+    "https://en.wikipedia.org/wiki/A-Kid"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Rebecca Quin",
+   "RingName": "Becky Lynch",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Face",
+   "Proposed": "Heel",
+   "Why": "Lynch has worked as a heel since 2025 (cheating wins over Lyra Valkyria, heel promos through her 2026 Women's IC title reigns).",
+   "Sources": [
+    "https://tjrwrestling.net/news/becky-lynch-cheats-her-way-to-major-wwe-milestone-on-raw",
+    "https://www.wrestlingnewssource.com/news/93954/Becky-Lynch-Steals-A-Win-From-Lyra-Valkyria-At"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Candice Dawson",
+   "RingName": "Candice LeRae",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "All Risk, No Reward",
+   "Proposed": "The Poison Pixie",
+   "Why": "Her nickname is 'The Poison Pixie'; the current descriptor is invented.",
+   "Sources": [
+    "https://www.foxsports.com/wwe/candice-lerae-superstar-bio",
+    "https://www.tvtropes.org/pmwiki/pmwiki.php/Wrestling/CandiceLeRae"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Candice Dawson",
+   "RingName": "Candice LeRae",
+   "Field": "Signature",
+   "Current": [
+    "No Brakes"
+   ],
+   "Proposed": [
+    "Lionsault",
+    "Wicked Stepsister"
+   ],
+   "Why": "'No Brakes' is not one of her moves; she wins with the Lionsault and is known for the Wicked Stepsister.",
+   "Sources": [
+    "https://www.foxsports.com/wwe/candice-lerae-superstar-bio",
+    "https://www.f4wonline.com/news/wwe/candice-lerae-goes-to-another-time-limit-draw-in-wwe-speed-title-defense"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Chelsea Green",
+   "RingName": "Chelsea Green",
+   "Field": "Gimmick.Type",
+   "Current": "Loner",
+   "Proposed": "Comedy",
+   "Why": "Green plays a comedic 'Karen'-style heel, not a loner.",
+   "Sources": [
+    "https://www.wrestlinginc.com/2118367/wwe-chelsea-green-grunge-character/",
+    "https://tjrwrestling.net/news/secret-hervice-twist-fails-as-jade-cargill-steamrolls-chelsea-green-on-wwe-smackdown/"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Chelsea Green",
+   "RingName": "Chelsea Green",
+   "Field": "Gimmick.Tone",
+   "Current": "Melancholic",
+   "Proposed": "Humorous",
+   "Why": "Her act is played for laughs (complaining, entitled comedy), not melancholy.",
+   "Sources": [
+    "https://www.wrestlinginc.com/2118367/wwe-chelsea-green-grunge-character/"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Chelsea Green",
+   "RingName": "Chelsea Green",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Tweener",
+   "Proposed": "Heel",
+   "Why": "She has been a heel since her 2023 WWE return, leading the heel Secret Hervice group.",
+   "Sources": [
+    "https://tjrwrestling.net/news/secret-hervice-twist-fails-as-jade-cargill-steamrolls-chelsea-green-on-wwe-smackdown/"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Chelsea Green",
+   "RingName": "Chelsea Green",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "The Cold Read",
+   "Proposed": "The Comedic Karen",
+   "Why": "'The Cold Read' does not describe her; she is presented as an entitled, complaining 'Karen'.",
+   "Sources": [
+    "https://www.wrestlinginc.com/2118367/wwe-chelsea-green-grunge-character/"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Chelsea Green",
+   "RingName": "Chelsea Green",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Detached",
+    "Analytical",
+    "Friendless"
+   ],
+   "Proposed": [
+    "Entitled",
+    "Complainer",
+    "Comedic"
+   ],
+   "Why": "Detached/analytical/friendless is the opposite of her loud, entitled comedy act with on-screen allies.",
+   "Sources": [
+    "https://www.wrestlinginc.com/2118367/wwe-chelsea-green-grunge-character/"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Chelsea Green",
+   "RingName": "Chelsea Green",
+   "Field": "Signature",
+   "Current": [
+    "Full Stop"
+   ],
+   "Proposed": [
+    "Unprettier"
+   ],
+   "Why": "Her finisher is the Unprettier (also called Unpretty-Her); 'Full Stop' is not her move.",
+   "Sources": [
+    "https://www.cagematch.net/?id=2&nr=16283",
+    "https://www.fightful.com/wrestling/exclusives/chelsea-green-remembers-when-she-did-unprettier-backwards-why-she-didn-t-keep-using-it"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Luis Martinez",
+   "RingName": "Damian Priest",
+   "Field": "Signature",
+   "Current": [
+    "The Long Count"
+   ],
+   "Proposed": [
+    "South of Heaven",
+    "Razor's Edge"
+   ],
+   "Why": "Priest's finisher is the South of Heaven chokeslam (and Razor's Edge); 'The Long Count' is not his move.",
+   "Sources": [
+    "https://sportskeeda.com/wwe/damian-priest-finisher-and-theme-song",
+    "https://fightful.com/wrestling/exclusives/making-finisher-punishment-martinez-s-south-heaven-chokeslam"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Luis Martinez",
+   "RingName": "Damian Priest",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "The Last Honest Man",
+   "Proposed": "The Archer of Infamy",
+   "Why": "His long-standing nickname is 'The Archer of Infamy'; 'The Last Honest Man' is invented.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Damian_Priest"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Luis Martinez",
+   "RingName": "Damian Priest",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Face",
+   "Proposed": "Heel",
+   "Why": "Priest turned heel on R-Truth on the 11 Sept 2026 SmackDown.",
+   "Sources": [
+    "https://www.fightful.com/?p=327922",
+    "https://www.sacnilk.com/news/damian_priest_turns_heel_attacks_rtruth_after_smackdown_loss"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Ilja Rukober",
+   "RingName": "Ilja Dragunov",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Heel",
+   "Proposed": "Face",
+   "Why": "Dragunov was a babyface through his WWE run (incl. 2025 US title reign) and no heel turn was reported before he left in Aug 2026.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Ilja_Dragunov",
+    "https://www.foxnews.com/outkick-sports/wwe-star-ilja-dragunov-departs-company-after-being-out-action-4-months.amp"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Ilja Rukober",
+   "RingName": "Ilja Dragunov",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "The Shoot-Style Import",
+   "Proposed": "The Mad Dragon",
+   "Why": "He is billed as 'The Mad Dragon'; 'shoot-style import' misdescribes his intense, emotional striker persona.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Ilja_Dragunov"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Ilja Rukober",
+   "RingName": "Ilja Dragunov",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Legitimate",
+    "Cold",
+    "Wrist Control"
+   ],
+   "Proposed": [
+    "Intense",
+    "Hard-hitting",
+    "Emotional"
+   ],
+   "Why": "'Cold' and 'Wrist Control' are the opposite of his famously emotional, all-out striking style.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Ilja_Dragunov"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Ilja Rukober",
+   "RingName": "Ilja Dragunov",
+   "Field": "Signature",
+   "Current": [
+    "The Referee Stoppage"
+   ],
+   "Proposed": [
+    "Torpedo Moscow",
+    "H-Bomb"
+   ],
+   "Why": "His finishers are the Torpedo Moscow and H-Bomb; 'The Referee Stoppage' is not a move.",
+   "Sources": [
+    "https://www.cagematch.net/?id=2&nr=13179",
+    "https://en.wikipedia.org/wiki/Ilja_Dragunov"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Jade Cargill",
+   "RingName": "Jade Cargill",
+   "Field": "Signature",
+   "Current": [
+    "Glacier Drop"
+   ],
+   "Proposed": [
+    "Jaded"
+   ],
+   "Why": "Her finisher is the Jaded, used to win the WWE Women's title on 1 Nov 2025.",
+   "Sources": [
+    "https://www.foxsports.com/wwe/jade-cargill-superstar?p=5",
+    "https://en.wikipedia.org/wiki/Jade_Cargill"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Jade Cargill",
+   "RingName": "Jade Cargill",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "The Iron Mountain",
+   "Proposed": "Storm-Inspired Powerhouse",
+   "Why": "'The Iron Mountain' is not a name she uses; her look and persona are modelled on Marvel's Storm.",
+   "Sources": [
+    "https://bleedingcool.com/tv/aews-jade-cargill-explains-her-connection-to-the-x-mens-storm"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Jade Cargill",
+   "RingName": "Jade Cargill",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Towering",
+    "Merciless",
+    "Never Pinned Clean"
+   ],
+   "Proposed": [
+    "Towering",
+    "Merciless",
+    "Imposing"
+   ],
+   "Why": "'Never Pinned Clean' is false: Rhea Ripley pinned her clean with a Riptide at WrestleMania 42.",
+   "Sources": [
+    "https://tjrwrestling.net/news/breaking-world-champion-shockingly-dethroned-at-wwe-wrestlemania-42/"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Kofi Sarkodie-Mensah",
+   "RingName": "Kofi Kingston",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Face",
+   "Proposed": "Heel",
+   "Why": "Kingston and Woods turned heel on Big E in Dec 2024 and remained heels until leaving WWE in May 2026.",
+   "Sources": [
+    "https://www.si.com/fannation/wrestling/wwe/kofi-kingston-and-xavier-woods-turn-heel-as-big-e-returns-to-wwe-raw",
+    "https://www.foxnews.com/sports/heel-turn-new-day-leave-wwe-death-riders-influence-ospreay-grows-hottest-storyline"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Kofi Sarkodie-Mensah",
+   "RingName": "Kofi Kingston",
+   "Field": "Gimmick.Type",
+   "Current": "Realist",
+   "Proposed": "Sellout",
+   "Why": "The heel New Day are smug veterans who betrayed their friend Big E; 'Realist' does not describe that.",
+   "Sources": [
+    "https://www.si.com/fannation/wrestling/wwe/kofi-kingston-and-xavier-woods-turn-heel-as-big-e-returns-to-wwe-raw"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Kofi Sarkodie-Mensah",
+   "RingName": "Kofi Kingston",
+   "Field": "Gimmick.Tone",
+   "Current": "Serious",
+   "Proposed": "Arrogant",
+   "Why": "His current act is mocking and smug, not serious.",
+   "Sources": [
+    "https://www.si.com/fannation/wrestling/wwe/kofi-kingston-and-xavier-woods-turn-heel-as-big-e-returns-to-wwe-raw"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Kofi Sarkodie-Mensah",
+   "RingName": "Kofi Kingston",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "The Trainer's Son",
+   "Proposed": "New Day Veteran",
+   "Why": "'The Trainer's Son' is invented and not true of him; he is known as a founding member of The New Day (and for KofiMania).",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Kofi_Kingston"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Kofi Sarkodie-Mensah",
+   "RingName": "Kofi Kingston",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Studious",
+    "Unmarketable",
+    "Excellent Hands"
+   ],
+   "Proposed": [
+    "Veteran",
+    "Smug",
+    "Tag Team Specialist"
+   ],
+   "Why": "'Unmarketable' is plainly false for a former WWE Champion and one of WWE's most merchandised acts.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Kofi_Kingston"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Kofi Sarkodie-Mensah",
+   "RingName": "Kofi Kingston",
+   "Field": "Signature",
+   "Current": [
+    "The Chalkboard",
+    "Midnight Hour"
+   ],
+   "Proposed": [
+    "Trouble in Paradise",
+    "Midnight Hour"
+   ],
+   "Why": "His finisher is Trouble in Paradise; 'The Chalkboard' is not a move of his.",
+   "Sources": [
+    "https://tvtropes.org/pmwiki/pmwiki.php/Wrestling/KofiKingston",
+    "https://wrestlezone.com/news/1206581-wwe-raw-results-10-19-20/5"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Aoife Cusack",
+   "RingName": "Lyra Valkyria",
+   "Field": "Signature",
+   "Current": [
+    "Chapter And Verse"
+   ],
+   "Proposed": [
+    "Nightwing"
+   ],
+   "Why": "Her finisher is the Nightwing; 'Chapter And Verse' is not a move she uses.",
+   "Sources": [
+    "https://www.thesmackdownhotel.com/wrestlers/lyra-valkyria-aoife-valkyrie"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Aoife Cusack",
+   "RingName": "Lyra Valkyria",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "The Textbook",
+   "Proposed": "Irish High-Flyer",
+   "Why": "'The Textbook' is not a name she is billed under; she is presented as a Dublin-born high-flyer.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Lyra_Valkyria"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Randal Orton",
+   "RingName": "Randy Orton",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Face",
+   "Proposed": "Heel",
+   "Why": "Orton turned heel on Cody Rhodes on the 13 March 2026 SmackDown; no face turn since was found.",
+   "Sources": [
+    "https://wrestlingheadlines.com/randy-orton-turns-heel-savagely-attacks-cody-rhodes-to-end-3-13-wwe-smackdown/",
+    "https://tjrwrestling.net/news/randy-orton-solidifies-heel-turn-with-explosive-wwe-smackdown-promo/"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Carla Gonzalez",
+   "RingName": "Roxanne Perez",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Face",
+   "Proposed": "Heel",
+   "Why": "Perez has been a heel since 2024 and is a member of The Judgment Day in 2026.",
+   "Sources": [
+    "https://www.sacnilk.com/news/roxanne-perez-opens-up-about-her-shocking-transformation-from-wwe-prodigy-to-villain",
+    "https://www.foxnews.com/outkick-sports/wwe-roxanne-perez-unconcerned-without-judgment-day-stablemates-massive-triplemania-34-match.print"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Carla Gonzalez",
+   "RingName": "Roxanne Perez",
+   "Field": "Gimmick.Type",
+   "Current": "Underdog",
+   "Proposed": "Egotist",
+   "Why": "As a heel she is presented as a scheming self-styled 'mastermind', not an underdog.",
+   "Sources": [
+    "https://www.sacnilk.com/news/roxanne-perez-opens-up-about-her-shocking-transformation-from-wwe-prodigy-to-villain"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Carla Gonzalez",
+   "RingName": "Roxanne Perez",
+   "Field": "Gimmick.Tone",
+   "Current": "Inspirational",
+   "Proposed": "Arrogant",
+   "Why": "Her heel act is cocky and scheming, not inspirational.",
+   "Sources": [
+    "https://www.sacnilk.com/news/roxanne-perez-opens-up-about-her-shocking-transformation-from-wwe-prodigy-to-villain"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Carla Gonzalez",
+   "RingName": "Roxanne Perez",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "Smallest Person In The Building",
+   "Proposed": "The Prodigy",
+   "Why": "She is billed as 'The Prodigy'.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Roxanne_Perez"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Carla Gonzalez",
+   "RingName": "Roxanne Perez",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Tiny",
+    "Relentless",
+    "Crowd Favourite"
+   ],
+   "Proposed": [
+    "Tiny",
+    "Scheming",
+    "Cocky"
+   ],
+   "Why": "'Crowd Favourite' is wrong for a Judgment Day heel.",
+   "Sources": [
+    "https://www.sacnilk.com/news/roxanne-perez-opens-up-about-her-shocking-transformation-from-wwe-prodigy-to-villain"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Carla Gonzalez",
+   "RingName": "Roxanne Perez",
+   "Field": "Signature",
+   "Current": [
+    "Little Bird"
+   ],
+   "Proposed": [
+    "Pop Rox"
+   ],
+   "Why": "Her finisher is the Pop Rox, still in use in 2026.",
+   "Sources": [
+    "https://www.wrestlinginc.com/1952170/roxanne-perez-hits-finisher-cm-punk-wwe-live-event-pop-rox"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Ashley Urbanski",
+   "RingName": "Shotzi Blackheart",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "Indy God",
+   "Proposed": "The Ballsy Badass",
+   "Why": "Her nickname is 'The Ballsy Badass'; 'Indy God' is not used for her.",
+   "Sources": [
+    "https://www.imdb.com/name/nm6899050/",
+    "https://slamwrestling.net/features/ballsy-badass-shotzi-is-in-mlw-to-stay/"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Stephon Strickland",
+   "RingName": "Swerve Strickland",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Face",
+   "Proposed": "Heel",
+   "Why": "Swerve turned heel on Kenny Omega on the 18 Feb 2026 Dynamite and has since led a heel faction.",
+   "Sources": [
+    "https://www.si.com/fannation/wrestling/aew/aew-dynamite-results-swerve-strickland-turns-heel-page-ups-stakes-with-mjf",
+    "https://www.f4wonline.com/news/aew/swerve-strickland-on-aew-heel-turn-it-was-needed"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Madison Knisley",
+   "RingName": "Thea Hail",
+   "Field": "Gimmick.Type",
+   "Current": "Egotist",
+   "Proposed": "Underdog",
+   "Why": "Hail is Chase U's excitable, sympathetic young babyface who keeps being betrayed, not a vain egotist.",
+   "Sources": [
+    "https://www.fightful.com/wrestling/fallon-henley-turns-thea-hail-nxt-spring-breakin-week-2-430",
+    "https://en.wikipedia.org/wiki/Thea_Hail"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Madison Knisley",
+   "RingName": "Thea Hail",
+   "Field": "Gimmick.Tone",
+   "Current": "Arrogant",
+   "Proposed": "Humorous",
+   "Why": "Her act is bubbly and over-excited, played partly for comedy, not arrogant.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Thea_Hail"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Madison Knisley",
+   "RingName": "Thea Hail",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Heel",
+   "Proposed": "Face",
+   "Why": "She remained a face through 2026, the victim of betrayals by Jacy Jayne and Fallon Henley; no heel turn found.",
+   "Sources": [
+    "https://www.fightful.com/wrestling/fallon-henley-turns-thea-hail-nxt-spring-breakin-week-2-430",
+    "https://www.ringsidenews.com/wwe-appears-have-new-plans-thea-hail-quiet-2026-run/"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Madison Knisley",
+   "RingName": "Thea Hail",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "The Model",
+   "Proposed": "Chase U's Biggest Fan",
+   "Why": "'The Model' is invented; she is known as the overenthusiastic Chase University student.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Thea_Hail",
+    "https://www.thesmackdownhotel.com/wrestlers/thea-hail"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Madison Knisley",
+   "RingName": "Thea Hail",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Vain",
+    "Sneering",
+    "Untested"
+   ],
+   "Proposed": [
+    "Enthusiastic",
+    "Excitable",
+    "Young"
+   ],
+   "Why": "Vain and sneering are the opposite of her eager, upbeat babyface character.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Thea_Hail"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Austin Watson",
+   "RingName": "Xavier Woods",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Face",
+   "Proposed": "Heel",
+   "Why": "Woods and Kingston turned heel on Big E in Dec 2024 and stayed heels until leaving WWE in May 2026.",
+   "Sources": [
+    "https://www.si.com/fannation/wrestling/wwe/kofi-kingston-and-xavier-woods-turn-heel-as-big-e-returns-to-wwe-raw"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Austin Watson",
+   "RingName": "Xavier Woods",
+   "Field": "Gimmick.Type",
+   "Current": "Traditionalist",
+   "Proposed": "Sellout",
+   "Why": "The heel New Day are smug veterans who turned on Big E; 'Traditionalist' does not fit.",
+   "Sources": [
+    "https://www.si.com/fannation/wrestling/wwe/kofi-kingston-and-xavier-woods-turn-heel-as-big-e-returns-to-wwe-raw"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Austin Watson",
+   "RingName": "Xavier Woods",
+   "Field": "Gimmick.Tone",
+   "Current": "Inspirational",
+   "Proposed": "Arrogant",
+   "Why": "His current act is mocking and smug, not inspirational.",
+   "Sources": [
+    "https://www.si.com/fannation/wrestling/wwe/kofi-kingston-and-xavier-woods-turn-heel-as-big-e-returns-to-wwe-raw"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Austin Watson",
+   "RingName": "Xavier Woods",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "The Territory Kid",
+   "Proposed": "New Day's Gamer",
+   "Why": "'The Territory Kid' is invented; Woods is known as The New Day's resident gamer (UpUpDownDown's Austin Creed).",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Xavier_Woods"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Austin Watson",
+   "RingName": "Xavier Woods",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Earnest",
+    "Fundamentals First",
+    "Still Learning"
+   ],
+   "Proposed": [
+    "Gamer",
+    "Smug",
+    "Veteran"
+   ],
+   "Why": "'Still Learning' is false for a 20-year veteran and multi-time tag champion; 'Earnest' does not fit his heel run.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Xavier_Woods"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Austin Watson",
+   "RingName": "Xavier Woods",
+   "Field": "Signature",
+   "Current": [
+    "Homecoming",
+    "Midnight Hour"
+   ],
+   "Proposed": [
+    "Backwoods",
+    "Midnight Hour"
+   ],
+   "Why": "'Homecoming' is not a Woods move; his finisher since 2022 is the Backwoods (formerly Lost in the Woods).",
+   "Sources": [
+    "https://www.wrestlinginc.com/news/2022/04/xavier-woods-confirms-the-backwoods-is-his-new-finisher"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Kayleigh Rae",
+   "RingName": "Alba Fyre",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "The Girl In The Polaroid",
+   "Proposed": "Scottish Hardcore Brawler",
+   "Why": "'The Girl In The Polaroid' is not any presentation she has had; she is a bat-wielding Scottish brawler (Unholy Union, then Chelsea Green's Secret Hervice bodyguard).",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Alba_Fyre",
+    "https://en.wikipedia.org/wiki/The_Green_Regime"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Kayleigh Rae",
+   "RingName": "Alba Fyre",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Eerie",
+    "Nostalgic",
+    "Vacant Stare"
+   ],
+   "Proposed": [
+    "Hardcore",
+    "Fearless",
+    "Scottish"
+   ],
+   "Why": "Nostalgic/vacant-stare flavour describes an invented character, not her on-screen work.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Alba_Fyre"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Kayleigh Rae",
+   "RingName": "Alba Fyre",
+   "Field": "Signature",
+   "Current": [
+    "Flashbulb"
+   ],
+   "Proposed": [
+    "Gory Bomb"
+   ],
+   "Why": "'Flashbulb' is not her move; the Gory Bomb is her long-standing finisher (Swanton Bomb also used).",
+   "Sources": [
+    "https://www.wwe.com/superstars/alba-fyre",
+    "https://www.thesmackdownhotel.com/wrestlers/kay-lee-ray"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Bronson Rechsteiner",
+   "RingName": "Bron Breakker",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Explosive",
+    "Legacy",
+    "Green"
+   ],
+   "Proposed": [
+    "Explosive",
+    "Legacy",
+    "Dominant"
+   ],
+   "Why": "'Green' misdescribes a two-time NXT and multi-time Intercontinental Champion who is a main-event enforcer in The Vision.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Bron_Breakker"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Christian Brigham",
+   "RingName": "Carmelo Hayes",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Face",
+   "Proposed": "Heel",
+   "Why": "He turned heel on 12 Oct 2026 Raw, attacking Solo Sikoa with a crowbar and joining Royce Keys' 946.",
+   "Sources": [
+    "https://bleacherreport.com/articles/25507322-carmelo-hayes-turns-heel-helps-946-beat-bloodline-major-surprise-wwe-raw",
+    "https://www.fightful.com/?p=333616"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Christian Brigham",
+   "RingName": "Carmelo Hayes",
+   "Field": "Gimmick.Type",
+   "Current": "Rebel",
+   "Proposed": "Egotist",
+   "Why": "His character is the self-assured 'Him' / 'Melo Don't Miss', not an anti-authority rebel.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Carmelo_Hayes"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Christian Brigham",
+   "RingName": "Carmelo Hayes",
+   "Field": "Gimmick.Tone",
+   "Current": "Chaotic",
+   "Proposed": "Arrogant",
+   "Why": "He is a cocky, smooth talker, not a chaotic one.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Carmelo_Hayes"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Christian Brigham",
+   "RingName": "Carmelo Hayes",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "The Sound And The Fury",
+   "Proposed": "Him",
+   "Why": "'The Sound And The Fury' is not his nickname; he is billed as 'Him'.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Carmelo_Hayes"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Christian Brigham",
+   "RingName": "Carmelo Hayes",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Reckless",
+    "Anti-Authority",
+    "Buzzy"
+   ],
+   "Proposed": [
+    "Confident",
+    "Smooth",
+    "Opportunistic"
+   ],
+   "Why": "Anti-authority recklessness is not his character; cocky confidence and (now) opportunism with the 946 is.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Carmelo_Hayes"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Christian Brigham",
+   "RingName": "Carmelo Hayes",
+   "Field": "Signature",
+   "Current": [
+    "Feedback"
+   ],
+   "Proposed": [
+    "Nothing But Net"
+   ],
+   "Why": "'Feedback' is not his move; his finisher is the Nothing But Net diving leg drop.",
+   "Sources": [
+    "https://sportskeeda.com/wwe/carmelo-hayes-finisher"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Fergal Devitt",
+   "RingName": "Finn Balor",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Heel",
+   "Proposed": "Face",
+   "Why": "Judgment Day threw him out on 9 Mar 2026 Raw, cementing a face turn; he beat Dominik Mysterio at WrestleMania 42 with the Demon.",
+   "Sources": [
+    "https://www.wwe.com/shows/wrestlemania/saturday-2026/finn-balor-vs-dominik-mysterio",
+    "https://www.foxnews.com/sports/demon-finn-balor-settles-score-dominik-mysterio-wrestlemania-42"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Fergal Devitt",
+   "RingName": "Finn Balor",
+   "Field": "Gimmick.Type",
+   "Current": "Sellout",
+   "Proposed": "AntiHero",
+   "Why": "He has never been presented as a corporate sellout; he is a cast-out veteran on a revenge run with his Demon alter ego.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Finn_B%C3%A1lor"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Fergal Devitt",
+   "RingName": "Finn Balor",
+   "Field": "Gimmick.Tone",
+   "Current": "Arrogant",
+   "Proposed": "Serious",
+   "Why": "Post-Judgment Day he is presented as a wronged, intense veteran rather than arrogant.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Finn_B%C3%A1lor"
+   ],
+   "Confidence": "low"
+  },
+  {
+   "RealName": "Fergal Devitt",
+   "RingName": "Finn Balor",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "The Corporate Signing",
+   "Proposed": "The Prince",
+   "Why": "'The Corporate Signing' is invented; his nickname is 'The Prince' (with 'The Demon' alter ego).",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Finn_B%C3%A1lor"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Fergal Devitt",
+   "RingName": "Finn Balor",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Smug",
+    "Well-Connected",
+    "Takes Shortcuts"
+   ],
+   "Proposed": [
+    "Veteran",
+    "Vengeful",
+    "Demon Alter Ego"
+   ],
+   "Why": "The corporate-shortcut traits describe an invented character.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Finn_B%C3%A1lor"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Fergal Devitt",
+   "RingName": "Finn Balor",
+   "Field": "Signature",
+   "Current": [
+    "The Severance"
+   ],
+   "Proposed": [
+    "Coup de Grace"
+   ],
+   "Why": "'The Severance' is not his move; his finisher is the Coup de Grace diving double foot stomp.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Finn_B%C3%A1lor"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Courtney Stewart",
+   "RingName": "Isla Dawn",
+   "Field": "Gimmick.Type",
+   "Current": "Egotist",
+   "Proposed": "DarkPersona",
+   "Why": "She is presented as an occult witch figure (tarot, ouija, black mist), not a spoiled egotist.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Isla_Dawn"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Courtney Stewart",
+   "RingName": "Isla Dawn",
+   "Field": "Gimmick.Tone",
+   "Current": "Arrogant",
+   "Proposed": "Cryptic",
+   "Why": "Her promos are occult/mystic, not arrogant.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Isla_Dawn"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Courtney Stewart",
+   "RingName": "Isla Dawn",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "Trust-Fund Terror",
+   "Proposed": "The Occult Witch",
+   "Why": "'Trust-Fund Terror' is an invented rich-girl character she has never played.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Isla_Dawn",
+    "https://en.wikipedia.org/wiki/The_Unholy_Union"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Courtney Stewart",
+   "RingName": "Isla Dawn",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Spoiled",
+    "Vicious",
+    "Buys Her Way Out"
+   ],
+   "Proposed": [
+    "Occult",
+    "Mystic",
+    "Vicious"
+   ],
+   "Why": "'Spoiled' and 'Buys Her Way Out' misdescribe her; she is an occult heel.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Isla_Dawn"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Joshua Fatu",
+   "RingName": "Jey Uso",
+   "Field": "Gimmick.Type",
+   "Current": "Loner",
+   "Proposed": "Showman",
+   "Why": "Jey is the crowd-leading 'YEET' Main Event Jey Uso and a Bloodline family man, not a loner.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Jey_Uso",
+    "https://tjrwrestling.net/news/jey-uso-on-reuniting-with-roman-reigns-wwe"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Joshua Fatu",
+   "RingName": "Jey Uso",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "The Coal-Country Bruiser",
+   "Proposed": "Main Event Jey Uso",
+   "Why": "'The Coal-Country Bruiser' is invented; he is billed as 'Main Event Jey Uso'.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Jey_Uso"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Joshua Fatu",
+   "RingName": "Jey Uso",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Hard-Nosed",
+    "Unglamorous",
+    "Dependable"
+   ],
+   "Proposed": [
+    "Charismatic",
+    "Crowd Favourite",
+    "Family Loyalty"
+   ],
+   "Why": "'Unglamorous' badly misdescribes one of WWE's most merchandised crowd favourites.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Jey_Uso"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Joshua Fatu",
+   "RingName": "Jey Uso",
+   "Field": "Signature",
+   "Current": [
+    "Pit Closer"
+   ],
+   "Proposed": [
+    "Uso Splash"
+   ],
+   "Why": "'Pit Closer' is not his move; his finisher is the Uso Splash (top-rope splash), with the spear.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Jey_Uso"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Kaori Housako",
+   "RingName": "Kairi Sane",
+   "Field": "Gimmick.Type",
+   "Current": "Realist",
+   "Proposed": "Showman",
+   "Why": "She is the flamboyant 'Pirate Princess' and a Kabuki Warriors/Damage CTRL heel, not a legitimate-shooter realist.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Kairi_Sane",
+    "https://sportskeeda.com/wwe/is-kairi-sane-heel-or-face"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Kaori Housako",
+   "RingName": "Kairi Sane",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "The Shooter",
+   "Proposed": "The Pirate Princess",
+   "Why": "'The Shooter' is invented; her nickname is 'The Pirate Princess'.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Kairi_Sane"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Kaori Housako",
+   "RingName": "Kairi Sane",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Legitimate",
+    "Humourless",
+    "Dangerous"
+   ],
+   "Proposed": [
+    "Flamboyant",
+    "Agile",
+    "Sneaky"
+   ],
+   "Why": "'Humourless' shooter traits misdescribe her playful pirate persona.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Kairi_Sane"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Kaori Housako",
+   "RingName": "Kairi Sane",
+   "Field": "Signature",
+   "Current": [
+    "The Clinic"
+   ],
+   "Proposed": [
+    "Insane Elbow"
+   ],
+   "Why": "'The Clinic' is not her move; her finisher is the Insane Elbow.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Kairi_Sane"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Stephanie Hym Bell",
+   "RingName": "Michin",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Tweener",
+   "Proposed": "Heel",
+   "Why": "She and B-Fab turned heel on Rhea Ripley on 20 Mar 2026 SmackDown and joined Jade Cargill.",
+   "Sources": [
+    "https://www.wrestlinginc.com/2128515/wwe-smackdown-michin-b-fab-turn-heel-join-forces-jade-cargill",
+    "https://en.wikipedia.org/wiki/Mia_Yim"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Benjamin Timms",
+   "RingName": "Nathan Frazer",
+   "Field": "Gimmick.Type",
+   "Current": "Cryptic",
+   "Proposed": "Daredevil",
+   "Why": "He is a high-flying tag specialist (Fraxiom), not a cryptic persona.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Nathan_Frazer",
+    "https://www.wrestlinginc.com/1843862/fraxiom-wwe-main-roster-debut-smackdown"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Benjamin Timms",
+   "RingName": "Nathan Frazer",
+   "Field": "Gimmick.Tone",
+   "Current": "Cryptic",
+   "Proposed": "Serious",
+   "Why": "Nothing about his presentation is cryptic.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Nathan_Frazer"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Benjamin Timms",
+   "RingName": "Nathan Frazer",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Heel",
+   "Proposed": "Face",
+   "Why": "Fraxiom have been faces since late 2024; heel turns have been teased repeatedly but no completed turn is reported.",
+   "Sources": [
+    "https://www.thesmackdownhotel.com/wrestlers/nathan-frazer-ben-carter",
+    "https://www.wrestlingnewssource.com/news/92905/Nathan-Frazer-Denies-Turning-on-Axiom-Amid-Fraxiom-Split/"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Benjamin Timms",
+   "RingName": "Nathan Frazer",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "The Signal From The Dark",
+   "Proposed": "High-Flying Tag Specialist",
+   "Why": "'The Signal From The Dark' is an invented character.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Nathan_Frazer"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Benjamin Timms",
+   "RingName": "Nathan Frazer",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Obscure",
+    "Twitching",
+    "Unreadable"
+   ],
+   "Proposed": [
+    "Acrobatic",
+    "Fearless",
+    "Team Player"
+   ],
+   "Why": "'Twitching'/'Unreadable' describe an invented character, not him.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Nathan_Frazer"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Benjamin Timms",
+   "RingName": "Nathan Frazer",
+   "Field": "Signature",
+   "Current": [
+    "Dead Air"
+   ],
+   "Proposed": [
+    "Phoenix Splash"
+   ],
+   "Why": "'Dead Air' is not his move; his finisher is the Phoenix Splash (corkscrew 450).",
+   "Sources": [
+    "https://www.wrestlinginc.com/1843862/fraxiom-wwe-main-roster-debut-smackdown"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Victoria Gonzalez",
+   "RingName": "Raquel Rodriguez",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Face",
+   "Proposed": "Heel",
+   "Why": "She is a Judgment Day heel alongside Liv Morgan and Roxanne Perez, winning the Women's IC title on 27 Jul 2026 via their interference.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Liv_Morgan_and_Raquel_Rodriguez",
+    "https://wrestletalk.com/news/title-change-wwe-raw-raquel-rodriguez/"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Shayna Baszler",
+   "RingName": "Shayna Baszler",
+   "Field": "Gimmick.Type",
+   "Current": "Rebel",
+   "Proposed": "Realist",
+   "Why": "Her character is the MMA-credentialed submission specialist ('Queen of Spades'), a legit-fighter realist, not an anti-establishment rebel.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Shayna_Baszler"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Calyx Hampton",
+   "RingName": "Sol Ruca",
+   "Field": "Gimmick.Type",
+   "Current": "Comedy",
+   "Proposed": "Daredevil",
+   "Why": "She is presented as an acrobatic surfer babyface whose draw is high-risk athleticism, not a comedy act.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Sol_Ruca"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Calyx Hampton",
+   "RingName": "Sol Ruca",
+   "Field": "Gimmick.Tone",
+   "Current": "Humorous",
+   "Proposed": "Inspirational",
+   "Why": "She is a sunny, earnest babyface, not played for laughs.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Sol_Ruca"
+   ],
+   "Confidence": "low"
+  },
+  {
+   "RealName": "Calyx Hampton",
+   "RingName": "Sol Ruca",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "The Enthusiast",
+   "Proposed": "The Surfer",
+   "Why": "'The Enthusiast' is not how she is billed; her presentation is the laid-back surfer.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Sol_Ruca",
+    "https://www.wwe.com/superstars/sol-ruca"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Calyx Hampton",
+   "RingName": "Sol Ruca",
+   "Field": "Signature",
+   "Current": [
+    "Big Finish"
+   ],
+   "Proposed": [
+    "Sol Snatcher"
+   ],
+   "Why": "'Big Finish' is not her move; her finisher is the Sol Snatcher (springboard frontflip cutter).",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Sol_Ruca"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Jessica Woynilko",
+   "RingName": "Tiffany Stratton",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Face",
+   "Proposed": "Heel",
+   "Why": "She turned heel at Crown Jewel on 7 Nov 2026, cashing in Money in the Bank on Chelsea Green.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Tiffany_Stratton"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Jessica Woynilko",
+   "RingName": "Tiffany Stratton",
+   "Field": "Gimmick.Type",
+   "Current": "Rebel",
+   "Proposed": "Egotist",
+   "Why": "Her character is the rich, spoiled 'daddy's girl' (Paris Hilton/Sharpay inspired), not a rebel.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Tiffany_Stratton"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Jessica Woynilko",
+   "RingName": "Tiffany Stratton",
+   "Field": "Gimmick.Tone",
+   "Current": "Chaotic",
+   "Proposed": "Arrogant",
+   "Why": "Her presentation is self-adoring and haughty, not chaotic.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Tiffany_Stratton"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Jessica Woynilko",
+   "RingName": "Tiffany Stratton",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "Loudest Woman In The Building",
+   "Proposed": "Spoiled Daddy's Girl",
+   "Why": "'Loudest Woman In The Building' is invented; Wikipedia describes the rich, spoiled daddy's-girl persona.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Tiffany_Stratton"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Jessica Woynilko",
+   "RingName": "Tiffany Stratton",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Fearless",
+    "Mouthy",
+    "Beloved"
+   ],
+   "Proposed": [
+    "Spoiled",
+    "Glamorous",
+    "Athletic"
+   ],
+   "Why": "'Beloved' is now false after her heel turn and the set misses her defining spoiled-glamour persona.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Tiffany_Stratton"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Jessica Woynilko",
+   "RingName": "Tiffany Stratton",
+   "Field": "Signature",
+   "Current": [
+    "Riot Act"
+   ],
+   "Proposed": [
+    "Prettiest Moonsault Ever"
+   ],
+   "Why": "'Riot Act' is not her move; her finisher is the Prettiest Moonsault Ever.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Tiffany_Stratton"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Stephen Farrelly",
+   "RingName": "Sheamus",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Unsettling",
+    "Patient",
+    "Never Speaks"
+   ],
+   "Proposed": [
+    "Brawler",
+    "Hard-Hitting",
+    "Loud"
+   ],
+   "Why": "Sheamus is a loud, talkative hard-hitting brawler ('Celtic Warrior', 'bangers'); 'Never Speaks' and 'Unsettling' are false.",
+   "Sources": [
+    "https://www.fightful.com/wrestling/sheamus-defeats-shinsuke-nakamura-to-advance-in-the-last-time-is-now-tournament/",
+    "https://tjrwrestling.net/news/rusev-defeats-sheamus-clash-in-paris/",
+    "https://www.wwe.com:443/superstars/sheamus"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Stephen Farrelly",
+   "RingName": "Sheamus",
+   "Field": "Gimmick.Type",
+   "Current": "DarkPersona",
+   "Proposed": "Traditionalist",
+   "Why": "He has never had a dark/creepy persona; he is presented as an old-school fighting brawler.",
+   "Sources": [
+    "https://www.fightful.com/wrestling/sheamus-defeats-shinsuke-nakamura-to-advance-in-the-last-time-is-now-tournament/",
+    "https://tjrwrestling.net/news/rusev-defeats-sheamus-clash-in-paris/",
+    "https://www.wwe.com:443/superstars/sheamus"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Stephen Farrelly",
+   "RingName": "Sheamus",
+   "Field": "Gimmick.Tone",
+   "Current": "Cryptic",
+   "Proposed": "Serious",
+   "Why": "Nothing cryptic about his character; straightforward fighter with brash promos.",
+   "Sources": [
+    "https://www.fightful.com/wrestling/sheamus-defeats-shinsuke-nakamura-to-advance-in-the-last-time-is-now-tournament/",
+    "https://tjrwrestling.net/news/rusev-defeats-sheamus-clash-in-paris/",
+    "https://www.wwe.com:443/superstars/sheamus"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Stephen Farrelly",
+   "RingName": "Sheamus",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Heel",
+   "Proposed": "Face",
+   "Why": "He returned in May 2025 and worked as a babyface (Rusev feud, Last Time Is Now tournament) until leaving WWE in July 2026.",
+   "Sources": [
+    "https://www.fightful.com/wrestling/sheamus-defeats-shinsuke-nakamura-to-advance-in-the-last-time-is-now-tournament/",
+    "https://tjrwrestling.net/news/rusev-defeats-sheamus-clash-in-paris/",
+    "https://www.wwe.com:443/superstars/sheamus",
+    "https://prowrestling.net/site/2026/07/10/sheamus-says-goodbye-to-wwe/"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Stephen Farrelly",
+   "RingName": "Sheamus",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "Keeper of Quiet Rooms",
+   "Proposed": "The Celtic Warrior",
+   "Why": "His real long-standing nickname; the current one is invented and implies a silent dark character.",
+   "Sources": [
+    "https://www.fightful.com/wrestling/sheamus-2025-going-be-year-celtic-warrior"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Stephen Farrelly",
+   "RingName": "Sheamus",
+   "Field": "Signature",
+   "Current": [
+    "The Quiet Hour"
+   ],
+   "Proposed": [
+    "Brogue Kick"
+   ],
+   "Why": "His finisher is the Brogue Kick, used for his 2025 wins.",
+   "Sources": [
+    "https://www.fightful.com/wrestling/sheamus-defeats-shinsuke-nakamura-to-advance-in-the-last-time-is-now-tournament/",
+    "https://tjrwrestling.net/news/rusev-defeats-sheamus-clash-in-paris/",
+    "https://tjrwrestling.net/news/sheamus-claims-greatest-finisher-in-history"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Savelina Fanene",
+   "RingName": "Nia Jax",
+   "Field": "Gimmick.Type",
+   "Current": "Showman",
+   "Proposed": "Monster",
+   "Why": "Nia Jax is presented as a dominant, destructive powerhouse ('The Irresistible Force'), not a glamour showman.",
+   "Sources": [
+    "https://sportskeeda.com/wwe/nia-jax-theme-song-and-finisher",
+    "https://lastwordonsports.com/prowrestling/2025/11/07/wwe-nxt-star-attacks-alexa-bliss-on-wwe-smackdown-aligns-with-nia-jax/",
+    "https://fightful.com/wrestling/nia-jax-recalls-annihilator-lyra-valkyria-says-lyra-told-her-it-was-incredible"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Savelina Fanene",
+   "RingName": "Nia Jax",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "The Golden Hour",
+   "Proposed": "The Irresistible Force",
+   "Why": "Her real billed nickname.",
+   "Sources": [
+    "https://sportskeeda.com/wwe/nia-jax-theme-song-and-finisher",
+    "https://lastwordonsports.com/prowrestling/2025/11/07/wwe-nxt-star-attacks-alexa-bliss-on-wwe-smackdown-aligns-with-nia-jax/",
+    "https://fightful.com/wrestling/nia-jax-recalls-annihilator-lyra-valkyria-says-lyra-told-her-it-was-incredible"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Savelina Fanene",
+   "RingName": "Nia Jax",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Glamorous",
+    "Photogenic",
+    "Ruthless"
+   ],
+   "Proposed": [
+    "Powerhouse",
+    "Bully",
+    "Ruthless"
+   ],
+   "Why": "'Glamorous/Photogenic' misdescribe a character built on size and brutality.",
+   "Sources": [
+    "https://sportskeeda.com/wwe/nia-jax-theme-song-and-finisher",
+    "https://lastwordonsports.com/prowrestling/2025/11/07/wwe-nxt-star-attacks-alexa-bliss-on-wwe-smackdown-aligns-with-nia-jax/",
+    "https://fightful.com/wrestling/nia-jax-recalls-annihilator-lyra-valkyria-says-lyra-told-her-it-was-incredible"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Savelina Fanene",
+   "RingName": "Nia Jax",
+   "Field": "Signature",
+   "Current": [
+    "Golden Hour"
+   ],
+   "Proposed": [
+    "Annihilator"
+   ],
+   "Why": "Her finisher since 2023 is the Annihilator (used e.g. to beat Charlotte Flair, Nov 2025).",
+   "Sources": [
+    "https://sportskeeda.com/wwe/nia-jax-theme-song-and-finisher",
+    "https://lastwordonsports.com/prowrestling/2025/11/07/wwe-nxt-star-attacks-alexa-bliss-on-wwe-smackdown-aligns-with-nia-jax/",
+    "https://fightful.com/wrestling/nia-jax-recalls-annihilator-lyra-valkyria-says-lyra-told-her-it-was-incredible"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Trevor Mann",
+   "RingName": "Ricochet",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Face",
+   "Proposed": "Heel",
+   "Why": "Ricochet turned heel in AEW at the start of 2025 (scissors attack on Swerve Strickland) and has stayed a heel, leading the Gates of Agony.",
+   "Sources": [
+    "https://comicbook.com/wwe/news/ricochet-stabs-aew-star-with-scissors-brutal-heel-turn-dynamite",
+    "https://www.sescoops.com/article/aew-star-reveals-his-character-turn-was-planned-for-almost-a-year"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Trevor Mann",
+   "RingName": "Ricochet",
+   "Field": "Gimmick.Tone",
+   "Current": "Serious",
+   "Proposed": "Arrogant",
+   "Why": "His AEW heel persona is a smug, taunting antagonist.",
+   "Sources": [
+    "https://comicbook.com/wwe/news/ricochet-stabs-aew-star-with-scissors-brutal-heel-turn-dynamite",
+    "https://www.sescoops.com/article/aew-star-reveals-his-character-turn-was-planned-for-almost-a-year"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Trevor Mann",
+   "RingName": "Ricochet",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Gravity-Defying",
+    "Understated"
+   ],
+   "Proposed": [
+    "Gravity-Defying",
+    "Smug",
+    "Despised"
+   ],
+   "Why": "'Understated' is the opposite of his current smarmy heel act, reported as one of AEW's most hated heels.",
+   "Sources": [
+    "https://comicbook.com/wwe/news/ricochet-stabs-aew-star-with-scissors-brutal-heel-turn-dynamite",
+    "https://www.sescoops.com/article/aew-star-reveals-his-character-turn-was-planned-for-almost-a-year"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Charles Betts",
+   "RingName": "Chad Gable",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Heel",
+   "Proposed": "Face",
+   "Why": "After returning at the 2026 Royal Rumble against Ludwig Kaiser's El Grande Americano, Gable became an official babyface on Raw (American Alpha theme restored).",
+   "Sources": [
+    "https://wrestletalk.com/news/chad-gable-officially-babyface-original-american-alpha-entrance-theme-wwe-raw/",
+    "https://wrestletalk.com/news/chad-gable-creatively-fulfilled-wwe-babyface-run-el-grande-americano-storyline/"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Charles Betts",
+   "RingName": "Chad Gable",
+   "Field": "Gimmick.Type",
+   "Current": "Egotist",
+   "Proposed": "Traditionalist",
+   "Why": "His 2026 face run presents him as the Olympic amateur-wrestling purist, not a self-obsessed egotist.",
+   "Sources": [
+    "https://wrestletalk.com/news/chad-gable-officially-babyface-original-american-alpha-entrance-theme-wwe-raw/",
+    "https://wrestletalk.com/news/chad-gable-creatively-fulfilled-wwe-babyface-run-el-grande-americano-storyline/"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Charles Betts",
+   "RingName": "Chad Gable",
+   "Field": "Gimmick.Tone",
+   "Current": "Arrogant",
+   "Proposed": "Serious",
+   "Why": "Fits his current babyface presentation; the arrogant tone was his 2024-25 Alpha Academy heel run.",
+   "Sources": [
+    "https://wrestletalk.com/news/chad-gable-officially-babyface-original-american-alpha-entrance-theme-wwe-raw/",
+    "https://wrestletalk.com/news/chad-gable-creatively-fulfilled-wwe-babyface-run-el-grande-americano-storyline/"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Charles Betts",
+   "RingName": "Chad Gable",
+   "Field": "DebutedIn",
+   "Current": 2003,
+   "Proposed": 2013,
+   "Why": "Gable was an amateur (2012 Olympian) and made his pro debut in 2013, signing with WWE that November.",
+   "Sources": [
+    "https://www.wikiwand.com/en/articles/Chad_Gable"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Jacob Fatu",
+   "RingName": "Jacob Fatu",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Tweener",
+   "Proposed": "Heel",
+   "Why": "He officially turned heel at Backlash 2026, attacking Roman Reigns after their title match, and later sided with the Bloodline.",
+   "Sources": [
+    "https://tjrwrestling.net/news/jacob-fatu-officially-turns-heel-in-new-wwe-backstage-promo/",
+    "https://tjrwrestling.net/news/jacob-fatu-attacks-famous-fan-on-wwe-raw-medics-rush-to-scene/"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Joseph Fatu",
+   "RingName": "Solo Sikoa",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Heel",
+   "Proposed": "Face",
+   "Why": "Solo turned babyface on Raw in July 2026 ('Solo Dolo'), spiking the Bloodline and siding with LA Knight; coverage calls him WWE's best babyface.",
+   "Sources": [
+    "https://www.sescoops.com/article/wwe-may-be-rethinking-solo-sikoa-plans",
+    "https://www.fightful.com/wrestling-news/solo-sikoa-declines-to-rejoin-the-bloodline-spikes-roman-reigns-and-jey-uso-on-wwe-raw/",
+    "https://bleacherreport.com/articles/25474314-why-solo-sikoa-wwes-best-babyface-red-flag-struggling-star-more-wwe-raw-fallout"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Tyson Smith",
+   "RingName": "Kenny Omega",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Face",
+   "Proposed": "Tweener",
+   "Why": "In the run-up to All In 2026 Omega developed a heel streak (attacked Ospreay after Ospreay saved him; Meltzer reported a heel turn partly his own idea), though some call it not a full turn.",
+   "Sources": [
+    "https://cultaholic.com/posts/why-kenny-omega-decided-to-turn-heel-ahead-of-aew-all-in-2026",
+    "https://www.fightful.com/wrestling-news/will-ospreay-defeats-kenny-omega-to-win-the-aew-world-championship-at-aew-all-in/"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Gary Gordon",
+   "RingName": "Angelo Dawkins",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Face",
+   "Proposed": "Tweener",
+   "Why": "The Street Profits turned heel with Bobby Lashley in Aug 2025 and on their April 2026 return said they saved Seth Rollins only to chase the titles; the team is no longer a clean face act.",
+   "Sources": [
+    "https://wrestletalk.com/news/two-wwe-stars-turning-heel-update-street-profits/",
+    "https://www.wrestlinginc.com/2153185/wwe-raw-wrestlemania-street-profits-return-tag-champions-vision/",
+    "https://www.wrestlinginc.com/1450871/wwes-montez-ford-says-old-ways-street-profits-obviously-not-working"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Gary Gordon",
+   "RingName": "Angelo Dawkins",
+   "Field": "Gimmick.Tone",
+   "Current": "Melancholic",
+   "Proposed": "Serious",
+   "Why": "Nothing melancholic in his presentation; the Profits were upbeat party faces and are now an edgier, aggressive team.",
+   "Sources": [
+    "https://wrestletalk.com/news/two-wwe-stars-turning-heel-update-street-profits/",
+    "https://www.wrestlinginc.com/2153185/wwe-raw-wrestlemania-street-profits-return-tag-champions-vision/"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Kenneth Crawford",
+   "RingName": "Montez Ford",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Heel",
+   "Proposed": "Tweener",
+   "Why": "Heel with Lashley from Aug 2025, but returned in April 2026 attacking heels The Vision; Tweener matches his partner and the current ambiguity.",
+   "Sources": [
+    "https://wrestletalk.com/news/two-wwe-stars-turning-heel-update-street-profits/",
+    "https://www.wrestlinginc.com/2153185/wwe-raw-wrestlemania-street-profits-return-tag-champions-vision/"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Kenneth Crawford",
+   "RingName": "Montez Ford",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Loud",
+    "Self-Mythologising",
+    "All Talk"
+   ],
+   "Proposed": [
+    "Loud",
+    "Self-Mythologising",
+    "Athletic"
+   ],
+   "Why": "'All Talk' misdescribes one of WWE's most athletic performers, known for his frog splash and ladder dives.",
+   "Sources": [
+    "https://www.fightful.com/wrestling/montez-ford-was-ready-change-his-name-and-move-if-he-missed-ladder-jump-nxt-takeover-xxv"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Kenneth Crawford",
+   "RingName": "Montez Ford",
+   "Field": "Signature",
+   "Current": [
+    "The Highlight"
+   ],
+   "Proposed": [
+    "Frog Splash"
+   ],
+   "Why": "His finisher is the frog splash.",
+   "Sources": [
+    "https://www.fightful.com/wrestling/montez-ford-was-ready-change-his-name-and-move-if-he-missed-ladder-jump-nxt-takeover-xxv",
+    "https://wwe.com/amp/shows/wwenxt/2018-10-31/article/the-street-profits-def-the-mighty"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Jonathan Fatu",
+   "RingName": "Jimmy Uso",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Goofy",
+    "Beloved",
+    "Harmless"
+   ],
+   "Proposed": [
+    "Fun-Loving",
+    "Beloved",
+    "Family Loyalist"
+   ],
+   "Why": "'Harmless' misreads a veteran Bloodline enforcer and multi-time tag champion; 'Goofy' overstates the comedy.",
+   "Sources": [
+    "https://www.sescoops.com/article/wwe-hasnt-changed-its-plans-for-the-usos",
+    "https://tjrwrestling.net/news/jey-uso-on-reuniting-with-roman-reigns-wwe/"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Jonathan Fatu",
+   "RingName": "Jimmy Uso",
+   "Field": "Signature",
+   "Current": [
+    "Last Call"
+   ],
+   "Proposed": [
+    "Uso Splash"
+   ],
+   "Why": "His finisher is the Uso Splash (top-rope splash).",
+   "Sources": [
+    "https://www.sescoops.com/news/wwe/jimmy-uso-injury-wwe-survivor-series-2024",
+    "https://www.wwe.com/shows/smackdown/14-awesome-tag-team-finishing-maneuvers"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Todd Smith",
+   "RingName": "Ivar",
+   "Field": "Gimmick.Type",
+   "Current": "Comedy",
+   "Proposed": "Monster",
+   "Why": "Ivar is presented as a War Raiders viking powerhouse known for agile big-man offence, not a comedy act.",
+   "Sources": [
+    "https://cultaholic.com/posts/the-war-raiders-undergo-internal-wwe-babyface-turn",
+    "https://cultaholic.com/posts/ivar--erik-return-as-war-raiders-on-wwe-raw",
+    "https://wrestletalk.com/news/oba-femi-wwe-star-sees-mentor/"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Todd Smith",
+   "RingName": "Ivar",
+   "Field": "Gimmick.Tone",
+   "Current": "Humorous",
+   "Proposed": "Serious",
+   "Why": "The War Raiders' 2024-26 presentation is serious; the comedy 'Viking Rules' era was 2022.",
+   "Sources": [
+    "https://cultaholic.com/posts/the-war-raiders-undergo-internal-wwe-babyface-turn",
+    "https://cultaholic.com/posts/ivar--erik-return-as-war-raiders-on-wwe-raw",
+    "https://wrestletalk.com/news/oba-femi-wwe-star-sees-mentor/"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Todd Smith",
+   "RingName": "Ivar",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "The Lunchpail",
+   "Proposed": "The War Raider",
+   "Why": "'The Lunchpail' is invented; he is billed as one of the War Raiders.",
+   "Sources": [
+    "https://cultaholic.com/posts/the-war-raiders-undergo-internal-wwe-babyface-turn",
+    "https://cultaholic.com/posts/ivar--erik-return-as-war-raiders-on-wwe-raw",
+    "https://wrestletalk.com/news/oba-femi-wwe-star-sees-mentor/"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Todd Smith",
+   "RingName": "Ivar",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Lovable",
+    "Clumsy",
+    "Enormous Appetite"
+   ],
+   "Proposed": [
+    "Viking",
+    "Agile Big Man",
+    "Hard-Hitting"
+   ],
+   "Why": "'Clumsy' and 'Enormous Appetite' misdescribe him; he is noted for agility (moonsaults, cartwheels) at his size.",
+   "Sources": [
+    "https://cultaholic.com/posts/the-war-raiders-undergo-internal-wwe-babyface-turn",
+    "https://cultaholic.com/posts/ivar--erik-return-as-war-raiders-on-wwe-raw",
+    "https://wrestletalk.com/news/oba-femi-wwe-star-sees-mentor/"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Monika Klisara",
+   "RingName": "Karmen Petrovic",
+   "Field": "Gimmick.Type",
+   "Current": "Gimmickless",
+   "Proposed": "Traditionalist",
+   "Why": "Her character is built around her real karate background (third-degree black belt, katana imagery), so she is not gimmickless.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Karmen_Petrovic",
+    "https://www.ringsidenews.com/wwe-nxts-karmen-petrovic-revives-her-karate-background-spectacular-display"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Monika Klisara",
+   "RingName": "Karmen Petrovic",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "Local Talent",
+   "Proposed": "Karate Black Belt",
+   "Why": "She is presented as a decorated karateka and the first Bosnian in WWE, not a local enhancement talent.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Karmen_Petrovic",
+    "https://www.ringsidenews.com/wwe-nxts-karmen-petrovic-revives-her-karate-background-spectacular-display"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Monika Klisara",
+   "RingName": "Karmen Petrovic",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Unbranded",
+    "Competent",
+    "Forgettable"
+   ],
+   "Proposed": [
+    "Martial Artist",
+    "Disciplined",
+    "Striker"
+   ],
+   "Why": "'Unbranded/Forgettable' are disparaging and wrong for a karate-gimmick performer.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Karmen_Petrovic",
+    "https://www.ringsidenews.com/wwe-nxts-karmen-petrovic-revives-her-karate-background-spectacular-display"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Beatrice Priestley",
+   "RingName": "Blair Davenport",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Immovable",
+    "Wordless",
+    "Sheer Mass"
+   ],
+   "Proposed": [
+    "Stiff Striker",
+    "Vicious",
+    "Entitled"
+   ],
+   "Why": "She is an average-sized, kick-based striker who cuts promos; 'Sheer Mass' and 'Wordless' are false.",
+   "Sources": [
+    "https://www.wikipedia.org/wiki/Bea_Priestley",
+    "https://www.fightful.com/wrestling/blair-davenport-explains-why-she-signed-nxt-uk-changing-her-name-bea-priestley"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Beatrice Priestley",
+   "RingName": "Blair Davenport",
+   "Field": "Gimmick.Type",
+   "Current": "Monster",
+   "Proposed": "Realist",
+   "Why": "A 'Monster' reading does not fit a mid-size technical striker; her heel act is a cold, hard-hitting fighter.",
+   "Sources": [
+    "https://www.wikipedia.org/wiki/Bea_Priestley",
+    "https://www.fightful.com/wrestling/blair-davenport-explains-why-she-signed-nxt-uk-changing-her-name-bea-priestley"
+   ],
+   "Confidence": "low"
+  },
+  {
+   "RealName": "Jermaine Haley",
+   "RingName": "Bronson Reed",
+   "Field": "Signature",
+   "Current": [
+    "Rockfall"
+   ],
+   "Proposed": [
+    "Tsunami"
+   ],
+   "Why": "Reed's finisher is the Tsunami top-rope splash (Fightful 2024 Finisher of the Year).",
+   "Sources": [
+    "https://fightful.com/wrestling/exclusives/bronson-reed-nobody-s-kicked-out-tsunami-5-years-i-want-keep-it-way",
+    "https://cultaholic.com/posts/bronson-reed-wants-to-continue-protecting-his-tsunami-finisher"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Thomas Pestock",
+   "RingName": "Baron Corbin",
+   "Field": "Signature",
+   "Current": [
+    "Last Stop"
+   ],
+   "Proposed": [
+    "End of Days"
+   ],
+   "Why": "Corbin's long-standing finisher is the End of Days.",
+   "Sources": [
+    "https://fightful.com/wrestling/baron-corbin-creating-end-days-feels-kevin-owens-using-stunner-wrong",
+    "https://sportskeeda.com/wwe/baron-corbin-finishers"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Brianna Coda",
+   "RingName": "Cora Jade",
+   "Field": "Signature",
+   "Current": [
+    "Glass House"
+   ],
+   "Proposed": [
+    "Jaded"
+   ],
+   "Why": "Her WWE finisher was the double-arm DDT called Jaded.",
+   "Sources": [
+    "https://www.sportskeeda.com/wwe/cora-jade-finisher"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Karissa Rivera",
+   "RingName": "Elektra Lopez",
+   "Field": "Signature",
+   "Current": [
+    "Barrio Buster"
+   ],
+   "Proposed": [
+    "Gigi Driver"
+   ],
+   "Why": "Her named finisher in WWE was the Gigi Driver.",
+   "Sources": [
+    "https://thesmackdownhotel.com/wrestlers/elektra-lopez",
+    "https://en.wikipedia.org/wiki/Elektra_Lopez"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Pamela Rose Martinez",
+   "RingName": "Bayley",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Heel",
+   "Proposed": "Face",
+   "Why": "Bayley worked as a face through 2026; Lyra Valkyria turned heel on her on Raw in June 2026.",
+   "Sources": [
+    "https://wrestletalk.com/news/lyra-valkyria-turns-heel-attacks-bayley-wwe-raw-london/",
+    "https://www.fightful.com/wrestling-news/lyra-valkyria-turns-on-bayley-after-loss-to-paige-brie-bella-on-wwe-raw/"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Pamela Rose Martinez",
+   "RingName": "Bayley",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Manipulative",
+    "Calculating"
+   ],
+   "Proposed": [
+    "Veteran",
+    "Resilient",
+    "Unpredictable"
+   ],
+   "Why": "Manipulative and Calculating describe her Damage CTRL heel run, not her 2025-26 face run as the betrayed partner.",
+   "Sources": [
+    "https://wrestletalk.com/news/lyra-valkyria-turns-heel-attacks-bayley-wwe-raw-london/"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Phillip Brooks",
+   "RingName": "CM Punk",
+   "Field": "Gimmick.Type",
+   "Current": "CultLeader",
+   "Proposed": "Rebel",
+   "Why": "Punk has never had a cult-leader character; he is the outspoken straight-edge rebel.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/CM_Punk"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Phillip Brooks",
+   "RingName": "CM Punk",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Heel",
+   "Proposed": "Face",
+   "Why": "Punk was a face World Heavyweight Champion from Nov 2025 until losing to Roman Reigns at WrestleMania 42 in April 2026.",
+   "Sources": [
+    "https://www.si.com/fannation/wrestling/wwe/cm-punk-retains-world-heavyweight-championship-at-wwe-elimination-chamber",
+    "https://www.netflix.com/tudum/articles/cm-punk-wwe-raw-superstar-bio"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Phillip Brooks",
+   "RingName": "CM Punk",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "Shepherd of the Lost",
+   "Proposed": "The Best in the World",
+   "Why": "'Shepherd of the Lost' is invented; his long-standing nickname is 'The Best in the World'.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/CM_Punk"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Phillip Brooks",
+   "RingName": "CM Punk",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Magnetic",
+    "Manipulative",
+    "Feared"
+   ],
+   "Proposed": [
+    "Magnetic",
+    "Outspoken",
+    "Straight Edge"
+   ],
+   "Why": "Manipulative and Feared belong to the invented cult-leader gimmick; straight edge is his defining trait.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/CM_Punk"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Phillip Brooks",
+   "RingName": "CM Punk",
+   "Field": "Signature",
+   "Current": [
+    "The Reckoning"
+   ],
+   "Proposed": [
+    "GTS"
+   ],
+   "Why": "His finisher is the GTS (Go To Sleep); 'The Reckoning' is invented.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/CM_Punk",
+    "https://www.f4wonline.com/profiles/cm-punk"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Ashley Fliehr",
+   "RingName": "Charlotte Flair",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Heel",
+   "Proposed": "Face",
+   "Why": "Bleacher Report (Aug 2026) reports she has been working as a babyface, mostly teamed with Alexa Bliss.",
+   "Sources": [
+    "https://bleacherreport.com/articles/25481012-heel-and-face-turns-revitalize-wwe-and-aew-rosters-year",
+    "https://wrestletalk.com/news/top-wwe-star-hoping-babyface-turn-charlotte-flair/"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Cheree Crowley",
+   "RingName": "Dakota Kai",
+   "Field": "Gimmick.Type",
+   "Current": "Comedy",
+   "Proposed": "Realist",
+   "Why": "Dakota Kai has never been a comedy act; she is a serious hard-kicking veteran.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Dakota_Kai"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Cheree Crowley",
+   "RingName": "Dakota Kai",
+   "Field": "Gimmick.Tone",
+   "Current": "Humorous",
+   "Proposed": "Serious",
+   "Why": "Her presentation has always been serious, not comedic.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Dakota_Kai"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Cheree Crowley",
+   "RingName": "Dakota Kai",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "The Bingo Hall Legend",
+   "Proposed": "Captain of Team Kick",
+   "Why": "'The Bingo Hall Legend' is invented; 'Captain of Team Kick' is her established nickname.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Dakota_Kai"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Cheree Crowley",
+   "RingName": "Dakota Kai",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Veteran",
+    "Deadpan",
+    "Hits Harder Than She Looks"
+   ],
+   "Proposed": [
+    "Veteran",
+    "Hard-Kicking",
+    "Resilient"
+   ],
+   "Why": "'Deadpan' is part of the invented comedy gimmick; she is known for kicks and for comebacks from injury.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Dakota_Kai"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Cheree Crowley",
+   "RingName": "Dakota Kai",
+   "Field": "Signature",
+   "Current": [
+    "Last Orders"
+   ],
+   "Proposed": [
+    "Kairopractor"
+   ],
+   "Why": "Her finisher is the Kairopractor; 'Last Orders' is invented.",
+   "Sources": [
+    "https://www.fightful.com/wrestling/exclusives/dakota-kai-says-ember-moon-taught-her-kairoprachtor-talks-upupdowndown-work"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Raymond Rowe",
+   "RingName": "Erik",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Heel",
+   "Proposed": "Face",
+   "Why": "The War Raiders have been listed internally as babyfaces since late 2024 and were working as faces in 2026 (e.g., #1 contenders in Feb 2026).",
+   "Sources": [
+    "https://cultaholic.com/posts/the-war-raiders-undergo-internal-wwe-babyface-turn",
+    "https://tjrwrestling.net/news/wwe-team-earns-title-opportunity-oba-femi/"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Raymond Rowe",
+   "RingName": "Erik",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "The Warehouse",
+   "Proposed": "War Raider",
+   "Why": "'The Warehouse' is invented; he is presented as one half of the War Raiders (formerly Viking Raiders).",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/War_Raiders"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Raymond Rowe",
+   "RingName": "Erik",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Immovable",
+    "Green",
+    "Blunt Instrument"
+   ],
+   "Proposed": [
+    "Immovable",
+    "Veteran",
+    "Blunt Instrument"
+   ],
+   "Why": "'Green' is false for a wrestler who debuted in 2003 and is a former multi-promotion tag champion.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Erik_(wrestler)"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Fabian Aichner",
+   "RingName": "Giovanni Vinci",
+   "Field": "Gimmick.Type",
+   "Current": "Sellout",
+   "Proposed": "Egotist",
+   "Why": "The Giovanni Vinci character is a wealthy, vain Italian model, not an insurance salesman or sellout.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Giovanni_Vinci"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Fabian Aichner",
+   "RingName": "Giovanni Vinci",
+   "Field": "Gimmick.Tone",
+   "Current": "SelfRighteous",
+   "Proposed": "Arrogant",
+   "Why": "A vain, wealthy model character reads as arrogant.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Giovanni_Vinci"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Fabian Aichner",
+   "RingName": "Giovanni Vinci",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "The Insurance Salesman",
+   "Proposed": "Vain Italian model",
+   "Why": "'The Insurance Salesman' is invented; Wikipedia describes the character as a wealthy, vain Italian model.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Giovanni_Vinci"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Fabian Aichner",
+   "RingName": "Giovanni Vinci",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Weaselly",
+    "Litigious",
+    "Talks Too Much"
+   ],
+   "Proposed": [
+    "Vain",
+    "Wealthy",
+    "Powerhouse"
+   ],
+   "Why": "The current traits belong to the invented insurance-salesman gimmick.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Giovanni_Vinci"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Emily Andzulis",
+   "RingName": "Ivy Nile",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "Hired Muscle",
+   "Proposed": "The Pitbull",
+   "Why": "'Hired Muscle' is invented; she is billed as 'The Pitbull' (her Dragon Sleeper is 'Jaws of the Pitbull').",
+   "Sources": [
+    "https://www.thesmackdownhotel.com/wrestlers/ivy-nile"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Emily Andzulis",
+   "RingName": "Ivy Nile",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Blunt",
+    "Heavy-Handed",
+    "Silent"
+   ],
+   "Proposed": [
+    "Intense",
+    "Athletic",
+    "Submission Specialist"
+   ],
+   "Why": "She is not a silent character, and she presents as a submission wrestler.",
+   "Sources": [
+    "https://www.wrestlinginc.com/1498757/ivy-nile-explains-chose-dragon-sleeper-wwe-finishing-move"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Emily Andzulis",
+   "RingName": "Ivy Nile",
+   "Field": "Signature",
+   "Current": [
+    "Payday"
+   ],
+   "Proposed": [
+    "Diamond Chain Lock"
+   ],
+   "Why": "'Payday' is invented; WWE's profile gives her move as the Diamond Chain Lock (a Dragon Sleeper).",
+   "Sources": [
+    "https://www.wwe.com/superstars/ivy-nile",
+    "https://www.wrestlinginc.com/1498757/ivy-nile-explains-chose-dragon-sleeper-wwe-finishing-move"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Taylor Grado",
+   "RingName": "Jacy Jayne",
+   "Field": "Gimmick.Type",
+   "Current": "Loner",
+   "Proposed": "Egotist",
+   "Why": "Jacy Jayne leads the Fatal Influence stable, so she is not a loner; she is a mean-girl heel leader.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Jacy_Jayne",
+    "https://en.wikipedia.org/wiki/Fatal_Influence"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Taylor Grado",
+   "RingName": "Jacy Jayne",
+   "Field": "Gimmick.Tone",
+   "Current": "Melancholic",
+   "Proposed": "Arrogant",
+   "Why": "Her character is brash and arrogant, not melancholic.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Jacy_Jayne"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Taylor Grado",
+   "RingName": "Jacy Jayne",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "Speaks To No One",
+   "Proposed": "Leader of Fatal Influence",
+   "Why": "'Speaks To No One' is invented; she is presented as the leader of Fatal Influence.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Fatal_Influence"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Taylor Grado",
+   "RingName": "Jacy Jayne",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Silent",
+    "Withdrawn",
+    "Sudden"
+   ],
+   "Proposed": [
+    "Mouthy",
+    "Cunning",
+    "Ringleader"
+   ],
+   "Why": "Silent and Withdrawn are plainly false for a talking stable leader and two-time NXT Women's Champion.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Jacy_Jayne",
+    "https://www.wrestlinginc.com/1884540/wwe-nxt-jacy-jayne-shift-fatal-influence"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Jonathan Good",
+   "RingName": "Jon Moxley",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Face",
+   "Proposed": "Heel",
+   "Why": "Moxley still led the heel Death Riders stable through Full Gear 2026 (Nov 14, 2026).",
+   "Sources": [
+    "https://www.wrestlinginc.com/2317070/aew-full-gear-2026-the-cut-anarchy-in-the-arena-death-riders-conglomeration/",
+    "https://tjrwrestling.net/news/jon-moxley-and-death-riders-kidnap-top-aew-star-on-dynamite/"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Sydney Zmrzel",
+   "RingName": "Maxxine Dupri",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "Never Beaten, Never Booked",
+   "Proposed": "Former Women's Intercontinental Champion",
+   "Why": "'Never Beaten, Never Booked' is invented and false; she won the Women's IC title from Becky Lynch in Nov 2025.",
+   "Sources": [
+    "https://www.wrestlinginc.com/2060932/maxxine-dupri-wwe-ic-title-win-rocked-to-core",
+    "https://www.si.com/fannation/wrestling/wwe/becky-lynch-defeats-maxxine-dupri-to-win-back-women-intercontinental-championship"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Sydney Zmrzel",
+   "RingName": "Maxxine Dupri",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Overlooked",
+    "Technically Sound",
+    "Patient"
+   ],
+   "Proposed": [
+    "Determined",
+    "Upbeat",
+    "Improving"
+   ],
+   "Why": "She is a recent-debut babyface whose story is rapid improvement, not an overlooked technician.",
+   "Sources": [
+    "https://www.wrestlinginc.com/2187792/maxxine-dupri-wwe-ic-title-feud-becky-lynch-changed-everything/"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Quinn Ojinnaka",
+   "RingName": "Moose",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Tweener",
+   "Proposed": "Face",
+   "Why": "Moose was thrown out of The System in Jan 2026 and returned as a babyface alongside Mike Santana and the Hardys.",
+   "Sources": [
+    "https://www.pwtorch.com/site/?p=211843",
+    "https://www.f4wonline.com/news/tna-wrestling/tna-faction-adds-new-members-kicks-out-others"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Nicholas Nemeth",
+   "RingName": "Nic Nemeth",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "The Natural",
+   "Proposed": "The Wanted Man",
+   "Why": "His TNA billing since 2023 is 'The Wanted Man'; 'The Natural' is not a nickname he uses.",
+   "Sources": [
+    "https://www.sescoops.com/news/dolph-ziggler-nick-nemeth-wanted-man-trailer",
+    "https://www.f4wonline.com/news/tna-wrestling/nic-nemeth-dolph-ziggler-re-signs-with-tna-wrestling"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Demi Bennett",
+   "RingName": "Rhea Ripley",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Heel",
+   "Proposed": "Face",
+   "Why": "Ripley worked as a babyface through 2026, beating heel Jade Cargill for the WWE Women's Championship at WrestleMania 42.",
+   "Sources": [
+    "https://www.pwtorch.com/site/2026/08/01/wwe-rising-stars-fading-stars-women-babyface-edition-ripley-rules-ruca-wipes-out-iyos-adorable-tiffy-is-tedious-gray-is-relatable-the-twin-magic-is-gone/",
+    "https://www.foxnews.com/sports/rhea-ripley-captures-wwe-womens-championship-wrestlemania-42.print"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Shinsuke Nakamura",
+   "RingName": "Shinsuke Nakamura",
+   "Field": "Gimmick.Type",
+   "Current": "Realist",
+   "Proposed": "Showman",
+   "Why": "Nakamura is a flamboyant, eccentric performer ('The Artist'), not a no-frills realist.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Shinsuke_Nakamura"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Shinsuke Nakamura",
+   "RingName": "Shinsuke Nakamura",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "The Purist",
+   "Proposed": "The King of Strong Style",
+   "Why": "'The Purist' is invented; his established nickname is 'The King of Strong Style'.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Shinsuke_Nakamura"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Shinsuke Nakamura",
+   "RingName": "Shinsuke Nakamura",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Stiff",
+    "Uncompromising",
+    "No Wasted Motion"
+   ],
+   "Proposed": [
+    "Stiff",
+    "Eccentric",
+    "Charismatic"
+   ],
+   "Why": "'No Wasted Motion' contradicts his showy, exaggerated mannerisms.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Shinsuke_Nakamura"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Shinsuke Nakamura",
+   "RingName": "Shinsuke Nakamura",
+   "Field": "Signature",
+   "Current": [
+    "Last Bell"
+   ],
+   "Proposed": [
+    "Kinshasa"
+   ],
+   "Why": "His finisher is the Kinshasa; 'Last Bell' is invented.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Shinsuke_Nakamura"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Stephanie Vaquer",
+   "RingName": "Stephanie Vaquer",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "La Tormenta",
+   "Proposed": "La Primera",
+   "Why": "Her nickname is 'La Primera'; 'La Tormenta' is not hers.",
+   "Sources": [
+    "https://espndeportes.espn.com/luchalibre/nota/_/id/15682698/wwe-stephanie-vaquer-apodo-la-primera-origen"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Stephanie Vaquer",
+   "RingName": "Stephanie Vaquer",
+   "Field": "Signature",
+   "Current": [
+    "Tormenta"
+   ],
+   "Proposed": [
+    "SVB"
+   ],
+   "Why": "Her finisher on WWE TV is the SVB; 'Tormenta' is invented.",
+   "Sources": [
+    "https://www.wwe.com/superstars/Stephanie-Vaquer",
+    "https://www.cagematch.net/?id=2&nr=12516"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Joseph Ariola",
+   "RingName": "Tony D'Angelo",
+   "Field": "Gimmick.Type",
+   "Current": "Egotist",
+   "Proposed": "Realist",
+   "Why": "The invented 'local hero, allegedly' gimmick misrepresents him; he is the tough Italian-American family leader 'The Don of NXT'.",
+   "Sources": [
+    "https://www.foxnews.com/sports/tony-dangelo-stands-tall-nxt-champion-brutal-four-way-match-stand-deliver"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Joseph Ariola",
+   "RingName": "Tony D'Angelo",
+   "Field": "Gimmick.Tone",
+   "Current": "Arrogant",
+   "Proposed": "Serious",
+   "Why": "His character is played straight and tough, not preening or arrogant.",
+   "Sources": [
+    "https://www.foxnews.com/sports/tony-dangelo-stands-tall-nxt-champion-brutal-four-way-match-stand-deliver"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Joseph Ariola",
+   "RingName": "Tony D'Angelo",
+   "Field": "Gimmick.NaturalAlignment",
+   "Current": "Heel",
+   "Proposed": "Face",
+   "Why": "In late 2026 he was challenging heel champion Grayson Waller as leader of the D'Angelo Family, which is a babyface role.",
+   "Sources": [
+    "https://www.wrestlinginc.com/2301904/wwe-nxt-halloween-havoc-october-31-2026-results/",
+    "https://www.wwe.com/shows/nxtple/full-nxt-halloween-havoc-2026-results"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Joseph Ariola",
+   "RingName": "Tony D'Angelo",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "The Local Hero, Allegedly",
+   "Proposed": "The Don of NXT",
+   "Why": "'The Local Hero, Allegedly' is invented; his billing is 'The Don of NXT'.",
+   "Sources": [
+    "https://www.foxnews.com/sports/tony-dangelo-stands-tall-nxt-champion-brutal-four-way-match-stand-deliver"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Joseph Ariola",
+   "RingName": "Tony D'Angelo",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Deluded",
+    "Preening",
+    "Thin-Skinned"
+   ],
+   "Proposed": [
+    "Streetwise",
+    "Loyal",
+    "Tough"
+   ],
+   "Why": "The current traits belong to the invented gimmick and misdescribe him.",
+   "Sources": [
+    "https://www.foxnews.com/sports/tony-dangelo-stands-tall-nxt-champion-brutal-four-way-match-stand-deliver"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Joseph Ariola",
+   "RingName": "Tony D'Angelo",
+   "Field": "Signature",
+   "Current": [
+    "Standing Ovation"
+   ],
+   "Proposed": [
+    "Dead to Rights"
+   ],
+   "Why": "He won the NXT title at Stand & Deliver 2026 with Dead to Rights; 'Standing Ovation' is invented.",
+   "Sources": [
+    "https://www.foxnews.com/sports/tony-dangelo-stands-tall-nxt-champion-brutal-four-way-match-stand-deliver"
+   ],
+   "Confidence": "high"
+  },
+  {
+   "RealName": "Madison Dombkowski",
+   "RingName": "Wren Sinclair",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "Still Learning",
+   "Proposed": "Catch-wrestling technician",
+   "Why": "'Still Learning' is invented. She is a No Quarter Catch Crew technical wrestler who won the Women's Speed Championship in March 2026.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Wren_Sinclair"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Madison Dombkowski",
+   "RingName": "Wren Sinclair",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Green",
+    "Willing",
+    "Improving"
+   ],
+   "Proposed": [
+    "Technical",
+    "Scrappy",
+    "Improving"
+   ],
+   "Why": "'Green' misdescribes a wrestler who debuted in 2019 and won a WWE title in 2026.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Wren_Sinclair"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Theresa Serrano",
+   "RingName": "Zoey Stark",
+   "Field": "Gimmick.Type",
+   "Current": "Sellout",
+   "Proposed": "Daredevil",
+   "Why": "The 'ratings darling / media-trained' sellout gimmick is invented. Zoey Stark is an athletic heel known for the Z360.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Zoey_Stark"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Theresa Serrano",
+   "RingName": "Zoey Stark",
+   "Field": "Gimmick.Tone",
+   "Current": "SelfRighteous",
+   "Proposed": "Serious",
+   "Why": "There is no self-righteous media persona; she plays it as an aggressive, serious heel.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Zoey_Stark"
+   ],
+   "Confidence": "low"
+  },
+  {
+   "RealName": "Theresa Serrano",
+   "RingName": "Zoey Stark",
+   "Field": "Gimmick.PersonaDescriptor",
+   "Current": "The Ratings Darling",
+   "Proposed": "Z360 specialist",
+   "Why": "'The Ratings Darling' is invented.",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/Zoey_Stark"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Theresa Serrano",
+   "RingName": "Zoey Stark",
+   "Field": "Gimmick.GimmickTraits",
+   "Current": [
+    "Media-Trained",
+    "Insincere",
+    "Protected"
+   ],
+   "Proposed": [
+    "Athletic",
+    "Aggressive",
+    "Opportunistic"
+   ],
+   "Why": "The current traits belong to the invented gimmick; 'Protected' is also false since she was released from WWE in April 2026 without returning to TV.",
+   "Sources": [
+    "https://www.wrestlinginc.com/2157077/zoey-stark-wwe-release-young-girls-dream-come-true/"
+   ],
+   "Confidence": "medium"
+  },
+  {
+   "RealName": "Theresa Serrano",
+   "RingName": "Zoey Stark",
+   "Field": "Signature",
+   "Current": [
+    "Prime Time"
+   ],
+   "Proposed": [
+    "Z360"
+   ],
+   "Why": "Her finisher is the Z360; 'Prime Time' is invented.",
+   "Sources": [
+    "https://www.fightful.com/?p=212066",
+    "https://www.fightful.com/wrestling/zoey-serrano-signs-with-tna-wrestling?xv=20260828024424"
+   ],
+   "Confidence": "high"
+  }
+ ],
+ "finishers_renamed_to_the_move": "Where a finisher name looked invented and no source named the real one, the signature now carries the move's own name: Brendan Vink, Brad Baylor, Isla Dawn, Michin, Angelo Dawkins, Blair Davenport, Ivar, Karmen Petrovic, Giovanni Vinci, Jacy Jayne, Maxxine Dupri, Ludwig Kaiser, Erik, Wren Sinclair.",
+ "removed": [
+  "Kenny Omega: previous name 'Scott Carpenter' (not a ring name he has used)"
+ ],
+ "proposed_not_applied_low_confidence_finishers": [
+  {
+   "RealName": "Raymond Rowe",
+   "RingName": "Erik",
+   "Field": "Signature",
+   "Current": [
+    "Loading Dock"
+   ],
+   "Proposed": [
+    "Viking Experience"
+   ],
+   "Why": "'Loading Dock' is invented; the team's long-time finisher is the Viking Experience (Sportskeeda lists a newer 'War Machine' combination).",
+   "Sources": [
+    "https://en.wikipedia.org/wiki/War_Raiders",
+    "https://widgets.sportskeeda.com/team/the-viking-raiders"
+   ],
+   "Confidence": "low"
+  },
+  {
+   "RealName": "Madison Dombkowski",
+   "RingName": "Wren Sinclair",
+   "Field": "Signature",
+   "Current": [
+    "First Step"
+   ],
+   "Proposed": [
+    "Final Wrench"
+   ],
+   "Why": "'First Step' is invented; one profile lists her finisher as the Final Wrench (bridging double chickenwing), and no second source was found.",
+   "Sources": [
+    "https://sportskeeda.com/player/Wren-Sinclair"
+   ],
+   "Confidence": "low"
+  }
+ ],
+ "unconfirmed": [
+  {
+   "RealName": "Candice Dawson",
+   "Field": "Gimmick.NaturalAlignment",
+   "Note": "Filed as Face; 2026 reports (WWE Speed title controversies, a SummerSlam 2026 'babyface turn' preview) suggest she and Gargano were heels for part of 2026, but no dated source settled her alignment as of late 2026."
+  },
+  {
+   "RealName": "Brendan Vink",
+   "Field": "Signature",
+   "Note": "'The Payoff' appears invented; WWE's profile lists the Razor's Edge as his signature and gerweck lists a 'Lunch Cutter'. Sources disagree, so no change proposed."
+  },
+  {
+   "RealName": "Brendan Vink",
+   "Field": "Gimmick.Type / PersonaDescriptor",
+   "Note": "Filed as Gimmickless 'Just A Guy In Trunks' with trait 'Anonymous', but he had distinct gimmicks (arrogant poker player, then Chase U teaching assistant). He was released by WWE in Jan 2025 and his current presentation could not be confirmed."
+  },
+  {
+   "RealName": "Brad Baylor",
+   "Field": "Signature",
+   "Note": "Could not confirm finisher names; Vanity Project wins with a stomp/neckbreaker combination. BornIn 2004 matches the Wikipedia mirror."
+  },
+  {
+   "RealName": "Torioluwa Odugbesan",
+   "Field": "RealName",
+   "Note": "Could not confirm Oba Femi's legal first name from a reliable source (low-quality pages give other forenames). Surname Odugbesan is consistent."
+  },
+  {
+   "RealName": "Matrick Belton",
+   "Field": "Gimmick.NaturalAlignment",
+   "Note": "Face is defensible (reported babyface turn around WrestleMania 42), but his 2026 alignment has flip-flopped and later reports do not state it. Tweener may be fairer."
+  },
+  {
+   "RealName": "Colby Lopez",
+   "Field": "Gimmick.NaturalAlignment",
+   "Note": "Face is plausible: he returned in March 2026 to get revenge on Heyman and The Vision. No source explicitly confirms a face turn, though."
+  },
+  {
+   "RealName": "Ilja Rukober",
+   "Field": "Gimmick.Type",
+   "Note": "'Realist' with 'Cold' traits misreads him, but no Type fits clearly (perhaps Rebel or Daredevil), so it is left for the owner to decide. His AEW alignment since his Oct 2026 debut is unconfirmed."
+  },
+  {
+   "RealName": "Taula Fifita",
+   "Field": "RealName",
+   "Note": "Not changed: Wikipedia's lead gives 'Taula Leone Fifita (né Koloamatangi)' and the infobox birth name 'Taula Koloamatangi'; other profiles give 'Tautuiaki Taula Koloamatangi'. 'Taula Fifita' is defensible as his current legal name; if the field is meant to hold birth name, use 'Taula Koloamatangi'."
+  },
+  {
+   "RealName": "Daria Hodder",
+   "Field": "RealName",
+   "Note": "Checked: 'Daria Hodder' is confirmed by Wikipedia and multiple profiles. No change."
+  },
+  {
+   "RealName": "Daria Hodder",
+   "Field": "BornIn",
+   "Note": "Currently null. Several profiles give 11 May 1999 but Wikipedia lists no birth date; not proposed."
+  },
+  {
+   "RealName": "Courtney Stewart",
+   "Field": "Signature",
+   "Note": "'The Allowance' fits the invented trust-fund character and is almost certainly not her move, but no source naming her real finisher was found."
+  },
+  {
+   "RealName": "Stephanie Hym Bell",
+   "Field": "Gimmick.PersonaDescriptor / Signature",
+   "Note": "'The Bouncer' and 'Closing Time' look invented; her finisher is believed to be 'Eat Defeat' and 'Michin' means 'crazy' (Wikipedia). Not confirmed by a fetched source."
+  },
+  {
+   "RealName": "Ricky Smokes",
+   "Field": "RealName",
+   "Note": "Wikipedia gives no birth name for Ricky Smokes; 'Ricky Smokes' as RealName is unverified."
+  },
+  {
+   "RealName": "Jackson Drake",
+   "Field": "DebutedIn",
+   "Note": "2017 (age 13-14, born Aug 2003) comes from a single database entry; plausible for a youth start but unverified elsewhere."
+  },
+  {
+   "RealName": "Calyx Hampton",
+   "Field": "Gimmick.GimmickTraits",
+   "Note": "'Over-Eager' and 'Slightly Dangerous' are mild invention; 'Sunny' is fair. Left alone; could be ['Acrobatic','Sunny','Laid-Back']."
+  },
+  {
+   "RealName": "Rami Sebei",
+   "Field": "Gimmick.NaturalAlignment",
+   "Note": "2026 storyline is a gradual, unfinished heel shift (tension with Cody Rhodes, brief Undisputed title reign June-July 2026); Zayn himself said in May 2026 he had not fully turned. Face may be stale (Tweener plausible) but no confirmed turn found."
+  },
+  {
+   "RealName": "Alipate Leone",
+   "Field": "Gimmick.NaturalAlignment",
+   "Note": "Tama Tonga left Solo Sikoa's MFT in June 2026; no confirmed face turn found. 'Guerrilla of Destiny' is the name of his tag team (Guerrillas of Destiny), not a personal nickname -- acceptable but loose."
+  },
+  {
+   "RealName": "Brianna Coda",
+   "Field": "RingName",
+   "Note": "Released by WWE May 2025; now wrestles as Elayna Black (TNA, signed Jan 2026) with a darker 'back from the dead' persona. Ring name/descriptor 'The Bar-Fight Champion' (no source found for that nickname) may be stale. RingName is outside the allowed Field list so not proposed."
+  },
+  {
+   "RealName": "Jonathan Fatu",
+   "Field": "Gimmick.NaturalAlignment",
+   "Note": "Usos were faces around WrestleMania 42, then reunited with Roman Reigns (reported as heel again) and were booked with Jacob Fatu vs LA Knight/Solo Sikoa at SummerSlam 2026. May now be Heel/Tweener; not confirmed by a clear report."
+  },
+  {
+   "RealName": "Frank Gerdelman",
+   "Field": "Gimmick.NaturalAlignment",
+   "Note": "Kazarian is in TNA (re-signed 2026); his 2026 alignment could not be confirmed. 'Elite Hunter' is a real 2024 TNA nickname."
+  },
+  {
+   "RealName": "Gary Gordon",
+   "Field": "Signature",
+   "Note": "'One More Round' does not appear to be a real Angelo Dawkins move; could not confirm his named finisher."
+  },
+  {
+   "RealName": "Beatrice Priestley",
+   "Field": "Signature",
+   "Note": "'Standing Stone' does not appear to be a real move of hers; could not confirm a named finisher. Also 'The Standing Stone' descriptor seems invented."
+  },
+  {
+   "RealName": "Todd Smith",
+   "Field": "Signature",
+   "Note": "'The Lunch Break' appears invented; could not confirm Ivar's named singles finisher (team finisher is the Viking Experience)."
+  },
+  {
+   "RealName": "Monika Klisara",
+   "Field": "Signature",
+   "Note": "'Clean Finish' appears invented; could not confirm her named finisher."
+  },
+  {
+   "RealName": "Penta / Rey Fenix",
+   "Field": "RealName",
+   "Note": "Both entries use the ring name as RealName; their legal names are not publicly confirmed, so left as is."
+  },
+  {
+   "RealName": "Tyson Smith",
+   "Field": "PreviousNames",
+   "Note": "'Scott Carpenter' is not a known previous ring name of Kenny Omega (not a checked field, flagged only)."
+  },
+  {
+   "RealName": "Fabian Aichner",
+   "Field": "Signature",
+   "Note": "'Fine Print' is almost certainly invented to match the fake insurance-salesman gimmick, but no source named his Giovanni Vinci finisher."
+  },
+  {
+   "RealName": "Taylor Grado",
+   "Field": "Signature",
+   "Note": "'Nothing To Say' is almost certainly invented. A fan-run list gives a discus forearm or discus big boot, but there is no official source."
+  },
+  {
+   "RealName": "Sydney Zmrzel",
+   "Field": "Signature",
+   "Note": "'Second Wind' looks invented, but no source naming her finisher was found."
+  },
+  {
+   "RealName": "Marcel Barthel",
+   "Field": "Signature",
+   "Note": "'The Inheritance' looks invented. Sources disagree on the real move (Landungsbrücken per prowrestlingsource/Cagematch, Swinging DDT per SportzWiki). He also wrestled as El Grande Americano in 2025-26."
+  },
+  {
+   "RealName": "Kacy Catanzaro",
+   "Field": "Signature",
+   "Note": "'Katana Cutter' could not be confirmed. ESPN lists 'Highlight Reel' as a signature move. 'Green' in her traits is questionable for a wrestler who debuted in 2018."
+  },
+  {
+   "RealName": "Cheree Crowley",
+   "Field": "Gimmick.NaturalAlignment",
+   "Note": "Released by WWE in May 2025. She returned on the indies as 'Charlie' in March 2026, and no 2026 alignment is reported. Face is plausible but unconfirmed."
+  },
+  {
+   "RealName": "Kevin Steen",
+   "Field": "Gimmick.NaturalAlignment",
+   "Note": "He returned at SummerSlam 2026 after a heel run in 2024-25. Reports said the plan was for him to work as a face, so Face is plausible but not confirmed."
+  },
+  {
+   "RealName": "Shinsuke Nakamura",
+   "Field": "Gimmick.NaturalAlignment",
+   "Note": "Tweener kept: he was heel-leaning in Jan 2026, then in a revenge feud with the heel MFT alongside Hiromu Takahashi in Aug 2026. No clear current label was found."
+  },
+  {
+   "RealName": "Raymond Rowe",
+   "Field": "Signature",
+   "Note": "The proposed 'Viking Experience' is the long-standing team finisher; Sportskeeda lists 'War Machine' as the team finisher since Dec 2024. Either one replaces the invented 'Loading Dock'."
+  }
+ ]
+}

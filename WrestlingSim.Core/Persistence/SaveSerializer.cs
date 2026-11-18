@@ -84,7 +84,10 @@ namespace WrestlingSim.Persistence
             CreativeLevel    = career.Promotion.CreativeLevel,
             PromoNotes       = career.PromoNotes.Count > 0 ? new Dictionary<string, Models.World.PromoNote>(career.PromoNotes) : null,
 
-            // Only state that actually changes. Everything else comes from the roster.
+            // Only state that actually changes. Everything else comes from the roster. Not rounded:
+            // the day after a reload has to be the same day it would have been
+            // (PlannerTests.WhatItWantsAndWhatItDecidedSurviveASave), and a third decimal of
+            // overness was enough to tip a rival's decision once characters priced results.
             Wrestlers = career.Roster
                 .Select(w => new WrestlerStateDto
                 {
@@ -101,12 +104,12 @@ namespace WrestlingSim.Persistence
                     Development    = w.IsGenerated ? null : w.Development,
                     RetiredOn      = w.RetiredOn is { } r ? Iso(r) : null,
                     PartTimeSince  = w.PartTimeSince is { } pt ? Iso(pt) : null,
-                    Favoured       = Math.Round(w.Favoured, 3),
-                    Warmth         = Math.Round(w.Warmth, 1),
+                    Favoured       = w.Favoured,
+                    Warmth         = w.Warmth,
                     RejectedSince  = w.RejectedSince is { } rj ? Iso(rj) : null,
-                    Freshness      = w.Gimmick is { } gim ? Math.Round(gim.Freshness, 4) : null,
-                    Overness       = Math.Round(w.Overness, 3),
-                    Momentum       = Math.Round(w.Momentum, 3),
+                    Freshness      = w.Gimmick is { } gim ? gim.Freshness : null,
+                    Overness       = w.Overness,
+                    Momentum       = w.Momentum,
                     LastAppearance = w.LastAppearance is { } seen ? Iso(seen) : null,
                     TouringUntil   = w.TouringUntil is { } road ? Iso(road) : null,
                     Fatigue        = w.Fatigue,

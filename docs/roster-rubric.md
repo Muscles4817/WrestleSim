@@ -172,3 +172,31 @@ generic moves, as in the existing file. Toni Storm is written off television for
 Established 0.4934 → 0.6756, National 0.6161 → 0.7686, Global 0.8842 → 0.8969 (Local held).
 `TypicalInvestment` held. The opening rosters of the television tiers now carry real stars, so a
 typical card at those tiers is a good deal stronger than it was.
+
+## Accuracy pass — 18 Nov 2026 (all 124)
+
+Asked by the owner after the promo research found real people filed as characters they do not
+play (Sheamus tagged "Never Speaks"; Chelsea Green a melancholic loner, not a comedy heel).
+Four research agents, 31 people each, checked every character field and every fact against
+public sources; every change has a source. The full record — each change with its reason,
+sources and confidence, and everything left unconfirmed — is
+`docs/research/roster-audit-2026-11.json`.
+
+- **188 changes to 63 people.** 38 descriptors, 36 trait lists, 33 finisher names, 32
+  alignments, 27 types, 21 tones, one debut year.
+- **Where the errors came from.** About two dozen entries from the original roster file
+  (commit d81f3d0) carried characters nobody has played — Jey Uso as "The Coal-Country
+  Bruiser", Finn Bálor as "The Corporate Signing", Dakota Kai as "The Bingo Hall Legend", Nia
+  Jax as a glamorous showman — with invented finishers to match. Others were out of date:
+  alignments are as of 2026 (Orton turned heel on 13 March, Sikoa face in July, Hayes and
+  Stratton heel in October and November).
+- **Finishers that looked invented, where no source named the real one,** now carry the move's
+  own name rather than a made-up one (fourteen people, listed in the record).
+- **Not changed, for the owner:** Talla Tonga's real name is his present legal name (born
+  Koloamatangi); Penta and Rey Fénix carry their ring names because their legal names are not
+  public; Brendan Vink is filed as gimmickless although he has had gimmicks; and 36 notes where
+  the evidence was too thin to change anything.
+- **What moved:** the promo centring (`Promos.Centring`, 0.309 → 0.298), because 21 tones and so
+  21 natural notes changed. `TypicalInvestment` and the box-office medians did not move.
+- **Also fixed, found by it:** the save rounded overness, momentum, favour and warmth, which tipped
+  a rival's decision the day after a reload once characters priced results. They are saved whole.

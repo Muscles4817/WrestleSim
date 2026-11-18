@@ -14,7 +14,7 @@
       "Type": "AntiHero",
       "PersonaDescriptor": "Brutal Enforcer",
       "Tone": "Serious",
-      "NaturalAlignment": "Heel",
+      "NaturalAlignment": "Face",
       "Durability": "LongTerm",
       "Freshness": 0.9,
       "GimmickTraits": [
@@ -109,7 +109,7 @@
       "Type": "Superstar",
       "PersonaDescriptor": "The Man",
       "Tone": "Arrogant",
-      "NaturalAlignment": "Face",
+      "NaturalAlignment": "Heel",
       "Durability": "LongTerm",
       "Freshness": 0.88,
       "GimmickTraits": [
@@ -204,7 +204,7 @@
       "Type": "Egotist",
       "PersonaDescriptor": "The Queen",
       "Tone": "Arrogant",
-      "NaturalAlignment": "Heel",
+      "NaturalAlignment": "Face",
       "Durability": "LongTerm",
       "Freshness": 0.8,
       "GimmickTraits": [
@@ -485,12 +485,13 @@
       "Type": "Rebel",
       "PersonaDescriptor": "Role Model",
       "Tone": "SelfRighteous",
-      "NaturalAlignment": "Heel",
+      "NaturalAlignment": "Face",
       "Durability": "MediumTerm",
       "Freshness": 0.78,
       "GimmickTraits": [
-        "Manipulative",
-        "Calculating"
+        "Veteran",
+        "Resilient",
+        "Unpredictable"
       ],
       "AppealRatings": [
         {
@@ -765,7 +766,7 @@
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Shayna Baszler",
-      "Type": "Rebel",
+      "Type": "Realist",
       "PersonaDescriptor": "Queen of Spades",
       "Tone": "Serious",
       "NaturalAlignment": "Heel",
@@ -861,7 +862,7 @@
       "Type": "Monster",
       "PersonaDescriptor": "Big Mami Cool",
       "Tone": "Serious",
-      "NaturalAlignment": "Face",
+      "NaturalAlignment": "Heel",
       "Durability": "MediumTerm",
       "Freshness": 0.8,
       "GimmickTraits": [
@@ -1401,7 +1402,7 @@
     ],
     "Signature": [
       {
-        "Name": "Barrio Buster",
+        "Name": "Gigi Driver",
         "Move": {
           "Name": "Fireman's Carry Slam",
           "Types": [
@@ -1719,7 +1720,7 @@
       "Type": "Realist",
       "PersonaDescriptor": "The Viper",
       "Tone": "Serious",
-      "NaturalAlignment": "Face",
+      "NaturalAlignment": "Heel",
       "Durability": "LongTerm",
       "Freshness": 0.66,
       "GimmickTraits": [
@@ -2301,7 +2302,7 @@
       "GimmickTraits": [
         "Explosive",
         "Legacy",
-        "Green"
+        "Dominant"
       ],
       "AppealRatings": [
         {
@@ -2388,13 +2389,14 @@
       "Name": "Ricochet",
       "Type": "Daredevil",
       "PersonaDescriptor": "The One and Only",
-      "Tone": "Serious",
-      "NaturalAlignment": "Face",
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Heel",
       "Durability": "MediumTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
         "Gravity-Defying",
-        "Understated"
+        "Smug",
+        "Despised"
       ],
       "AppealRatings": [
         {
@@ -2473,7 +2475,7 @@
     "RealName": "Charles Betts",
     "Division": "Mens",
     "BornIn": 1986,
-    "DebutedIn": 2003,
+    "DebutedIn": 2013,
     "Overness": 70,
     "Charisma": 3.0,
     "Promo": {"Delivery": 68, "Improvisation": 58, "Stillness": 64, "RingPresence": 64, "CrowdWork": 58, "SetPiece": 66, "Physicality": 62, "Registers": [{"Register": "Arrogant", "Rating": 70}, {"Register": "Funny", "Rating": 62, "Lean": "Scripted"}], "Range": 58},
@@ -2481,10 +2483,10 @@
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Chad Gable",
-      "Type": "Egotist",
+      "Type": "Traditionalist",
       "PersonaDescriptor": "The Master of the Amateurs",
-      "Tone": "Arrogant",
-      "NaturalAlignment": "Heel",
+      "Tone": "Serious",
+      "NaturalAlignment": "Face",
       "Durability": "MediumTerm",
       "Freshness": 0.84,
       "GimmickTraits": [
@@ -2859,16 +2861,16 @@
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "CM Punk",
-      "Type": "CultLeader",
-      "PersonaDescriptor": "Shepherd of the Lost",
+      "Type": "Rebel",
+      "PersonaDescriptor": "The Best in the World",
       "Tone": "SelfRighteous",
-      "NaturalAlignment": "Heel",
+      "NaturalAlignment": "Face",
       "Durability": "LongTerm",
       "Freshness": 0.88,
       "GimmickTraits": [
         "Magnetic",
-        "Manipulative",
-        "Feared"
+        "Outspoken",
+        "Straight Edge"
       ],
       "AppealRatings": [
         {
@@ -2929,7 +2931,7 @@
     ],
     "Signature": [
       {
-        "Name": "The Reckoning",
+        "Name": "GTS",
         "Move": {
           "Name": "Spinning Heel Kick",
           "Types": [
@@ -2958,9 +2960,9 @@
     "Gimmick": {
       "Name": "Damian Priest",
       "Type": "Traditionalist",
-      "PersonaDescriptor": "The Last Honest Man",
+      "PersonaDescriptor": "The Archer of Infamy",
       "Tone": "Serious",
-      "NaturalAlignment": "Face",
+      "NaturalAlignment": "Heel",
       "Durability": "LongTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
@@ -3023,7 +3025,7 @@
     ],
     "Signature": [
       {
-        "Name": "The Long Count",
+        "Name": "South of Heaven",
         "Move": {
           "Name": "Cross Armbreaker",
           "Types": [
@@ -3051,16 +3053,16 @@
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Shinsuke Nakamura",
-      "Type": "Realist",
-      "PersonaDescriptor": "The Purist",
+      "Type": "Showman",
+      "PersonaDescriptor": "The King of Strong Style",
       "Tone": "Serious",
       "NaturalAlignment": "Tweener",
       "Durability": "MediumTerm",
       "Freshness": 0.8,
       "GimmickTraits": [
         "Stiff",
-        "Uncompromising",
-        "No Wasted Motion"
+        "Eccentric",
+        "Charismatic"
       ],
       "AppealRatings": [
         {
@@ -3121,7 +3123,7 @@
     ],
     "Signature": [
       {
-        "Name": "Last Bell",
+        "Name": "Kinshasa",
         "Move": {
           "Name": "Bridging Dragon Suplex",
           "Types": [
@@ -3149,16 +3151,16 @@
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Finn Balor",
-      "Type": "Sellout",
-      "PersonaDescriptor": "The Corporate Signing",
-      "Tone": "Arrogant",
-      "NaturalAlignment": "Heel",
+      "Type": "AntiHero",
+      "PersonaDescriptor": "The Prince",
+      "Tone": "Serious",
+      "NaturalAlignment": "Face",
       "Durability": "MediumTerm",
       "Freshness": 0.76,
       "GimmickTraits": [
-        "Smug",
-        "Well-Connected",
-        "Takes Shortcuts"
+        "Veteran",
+        "Vengeful",
+        "Demon Alter Ego"
       ],
       "AppealRatings": [
         {
@@ -3219,7 +3221,7 @@
     ],
     "Signature": [
       {
-        "Name": "The Severance",
+        "Name": "Coup de Grace",
         "Move": {
           "Name": "Uranage Slam",
           "Types": [
@@ -3247,16 +3249,16 @@
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Jey Uso",
-      "Type": "Loner",
-      "PersonaDescriptor": "The Coal-Country Bruiser",
+      "Type": "Showman",
+      "PersonaDescriptor": "Main Event Jey Uso",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
       "Durability": "LongTerm",
       "Freshness": 0.66,
       "GimmickTraits": [
-        "Hard-Nosed",
-        "Unglamorous",
-        "Dependable"
+        "Charismatic",
+        "Crowd Favourite",
+        "Family Loyalty"
       ],
       "AppealRatings": [
         {
@@ -3313,7 +3315,7 @@
     ],
     "Signature": [
       {
-        "Name": "Pit Closer",
+        "Name": "Uso Splash",
         "Move": {
           "Name": "Short-Range Lariat",
           "Types": [
@@ -3341,16 +3343,16 @@
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Sheamus",
-      "Type": "DarkPersona",
-      "PersonaDescriptor": "Keeper of Quiet Rooms",
-      "Tone": "Cryptic",
-      "NaturalAlignment": "Heel",
+      "Type": "Traditionalist",
+      "PersonaDescriptor": "The Celtic Warrior",
+      "Tone": "Serious",
+      "NaturalAlignment": "Face",
       "Durability": "MediumTerm",
       "Freshness": 0.74,
       "GimmickTraits": [
-        "Unsettling",
-        "Patient",
-        "Never Speaks"
+        "Brawler",
+        "Hard-Hitting",
+        "Loud"
       ],
       "AppealRatings": [
         {
@@ -3411,7 +3413,7 @@
     ],
     "Signature": [
       {
-        "Name": "The Quiet Hour",
+        "Name": "Brogue Kick",
         "Move": {
           "Name": "Rear Naked Choke",
           "Types": [
@@ -3442,13 +3444,13 @@
       "Type": "Showman",
       "PersonaDescriptor": "The Main Event Mind",
       "Tone": "Arrogant",
-      "NaturalAlignment": "Heel",
+      "NaturalAlignment": "Tweener",
       "Durability": "MediumTerm",
       "Freshness": 0.82,
       "GimmickTraits": [
         "Loud",
         "Self-Mythologising",
-        "All Talk"
+        "Athletic"
       ],
       "AppealRatings": [
         {
@@ -3509,7 +3511,7 @@
     ],
     "Signature": [
       {
-        "Name": "The Highlight",
+        "Name": "Frog Splash",
         "Move": {
           "Name": "Superkick",
           "Types": [
@@ -3544,9 +3546,9 @@
       "Durability": "ShortTerm",
       "Freshness": 0.78,
       "GimmickTraits": [
-        "Goofy",
+        "Fun-Loving",
         "Beloved",
-        "Harmless"
+        "Family Loyalist"
       ],
       "AppealRatings": [
         {
@@ -3611,7 +3613,7 @@
     ],
     "Signature": [
       {
-        "Name": "Last Call",
+        "Name": "Uso Splash",
         "Move": {
           "Name": "Diving Elbow Drop",
           "Types": [
@@ -3705,7 +3707,7 @@
     ],
     "Signature": [
       {
-        "Name": "Rockfall",
+        "Name": "Tsunami",
         "Move": {
           "Name": "Sit-Out Powerbomb",
           "Types": [
@@ -3734,15 +3736,15 @@
     "Gimmick": {
       "Name": "Ilja Dragunov",
       "Type": "Realist",
-      "PersonaDescriptor": "The Shoot-Style Import",
+      "PersonaDescriptor": "The Mad Dragon",
       "Tone": "Serious",
-      "NaturalAlignment": "Heel",
+      "NaturalAlignment": "Face",
       "Durability": "MediumTerm",
       "Freshness": 0.72,
       "GimmickTraits": [
-        "Legitimate",
-        "Cold",
-        "Wrist Control"
+        "Intense",
+        "Hard-hitting",
+        "Emotional"
       ],
       "AppealRatings": [
         {
@@ -3803,7 +3805,7 @@
     ],
     "Signature": [
       {
-        "Name": "The Referee Stoppage",
+        "Name": "Torpedo Moscow",
         "Move": {
           "Name": "Cross-Face Chickenwing",
           "Types": [
@@ -3897,7 +3899,7 @@
     ],
     "Signature": [
       {
-        "Name": "The Inheritance",
+        "Name": "Figure-Four Leglock",
         "Move": {
           "Name": "Figure-Four Leglock",
           "Types": [
@@ -3928,8 +3930,8 @@
       "Name": "Angelo Dawkins",
       "Type": "Underdog",
       "PersonaDescriptor": "Never Quite The Guy",
-      "Tone": "Melancholic",
-      "NaturalAlignment": "Face",
+      "Tone": "Serious",
+      "NaturalAlignment": "Tweener",
       "Durability": "LongTerm",
       "Freshness": 0.6,
       "GimmickTraits": [
@@ -3992,7 +3994,7 @@
     ],
     "Signature": [
       {
-        "Name": "One More Round",
+        "Name": "Bridging Fisherman Suplex",
         "Move": {
           "Name": "Bridging Fisherman Suplex",
           "Types": [
@@ -4021,16 +4023,16 @@
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Carmelo Hayes",
-      "Type": "Rebel",
-      "PersonaDescriptor": "The Sound And The Fury",
-      "Tone": "Chaotic",
-      "NaturalAlignment": "Face",
+      "Type": "Egotist",
+      "PersonaDescriptor": "Him",
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Heel",
       "Durability": "ShortTerm",
       "Freshness": 0.84,
       "GimmickTraits": [
-        "Reckless",
-        "Anti-Authority",
-        "Buzzy"
+        "Confident",
+        "Smooth",
+        "Opportunistic"
       ],
       "AppealRatings": [
         {
@@ -4091,7 +4093,7 @@
     ],
     "Signature": [
       {
-        "Name": "Feedback",
+        "Name": "Nothing But Net",
         "Move": {
           "Name": "Shooting Star Press",
           "Types": [
@@ -4185,7 +4187,7 @@
     ],
     "Signature": [
       {
-        "Name": "Last Stop",
+        "Name": "End of Days",
         "Move": {
           "Name": "Spinning Backfist",
           "Types": [
@@ -4213,16 +4215,16 @@
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Xavier Woods",
-      "Type": "Traditionalist",
-      "PersonaDescriptor": "The Territory Kid",
-      "Tone": "Inspirational",
-      "NaturalAlignment": "Face",
+      "Type": "Sellout",
+      "PersonaDescriptor": "New Day's Gamer",
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Heel",
       "Durability": "MediumTerm",
       "Freshness": 0.68,
       "GimmickTraits": [
-        "Earnest",
-        "Fundamentals First",
-        "Still Learning"
+        "Gamer",
+        "Smug",
+        "Veteran"
       ],
       "AppealRatings": [
         {
@@ -4279,7 +4281,7 @@
     ],
     "Signature": [
       {
-        "Name": "Homecoming",
+        "Name": "Backwoods",
         "Move": {
           "Name": "Rolling Cradle",
           "Types": [
@@ -4322,16 +4324,16 @@
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Giovanni Vinci",
-      "Type": "Sellout",
-      "PersonaDescriptor": "The Insurance Salesman",
-      "Tone": "SelfRighteous",
+      "Type": "Egotist",
+      "PersonaDescriptor": "Vain Italian model",
+      "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
       "Durability": "ShortTerm",
       "Freshness": 0.66,
       "GimmickTraits": [
-        "Weaselly",
-        "Litigious",
-        "Talks Too Much"
+        "Vain",
+        "Wealthy",
+        "Powerhouse"
       ],
       "AppealRatings": [
         {
@@ -4388,7 +4390,7 @@
     ],
     "Signature": [
       {
-        "Name": "Fine Print",
+        "Name": "Handful Of Tights",
         "Move": {
           "Name": "Handful Of Tights",
           "Types": [
@@ -4417,7 +4419,7 @@
     "Gimmick": {
       "Name": "Axiom",
       "Type": "Underdog",
-      "PersonaDescriptor": "The Kid From The Parking Lot",
+      "PersonaDescriptor": "Masked Spanish High-Flyer",
       "Tone": "Inspirational",
       "NaturalAlignment": "Face",
       "Durability": "ShortTerm",
@@ -4486,7 +4488,7 @@
     ],
     "Signature": [
       {
-        "Name": "Parking Lot Special",
+        "Name": "Golden Ratio",
         "Move": {
           "Name": "450 Splash",
           "Types": [
@@ -4515,16 +4517,16 @@
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Nathan Frazer",
-      "Type": "Cryptic",
-      "PersonaDescriptor": "The Signal From The Dark",
-      "Tone": "Cryptic",
-      "NaturalAlignment": "Heel",
+      "Type": "Daredevil",
+      "PersonaDescriptor": "High-Flying Tag Specialist",
+      "Tone": "Serious",
+      "NaturalAlignment": "Face",
       "Durability": "ShortTerm",
       "Freshness": 0.8,
       "GimmickTraits": [
-        "Obscure",
-        "Twitching",
-        "Unreadable"
+        "Acrobatic",
+        "Fearless",
+        "Team Player"
       ],
       "AppealRatings": [
         {
@@ -4585,7 +4587,7 @@
     ],
     "Signature": [
       {
-        "Name": "Dead Air",
+        "Name": "Phoenix Splash",
         "Move": {
           "Name": "Bicycle Knee Strike",
           "Types": [
@@ -4613,16 +4615,16 @@
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Ivar",
-      "Type": "Comedy",
-      "PersonaDescriptor": "The Lunchpail",
-      "Tone": "Humorous",
+      "Type": "Monster",
+      "PersonaDescriptor": "The War Raider",
+      "Tone": "Serious",
       "NaturalAlignment": "Face",
       "Durability": "ShortTerm",
       "Freshness": 0.72,
       "GimmickTraits": [
-        "Lovable",
-        "Clumsy",
-        "Enormous Appetite"
+        "Viking",
+        "Agile Big Man",
+        "Hard-Hitting"
       ],
       "AppealRatings": [
         {
@@ -4687,7 +4689,7 @@
     ],
     "Signature": [
       {
-        "Name": "The Lunch Break",
+        "Name": "Running Senton",
         "Move": {
           "Name": "Running Senton",
           "Types": [
@@ -4715,16 +4717,16 @@
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Kofi Kingston",
-      "Type": "Realist",
-      "PersonaDescriptor": "The Trainer's Son",
-      "Tone": "Serious",
-      "NaturalAlignment": "Face",
+      "Type": "Sellout",
+      "PersonaDescriptor": "New Day Veteran",
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Heel",
       "Durability": "MediumTerm",
       "Freshness": 0.64,
       "GimmickTraits": [
-        "Studious",
-        "Unmarketable",
-        "Excellent Hands"
+        "Veteran",
+        "Smug",
+        "Tag Team Specialist"
       ],
       "AppealRatings": [
         {
@@ -4781,7 +4783,7 @@
     ],
     "Signature": [
       {
-        "Name": "The Chalkboard",
+        "Name": "Trouble in Paradise",
         "Move": {
           "Name": "Double Underhook Suplex",
           "Types": [
@@ -4890,7 +4892,7 @@
     ],
     "Signature": [
       {
-        "Name": "The Payoff",
+        "Name": "Swinging Neckbreaker",
         "Move": {
           "Name": "Swinging Neckbreaker",
           "Types": [
@@ -4919,16 +4921,16 @@
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Tony D'Angelo",
-      "Type": "Egotist",
-      "PersonaDescriptor": "The Local Hero, Allegedly",
-      "Tone": "Arrogant",
-      "NaturalAlignment": "Heel",
+      "Type": "Realist",
+      "PersonaDescriptor": "The Don of NXT",
+      "Tone": "Serious",
+      "NaturalAlignment": "Face",
       "Durability": "ShortTerm",
       "Freshness": 0.58,
       "GimmickTraits": [
-        "Deluded",
-        "Preening",
-        "Thin-Skinned"
+        "Streetwise",
+        "Loyal",
+        "Tough"
       ],
       "AppealRatings": [
         {
@@ -4985,7 +4987,7 @@
     ],
     "Signature": [
       {
-        "Name": "Standing Ovation",
+        "Name": "Dead to Rights",
         "Move": {
           "Name": "Spinning Back Kick",
           "Types": [
@@ -5014,14 +5016,14 @@
     "Gimmick": {
       "Name": "Erik",
       "Type": "Monster",
-      "PersonaDescriptor": "The Warehouse",
+      "PersonaDescriptor": "War Raider",
       "Tone": "Violent",
-      "NaturalAlignment": "Heel",
+      "NaturalAlignment": "Face",
       "Durability": "ShortTerm",
       "Freshness": 0.6,
       "GimmickTraits": [
         "Immovable",
-        "Green",
+        "Veteran",
         "Blunt Instrument"
       ],
       "AppealRatings": [
@@ -5079,7 +5081,7 @@
     ],
     "Signature": [
       {
-        "Name": "Loading Dock",
+        "Name": "Military Press Slam",
         "Move": {
           "Name": "Military Press Slam",
           "Types": [
@@ -5107,16 +5109,16 @@
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Tiffany Stratton",
-      "Type": "Rebel",
-      "PersonaDescriptor": "Loudest Woman In The Building",
-      "Tone": "Chaotic",
-      "NaturalAlignment": "Face",
+      "Type": "Egotist",
+      "PersonaDescriptor": "Spoiled Daddy's Girl",
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Heel",
       "Durability": "MediumTerm",
       "Freshness": 0.9,
       "GimmickTraits": [
-        "Fearless",
-        "Mouthy",
-        "Beloved"
+        "Spoiled",
+        "Glamorous",
+        "Athletic"
       ],
       "AppealRatings": [
         {
@@ -5177,7 +5179,7 @@
     ],
     "Signature": [
       {
-        "Name": "Riot Act",
+        "Name": "Prettiest Moonsault Ever",
         "Move": {
           "Name": "Discus Lariat",
           "Types": [
@@ -5206,7 +5208,7 @@
     "Gimmick": {
       "Name": "Jade Cargill",
       "Type": "Monster",
-      "PersonaDescriptor": "The Iron Mountain",
+      "PersonaDescriptor": "Storm-Inspired Powerhouse",
       "Tone": "Serious",
       "NaturalAlignment": "Heel",
       "Durability": "LongTerm",
@@ -5214,7 +5216,7 @@
       "GimmickTraits": [
         "Towering",
         "Merciless",
-        "Never Pinned Clean"
+        "Imposing"
       ],
       "AppealRatings": [
         {
@@ -5271,7 +5273,7 @@
     ],
     "Signature": [
       {
-        "Name": "Glacier Drop",
+        "Name": "Jaded",
         "Move": {
           "Name": "Sit-Out Chokebomb",
           "Types": [
@@ -5299,15 +5301,15 @@
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Nia Jax",
-      "Type": "Showman",
-      "PersonaDescriptor": "The Golden Hour",
+      "Type": "Monster",
+      "PersonaDescriptor": "The Irresistible Force",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
       "Durability": "MediumTerm",
       "Freshness": 0.85,
       "GimmickTraits": [
-        "Glamorous",
-        "Photogenic",
+        "Powerhouse",
+        "Bully",
         "Ruthless"
       ],
       "AppealRatings": [
@@ -5369,7 +5371,7 @@
     ],
     "Signature": [
       {
-        "Name": "Golden Hour",
+        "Name": "Annihilator",
         "Move": {
           "Name": "Corkscrew Moonsault",
           "Types": [
@@ -5398,7 +5400,7 @@
     "Gimmick": {
       "Name": "Lyra Valkyria",
       "Type": "Traditionalist",
-      "PersonaDescriptor": "The Textbook",
+      "PersonaDescriptor": "Irish High-Flyer",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
       "Durability": "LongTerm",
@@ -5463,7 +5465,7 @@
     ],
     "Signature": [
       {
-        "Name": "Chapter And Verse",
+        "Name": "Nightwing",
         "Move": {
           "Name": "Bridging Tiger Suplex",
           "Types": [
@@ -5491,16 +5493,16 @@
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Chelsea Green",
-      "Type": "Loner",
-      "PersonaDescriptor": "The Cold Read",
-      "Tone": "Melancholic",
-      "NaturalAlignment": "Tweener",
+      "Type": "Comedy",
+      "PersonaDescriptor": "The Comedic Karen",
+      "Tone": "Humorous",
+      "NaturalAlignment": "Heel",
       "Durability": "MediumTerm",
       "Freshness": 0.76,
       "GimmickTraits": [
-        "Detached",
-        "Analytical",
-        "Friendless"
+        "Entitled",
+        "Complainer",
+        "Comedic"
       ],
       "AppealRatings": [
         {
@@ -5557,7 +5559,7 @@
     ],
     "Signature": [
       {
-        "Name": "Full Stop",
+        "Name": "Unprettier",
         "Move": {
           "Name": "Inverted Cloverleaf",
           "Types": [
@@ -5585,16 +5587,16 @@
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Roxanne Perez",
-      "Type": "Underdog",
-      "PersonaDescriptor": "Smallest Person In The Building",
-      "Tone": "Inspirational",
-      "NaturalAlignment": "Face",
+      "Type": "Egotist",
+      "PersonaDescriptor": "The Prodigy",
+      "Tone": "Arrogant",
+      "NaturalAlignment": "Heel",
       "Durability": "MediumTerm",
       "Freshness": 0.8,
       "GimmickTraits": [
         "Tiny",
-        "Relentless",
-        "Crowd Favourite"
+        "Scheming",
+        "Cocky"
       ],
       "AppealRatings": [
         {
@@ -5655,7 +5657,7 @@
     ],
     "Signature": [
       {
-        "Name": "Little Bird",
+        "Name": "Pop Rox",
         "Move": {
           "Name": "Diving Double Stomp",
           "Types": [
@@ -5684,7 +5686,7 @@
     "Gimmick": {
       "Name": "Stephanie Vaquer",
       "Type": "Daredevil",
-      "PersonaDescriptor": "La Tormenta",
+      "PersonaDescriptor": "La Primera",
       "Tone": "Chaotic",
       "NaturalAlignment": "Face",
       "Durability": "ShortTerm",
@@ -5753,7 +5755,7 @@
     ],
     "Signature": [
       {
-        "Name": "Tormenta",
+        "Name": "SVB",
         "Move": {
           "Name": "Spanish Fly",
           "Types": [
@@ -5783,15 +5785,15 @@
     "Gimmick": {
       "Name": "Alba Fyre",
       "Type": "DarkPersona",
-      "PersonaDescriptor": "The Girl In The Polaroid",
+      "PersonaDescriptor": "Scottish Hardcore Brawler",
       "Tone": "Cryptic",
       "NaturalAlignment": "Heel",
       "Durability": "MediumTerm",
       "Freshness": 0.78,
       "GimmickTraits": [
-        "Eerie",
-        "Nostalgic",
-        "Vacant Stare"
+        "Hardcore",
+        "Fearless",
+        "Scottish"
       ],
       "AppealRatings": [
         {
@@ -5852,7 +5854,7 @@
     ],
     "Signature": [
       {
-        "Name": "Flashbulb",
+        "Name": "Gory Bomb",
         "Move": {
           "Name": "Busaiku Knee",
           "Types": [
@@ -5884,7 +5886,7 @@
       "Type": "AntiHero",
       "PersonaDescriptor": "The Bouncer",
       "Tone": "Serious",
-      "NaturalAlignment": "Tweener",
+      "NaturalAlignment": "Heel",
       "Durability": "MediumTerm",
       "Freshness": 0.72,
       "GimmickTraits": [
@@ -5947,7 +5949,7 @@
     ],
     "Signature": [
       {
-        "Name": "Closing Time",
+        "Name": "Head Kick",
         "Move": {
           "Name": "Head Kick",
           "Types": [
@@ -5975,16 +5977,16 @@
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Kairi Sane",
-      "Type": "Realist",
-      "PersonaDescriptor": "The Shooter",
+      "Type": "Showman",
+      "PersonaDescriptor": "The Pirate Princess",
       "Tone": "Serious",
       "NaturalAlignment": "Heel",
       "Durability": "MediumTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
-        "Legitimate",
-        "Humourless",
-        "Dangerous"
+        "Flamboyant",
+        "Agile",
+        "Sneaky"
       ],
       "AppealRatings": [
         {
@@ -6041,7 +6043,7 @@
     ],
     "Signature": [
       {
-        "Name": "The Clinic",
+        "Name": "Insane Elbow",
         "Move": {
           "Name": "Arm-Trap Crossface",
           "Types": [
@@ -6069,16 +6071,16 @@
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Dakota Kai",
-      "Type": "Comedy",
-      "PersonaDescriptor": "The Bingo Hall Legend",
-      "Tone": "Humorous",
+      "Type": "Realist",
+      "PersonaDescriptor": "Captain of Team Kick",
+      "Tone": "Serious",
       "NaturalAlignment": "Face",
       "Durability": "LongTerm",
       "Freshness": 0.68,
       "GimmickTraits": [
         "Veteran",
-        "Deadpan",
-        "Hits Harder Than She Looks"
+        "Hard-Kicking",
+        "Resilient"
       ],
       "AppealRatings": [
         {
@@ -6139,7 +6141,7 @@
     ],
     "Signature": [
       {
-        "Name": "Last Orders",
+        "Name": "Kairopractor",
         "Move": {
           "Name": "Bionic Elbow",
           "Types": [
@@ -6168,16 +6170,16 @@
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Isla Dawn",
-      "Type": "Egotist",
-      "PersonaDescriptor": "Trust-Fund Terror",
-      "Tone": "Arrogant",
+      "Type": "DarkPersona",
+      "PersonaDescriptor": "The Occult Witch",
+      "Tone": "Cryptic",
       "NaturalAlignment": "Heel",
       "Durability": "MediumTerm",
       "Freshness": 0.76,
       "GimmickTraits": [
-        "Spoiled",
-        "Vicious",
-        "Buys Her Way Out"
+        "Occult",
+        "Mystic",
+        "Vicious"
       ],
       "AppealRatings": [
         {
@@ -6238,7 +6240,7 @@
     ],
     "Signature": [
       {
-        "Name": "The Allowance",
+        "Name": "Reverse Figure-Four",
         "Move": {
           "Name": "Reverse Figure-Four",
           "Types": [
@@ -6266,16 +6268,16 @@
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Zoey Stark",
-      "Type": "Sellout",
-      "PersonaDescriptor": "The Ratings Darling",
-      "Tone": "SelfRighteous",
+      "Type": "Daredevil",
+      "PersonaDescriptor": "Z360 specialist",
+      "Tone": "Serious",
       "NaturalAlignment": "Heel",
       "Durability": "ShortTerm",
       "Freshness": 0.72,
       "GimmickTraits": [
-        "Media-Trained",
-        "Insincere",
-        "Protected"
+        "Athletic",
+        "Aggressive",
+        "Opportunistic"
       ],
       "AppealRatings": [
         {
@@ -6336,7 +6338,7 @@
     ],
     "Signature": [
       {
-        "Name": "Prime Time",
+        "Name": "Z360",
         "Move": {
           "Name": "Fisherman Neckbreaker",
           "Types": [
@@ -6365,7 +6367,7 @@
     "Gimmick": {
       "Name": "Candice LeRae",
       "Type": "Daredevil",
-      "PersonaDescriptor": "All Risk, No Reward",
+      "PersonaDescriptor": "The Poison Pixie",
       "Tone": "Chaotic",
       "NaturalAlignment": "Face",
       "Durability": "ShortTerm",
@@ -6434,7 +6436,7 @@
     ],
     "Signature": [
       {
-        "Name": "No Brakes",
+        "Name": "Lionsault",
         "Move": {
           "Name": "Swanton Bomb",
           "Types": [
@@ -6462,16 +6464,16 @@
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Blair Davenport",
-      "Type": "Monster",
+      "Type": "Realist",
       "PersonaDescriptor": "The Standing Stone",
       "Tone": "Serious",
       "NaturalAlignment": "Heel",
       "Durability": "MediumTerm",
       "Freshness": 0.64,
       "GimmickTraits": [
-        "Immovable",
-        "Wordless",
-        "Sheer Mass"
+        "Stiff Striker",
+        "Vicious",
+        "Entitled"
       ],
       "AppealRatings": [
         {
@@ -6528,7 +6530,7 @@
     ],
     "Signature": [
       {
-        "Name": "Standing Stone",
+        "Name": "Spinning Side Slam",
         "Move": {
           "Name": "Spinning Side Slam",
           "Types": [
@@ -6557,15 +6559,15 @@
     "Gimmick": {
       "Name": "Maxxine Dupri",
       "Type": "Underdog",
-      "PersonaDescriptor": "Never Beaten, Never Booked",
+      "PersonaDescriptor": "Former Women's Intercontinental Champion",
       "Tone": "Inspirational",
       "NaturalAlignment": "Face",
       "Durability": "MediumTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
-        "Overlooked",
-        "Technically Sound",
-        "Patient"
+        "Determined",
+        "Upbeat",
+        "Improving"
       ],
       "AppealRatings": [
         {
@@ -6622,7 +6624,7 @@
     ],
     "Signature": [
       {
-        "Name": "Second Wind",
+        "Name": "Bridging Half Nelson Suplex",
         "Move": {
           "Name": "Bridging Half Nelson Suplex",
           "Types": [
@@ -6716,7 +6718,7 @@
     ],
     "Signature": [
       {
-        "Name": "Glass House",
+        "Name": "Jaded",
         "Move": {
           "Name": "Discus Forearm",
           "Types": [
@@ -6745,16 +6747,16 @@
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Jacy Jayne",
-      "Type": "Loner",
-      "PersonaDescriptor": "Speaks To No One",
-      "Tone": "Melancholic",
+      "Type": "Egotist",
+      "PersonaDescriptor": "Leader of Fatal Influence",
+      "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
       "Durability": "MediumTerm",
       "Freshness": 0.66,
       "GimmickTraits": [
-        "Silent",
-        "Withdrawn",
-        "Sudden"
+        "Mouthy",
+        "Cunning",
+        "Ringleader"
       ],
       "AppealRatings": [
         {
@@ -6811,7 +6813,7 @@
     ],
     "Signature": [
       {
-        "Name": "Nothing To Say",
+        "Name": "Dragon Sleeper",
         "Move": {
           "Name": "Dragon Sleeper",
           "Types": [
@@ -6840,9 +6842,9 @@
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Sol Ruca",
-      "Type": "Comedy",
-      "PersonaDescriptor": "The Enthusiast",
-      "Tone": "Humorous",
+      "Type": "Daredevil",
+      "PersonaDescriptor": "The Surfer",
+      "Tone": "Inspirational",
       "NaturalAlignment": "Face",
       "Durability": "ShortTerm",
       "Freshness": 0.74,
@@ -6910,7 +6912,7 @@
     ],
     "Signature": [
       {
-        "Name": "Big Finish",
+        "Name": "Sol Snatcher",
         "Move": {
           "Name": "Diving Crossbody",
           "Types": [
@@ -6940,15 +6942,15 @@
     "Gimmick": {
       "Name": "Ivy Nile",
       "Type": "Monster",
-      "PersonaDescriptor": "Hired Muscle",
+      "PersonaDescriptor": "The Pitbull",
       "Tone": "Violent",
       "NaturalAlignment": "Heel",
       "Durability": "ShortTerm",
       "Freshness": 0.6,
       "GimmickTraits": [
-        "Blunt",
-        "Heavy-Handed",
-        "Silent"
+        "Intense",
+        "Athletic",
+        "Submission Specialist"
       ],
       "AppealRatings": [
         {
@@ -7005,7 +7007,7 @@
     ],
     "Signature": [
       {
-        "Name": "Payday",
+        "Name": "Diamond Chain Lock",
         "Move": {
           "Name": "Torture Rack",
           "Types": [
@@ -7034,16 +7036,16 @@
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Thea Hail",
-      "Type": "Egotist",
-      "PersonaDescriptor": "The Model",
-      "Tone": "Arrogant",
-      "NaturalAlignment": "Heel",
+      "Type": "Underdog",
+      "PersonaDescriptor": "Chase U's Biggest Fan",
+      "Tone": "Humorous",
+      "NaturalAlignment": "Face",
       "Durability": "ShortTerm",
       "Freshness": 0.62,
       "GimmickTraits": [
-        "Vain",
-        "Sneering",
-        "Untested"
+        "Enthusiastic",
+        "Excitable",
+        "Young"
       ],
       "AppealRatings": [
         {
@@ -7129,16 +7131,16 @@
     "PreviousGimmicks": [],
     "Gimmick": {
       "Name": "Karmen Petrovic",
-      "Type": "Gimmickless",
-      "PersonaDescriptor": "Local Talent",
+      "Type": "Traditionalist",
+      "PersonaDescriptor": "Karate Black Belt",
       "Tone": "Serious",
       "NaturalAlignment": "Face",
       "Durability": "ShortTerm",
       "Freshness": 0.5,
       "GimmickTraits": [
-        "Unbranded",
-        "Competent",
-        "Forgettable"
+        "Martial Artist",
+        "Disciplined",
+        "Striker"
       ],
       "AppealRatings": [
         {
@@ -7195,7 +7197,7 @@
     ],
     "Signature": [
       {
-        "Name": "Clean Finish",
+        "Name": "Victory Roll",
         "Move": {
           "Name": "Victory Roll",
           "Types": [
@@ -7225,14 +7227,14 @@
     "Gimmick": {
       "Name": "Wren Sinclair",
       "Type": "Underdog",
-      "PersonaDescriptor": "Still Learning",
+      "PersonaDescriptor": "Catch-wrestling technician",
       "Tone": "Inspirational",
       "NaturalAlignment": "Face",
       "Durability": "ShortTerm",
       "Freshness": 0.56,
       "GimmickTraits": [
-        "Green",
-        "Willing",
+        "Technical",
+        "Scrappy",
         "Improving"
       ],
       "AppealRatings": [
@@ -7290,7 +7292,7 @@
     ],
     "Signature": [
       {
-        "Name": "First Step",
+        "Name": "Fisherman Suplex",
         "Move": {
           "Name": "Fisherman Suplex",
           "Types": [
@@ -8805,7 +8807,7 @@
       "Type": "Monster",
       "PersonaDescriptor": "The Samoan Werewolf",
       "Tone": "Violent",
-      "NaturalAlignment": "Tweener",
+      "NaturalAlignment": "Heel",
       "Durability": "LongTerm",
       "Freshness": 0.9,
       "GimmickTraits": [
@@ -8914,7 +8916,7 @@
       "Type": "Egotist",
       "PersonaDescriptor": "The Enforcer",
       "Tone": "Serious",
-      "NaturalAlignment": "Heel",
+      "NaturalAlignment": "Face",
       "Durability": "MediumTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
@@ -10018,7 +10020,7 @@
       "Type": "Showman",
       "PersonaDescriptor": "Swerve the Realest",
       "Tone": "Serious",
-      "NaturalAlignment": "Face",
+      "NaturalAlignment": "Heel",
       "Durability": "LongTerm",
       "Freshness": 0.84,
       "GimmickTraits": [
@@ -10132,7 +10134,7 @@
       "Type": "Superstar",
       "PersonaDescriptor": "The Cleaner",
       "Tone": "Inspirational",
-      "NaturalAlignment": "Face",
+      "NaturalAlignment": "Tweener",
       "Durability": "LongTerm",
       "Freshness": 0.78,
       "GimmickTraits": [
@@ -10151,7 +10153,6 @@
         }
       ],
       "PreviousNames": [
-        "Scott Carpenter"
       ]
     },
     "RingSkills": {
@@ -10343,7 +10344,7 @@
       "Type": "Rebel",
       "PersonaDescriptor": "The Death Rider",
       "Tone": "Violent",
-      "NaturalAlignment": "Face",
+      "NaturalAlignment": "Heel",
       "Durability": "LongTerm",
       "Freshness": 0.7,
       "GimmickTraits": [
@@ -11037,7 +11038,7 @@
     "Gimmick": {
       "Name": "Nic Nemeth",
       "Type": "Showman",
-      "PersonaDescriptor": "The Natural",
+      "PersonaDescriptor": "The Wanted Man",
       "Tone": "Arrogant",
       "NaturalAlignment": "Heel",
       "Durability": "MediumTerm",
@@ -11333,7 +11334,7 @@
       "Type": "Loner",
       "PersonaDescriptor": "The System's Exile",
       "Tone": "Serious",
-      "NaturalAlignment": "Tweener",
+      "NaturalAlignment": "Face",
       "Durability": "MediumTerm",
       "Freshness": 0.6,
       "GimmickTraits": [
@@ -11816,7 +11817,7 @@
     "Gimmick": {
       "Name": "Shotzi Blackheart",
       "Type": "Rebel",
-      "PersonaDescriptor": "Indy God",
+      "PersonaDescriptor": "The Ballsy Badass",
       "Tone": "Chaotic",
       "NaturalAlignment": "Face",
       "Durability": "MediumTerm",
