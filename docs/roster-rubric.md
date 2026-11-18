@@ -86,6 +86,23 @@ a 22-year-old rarely belongs above the 60s whatever their athleticism.
 | Toughness | 54–94 | 90+ famously hard — Gunther 94 |
 | Size (1–5) | 1–5 | 1 cruiserweight / small woman, 3 average, 5 giant — Gunther, Otis, Piper Niven |
 
+### Promo (`Promo`, 0–100 — docs/gimmick-plan.md Part 3)
+
+Placed on the charisma scale above. Most people are good at one or two of these and ordinary at
+the rest; a non-native English speaker working short promos, or somebody who rarely talks,
+shows it in delivery and improvisation and may still be strong in a set piece or a brawl.
+
+- `Delivery` (written words made their own) and `Improvisation` (live, with no script).
+- Staging: `Stillness` (seated, interviews), `RingPresence`, `CrowdWork` (roaming, call and
+  response), `SetPiece` (vignettes, produced pieces), `Physicality` (a promo that becomes a fight).
+- `Registers`: one to three of `Menacing`, `Angry`, `Emotional`, `Fearful`, `Funny`, `Arrogant`,
+  `Inspirational`, `Cold`, each with a `Rating` and an optional `Lean` (`Scripted` or `Free`)
+  where a note plainly comes off best one way.
+- `Range`: every register that is not natural to them.
+
+The first judgements, with each person's basis, sources and confidence, are in
+`docs/research/promo-skills-2026-11.json`.
+
 ## The entry
 
 Exactly the shape of the existing entries (see Chad Gable or Rhea Ripley in the file). Allowed
@@ -100,7 +117,7 @@ values:
   `Violent`, `SelfRighteous`, `Chaotic`
 - `Gimmick.NaturalAlignment`: `Face`, `Heel`, `Tweener` (their alignment in 2026)
 - `Gimmick.Durability`: `ShortTerm`, `MediumTerm`, `LongTerm`
-- `Gimmick.Freshness`: 0–1; `PopularityModifier`: about −5 to +10 like the file
+- `Gimmick.Freshness`: 0.5–1 (nobody starts worn — `CharacterFreshness`)
 - `AppealRatings[].Group`: `Casual`, `Hardcore`, `Families`, `Kids`, `International`, `Online`;
   `AppealScore` 0–1
 - Moves: `Types` from `Takedown`, `Throw`, `Slam`, `Submission`, `Strike`, `Aerial`, `Technical`;

@@ -540,6 +540,64 @@ Each step is reachable by the booker and legible in the report before it counts 
    - the upgradable creative team;
    - standing notes;
    - the rebuilt promo quality.
+
+   **Built (18 Nov 2026).** `Engine.Promos`, `Models.Person.PromoSkills`:
+   - **The three axes** are on every segment: form (scripted, bullet points, free rein),
+     staging (seated, in the ring, working the crowd, a set piece, physical; defaulting from
+     the segment's type and place) and register (the eight; defaulting to each speaker's own
+     note, from their gimmick's tone). The segment builder sets all three and shows each
+     speaker's expected read, naming the weak spot.
+   - **A promo's quality** is a weighted geometric mean of the person's form skill, staging
+     skill and register skill, so a real gap anywhere shows. Charisma adds 15% as presence.
+     - **Scripted** multiplies the writing and the delivery, so neither can carry the other.
+     - **Free** is improvisation alone.
+     - **Bullet points** are half of each.
+     - A register's form lean costs 15% in the other form.
+     - Working against the character costs 15–20%, e.g. a monster asked to be afraid.
+
+     How far a promo swings comes from the weakest skill being leaned on, whatever the form.
+     Below 30 the segment falls apart, and the report says which axis did it.
+   - **Removed:** the flat ×1.15 for unscripted promos and the rule that a scripted segment
+     could not botch. The doc 19 correction of 17 Nov is now true of the code.
+   - **The creative team** is 1–10, starting by tier (local 1 up to global 7). It is bought on
+     the business screen at 60 days of the new level's upkeep. Upkeep is 15 × (level² −
+     opening level²) a day, so the opening team is free: it is in the tier overheads the
+     business tests pin. Any promotion can buy to 10. Rivals write with their tier's team.
+   - **Standing notes:** a form for a wrestler's usual material, and optionally for serious
+     material. Set on the profile, offered in the builder ("Your note says scripted for this —
+     Use it").
+   - **The profile** shows how somebody talks in words that sharpen with time:
+     - anybody: what they are known for;
+     - three months with you: broad bands;
+     - a year: the exact word and each note's form lean.
+   - **Calibration:** a promo's 0–100 meets the segment's old 0–5 charisma scale through
+     `Promos.Centring`, measured: the shipped roster's mean charisma (3.569) less its mean
+     promo at bullet points with established-tier writers (3.261) = 0.309. It is pinned the way
+     `TypicalInvestment` is. Both forms give the same mean impact for a person equally good at
+     each (3.747 and 3.747).
+   - **The data:** all 124 real wrestlers judged on the promo rubric (`docs/roster-rubric.md`)
+     by four research agents, 31 each, on public reputation, reviews and interviews.
+     - Confidence: 22 high, 63 medium, 39 low. The low ones sit near their charisma.
+     - The four batches agree on the scale: each batch's median offset from charisma was −2
+       to −4.
+     - The basis, sources and confidence for each person are kept in
+       `docs/research/promo-skills-2026-11.json`. Some sources are search-result pages that
+       were not opened, and some low-confidence entries have none. Both are recorded there.
+   - Generated wrestlers copy their template's shape, moved to their own charisma and
+     jittered from a stream seeded by their name, so no other generated number moved.
+
+   Not built, written down:
+   - **A creative team for rivals that changes.** Rivals do not buy writers.
+   - **Room strengths.** The 1–10 team writes every register equally. The writers' room
+     (§3.3) is where a room good at drama and poor at comedy belongs.
+   - **Chemistry** between particular speakers in a confrontation.
+   - **Data questions found by the research, left for the owner** (real people, so not
+     changed here):
+     - Chelsea Green is filed as a melancholic loner, and Sheamus as "Never Speaks", against
+       their actual work.
+     - Roxanne Perez is filed as a face; she has been a heel since about 2024.
+     - Two real names may be wrong: Talla Tonga ("Taula Fifita") and Zaria ("Daria Hodder").
+       One agent recalled otherwise, from memory and unchecked.
 4. **Turns** (Part 5): the cold turn, teases and anticipation, with rivals.
 5. **Repackage and evolution** (Part 6): the real-people toggle, with rivals.
 6. Later, written down so as not to look finished: managers and mouthpieces (doc 19 §7);

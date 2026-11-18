@@ -182,12 +182,52 @@ else
                 <div class="kv mt"><span>Level</span><span>@career.Promotion.TierLabel</span></div>
                 <div class="small muted">Promotions do not move between levels yet.</div>
             </section>
+
+            @* The creative team (docs/gimmick-plan.md §3.3). Matters in proportion to how much
+               of a promo is written: everything in a scripted one, nothing in a free one. A
+               stopgap for a writers' room of named writers, and said so where it is bought. *@
+            @{ int creative = Promos.CreativeOf(career.Promotion); }
+            <section class="panel">
+                <div class="panel__title">Creative team</div>
+                <div class="kv"><span>Level</span><span class="tabnum">@creative of @Promos.MaxCreative</span></div>
+                <div class="small muted">@Promos.CreativeWords(creative). It writes whatever of a promo is scripted: all of a scripted one, the beats of a bullet-point one, none of one handed over.</div>
+                <div class="kv mt"><span>Upkeep beyond the opening team</span><span class="tabnum">@Money.Format(Promos.UpkeepPerDay(career.Promotion.Tier, creative)) a day</span></div>
+                @if (creative < Promos.MaxCreative)
+                {
+                    <div class="kv"><span>Next level</span><span class="tabnum">@Money.Format(Promos.UpgradeCost(creative + 1)) now, then @Money.Format(Promos.UpkeepPerDay(career.Promotion.Tier, creative + 1)) a day</span></div>
+                }
+                <div class="row mt">
+                    <button class="btn btn--sm btn--primary" disabled="@(creative >= Promos.MaxCreative)" @onclick="UpgradeCreative">Hire up a level</button>
+                    <button class="btn btn--sm btn--ghost" disabled="@(creative <= Promos.MinCreative)" @onclick="DowngradeCreative">Let a level go</button>
+                </div>
+                @if (creativeRefusal is { } why)
+                {
+                    <div class="small heel mt">@why</div>
+                }
+                <div class="small muted mt">A stand-in for hiring individual writers with their own strengths, which is coming.</div>
+            </section>
         </aside>
     </div>
 }
 
 @code {
     [Parameter] public BusinessView View { get; set; }
+
+    private string? creativeRefusal;
+
+    private async Task UpgradeCreative()
+    {
+        if (State.Career is not { } career) return;
+        creativeRefusal = career.UpgradeCreative();
+        if (creativeRefusal is null) await State.SaveAsync();
+    }
+
+    private async Task DowngradeCreative()
+    {
+        if (State.Career is not { } career) return;
+        creativeRefusal = career.DowngradeCreative();
+        if (creativeRefusal is null) await State.SaveAsync();
+    }
 
     /// <summary>How often the promotion runs, from the next sixty days of its calendar, else its last sixty.</summary>
     private static double ShowsPerDay(Career career)

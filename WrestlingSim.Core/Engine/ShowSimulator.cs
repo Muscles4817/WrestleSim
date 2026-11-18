@@ -1,4 +1,4 @@
-using WrestlingSim.Enums;
+﻿using WrestlingSim.Enums;
 using WrestlingSim.Models;
 using WrestlingSim.Models.Segment;
 using WrestlingSim.Models.World;
@@ -47,6 +47,9 @@ namespace WrestlingSim.Engine
         /// <summary>Most a card can lose for running past its allotted runtime.</summary>
         private const double MaxOverrunPenalty = 0.35;
 
+        /// <summary>The promotion's creative team, 1–10, for whatever of a promo is written.</summary>
+        private readonly int _creative;
+
         public ShowSimulator(
             FeudBook feudBook,
             int? seed = null,
@@ -54,8 +57,10 @@ namespace WrestlingSim.Engine
             BrandContext? brands = null,
             StipulationBook? stipulations = null,
             PromotionTier tier = PromotionTier.Established,
-            Func<Wrestler, double>? response = null)
+            Func<Wrestler, double>? response = null,
+            int creative = 5)
         {
+            _creative     = creative;
             _response     = response;
             _tier         = tier;
             _feudBook     = feudBook;
@@ -838,8 +843,10 @@ namespace WrestlingSim.Engine
         private double RunSegment(Segment segment, CardItemResult itemResult, ShowResult showResult,
             DateOnly showDate)
         {
-            var segResult = new SegmentSimulator(_seed).Simulate(segment);
+            var segResult = new SegmentSimulator(_seed, _creative).Simulate(segment);
             itemResult.SegmentResult = segResult;
+
+            foreach (var line in segResult.PromoLines) itemResult.Notes.Add(line);
 
             if (segResult.Botched) itemResult.Notes.Add("Botched.");
             if (segResult.Injured != null) itemResult.Notes.Add($"{segResult.Injured.RingName} injured.");

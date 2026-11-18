@@ -1,4 +1,4 @@
-@*
+﻿@*
     One wrestler, everything the game knows about them. Opened from any name.
 
     There was no such screen: a roster row did not open, so "who is this, how good are they,
@@ -345,6 +345,40 @@ else
             </section>
         }
 
+        @* How they talk (docs/gimmick-plan.md Part 3), in words that sharpen with time, and
+           the standing note that pre-fills how their promos are written. *@
+        @{ var promo = Promos.Describe(career, w); }
+        <section class="panel">
+            <div class="panel__title">On the microphone</div>
+            @foreach (var line in promo.Lines)
+            {
+                <div class="kv"><span>@line.Label</span><span>@line.Words</span></div>
+            }
+            <div class="small muted">@promo.Knowledge</div>
+            @if (career is not null)
+            {
+                var note = career.PromoNotes.TryGetValue(w.Id, out var n) ? n : null;
+                <div class="kv mt">
+                    <span>Write their promos</span>
+                    <select class="input input--sm" value="@(note?.Usual.ToString() ?? "")" @onchange="e => SetNote(w, e.Value?.ToString(), serious: false)">
+                        <option value="">no note</option>
+                        @foreach (var f in Enum.GetValues<PromoForm>()) { <option value="@f">@Promos.Name(f)</option> }
+                    </select>
+                </div>
+                @if (note is not null)
+                {
+                    <div class="kv">
+                        <span>Anything serious</span>
+                        <select class="input input--sm" value="@(note.Serious?.ToString() ?? "")" @onchange="e => SetNote(w, e.Value?.ToString(), serious: true)">
+                            <option value="">the same</option>
+                            @foreach (var f in Enum.GetValues<PromoForm>()) { <option value="@f">@Promos.Name(f)</option> }
+                        </select>
+                    </div>
+                }
+                <div class="small muted">A note pre-fills the segment builder. You can still book any promo any way.</div>
+            }
+        </section>
+
         <section class="panel">
             <div class="panel__title">Stories and titles</div>
             @{ var feuds = State.FeudBook.For(w); }
@@ -480,5 +514,20 @@ else
         w.TouringUntil = null;
         await State.SaveAsync();
         State.Notify();
+    }
+
+    /// <summary>Sets or clears a standing note on how this wrestler's promos are written.</summary>
+    private async Task SetNote(Wrestler w, string? value, bool serious)
+    {
+        if (State.Career is not { } career) return;
+        PromoForm? form = Enum.TryParse<PromoForm>(value, out var f) ? f : null;
+        if (!serious)
+        {
+            if (form is null) career.PromoNotes.Remove(w.Id);
+            else if (career.PromoNotes.TryGetValue(w.Id, out var existing)) existing.Usual = form.Value;
+            else career.PromoNotes[w.Id] = new PromoNote { Usual = form.Value };
+        }
+        else if (career.PromoNotes.TryGetValue(w.Id, out var note)) note.Serious = form;
+        await State.SaveAsync();
     }
 }

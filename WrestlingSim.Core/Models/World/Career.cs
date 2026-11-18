@@ -1,4 +1,4 @@
-using WrestlingSim.Engine;
+﻿using WrestlingSim.Engine;
 using WrestlingSim.Enums;
 
 namespace WrestlingSim.Models.World
@@ -639,7 +639,48 @@ namespace WrestlingSim.Models.World
         }
 
         /// <summary>What the promotion costs to keep open for a day, show or no show.</summary>
-        public decimal DailyOverhead => BoxOffice.For(Promotion.Tier).DailyOverhead;
+        public decimal DailyOverhead => BoxOffice.For(Promotion.Tier).DailyOverhead
+                                        + Promos.UpkeepPerDay(Promotion.Tier, Promos.CreativeOf(Promotion));
+
+        /// <summary>
+        /// Buys the creative team one level up (docs/gimmick-plan.md §3.3), paid now; the new
+        /// level's upkeep is in <see cref="DailyOverhead"/> from tomorrow. Null when it went
+        /// through, otherwise why not.
+        /// </summary>
+        public string? UpgradeCreative()
+        {
+            int level = Promos.CreativeOf(Promotion);
+            if (level >= Promos.MaxCreative) return "The creative team is already the best there is.";
+            decimal cost = Promos.UpgradeCost(level + 1);
+            if (Books.Cash < cost) return $"It costs {cost:C0} and the promotion has {Books.Cash:C0}.";
+            Books.Cash -= cost;
+            Books.Overheads += cost;
+            Promotion.CreativeLevel = level + 1;
+            AddNews($"The creative team is now level {level + 1}: {Promos.CreativeWords(level + 1).ToLowerInvariant()}.", aboutYou: true);
+            return null;
+        }
+
+        /// <summary>Lets the creative team go one level down, to save its upkeep. Nothing is refunded.</summary>
+        public string? DowngradeCreative()
+        {
+            int level = Promos.CreativeOf(Promotion);
+            if (level <= Promos.MinCreative) return "There is nobody left to let go.";
+            Promotion.CreativeLevel = level - 1;
+            return null;
+        }
+
+        /// <summary>
+        /// Standing notes on how each wrestler's promos are written, by wrestler id: a form for
+        /// their usual material and, where it differs, for serious material — "script anything
+        /// serious" (plan §3.4). They pre-fill the segment builder; the booker can still override.
+        /// </summary>
+        public Dictionary<string, PromoNote> PromoNotes { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>The form the notes ask for this wrestler in this register, or null for no note.</summary>
+        public PromoForm? NotedForm(Wrestler w, PromoRegister register) =>
+            PromoNotes.TryGetValue(w.Id, out var note)
+                ? (register != PromoRegister.Funny && note.Serious is { } serious ? serious : note.Usual)
+                : null;
 
         /// <summary>
         /// Renews the television deal if its term has run out. A loop rather than a check, so
@@ -712,7 +753,8 @@ namespace WrestlingSim.Models.World
             var result = show.Card.Count > 0
                 ? new ShowSimulator(FeudBook, titles: Titles, brands: brands,
                                     stipulations: Stipulations, tier: Promotion.Tier,
-                                    response: w => Response(w, show.Type))
+                                    response: w => Response(w, show.Type),
+                                    creative: Promos.CreativeOf(Promotion))
                     .Simulate(show.ToShow())
                 : new ShowResult { BudgetMinutes = show.RuntimeMinutes };
 

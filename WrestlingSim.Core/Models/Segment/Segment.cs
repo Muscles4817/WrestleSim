@@ -1,4 +1,4 @@
-using WrestlingSim.Enums;
+﻿using WrestlingSim.Enums;
 
 namespace WrestlingSim.Models.Segment
 {
@@ -9,7 +9,24 @@ namespace WrestlingSim.Models.Segment
         public SegmentLocation Location { get; set; }
         public List<SegmentAction> Actions { get; set; } = new();
         public List<Wrestler> Participants { get; set; } = new();
-        public bool IsScripted { get; set; } // False = more botch risk
+        /// <summary>
+        /// How much of it is written (docs/gimmick-plan.md Part 3). Neither form is safer or
+        /// better by rule; what each gets depends on the writers and the people talking.
+        /// </summary>
+        public PromoForm Form { get; set; } = PromoForm.Scripted;
+
+        /// <summary>The old two-way switch, kept for the console and old saves: scripted, or handed the microphone.</summary>
+        public bool IsScripted
+        {
+            get => Form == PromoForm.Scripted;
+            set => Form = value ? PromoForm.Scripted : PromoForm.Free;
+        }
+
+        /// <summary>What it physically asks of them. Null reads it from the segment's type and place.</summary>
+        public PromoStaging? Staging { get; set; }
+
+        /// <summary>What it is meant to make the crowd feel. Null lets each speaker play their own natural note.</summary>
+        public PromoRegister? Register { get; set; }
         public double AudienceImpact { get; set; } // Set by SegmentSimulator
         public double HeatImpact { get; set; } // Feud heat generated
 

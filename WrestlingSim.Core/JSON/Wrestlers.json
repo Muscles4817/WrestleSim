@@ -6,6 +6,7 @@
     "DebutedIn": 2013,
     "Overness": 95,
     "Charisma": 4.5,
+    "Promo": {"Delivery": 78, "Improvisation": 76, "Stillness": 76, "RingPresence": 92, "CrowdWork": 90, "SetPiece": 82, "Physicality": 92, "Registers": [{"Register": "Menacing", "Rating": 90}, {"Register": "Arrogant", "Rating": 82}], "Range": 64},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -100,6 +101,7 @@
     "DebutedIn": 2002,
     "Overness": 95,
     "Charisma": 4.7,
+    "Promo": {"Delivery": 90, "Improvisation": 92, "Stillness": 88, "RingPresence": 93, "CrowdWork": 88, "SetPiece": 82, "Physicality": 86, "Registers": [{"Register": "Arrogant", "Rating": 93}, {"Register": "Angry", "Rating": 90, "Lean": "Free"}, {"Register": "Funny", "Rating": 85}], "Range": 80},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -194,6 +196,7 @@
     "DebutedIn": 2012,
     "Overness": 92,
     "Charisma": 4.3,
+    "Promo": {"Delivery": 80, "Improvisation": 66, "Stillness": 74, "RingPresence": 86, "CrowdWork": 74, "SetPiece": 84, "Physicality": 80, "Registers": [{"Register": "Arrogant", "Rating": 88}, {"Register": "Emotional", "Rating": 72, "Lean": "Scripted"}], "Range": 64},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -286,6 +289,7 @@
     "DebutedIn": 2016,
     "Overness": 90,
     "Charisma": 4.2,
+    "Promo": {"Delivery": 74, "Improvisation": 62, "Stillness": 70, "RingPresence": 82, "CrowdWork": 84, "SetPiece": 78, "Physicality": 82, "Registers": [{"Register": "Inspirational", "Rating": 80, "Lean": "Scripted"}, {"Register": "Emotional", "Rating": 74, "Lean": "Scripted"}, {"Register": "Arrogant", "Rating": 64}], "Range": 62},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -378,6 +382,7 @@
     "DebutedIn": 2004,
     "Overness": 85,
     "Charisma": 3.8,
+    "Promo": {"Delivery": 60, "Improvisation": 62, "Stillness": 55, "RingPresence": 70, "CrowdWork": 66, "SetPiece": 82, "Physicality": 84, "Registers": [{"Register": "Funny", "Rating": 78, "Lean": "Free"}, {"Register": "Menacing", "Rating": 76}], "Range": 55},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -472,6 +477,7 @@
     "DebutedIn": 2008,
     "Overness": 83,
     "Charisma": 4.1,
+    "Promo": {"Delivery": 82, "Improvisation": 80, "Stillness": 78, "RingPresence": 82, "CrowdWork": 84, "SetPiece": 82, "Physicality": 74, "Registers": [{"Register": "Arrogant", "Rating": 86}, {"Register": "Funny", "Rating": 82, "Lean": "Free"}, {"Register": "Emotional", "Rating": 76}], "Range": 76},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -566,6 +572,7 @@
     "DebutedIn": 2007,
     "Overness": 85,
     "Charisma": 3.5,
+    "Promo": {"Delivery": 40, "Improvisation": 32, "Stillness": 48, "RingPresence": 55, "CrowdWork": 72, "SetPiece": 66, "Physicality": 76, "Registers": [{"Register": "Emotional", "Rating": 60}, {"Register": "Arrogant", "Rating": 52}], "Range": 38},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -660,6 +667,7 @@
     "DebutedIn": 2015,
     "Overness": 89,
     "Charisma": 4.2,
+    "Promo": {"Delivery": 80, "Improvisation": 72, "Stillness": 78, "RingPresence": 80, "CrowdWork": 76, "SetPiece": 86, "Physicality": 76, "Registers": [{"Register": "Emotional", "Rating": 82}, {"Register": "Arrogant", "Rating": 76}, {"Register": "Funny", "Rating": 74}], "Range": 66},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -752,6 +760,7 @@
     "DebutedIn": 2015,
     "Overness": 58,
     "Charisma": 2.5,
+    "Promo": {"Delivery": 50, "Improvisation": 46, "Stillness": 60, "RingPresence": 48, "CrowdWork": 36, "SetPiece": 56, "Physicality": 76, "Registers": [{"Register": "Cold", "Rating": 64}, {"Register": "Menacing", "Rating": 60}], "Range": 32},
     "Style": "Grappler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -844,6 +853,7 @@
     "DebutedIn": 2013,
     "Overness": 76,
     "Charisma": 3.2,
+    "Promo": {"Delivery": 58, "Improvisation": 54, "Stillness": 56, "RingPresence": 62, "CrowdWork": 60, "SetPiece": 62, "Physicality": 82, "Registers": [{"Register": "Angry", "Rating": 62}, {"Register": "Inspirational", "Rating": 58}], "Range": 42},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -938,6 +948,7 @@
     "DebutedIn": 2010,
     "Overness": 48,
     "Charisma": 4.0,
+    "Promo": {"Delivery": 82, "Improvisation": 78, "Stillness": 72, "RingPresence": 80, "CrowdWork": 74, "SetPiece": 76, "Physicality": 58, "Registers": [{"Register": "Arrogant", "Rating": 84}, {"Register": "Angry", "Rating": 72}, {"Register": "Emotional", "Rating": 68}], "Range": 66},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -1032,6 +1043,7 @@
     "DebutedIn": 2007,
     "Overness": 50,
     "Charisma": 3.4,
+    "Promo": {"Delivery": 64, "Improvisation": 62, "Stillness": 60, "RingPresence": 66, "CrowdWork": 70, "SetPiece": 66, "Physicality": 82, "Registers": [{"Register": "Menacing", "Rating": 66}, {"Register": "Funny", "Rating": 68}], "Range": 54},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -1127,6 +1139,7 @@
     "DebutedIn": 2013,
     "Overness": 36,
     "Charisma": 2.8,
+    "Promo": {"Delivery": 58, "Improvisation": 56, "Stillness": 60, "RingPresence": 58, "CrowdWork": 58, "SetPiece": 60, "Physicality": 64, "Registers": [{"Register": "Emotional", "Rating": 64}, {"Register": "Inspirational", "Rating": 60}], "Range": 48},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -1222,6 +1235,7 @@
     "DebutedIn": 2018,
     "Overness": 26,
     "Charisma": 2.6,
+    "Promo": {"Delivery": 48, "Improvisation": 46, "Stillness": 46, "RingPresence": 52, "CrowdWork": 58, "SetPiece": 56, "Physicality": 62, "Registers": [{"Register": "Funny", "Rating": 52}, {"Register": "Inspirational", "Rating": 50}], "Range": 40},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -1317,6 +1331,7 @@
     "DebutedIn": 2017,
     "Overness": 24,
     "Charisma": 2.2,
+    "Promo": {"Delivery": 46, "Improvisation": 38, "Stillness": 46, "RingPresence": 44, "CrowdWork": 38, "SetPiece": 52, "Physicality": 52, "Registers": [{"Register": "Cold", "Rating": 50}], "Range": 34},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -1409,6 +1424,7 @@
     "DebutedIn": 2010,
     "Overness": 96,
     "Charisma": 4.6,
+    "Promo": {"Delivery": 88, "Improvisation": 76, "Stillness": 95, "RingPresence": 92, "CrowdWork": 86, "SetPiece": 88, "Physicality": 86, "Registers": [{"Register": "Cold", "Rating": 94}, {"Register": "Arrogant", "Rating": 92}, {"Register": "Menacing", "Rating": 90}], "Range": 62},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -1504,6 +1520,7 @@
     "DebutedIn": 2006,
     "Overness": 93,
     "Charisma": 4.5,
+    "Promo": {"Delivery": 92, "Improvisation": 74, "Stillness": 90, "RingPresence": 90, "CrowdWork": 84, "SetPiece": 88, "Physicality": 72, "Registers": [{"Register": "Inspirational", "Rating": 93, "Lean": "Scripted"}, {"Register": "Emotional", "Rating": 90, "Lean": "Scripted"}, {"Register": "Arrogant", "Rating": 78}], "Range": 74},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -1598,6 +1615,7 @@
     "DebutedIn": 2004,
     "Overness": 90,
     "Charisma": 4.8,
+    "Promo": {"Delivery": 92, "Improvisation": 90, "Stillness": 90, "RingPresence": 95, "CrowdWork": 96, "SetPiece": 90, "Physicality": 88, "Registers": [{"Register": "Arrogant", "Rating": 95}, {"Register": "Angry", "Rating": 90}, {"Register": "Funny", "Rating": 86}], "Range": 86},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -1693,6 +1711,7 @@
     "DebutedIn": 2000,
     "Overness": 88,
     "Charisma": 4.2,
+    "Promo": {"Delivery": 80, "Improvisation": 70, "Stillness": 88, "RingPresence": 80, "CrowdWork": 70, "SetPiece": 82, "Physicality": 88, "Registers": [{"Register": "Menacing", "Rating": 90}, {"Register": "Cold", "Rating": 88}, {"Register": "Emotional", "Rating": 66, "Lean": "Scripted"}], "Range": 55},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -1788,6 +1807,7 @@
     "DebutedIn": 2005,
     "Overness": 86,
     "Charisma": 3.2,
+    "Promo": {"Delivery": 80, "Improvisation": 52, "Stillness": 82, "RingPresence": 76, "CrowdWork": 44, "SetPiece": 70, "Physicality": 72, "Registers": [{"Register": "Cold", "Rating": 84}, {"Register": "Arrogant", "Rating": 78}, {"Register": "Menacing", "Rating": 74}], "Range": 48},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -1883,6 +1903,7 @@
     "DebutedIn": 2001,
     "Overness": 83,
     "Charisma": 4.1,
+    "Promo": {"Delivery": 86, "Improvisation": 82, "Stillness": 82, "RingPresence": 86, "CrowdWork": 78, "SetPiece": 80, "Physicality": 88, "Registers": [{"Register": "Angry", "Rating": 90}, {"Register": "Arrogant", "Rating": 82}, {"Register": "Inspirational", "Rating": 78}], "Range": 76},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -1977,6 +1998,7 @@
     "DebutedIn": 2002,
     "Overness": 91,
     "Charisma": 4.4,
+    "Promo": {"Delivery": 88, "Improvisation": 86, "Stillness": 90, "RingPresence": 86, "CrowdWork": 86, "SetPiece": 86, "Physicality": 78, "Registers": [{"Register": "Emotional", "Rating": 94}, {"Register": "Funny", "Rating": 88}, {"Register": "Inspirational", "Rating": 86}], "Range": 86},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -2072,6 +2094,7 @@
     "DebutedIn": 2003,
     "Overness": 77,
     "Charisma": 4.9,
+    "Promo": {"Delivery": 92, "Improvisation": 97, "Stillness": 82, "RingPresence": 98, "CrowdWork": 99, "SetPiece": 84, "Physicality": 80, "Registers": [{"Register": "Arrogant", "Rating": 97}, {"Register": "Funny", "Rating": 88, "Lean": "Free"}], "Range": 72},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -2168,6 +2191,7 @@
     "DebutedIn": 2000,
     "Overness": 74,
     "Charisma": 4.3,
+    "Promo": {"Delivery": 86, "Improvisation": 90, "Stillness": 84, "RingPresence": 88, "CrowdWork": 86, "SetPiece": 82, "Physicality": 90, "Registers": [{"Register": "Angry", "Rating": 92}, {"Register": "Funny", "Rating": 88, "Lean": "Free"}, {"Register": "Arrogant", "Rating": 86}], "Range": 84},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -2263,6 +2287,7 @@
     "DebutedIn": 2016,
     "Overness": 79,
     "Charisma": 3.3,
+    "Promo": {"Delivery": 62, "Improvisation": 58, "Stillness": 48, "RingPresence": 66, "CrowdWork": 56, "SetPiece": 66, "Physicality": 90, "Registers": [{"Register": "Angry", "Rating": 74}, {"Register": "Menacing", "Rating": 70}], "Range": 40},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -2356,6 +2381,7 @@
     "DebutedIn": 2003,
     "Overness": 55,
     "Charisma": 2.9,
+    "Promo": {"Delivery": 60, "Improvisation": 52, "Stillness": 58, "RingPresence": 56, "CrowdWork": 54, "SetPiece": 62, "Physicality": 62, "Registers": [{"Register": "Arrogant", "Rating": 64}, {"Register": "Inspirational", "Rating": 50, "Lean": "Scripted"}], "Range": 46},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -2450,6 +2476,7 @@
     "DebutedIn": 2003,
     "Overness": 70,
     "Charisma": 3.0,
+    "Promo": {"Delivery": 68, "Improvisation": 58, "Stillness": 64, "RingPresence": 64, "CrowdWork": 58, "SetPiece": 66, "Physicality": 62, "Registers": [{"Register": "Arrogant", "Rating": 70}, {"Register": "Funny", "Rating": 62, "Lean": "Scripted"}], "Range": 58},
     "Style": "Grappler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -2544,6 +2571,7 @@
     "DebutedIn": 2015,
     "Overness": 54,
     "Charisma": 3.6,
+    "Promo": {"Delivery": 52, "Improvisation": 62, "Stillness": 48, "RingPresence": 70, "CrowdWork": 82, "SetPiece": 80, "Physicality": 82, "Registers": [{"Register": "Funny", "Rating": 84, "Lean": "Free"}], "Range": 34},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -2639,6 +2667,7 @@
     "DebutedIn": 2005,
     "Overness": 40,
     "Charisma": 2.4,
+    "Promo": {"Delivery": 45, "Improvisation": 40, "Stillness": 35, "RingPresence": 45, "CrowdWork": 60, "SetPiece": 55, "Physicality": 55, "Registers": [{"Register": "Funny", "Rating": 62, "Lean": "Free"}, {"Register": "Angry", "Rating": 45}], "Range": 35},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -2731,6 +2760,7 @@
     "DebutedIn": 2019,
     "Overness": 23,
     "Charisma": 1.6,
+    "Promo": {"Delivery": 30, "Improvisation": 26, "Stillness": 36, "RingPresence": 34, "CrowdWork": 28, "SetPiece": 44, "Physicality": 62, "Registers": [{"Register": "Angry", "Rating": 40}], "Range": 20},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -2824,6 +2854,7 @@
     "DebutedIn": 1997,
     "Overness": 89,
     "Charisma": 4.6,
+    "Promo": {"Delivery": 90, "Improvisation": 95, "Stillness": 92, "RingPresence": 95, "CrowdWork": 92, "SetPiece": 82, "Physicality": 80, "Registers": [{"Register": "Angry", "Rating": 94}, {"Register": "Arrogant", "Rating": 92}, {"Register": "Emotional", "Rating": 88}], "Range": 88},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -2921,6 +2952,7 @@
     "DebutedIn": 2005,
     "Overness": 82,
     "Charisma": 3.6,
+    "Promo": {"Delivery": 72, "Improvisation": 64, "Stillness": 72, "RingPresence": 70, "CrowdWork": 66, "SetPiece": 76, "Physicality": 78, "Registers": [{"Register": "Menacing", "Rating": 74}, {"Register": "Cold", "Rating": 70}, {"Register": "Inspirational", "Rating": 62, "Lean": "Scripted"}], "Range": 55},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -3014,6 +3046,7 @@
     "DebutedIn": 2002,
     "Overness": 78,
     "Charisma": 3.2,
+    "Promo": {"Delivery": 52, "Improvisation": 50, "Stillness": 60, "RingPresence": 70, "CrowdWork": 72, "SetPiece": 78, "Physicality": 82, "Registers": [{"Register": "Menacing", "Rating": 72}, {"Register": "Cold", "Rating": 70, "Lean": "Scripted"}], "Range": 44},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -3111,6 +3144,7 @@
     "DebutedIn": 2001,
     "Overness": 76,
     "Charisma": 4.4,
+    "Promo": {"Delivery": 74, "Improvisation": 62, "Stillness": 72, "RingPresence": 78, "CrowdWork": 70, "SetPiece": 92, "Physicality": 78, "Registers": [{"Register": "Menacing", "Rating": 80}, {"Register": "Arrogant", "Rating": 76}, {"Register": "Cold", "Rating": 72}], "Range": 60},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -3208,6 +3242,7 @@
     "DebutedIn": 2007,
     "Overness": 69,
     "Charisma": 3.1,
+    "Promo": {"Delivery": 56, "Improvisation": 58, "Stillness": 60, "RingPresence": 70, "CrowdWork": 92, "SetPiece": 66, "Physicality": 76, "Registers": [{"Register": "Emotional", "Rating": 70}, {"Register": "Angry", "Rating": 64}, {"Register": "Inspirational", "Rating": 60}], "Range": 44},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -3301,6 +3336,7 @@
     "DebutedIn": 2002,
     "Overness": 60,
     "Charisma": 3.4,
+    "Promo": {"Delivery": 72, "Improvisation": 70, "Stillness": 66, "RingPresence": 72, "CrowdWork": 70, "SetPiece": 72, "Physicality": 84, "Registers": [{"Register": "Angry", "Rating": 72}, {"Register": "Funny", "Rating": 66, "Lean": "Free"}, {"Register": "Arrogant", "Rating": 68}], "Range": 58},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -3398,6 +3434,7 @@
     "DebutedIn": 2015,
     "Overness": 66,
     "Charisma": 4.6,
+    "Promo": {"Delivery": 86, "Improvisation": 88, "Stillness": 72, "RingPresence": 90, "CrowdWork": 92, "SetPiece": 84, "Physicality": 76, "Registers": [{"Register": "Arrogant", "Rating": 88}, {"Register": "Funny", "Rating": 84}, {"Register": "Inspirational", "Rating": 74}], "Range": 70},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -3495,6 +3532,7 @@
     "DebutedIn": 2007,
     "Overness": 62,
     "Charisma": 4.3,
+    "Promo": {"Delivery": 80, "Improvisation": 82, "Stillness": 72, "RingPresence": 84, "CrowdWork": 86, "SetPiece": 78, "Physicality": 82, "Registers": [{"Register": "Funny", "Rating": 84}, {"Register": "Arrogant", "Rating": 78}, {"Register": "Angry", "Rating": 72}], "Range": 72},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -3596,6 +3634,7 @@
     "DebutedIn": 2007,
     "Overness": 64,
     "Charisma": 2.2,
+    "Promo": {"Delivery": 46, "Improvisation": 52, "Stillness": 42, "RingPresence": 48, "CrowdWork": 44, "SetPiece": 45, "Physicality": 66, "Registers": [{"Register": "Menacing", "Rating": 55}, {"Register": "Arrogant", "Rating": 50}], "Range": 36},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -3689,6 +3728,7 @@
     "DebutedIn": 2012,
     "Overness": 55,
     "Charisma": 2.6,
+    "Promo": {"Delivery": 62, "Improvisation": 50, "Stillness": 58, "RingPresence": 58, "CrowdWork": 48, "SetPiece": 66, "Physicality": 76, "Registers": [{"Register": "Angry", "Rating": 70}, {"Register": "Emotional", "Rating": 66}, {"Register": "Menacing", "Rating": 60}], "Range": 42},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -3786,6 +3826,7 @@
     "DebutedIn": 2008,
     "Overness": 70,
     "Charisma": 4.0,
+    "Promo": {"Delivery": 84, "Improvisation": 70, "Stillness": 78, "RingPresence": 82, "CrowdWork": 74, "SetPiece": 82, "Physicality": 76, "Registers": [{"Register": "Arrogant", "Rating": 88}, {"Register": "Cold", "Rating": 72}], "Range": 64},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -3880,6 +3921,7 @@
     "DebutedIn": 2012,
     "Overness": 58,
     "Charisma": 3.5,
+    "Promo": {"Delivery": 64, "Improvisation": 60, "Stillness": 62, "RingPresence": 64, "CrowdWork": 72, "SetPiece": 70, "Physicality": 68, "Registers": [{"Register": "Funny", "Rating": 68}, {"Register": "Inspirational", "Rating": 58}], "Range": 55},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -3974,6 +4016,7 @@
     "DebutedIn": 2014,
     "Overness": 59,
     "Charisma": 3.9,
+    "Promo": {"Delivery": 80, "Improvisation": 76, "Stillness": 76, "RingPresence": 80, "CrowdWork": 72, "SetPiece": 74, "Physicality": 62, "Registers": [{"Register": "Arrogant", "Rating": 82}, {"Register": "Cold", "Rating": 70}, {"Register": "Emotional", "Rating": 66}], "Range": 64},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -4071,6 +4114,7 @@
     "DebutedIn": 2012,
     "Overness": 61,
     "Charisma": 2.8,
+    "Promo": {"Delivery": 62, "Improvisation": 55, "Stillness": 58, "RingPresence": 62, "CrowdWork": 55, "SetPiece": 60, "Physicality": 60, "Registers": [{"Register": "Arrogant", "Rating": 66}, {"Register": "Angry", "Rating": 58}], "Range": 50},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -4164,6 +4208,7 @@
     "DebutedIn": 2005,
     "Overness": 45,
     "Charisma": 3.3,
+    "Promo": {"Delivery": 68, "Improvisation": 70, "Stillness": 64, "RingPresence": 66, "CrowdWork": 72, "SetPiece": 68, "Physicality": 56, "Registers": [{"Register": "Funny", "Rating": 74, "Lean": "Free"}, {"Register": "Emotional", "Rating": 62}], "Range": 54},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -4272,6 +4317,7 @@
     "DebutedIn": 2011,
     "Overness": 36,
     "Charisma": 3.7,
+    "Promo": {"Delivery": 56, "Improvisation": 48, "Stillness": 52, "RingPresence": 60, "CrowdWork": 66, "SetPiece": 70, "Physicality": 74, "Registers": [{"Register": "Arrogant", "Rating": 64}, {"Register": "Funny", "Rating": 60}], "Range": 46},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -4365,6 +4411,7 @@
     "DebutedIn": 2012,
     "Overness": 43,
     "Charisma": 3.0,
+    "Promo": {"Delivery": 52, "Improvisation": 45, "Stillness": 50, "RingPresence": 52, "CrowdWork": 55, "SetPiece": 60, "Physicality": 60, "Registers": [{"Register": "Inspirational", "Rating": 58}, {"Register": "Funny", "Rating": 50}], "Range": 45},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -4463,6 +4510,7 @@
     "DebutedIn": 2018,
     "Overness": 41,
     "Charisma": 2.7,
+    "Promo": {"Delivery": 54, "Improvisation": 50, "Stillness": 54, "RingPresence": 52, "CrowdWork": 50, "SetPiece": 58, "Physicality": 60, "Registers": [{"Register": "Arrogant", "Rating": 54}], "Range": 42},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -4560,6 +4608,7 @@
     "DebutedIn": 2001,
     "Overness": 38,
     "Charisma": 3.6,
+    "Promo": {"Delivery": 64, "Improvisation": 62, "Stillness": 50, "RingPresence": 62, "CrowdWork": 74, "SetPiece": 76, "Physicality": 76, "Registers": [{"Register": "Funny", "Rating": 74}, {"Register": "Menacing", "Rating": 56}], "Range": 50},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -4661,6 +4710,7 @@
     "DebutedIn": 2006,
     "Overness": 44,
     "Charisma": 2.9,
+    "Promo": {"Delivery": 62, "Improvisation": 60, "Stillness": 60, "RingPresence": 62, "CrowdWork": 66, "SetPiece": 60, "Physicality": 60, "Registers": [{"Register": "Emotional", "Rating": 70}, {"Register": "Inspirational", "Rating": 66}, {"Register": "Funny", "Rating": 64}], "Range": 54},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -4769,6 +4819,7 @@
     "DebutedIn": 2006,
     "Overness": 24,
     "Charisma": 2.2,
+    "Promo": {"Delivery": 46, "Improvisation": 42, "Stillness": 48, "RingPresence": 44, "CrowdWork": 40, "SetPiece": 52, "Physicality": 55, "Registers": [{"Register": "Arrogant", "Rating": 48}, {"Register": "Cold", "Rating": 45}], "Range": 35},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -4863,6 +4914,7 @@
     "DebutedIn": 2019,
     "Overness": 52,
     "Charisma": 2.9,
+    "Promo": {"Delivery": 66, "Improvisation": 56, "Stillness": 64, "RingPresence": 60, "CrowdWork": 52, "SetPiece": 72, "Physicality": 66, "Registers": [{"Register": "Arrogant", "Rating": 66}, {"Register": "Menacing", "Rating": 60, "Lean": "Scripted"}, {"Register": "Funny", "Rating": 58}], "Range": 46},
     "Style": "Grappler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -4956,6 +5008,7 @@
     "DebutedIn": 2003,
     "Overness": 35,
     "Charisma": 2.0,
+    "Promo": {"Delivery": 40, "Improvisation": 34, "Stillness": 38, "RingPresence": 42, "CrowdWork": 40, "SetPiece": 56, "Physicality": 72, "Registers": [{"Register": "Angry", "Rating": 52}, {"Register": "Menacing", "Rating": 50}], "Range": 30},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -5049,6 +5102,7 @@
     "DebutedIn": 2021,
     "Overness": 89,
     "Charisma": 4.8,
+    "Promo": {"Delivery": 80, "Improvisation": 80, "Stillness": 72, "RingPresence": 90, "CrowdWork": 92, "SetPiece": 88, "Physicality": 74, "Registers": [{"Register": "Arrogant", "Rating": 90}, {"Register": "Funny", "Rating": 80, "Lean": "Free"}], "Range": 62},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -5146,6 +5200,7 @@
     "DebutedIn": 2021,
     "Overness": 84,
     "Charisma": 3.0,
+    "Promo": {"Delivery": 55, "Improvisation": 45, "Stillness": 58, "RingPresence": 66, "CrowdWork": 52, "SetPiece": 74, "Physicality": 72, "Registers": [{"Register": "Arrogant", "Rating": 64}, {"Register": "Cold", "Rating": 60}, {"Register": "Menacing", "Rating": 58}], "Range": 40},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -5239,6 +5294,7 @@
     "DebutedIn": 2015,
     "Overness": 80,
     "Charisma": 4.6,
+    "Promo": {"Delivery": 76, "Improvisation": 70, "Stillness": 66, "RingPresence": 84, "CrowdWork": 80, "SetPiece": 82, "Physicality": 92, "Registers": [{"Register": "Arrogant", "Rating": 86}, {"Register": "Funny", "Rating": 74, "Lean": "Free"}], "Range": 58},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -5336,6 +5392,7 @@
     "DebutedIn": 2015,
     "Overness": 77,
     "Charisma": 3.3,
+    "Promo": {"Delivery": 62, "Improvisation": 55, "Stillness": 64, "RingPresence": 62, "CrowdWork": 60, "SetPiece": 66, "Physicality": 62, "Registers": [{"Register": "Inspirational", "Rating": 62}, {"Register": "Emotional", "Rating": 60}], "Range": 48},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -5429,6 +5486,7 @@
     "DebutedIn": 2014,
     "Overness": 84,
     "Charisma": 3.4,
+    "Promo": {"Delivery": 74, "Improvisation": 72, "Stillness": 62, "RingPresence": 72, "CrowdWork": 76, "SetPiece": 74, "Physicality": 50, "Registers": [{"Register": "Funny", "Rating": 84, "Lean": "Free"}, {"Register": "Arrogant", "Rating": 72}], "Range": 48},
     "Style": "Grappler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -5522,6 +5580,7 @@
     "DebutedIn": 2018,
     "Overness": 71,
     "Charisma": 4.0,
+    "Promo": {"Delivery": 76, "Improvisation": 70, "Stillness": 74, "RingPresence": 76, "CrowdWork": 74, "SetPiece": 74, "Physicality": 70, "Registers": [{"Register": "Emotional", "Rating": 78}, {"Register": "Arrogant", "Rating": 76}, {"Register": "Inspirational", "Rating": 70}], "Range": 62},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -5619,6 +5678,7 @@
     "DebutedIn": 2009,
     "Overness": 80,
     "Charisma": 3.7,
+    "Promo": {"Delivery": 56, "Improvisation": 50, "Stillness": 52, "RingPresence": 72, "CrowdWork": 84, "SetPiece": 70, "Physicality": 84, "Registers": [{"Register": "Inspirational", "Rating": 68}, {"Register": "Emotional", "Rating": 64}], "Range": 46},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -5717,6 +5777,7 @@
     "DebutedIn": 2009,
     "Overness": 44,
     "Charisma": 3.5,
+    "Promo": {"Delivery": 64, "Improvisation": 56, "Stillness": 66, "RingPresence": 62, "CrowdWork": 52, "SetPiece": 74, "Physicality": 72, "Registers": [{"Register": "Menacing", "Rating": 70}, {"Register": "Cold", "Rating": 64}], "Range": 50},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -5815,6 +5876,7 @@
     "DebutedIn": 2009,
     "Overness": 70,
     "Charisma": 3.2,
+    "Promo": {"Delivery": 52, "Improvisation": 50, "Stillness": 52, "RingPresence": 58, "CrowdWork": 58, "SetPiece": 60, "Physicality": 80, "Registers": [{"Register": "Angry", "Rating": 62}], "Range": 36},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -5908,6 +5970,7 @@
     "DebutedIn": 2012,
     "Overness": 52,
     "Charisma": 2.8,
+    "Promo": {"Delivery": 46, "Improvisation": 36, "Stillness": 50, "RingPresence": 54, "CrowdWork": 64, "SetPiece": 66, "Physicality": 62, "Registers": [{"Register": "Funny", "Rating": 58}, {"Register": "Arrogant", "Rating": 50}], "Range": 36},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -6001,6 +6064,7 @@
     "DebutedIn": 2007,
     "Overness": 42,
     "Charisma": 4.2,
+    "Promo": {"Delivery": 72, "Improvisation": 76, "Stillness": 76, "RingPresence": 72, "CrowdWork": 70, "SetPiece": 74, "Physicality": 80, "Registers": [{"Register": "Funny", "Rating": 80, "Lean": "Free"}, {"Register": "Arrogant", "Rating": 74}], "Range": 66},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -6099,6 +6163,7 @@
     "DebutedIn": 2013,
     "Overness": 42,
     "Charisma": 4.1,
+    "Promo": {"Delivery": 72, "Improvisation": 60, "Stillness": 78, "RingPresence": 70, "CrowdWork": 58, "SetPiece": 88, "Physicality": 68, "Registers": [{"Register": "Menacing", "Rating": 80}, {"Register": "Cold", "Rating": 72}], "Range": 46},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -6196,6 +6261,7 @@
     "DebutedIn": 2013,
     "Overness": 47,
     "Charisma": 3.8,
+    "Promo": {"Delivery": 62, "Improvisation": 54, "Stillness": 60, "RingPresence": 66, "CrowdWork": 58, "SetPiece": 74, "Physicality": 82, "Registers": [{"Register": "Arrogant", "Rating": 64, "Lean": "Scripted"}, {"Register": "Cold", "Rating": 60}], "Range": 50},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -6293,6 +6359,7 @@
     "DebutedIn": 2002,
     "Overness": 53,
     "Charisma": 3.1,
+    "Promo": {"Delivery": 58, "Improvisation": 52, "Stillness": 60, "RingPresence": 55, "CrowdWork": 58, "SetPiece": 62, "Physicality": 66, "Registers": [{"Register": "Emotional", "Rating": 62}, {"Register": "Funny", "Rating": 55}], "Range": 50},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -6390,6 +6457,7 @@
     "DebutedIn": 2012,
     "Overness": 40,
     "Charisma": 1.9,
+    "Promo": {"Delivery": 38, "Improvisation": 32, "Stillness": 42, "RingPresence": 38, "CrowdWork": 30, "SetPiece": 48, "Physicality": 58, "Registers": [{"Register": "Cold", "Rating": 50}, {"Register": "Menacing", "Rating": 48}], "Range": 30},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -6483,6 +6551,7 @@
     "DebutedIn": 2023,
     "Overness": 56,
     "Charisma": 3.4,
+    "Promo": {"Delivery": 64, "Improvisation": 58, "Stillness": 60, "RingPresence": 66, "CrowdWork": 72, "SetPiece": 72, "Physicality": 62, "Registers": [{"Register": "Funny", "Rating": 66}, {"Register": "Inspirational", "Rating": 66}], "Range": 54},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -6576,6 +6645,7 @@
     "DebutedIn": 2018,
     "Overness": 38,
     "Charisma": 3.6,
+    "Promo": {"Delivery": 72, "Improvisation": 66, "Stillness": 64, "RingPresence": 72, "CrowdWork": 66, "SetPiece": 66, "Physicality": 64, "Registers": [{"Register": "Arrogant", "Rating": 72}, {"Register": "Angry", "Rating": 68}], "Range": 58},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -6670,6 +6740,7 @@
     "DebutedIn": 2018,
     "Overness": 63,
     "Charisma": 2.5,
+    "Promo": {"Delivery": 56, "Improvisation": 52, "Stillness": 52, "RingPresence": 56, "CrowdWork": 50, "SetPiece": 58, "Physicality": 60, "Registers": [{"Register": "Arrogant", "Rating": 62}, {"Register": "Cold", "Rating": 54}], "Range": 46},
     "Style": "Grappler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -6764,6 +6835,7 @@
     "DebutedIn": 2022,
     "Overness": 56,
     "Charisma": 3.5,
+    "Promo": {"Delivery": 62, "Improvisation": 60, "Stillness": 58, "RingPresence": 66, "CrowdWork": 74, "SetPiece": 70, "Physicality": 66, "Registers": [{"Register": "Funny", "Rating": 70}, {"Register": "Inspirational", "Rating": 64}], "Range": 38},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -6862,6 +6934,7 @@
     "DebutedIn": 2020,
     "Overness": 34,
     "Charisma": 2.0,
+    "Promo": {"Delivery": 42, "Improvisation": 36, "Stillness": 40, "RingPresence": 42, "CrowdWork": 38, "SetPiece": 58, "Physicality": 78, "Registers": [{"Register": "Angry", "Rating": 56}, {"Register": "Cold", "Rating": 52}], "Range": 32},
     "Style": "Grappler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -6956,6 +7029,7 @@
     "DebutedIn": 2021,
     "Overness": 43,
     "Charisma": 3.2,
+    "Promo": {"Delivery": 64, "Improvisation": 56, "Stillness": 54, "RingPresence": 64, "CrowdWork": 70, "SetPiece": 66, "Physicality": 60, "Registers": [{"Register": "Funny", "Rating": 68}, {"Register": "Emotional", "Rating": 64}, {"Register": "Arrogant", "Rating": 58}], "Range": 48},
     "Style": "Grappler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -7050,6 +7124,7 @@
     "DebutedIn": 2023,
     "Overness": 29,
     "Charisma": 2.4,
+    "Promo": {"Delivery": 46, "Improvisation": 40, "Stillness": 48, "RingPresence": 46, "CrowdWork": 44, "SetPiece": 54, "Physicality": 52, "Registers": [{"Register": "Inspirational", "Rating": 48}], "Range": 38},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -7144,6 +7219,7 @@
     "DebutedIn": 2019,
     "Overness": 37,
     "Charisma": 2.6,
+    "Promo": {"Delivery": 50, "Improvisation": 52, "Stillness": 50, "RingPresence": 52, "CrowdWork": 60, "SetPiece": 54, "Physicality": 58, "Registers": [{"Register": "Inspirational", "Rating": 54}, {"Register": "Funny", "Rating": 52}], "Range": 42},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -7237,6 +7313,7 @@
     "DebutedIn": 2020,
     "Overness": 72,
     "Charisma": 4.4,
+    "Promo": {"Delivery": 84, "Improvisation": 84, "Stillness": 76, "RingPresence": 88, "CrowdWork": 92, "SetPiece": 78, "Physicality": 78, "Registers": [{"Register": "Arrogant", "Rating": 86}, {"Register": "Funny", "Rating": 80}, {"Register": "Angry", "Rating": 74}], "Range": 64},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -7332,6 +7409,7 @@
     "DebutedIn": 2007,
     "Overness": 70,
     "Charisma": 4.3,
+    "Promo": {"Delivery": 60, "Improvisation": 52, "Stillness": 50, "RingPresence": 84, "CrowdWork": 94, "SetPiece": 82, "Physicality": 86, "Registers": [{"Register": "Menacing", "Rating": 80}, {"Register": "Inspirational", "Rating": 74}], "Range": 46},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -7432,6 +7510,7 @@
     "DebutedIn": 2006,
     "Overness": 64,
     "Charisma": 3.9,
+    "Promo": {"Delivery": 82, "Improvisation": 78, "Stillness": 78, "RingPresence": 80, "CrowdWork": 70, "SetPiece": 84, "Physicality": 66, "Registers": [{"Register": "Arrogant", "Rating": 85}, {"Register": "Funny", "Rating": 74}, {"Register": "Angry", "Rating": 68}], "Range": 62},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -7527,6 +7606,7 @@
     "DebutedIn": 2018,
     "Overness": 60,
     "Charisma": 4.0,
+    "Promo": {"Delivery": 66, "Improvisation": 70, "Stillness": 60, "RingPresence": 74, "CrowdWork": 84, "SetPiece": 68, "Physicality": 82, "Registers": [{"Register": "Inspirational", "Rating": 74}, {"Register": "Funny", "Rating": 62, "Lean": "Free"}], "Range": 54},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -7626,6 +7706,7 @@
     "DebutedIn": 2008,
     "Overness": 58,
     "Charisma": 3.4,
+    "Promo": {"Delivery": 52, "Improvisation": 54, "Stillness": 56, "RingPresence": 64, "CrowdWork": 72, "SetPiece": 62, "Physicality": 84, "Registers": [{"Register": "Menacing", "Rating": 70}, {"Register": "Arrogant", "Rating": 62}], "Range": 44},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -7721,6 +7802,7 @@
     "DebutedIn": 2016,
     "Overness": 48,
     "Charisma": 2.8,
+    "Promo": {"Delivery": 36, "Improvisation": 30, "Stillness": 56, "RingPresence": 54, "CrowdWork": 34, "SetPiece": 64, "Physicality": 82, "Registers": [{"Register": "Menacing", "Rating": 66}], "Range": 24},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -7817,6 +7899,7 @@
     "DebutedIn": 2019,
     "Overness": 44,
     "Charisma": 3.6,
+    "Promo": {"Delivery": 68, "Improvisation": 64, "Stillness": 58, "RingPresence": 70, "CrowdWork": 76, "SetPiece": 68, "Physicality": 56, "Registers": [{"Register": "Arrogant", "Rating": 72}, {"Register": "Funny", "Rating": 62}], "Range": 56},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -7910,6 +7993,7 @@
     "DebutedIn": 2005,
     "Overness": 66,
     "Charisma": 3.8,
+    "Promo": {"Delivery": 48, "Improvisation": 42, "Stillness": 46, "RingPresence": 70, "CrowdWork": 80, "SetPiece": 74, "Physicality": 82, "Registers": [{"Register": "Inspirational", "Rating": 64}], "Range": 40},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -8010,6 +8094,7 @@
     "DebutedIn": 2017,
     "Overness": 55,
     "Charisma": 4.2,
+    "Promo": {"Delivery": 84, "Improvisation": 84, "Stillness": 78, "RingPresence": 86, "CrowdWork": 84, "SetPiece": 74, "Physicality": 58, "Registers": [{"Register": "Arrogant", "Rating": 88}, {"Register": "Funny", "Rating": 80, "Lean": "Free"}], "Range": 60},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -8105,6 +8190,7 @@
     "DebutedIn": 2022,
     "Overness": 46,
     "Charisma": 3.4,
+    "Promo": {"Delivery": 64, "Improvisation": 56, "Stillness": 62, "RingPresence": 64, "CrowdWork": 58, "SetPiece": 64, "Physicality": 70, "Registers": [{"Register": "Arrogant", "Rating": 64}, {"Register": "Inspirational", "Rating": 62}], "Range": 42},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -8197,6 +8283,7 @@
     "DebutedIn": 2020,
     "Overness": 44,
     "Charisma": 3.0,
+    "Promo": {"Delivery": 56, "Improvisation": 50, "Stillness": 56, "RingPresence": 60, "CrowdWork": 50, "SetPiece": 62, "Physicality": 82, "Registers": [{"Register": "Menacing", "Rating": 60}], "Range": 40},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -8293,6 +8380,7 @@
     "DebutedIn": 2017,
     "Overness": 42,
     "Charisma": 3.2,
+    "Promo": {"Delivery": 64, "Improvisation": 60, "Stillness": 60, "RingPresence": 64, "CrowdWork": 60, "SetPiece": 62, "Physicality": 58, "Registers": [{"Register": "Arrogant", "Rating": 68}], "Range": 50},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -8388,6 +8476,7 @@
     "DebutedIn": 2021,
     "Overness": 32,
     "Charisma": 3.0,
+    "Promo": {"Delivery": 55, "Improvisation": 50, "Stillness": 50, "RingPresence": 55, "CrowdWork": 58, "SetPiece": 62, "Physicality": 58, "Registers": [{"Register": "Arrogant", "Rating": 60}, {"Register": "Funny", "Rating": 55}], "Range": 45},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -8496,6 +8585,7 @@
     "DebutedIn": 2019,
     "Overness": 31,
     "Charisma": 3.1,
+    "Promo": {"Delivery": 60, "Improvisation": 58, "Stillness": 54, "RingPresence": 62, "CrowdWork": 64, "SetPiece": 58, "Physicality": 58, "Registers": [{"Register": "Arrogant", "Rating": 64}, {"Register": "Funny", "Rating": 58}], "Range": 46},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -8607,6 +8697,7 @@
     "DebutedIn": 2020,
     "Overness": 85,
     "Charisma": 4.2,
+    "Promo": {"Delivery": 78, "Improvisation": 72, "Stillness": 70, "RingPresence": 86, "CrowdWork": 90, "SetPiece": 80, "Physicality": 74, "Registers": [{"Register": "Arrogant", "Rating": 88}, {"Register": "Fearful", "Rating": 80, "Lean": "Free"}], "Range": 66},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -8706,6 +8797,7 @@
     "DebutedIn": 2012,
     "Overness": 80,
     "Charisma": 3.4,
+    "Promo": {"Delivery": 62, "Improvisation": 70, "Stillness": 58, "RingPresence": 70, "CrowdWork": 60, "SetPiece": 64, "Physicality": 86, "Registers": [{"Register": "Menacing", "Rating": 80}, {"Register": "Angry", "Rating": 76}], "Range": 46},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -8814,6 +8906,7 @@
     "DebutedIn": 2018,
     "Overness": 78,
     "Charisma": 3.0,
+    "Promo": {"Delivery": 56, "Improvisation": 44, "Stillness": 66, "RingPresence": 56, "CrowdWork": 42, "SetPiece": 66, "Physicality": 82, "Registers": [{"Register": "Cold", "Rating": 70}, {"Register": "Menacing", "Rating": 68}], "Range": 40},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -8909,6 +9002,7 @@
     "DebutedIn": 2022,
     "Overness": 82,
     "Charisma": 3.8,
+    "Promo": {"Delivery": 76, "Improvisation": 62, "Stillness": 78, "RingPresence": 82, "CrowdWork": 64, "SetPiece": 74, "Physicality": 84, "Registers": [{"Register": "Menacing", "Rating": 80}, {"Register": "Cold", "Rating": 78}, {"Register": "Arrogant", "Rating": 68}], "Range": 48},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -9006,6 +9100,7 @@
     "DebutedIn": 2017,
     "Overness": 66,
     "Charisma": 3.4,
+    "Promo": {"Delivery": 42, "Improvisation": 30, "Stillness": 50, "RingPresence": 62, "CrowdWork": 60, "SetPiece": 76, "Physicality": 84, "Registers": [{"Register": "Menacing", "Rating": 72}, {"Register": "Cold", "Rating": 66}], "Range": 40},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -9118,6 +9213,7 @@
     "DebutedIn": 2012,
     "Overness": 66,
     "Charisma": 4.4,
+    "Promo": {"Delivery": 84, "Improvisation": 86, "Stillness": 78, "RingPresence": 88, "CrowdWork": 84, "SetPiece": 74, "Physicality": 66, "Registers": [{"Register": "Arrogant", "Rating": 88}, {"Register": "Funny", "Rating": 80}, {"Register": "Emotional", "Rating": 70}], "Range": 64},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -9217,6 +9313,7 @@
     "DebutedIn": 2012,
     "Overness": 66,
     "Charisma": 3.3,
+    "Promo": {"Delivery": 64, "Improvisation": 60, "Stillness": 64, "RingPresence": 64, "CrowdWork": 58, "SetPiece": 62, "Physicality": 74, "Registers": [{"Register": "Angry", "Rating": 64}, {"Register": "Inspirational", "Rating": 62}], "Range": 50},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -9310,6 +9407,7 @@
     "DebutedIn": 2021,
     "Overness": 90,
     "Charisma": 4.4,
+    "Promo": {"Delivery": 74, "Improvisation": 70, "Stillness": 76, "RingPresence": 78, "CrowdWork": 80, "SetPiece": 90, "Physicality": 82, "Registers": [{"Register": "Arrogant", "Rating": 88}, {"Register": "Funny", "Rating": 68}], "Range": 52},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -9407,6 +9505,7 @@
     "DebutedIn": 2022,
     "Overness": 47,
     "Charisma": 3.4,
+    "Promo": {"Delivery": 74, "Improvisation": 72, "Stillness": 66, "RingPresence": 74, "CrowdWork": 76, "SetPiece": 64, "Physicality": 74, "Registers": [{"Register": "Arrogant", "Rating": 76}, {"Register": "Angry", "Rating": 68}], "Range": 56},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -9500,6 +9599,7 @@
     "DebutedIn": 2008,
     "Overness": 68,
     "Charisma": 3.6,
+    "Promo": {"Delivery": 64, "Improvisation": 70, "Stillness": 60, "RingPresence": 70, "CrowdWork": 80, "SetPiece": 74, "Physicality": 86, "Registers": [{"Register": "Funny", "Rating": 80, "Lean": "Free"}, {"Register": "Menacing", "Rating": 74}], "Range": 56},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -9616,6 +9716,7 @@
     "DebutedIn": 2022,
     "Overness": 52,
     "Charisma": 3.3,
+    "Promo": {"Delivery": 62, "Improvisation": 52, "Stillness": 62, "RingPresence": 62, "CrowdWork": 68, "SetPiece": 70, "Physicality": 72, "Registers": [{"Register": "Emotional", "Rating": 66, "Lean": "Scripted"}, {"Register": "Angry", "Rating": 62}], "Range": 50},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -9713,6 +9814,7 @@
     "DebutedIn": 2015,
     "Overness": 83,
     "Charisma": 4.8,
+    "Promo": {"Delivery": 94, "Improvisation": 95, "Stillness": 94, "RingPresence": 96, "CrowdWork": 92, "SetPiece": 84, "Physicality": 72, "Registers": [{"Register": "Arrogant", "Rating": 98}, {"Register": "Emotional", "Rating": 88}, {"Register": "Funny", "Rating": 84, "Lean": "Free"}], "Range": 86},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -9810,6 +9912,7 @@
     "DebutedIn": 2008,
     "Overness": 80,
     "Charisma": 4.3,
+    "Promo": {"Delivery": 84, "Improvisation": 80, "Stillness": 86, "RingPresence": 84, "CrowdWork": 80, "SetPiece": 86, "Physicality": 86, "Registers": [{"Register": "Emotional", "Rating": 92}, {"Register": "Angry", "Rating": 86}, {"Register": "Funny", "Rating": 74}], "Range": 76},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -9907,6 +10010,7 @@
     "DebutedIn": 2009,
     "Overness": 76,
     "Charisma": 4.5,
+    "Promo": {"Delivery": 90, "Improvisation": 86, "Stillness": 90, "RingPresence": 90, "CrowdWork": 86, "SetPiece": 88, "Physicality": 84, "Registers": [{"Register": "Menacing", "Rating": 92}, {"Register": "Cold", "Rating": 86}, {"Register": "Arrogant", "Rating": 84}], "Range": 76},
     "Style": "Striker",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -10020,6 +10124,7 @@
     "DebutedIn": 2000,
     "Overness": 85,
     "Charisma": 4.0,
+    "Promo": {"Delivery": 76, "Improvisation": 72, "Stillness": 74, "RingPresence": 78, "CrowdWork": 72, "SetPiece": 84, "Physicality": 76, "Registers": [{"Register": "Funny", "Rating": 80}, {"Register": "Emotional", "Rating": 76}, {"Register": "Arrogant", "Rating": 76}], "Range": 72},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -10116,6 +10221,7 @@
     "DebutedIn": 2012,
     "Overness": 81,
     "Charisma": 4.0,
+    "Promo": {"Delivery": 66, "Improvisation": 74, "Stillness": 64, "RingPresence": 76, "CrowdWork": 78, "SetPiece": 78, "Physicality": 82, "Registers": [{"Register": "Emotional", "Rating": 76, "Lean": "Free"}, {"Register": "Arrogant", "Rating": 72}], "Range": 60},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -10229,6 +10335,7 @@
     "DebutedIn": 2004,
     "Overness": 87,
     "Charisma": 4.5,
+    "Promo": {"Delivery": 76, "Improvisation": 92, "Stillness": 88, "RingPresence": 88, "CrowdWork": 82, "SetPiece": 80, "Physicality": 95, "Registers": [{"Register": "Angry", "Rating": 92}, {"Register": "Menacing", "Rating": 88}, {"Register": "Emotional", "Rating": 80, "Lean": "Free"}], "Range": 72},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -10325,6 +10432,7 @@
     "DebutedIn": 2014,
     "Overness": 75,
     "Charisma": 3.3,
+    "Promo": {"Delivery": 64, "Improvisation": 58, "Stillness": 72, "RingPresence": 56, "CrowdWork": 48, "SetPiece": 86, "Physicality": 84, "Registers": [{"Register": "Emotional", "Rating": 70}, {"Register": "Cold", "Rating": 62}], "Range": 44},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -10421,6 +10529,7 @@
     "DebutedIn": 2004,
     "Overness": 82,
     "Charisma": 3.4,
+    "Promo": {"Delivery": 58, "Improvisation": 45, "Stillness": 56, "RingPresence": 72, "CrowdWork": 74, "SetPiece": 78, "Physicality": 64, "Registers": [{"Register": "Arrogant", "Rating": 76}, {"Register": "Funny", "Rating": 60}], "Range": 40},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -10517,6 +10626,7 @@
     "DebutedIn": 2010,
     "Overness": 88,
     "Charisma": 4.3,
+    "Promo": {"Delivery": 80, "Improvisation": 72, "Stillness": 76, "RingPresence": 86, "CrowdWork": 84, "SetPiece": 88, "Physicality": 72, "Registers": [{"Register": "Arrogant", "Rating": 88}, {"Register": "Emotional", "Rating": 74}], "Range": 62},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -10629,6 +10739,7 @@
     "DebutedIn": 2009,
     "Overness": 74,
     "Charisma": 4.5,
+    "Promo": {"Delivery": 94, "Improvisation": 84, "Stillness": 86, "RingPresence": 88, "CrowdWork": 84, "SetPiece": 96, "Physicality": 72, "Registers": [{"Register": "Funny", "Rating": 95}, {"Register": "Arrogant", "Rating": 86}, {"Register": "Emotional", "Rating": 80}], "Range": 84},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -10725,6 +10836,7 @@
     "DebutedIn": 2016,
     "Overness": 64,
     "Charisma": 3.2,
+    "Promo": {"Delivery": 52, "Improvisation": 50, "Stillness": 50, "RingPresence": 56, "CrowdWork": 60, "SetPiece": 66, "Physicality": 76, "Registers": [{"Register": "Funny", "Rating": 62}, {"Register": "Emotional", "Rating": 56}], "Range": 40},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -10821,6 +10933,7 @@
     "DebutedIn": 1999,
     "Overness": 78,
     "Charisma": 4.2,
+    "Promo": {"Delivery": 86, "Improvisation": 86, "Stillness": 92, "RingPresence": 86, "CrowdWork": 70, "SetPiece": 82, "Physicality": 90, "Registers": [{"Register": "Menacing", "Rating": 94}, {"Register": "Cold", "Rating": 86}, {"Register": "Funny", "Rating": 70}], "Range": 72},
     "Style": "Grappler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -10918,6 +11031,7 @@
     "DebutedIn": 2004,
     "Overness": 72,
     "Charisma": 3.9,
+    "Promo": {"Delivery": 76, "Improvisation": 76, "Stillness": 70, "RingPresence": 78, "CrowdWork": 80, "SetPiece": 74, "Physicality": 80, "Registers": [{"Register": "Arrogant", "Rating": 82}, {"Register": "Funny", "Rating": 72, "Lean": "Free"}], "Range": 62},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -11015,6 +11129,7 @@
     "DebutedIn": 1994,
     "Overness": 80,
     "Charisma": 3.6,
+    "Promo": {"Delivery": 52, "Improvisation": 50, "Stillness": 56, "RingPresence": 66, "CrowdWork": 82, "SetPiece": 78, "Physicality": 74, "Registers": [{"Register": "Emotional", "Rating": 64}, {"Register": "Inspirational", "Rating": 60}], "Range": 42},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -11112,6 +11227,7 @@
     "DebutedIn": 1992,
     "Overness": 76,
     "Charisma": 4.3,
+    "Promo": {"Delivery": 84, "Improvisation": 74, "Stillness": 76, "RingPresence": 80, "CrowdWork": 78, "SetPiece": 96, "Physicality": 72, "Registers": [{"Register": "Funny", "Rating": 88}, {"Register": "Emotional", "Rating": 76}, {"Register": "Menacing", "Rating": 70}], "Range": 80},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -11209,6 +11325,7 @@
     "DebutedIn": 2012,
     "Overness": 56,
     "Charisma": 3.3,
+    "Promo": {"Delivery": 66, "Improvisation": 62, "Stillness": 64, "RingPresence": 68, "CrowdWork": 56, "SetPiece": 66, "Physicality": 78, "Registers": [{"Register": "Arrogant", "Rating": 70}, {"Register": "Angry", "Rating": 68}], "Range": 50},
     "Style": "Powerhouse",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -11305,6 +11422,7 @@
     "DebutedIn": 1998,
     "Overness": 57,
     "Charisma": 3.6,
+    "Promo": {"Delivery": 72, "Improvisation": 70, "Stillness": 70, "RingPresence": 72, "CrowdWork": 66, "SetPiece": 66, "Physicality": 64, "Registers": [{"Register": "Arrogant", "Rating": 74}, {"Register": "Funny", "Rating": 62}], "Range": 64},
     "Style": "Technical",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -11402,6 +11520,7 @@
     "DebutedIn": 2003,
     "Overness": 62,
     "Charisma": 4.2,
+    "Promo": {"Delivery": 86, "Improvisation": 80, "Stillness": 84, "RingPresence": 82, "CrowdWork": 74, "SetPiece": 82, "Physicality": 66, "Registers": [{"Register": "Emotional", "Rating": 86}, {"Register": "Arrogant", "Rating": 80}, {"Register": "Funny", "Rating": 72}], "Range": 72},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -11499,6 +11618,7 @@
     "DebutedIn": 2019,
     "Overness": 54,
     "Charisma": 3.2,
+    "Promo": {"Delivery": 56, "Improvisation": 54, "Stillness": 50, "RingPresence": 60, "CrowdWork": 70, "SetPiece": 62, "Physicality": 74, "Registers": [{"Register": "Inspirational", "Rating": 64}, {"Register": "Arrogant", "Rating": 58}], "Range": 46},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -11594,6 +11714,7 @@
     "DebutedIn": 2002,
     "Overness": 45,
     "Charisma": 3.0,
+    "Promo": {"Delivery": 60, "Improvisation": 56, "Stillness": 62, "RingPresence": 58, "CrowdWork": 52, "SetPiece": 58, "Physicality": 74, "Registers": [{"Register": "Angry", "Rating": 66}, {"Register": "Emotional", "Rating": 64}], "Range": 48},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -11689,6 +11810,7 @@
     "DebutedIn": 2014,
     "Overness": 57,
     "Charisma": 3.7,
+    "Promo": {"Delivery": 64, "Improvisation": 62, "Stillness": 56, "RingPresence": 68, "CrowdWork": 80, "SetPiece": 74, "Physicality": 70, "Registers": [{"Register": "Funny", "Rating": 66}, {"Register": "Angry", "Rating": 62}], "Range": 50},
     "Style": "HighFlyer",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -11785,6 +11907,7 @@
     "DebutedIn": 2015,
     "Overness": 64,
     "Charisma": 3.6,
+    "Promo": {"Delivery": 64, "Improvisation": 68, "Stillness": 66, "RingPresence": 66, "CrowdWork": 64, "SetPiece": 62, "Physicality": 78, "Registers": [{"Register": "Angry", "Rating": 66}, {"Register": "Funny", "Rating": 64, "Lean": "Free"}], "Range": 56},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
@@ -11882,6 +12005,7 @@
     "DebutedIn": 2019,
     "Overness": 64,
     "Charisma": 4.0,
+    "Promo": {"Delivery": 80, "Improvisation": 70, "Stillness": 76, "RingPresence": 76, "CrowdWork": 72, "SetPiece": 88, "Physicality": 82, "Registers": [{"Register": "Arrogant", "Rating": 84}, {"Register": "Menacing", "Rating": 76, "Lean": "Scripted"}, {"Register": "Funny", "Rating": 72}], "Range": 68},
     "Style": "Brawler",
     "PreviousGimmicks": [],
     "Gimmick": {
