@@ -72,6 +72,10 @@ namespace WrestlingSim.Tests
                 if (career.CurrentDate >= next) { Report($"after {(next.DayNumber - day.DayNumber) / 30} months"); next = next.AddMonths(6); }
             }
             ByType();
+            var turned = career.Roster.Where(w => w.Turns > 0).ToList();
+            Say($"turns: {turned.Sum(w => w.Turns)} by {turned.Count} people over {years} years; " +
+                $"{career.News.Count(n => n.Text.Contains("has turned"))} in the last 80 news items");
+            foreach (var n in career.News.Where(n => n.Text.Contains("has turned")).TakeLast(8)) Say($"  {n.Date}: {n.Text}");
         }
     }
 }

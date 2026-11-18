@@ -208,6 +208,26 @@ namespace WrestlingSim.Models
         /// charisma, in their gimmick's natural note.
         /// </summary>
         public Models.Person.PromoSkills? Promo { get; set; }
+
+        // ── Turns (docs/gimmick-plan.md Part 5) ──────────────────────────────
+
+        /// <summary>When they last turned, for how often is too often (doc 19 §5.4).</summary>
+        public DateOnly? LastTurned { get; set; }
+
+        /// <summary>How many times they have turned in this world.</summary>
+        public int Turns { get; set; }
+
+        /// <summary>
+        /// How much the crowd senses a turn coming, 0–1, built by teases — a face cheating to
+        /// win, a heel refusing help. Fades if nothing comes of it (Engine.Turns).
+        /// </summary>
+        public double TurnAnticipation { get; set; }
+
+        /// <summary>Which way the teases have been pointing.</summary>
+        public Alignment? TeasedToward { get; set; }
+
+        /// <summary>When the current run of teases began.</summary>
+        public DateOnly? TeaseSince { get; set; }
         public List<Move> Moveset { get; set; }
         public List<Signature> Signature { get; set; }
         public WrestlingStyle Style { get; set; }

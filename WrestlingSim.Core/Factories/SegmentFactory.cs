@@ -193,6 +193,9 @@ namespace WrestlingSim.Factories
         public static Segment CreateBetrayal(Wrestler betrayer, Wrestler victim)
         {
             var segment = new Segment($"{betrayer.Gimmick.Name} Betrays {victim.Gimmick.Name}", SegmentType.Brawl, SegmentLocation.Ring, isScripted: false);
+            // A betrayal is a heel turn (docs/gimmick-plan.md Part 5) unless they already are one.
+            if (betrayer.Gimmick?.NaturalAlignment != Alignment.Heel)
+                segment.Turn = new AlignmentMove(betrayer, Alignment.Heel);
             segment.AddParticipant(betrayer);
             segment.AddParticipant(victim);
 

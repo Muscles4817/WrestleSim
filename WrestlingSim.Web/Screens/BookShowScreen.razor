@@ -123,7 +123,7 @@ else if (mode == Mode.AddSegment)
         <div class="screen__eyebrow">Adding to @show.Name</div>
         <h1 class="screen__title">Add a Segment</h1>
     </div>
-    <SegmentBuilder OnDone="AddSegment" OnCancel="@(() => mode = Mode.Card)" ConfirmLabel="Add to card +" />
+    <SegmentBuilder OnDone="AddSegment" OnCancel="@(() => mode = Mode.Card)" ConfirmLabel="Add to card +" Kind="show.Type" />
 }
 else if (mode == Mode.AddRumble)
 {

@@ -1,8 +1,11 @@
-namespace WrestlingSim.Models
+﻿namespace WrestlingSim.Models
 {
     public class Show
     {
         public string Name { get; set; } = "Unnamed Show";
+
+        /// <summary>What kind of night it is — a turn on a premium event is a bigger moment.</summary>
+        public Enums.ShowType Type { get; set; } = Enums.ShowType.Television;
         public DateTime Date { get; set; }
         public string Location { get; set; } = "Unknown Arena";
         public int AudienceSize { get; set; } = 10000;

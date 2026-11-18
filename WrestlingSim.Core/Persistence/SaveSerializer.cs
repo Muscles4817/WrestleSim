@@ -108,6 +108,12 @@ namespace WrestlingSim.Persistence
                     Warmth         = w.Warmth,
                     RejectedSince  = w.RejectedSince is { } rj ? Iso(rj) : null,
                     Freshness      = w.Gimmick is { } gim ? gim.Freshness : null,
+                    Alignment      = w.Gimmick?.NaturalAlignment,
+                    LastTurned     = w.LastTurned is { } turned ? Iso(turned) : null,
+                    Turns          = w.Turns,
+                    TurnAnticipation = w.TurnAnticipation,
+                    TeasedToward   = w.TeasedToward,
+                    TeaseSince     = w.TeaseSince is { } teased ? Iso(teased) : null,
                     Overness       = w.Overness,
                     Momentum       = w.Momentum,
                     LastAppearance = w.LastAppearance is { } seen ? Iso(seen) : null,
@@ -348,6 +354,10 @@ namespace WrestlingSim.Persistence
                 Form         = s.Form,
                 Staging      = s.Staging,
                 Register     = s.Register,
+                TurnWho      = s.Turn?.Who.Id,
+                TurnTo       = s.Turn?.To,
+                TeaseWho     = s.Tease?.Who.Id,
+                TeaseTo      = s.Tease?.To,
                 Participants = s.Participants.Select(p => p.Id).ToList(),
                 HistoryTags  = new List<FeudHistoryTag>(s.HistoryTags),
                 Actions = s.Actions.Select(a => new SegmentActionDto
@@ -581,6 +591,12 @@ namespace WrestlingSim.Persistence
                 if (state.Warmth is { } warm) w.Warmth = warm;
                 w.RejectedSince = string.IsNullOrEmpty(state.RejectedSince) ? null : ParseDate(state.RejectedSince);
                 if (state.Freshness is { } fresh && w.Gimmick is { } gimmick) gimmick.Freshness = Math.Clamp(fresh, 0, 1);
+                if (state.Alignment is { } aligned && w.Gimmick is { } turnedGimmick) turnedGimmick.NaturalAlignment = aligned;
+                w.LastTurned       = string.IsNullOrEmpty(state.LastTurned) ? null : ParseDate(state.LastTurned);
+                w.Turns            = state.Turns;
+                w.TurnAnticipation = state.TurnAnticipation;
+                w.TeasedToward     = state.TeasedToward;
+                w.TeaseSince       = string.IsNullOrEmpty(state.TeaseSince) ? null : ParseDate(state.TeaseSince);
             }
 
             var career = new Career
@@ -1329,6 +1345,10 @@ namespace WrestlingSim.Persistence
             if (dto.Form is { } form) segment.Form = form;
             segment.Staging  = dto.Staging;
             segment.Register = dto.Register;
+            if (dto.TurnWho is { } turner && dto.TurnTo is { } turnTo && byId.TryGetValue(turner, out var tw))
+                segment.Turn = new Models.Segment.AlignmentMove(tw, turnTo);
+            if (dto.TeaseWho is { } teaser && dto.TeaseTo is { } teaseTo && byId.TryGetValue(teaser, out var sw))
+                segment.Tease = new Models.Segment.AlignmentMove(sw, teaseTo);
 
             foreach (var id in dto.Participants)
                 if (byId.TryGetValue(id, out var p)) segment.AddParticipant(p);

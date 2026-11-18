@@ -1,4 +1,4 @@
-using WrestlingSim.Enums;
+﻿using WrestlingSim.Enums;
 using WrestlingSim.Models;
 
 namespace WrestlingSim.Engine
@@ -162,7 +162,8 @@ namespace WrestlingSim.Engine
             // The curve saturates asymptotically instead, so nobody is ever categorically
             // incapable of the other reading. 4.0 sets how firmly the gimmick's alignment
             // states its intent; 5.0 sets how far the crowd can overrule it.
-            double lean = (intent - 0.5) * 4.0 + (Disposition - 0.55) * 5.0;
+            // Teases move the crowd's reading before the turn comes (Turns.Lean).
+            double lean = (intent - 0.5) * 4.0 + (Disposition - 0.55) * 5.0 + Turns.Lean(w);
             Favour = 1.0 / (1.0 + Math.Exp(-lean));
 
             // Charisma is weighted heaviest because it is the sharpest discriminator on a

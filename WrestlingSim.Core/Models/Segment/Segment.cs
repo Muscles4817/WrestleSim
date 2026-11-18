@@ -27,6 +27,12 @@ namespace WrestlingSim.Models.Segment
 
         /// <summary>What it is meant to make the crowd feel. Null lets each speaker play their own natural note.</summary>
         public PromoRegister? Register { get; set; }
+
+        /// <summary>Somebody this segment turns (docs/gimmick-plan.md Part 5), or null.</summary>
+        public AlignmentMove? Turn { get; set; }
+
+        /// <summary>Somebody this segment teases a turn for, or null.</summary>
+        public AlignmentMove? Tease { get; set; }
         public double AudienceImpact { get; set; } // Set by SegmentSimulator
         public double HeatImpact { get; set; } // Feud heat generated
 
